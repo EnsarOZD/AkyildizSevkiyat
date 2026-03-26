@@ -1,0 +1,6 @@
+@Akyildiz.Sevkiyat.WebApi_HostAddress = http://localhost:5087
+
+GET {{Akyildiz.Sevkiyat.WebApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

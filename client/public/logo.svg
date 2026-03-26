@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 252 54">
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1d4ed8"/>
+      <stop offset="100%" stop-color="#1e3a8a"/>
+    </linearGradient>
+    <filter id="glow2">
+      <feGaussianBlur stdDeviation="1.2" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Icon badge — shifted 5px right + 5px down for padding -->
+  <rect x="5" y="5" width="44" height="44" rx="9" fill="url(#bg2)"/>
+
+  <!-- Speed lines (shifted +5, +5) -->
+  <line x1="8"  y1="27" x2="16" y2="27" stroke="#60a5fa" stroke-width="2"   stroke-linecap="round" opacity="0.55"/>
+  <line x1="8"  y1="22" x2="14" y2="22" stroke="#60a5fa" stroke-width="1.5" stroke-linecap="round" opacity="0.35"/>
+  <line x1="8"  y1="32" x2="14" y2="32" stroke="#60a5fa" stroke-width="1.5" stroke-linecap="round" opacity="0.35"/>
+
+  <!-- 5-pointed star (center 29,27, outer R=14, inner r=6) — shifted +5,+5 -->
+  <polygon
+    points="29,13 30.53,22.15 40.31,22.67 32.71,28.85 35.23,38.33 29,33 18.77,38.33 21.29,28.85 13.69,22.67 27.47,22.15"
+    fill="#fbbf24"
+    filter="url(#glow2)"
+  />
+
+  <!-- Brand text -->
+  <text x="62" y="29" font-family="system-ui,-apple-system,sans-serif" font-size="17" font-weight="700" fill="#1e3a8a" letter-spacing="-0.3">Akyıldız</text>
+  <text x="63" y="43" font-family="system-ui,-apple-system,sans-serif" font-size="10.5" fill="#64748b" letter-spacing="0.2">Sevkiyat Yönetimi</text>
+</svg>

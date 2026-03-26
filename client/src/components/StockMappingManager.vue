@@ -1,0 +1,282 @@
+<template>
+  <div class="bg-white dark:bg-gray-900 rounded-lg shadow p-4">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-lg font-semibold">Eşleştirme Bekleyen Stoklar</h2>
+    <div class="flex flex-wrap gap-2">
+      <!-- Download Template Button -->
+      <button @click="downloadTemplate" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm flex items-center gap-1">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+        Excel İndir
+      </button>
+
+      <input type="file" ref="fileInput" class="hidden" accept=".xlsx" @change="uploadStocks">
+      <button @click="fileInput?.click()" class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm flex items-center gap-1">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+        </svg>
+        Stok (Yeni Kart) Yükle
+      </button>
+
+      <input type="file" ref="mappingFileInput" class="hidden" accept=".xlsx" @change="uploadStockMappings">
+      <button @click="mappingFileInput?.click()" class="px-3 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 text-sm flex items-center gap-1">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+        </svg>
+        Excel Yükle (Eşleştirme)
+      </button>
+
+      <button @click="autoMatch" :disabled="autoMatching" class="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm flex items-center gap-1 disabled:opacity-50">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+        {{ autoMatching ? 'Eşleştiriliyor...' : 'Otomatik Eşleştir' }}
+      </button>
+
+      <button @click="refreshbi" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded" title="Yenile">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 dark:text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+        </svg>
+      </button>
+    </div>
+    </div>
+
+    <div v-if="loading" class="text-center py-4">Checking...</div>
+
+    <div v-else-if="unmappedStocks.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
+      Wait! No unmapped stocks found. Everything looks good.
+    </div>
+
+    <div v-else class="space-y-4">
+      <div v-for="stock in unmappedStocks" :key="stock.mappingId" class="border dark:border-gray-700 rounded p-3 flex flex-col md:flex-row gap-4 items-center">
+        <div class="flex-1">
+          <div class="font-medium text-red-600">{{ stock.externalCode }}</div>
+          <div class="text-sm text-gray-600 dark:text-gray-400">{{ stock.externalName }}</div>
+        </div>
+
+        <div class="flex gap-2 items-center">
+            <!-- Simple Local Stock Selector (Mocked list for now or search input) -->
+             <div class="relative w-48">
+                <StockCombobox
+                    placeholder="Search Code/Name"
+                    v-model="stock.selectedLocalId"
+                    @search="(val) => stock.currentSearch = val"
+                />
+             </div>
+
+             <!-- Add Button (Visible if no mapping and search term exists) -->
+             <button
+                v-if="!stock.selectedLocalId && stock.currentSearch && stock.currentSearch.length > 1"
+                @click="createAndSelectStock(stock)"
+                class="px-2 py-1 bg-teal-500 text-white rounded hover:bg-teal-600 text-xs flex items-center gap-1"
+                title="Yeni Stok Kartı Aç"
+             >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Ekle
+             </button>
+
+             <!-- DEBUG: Show selected ID -->
+             <span class="text-xs text-gray-400 dark:text-gray-600 font-mono w-6">{{ stock.selectedLocalId || '-' }}</span>
+
+             <button
+                @click="mapStock(stock, false)"
+                class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="!stock.selectedLocalId"
+             >
+                Eşleştir
+             </button>
+
+             <button
+                @click="mapStock(stock, true)"
+                class="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600 text-sm"
+             >
+                Yoksay
+             </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import shipmentService from '../services/shipmentService';
+import { stockService } from '../services/stockService';
+import StockCombobox from './StockCombobox.vue';
+import { useNotificationStore } from '../stores/notification';
+import { ApiErrorUtils } from '../utils/apiError';
+
+const notificationStore = useNotificationStore();
+
+interface UnmappedStock {
+    mappingId: number;
+    externalCode: string;
+    externalName: string;
+    selectedLocalId?: number;
+    currentSearch?: string;
+}
+
+const unmappedStocks = ref<UnmappedStock[]>([]);
+const loading = ref(false);
+const autoMatching = ref(false);
+const emit = defineEmits(['mapped']);
+const fileInput = ref<HTMLInputElement | null>(null);
+const mappingFileInput = ref<HTMLInputElement | null>(null);
+
+const autoMatch = async () => {
+    autoMatching.value = true;
+    try {
+        const result = await shipmentService.autoMatchMappings();
+        if (result.matchedCount > 0) {
+            let msg = `${result.matchedCount} stok isim eşleşmesiyle otomatik eşleştirildi.`;
+            if (result.ordersUnlocked > 0) msg += ` ${result.ordersUnlocked} sipariş hazır durumuna geçti.`;
+            notificationStore.add(msg, 'success');
+            emit('mapped');
+            await refreshbi();
+        } else {
+            notificationStore.add('İsim eşleşmesi bulunamadı. Manuel eşleştirme gerekiyor.', 'warning');
+        }
+    } catch (e) {
+        notificationStore.add('Otomatik eşleştirme başarısız: ' + (ApiErrorUtils.getErrorMessage(e) || 'Bilinmeyen hata'), 'error');
+    } finally {
+        autoMatching.value = false;
+    }
+};
+
+const refreshbi = async () => {
+    loading.value = true;
+    try {
+        const data = await shipmentService.getUnmappedStocks();
+        unmappedStocks.value = data.map((s: any) => ({...s, selectedLocalId: null}));
+    } catch (e) {
+        console.error(e);
+    } finally {
+        loading.value = false;
+    }
+};
+
+const uploadStocks = async (event: any) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+        loading.value = true;
+        const formData = new FormData();
+        formData.append('file', file);
+        const result = await shipmentService.importStocks(formData);
+        const msg = `Eklendi: ${result.added}, Güncellendi: ${result.updated}, Atlandı: ${result.skipped}`;
+        notificationStore.add(msg, result.errors.length > 0 ? 'warning' : 'success');
+        if (result.errors.length > 0) {
+            result.errors.slice(0, 3).forEach(e => notificationStore.add(e, 'error'));
+        }
+        window.location.reload();
+    } catch (e) {
+        console.error(e);
+        notificationStore.add('Stok yükleme başarısız: ' + (ApiErrorUtils.getErrorMessage(e) || 'Bilinmeyen hata'), 'error');
+    } finally {
+        loading.value = false;
+        if (fileInput.value) fileInput.value.value = '';
+    }
+};
+
+const uploadStockMappings = async (event: any) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+        loading.value = true;
+        const result = await shipmentService.importStockMappings(formData);
+
+        if (result.mappedCount > 0) {
+            notificationStore.add(`${result.mappedCount} eşleştirme başarıyla güncellendi.`, 'success');
+        }
+
+        if (result.notFoundStocks.length > 0) {
+            notificationStore.add(
+                `${result.notFoundStocks.length} yerel stok kodu bulunamadı: ${result.notFoundStocks.slice(0, 3).join(', ')}${result.notFoundStocks.length > 3 ? '...' : ''}`,
+                'warning'
+            );
+        }
+
+        if (result.notFoundMappings.length > 0) {
+            notificationStore.add(
+                `${result.notFoundMappings.length} ISS kodu eşleştirme tablosunda yok: ${result.notFoundMappings.slice(0, 3).join(', ')}${result.notFoundMappings.length > 3 ? '...' : ''}`,
+                'warning'
+            );
+        }
+
+        if (result.mappedCount === 0 && result.notFoundStocks.length === 0 && result.notFoundMappings.length === 0) {
+            notificationStore.add('İşlenecek satır bulunamadı. C sütununu (Yerel Stok Kodu) doldurduğunuzdan emin olun.', 'warning');
+        }
+
+        if (result.mappedCount > 0) window.location.reload();
+    } catch (e) {
+        console.error(e);
+        notificationStore.add('Eşleştirme yükleme başarısız: ' + (ApiErrorUtils.getErrorMessage(e) || 'Bilinmeyen hata'), 'error');
+    } finally {
+        loading.value = false;
+        if (mappingFileInput.value) mappingFileInput.value.value = '';
+    }
+};
+
+const createAndSelectStock = async (stock: UnmappedStock) => {
+    if (!stock.currentSearch) return;
+
+    try {
+        // Create new stock
+        const newStock = await stockService.create({
+            stockCode: stock.currentSearch,
+            stockName: stock.externalName,
+            pickingType: 1 // Default to something if required
+        });
+
+        // Select it
+        stock.selectedLocalId = newStock.id;
+
+    } catch (e) {
+        console.error(e);
+        notificationStore.add("Stok oluşturulamadı: " + (ApiErrorUtils.getErrorMessage(e) || 'Bilinmeyen hata'), 'error');
+    }
+};
+
+const mapStock = async (stock: UnmappedStock, ignore: boolean) => {
+    try {
+        await shipmentService.createMapping({
+            mappingId: stock.mappingId,
+            localStockId: ignore ? null : stock.selectedLocalId,
+            ignore: ignore
+        });
+
+        // Remove from list
+        unmappedStocks.value = unmappedStocks.value.filter(s => s.mappingId !== stock.mappingId);
+        emit('mapped'); // Tell parent to refresh orders
+    } catch (e) {
+        notificationStore.add("Mapping failed: " + (ApiErrorUtils.getErrorMessage(e) || 'Bilinmeyen hata'), 'error');
+        console.error(e);
+    }
+};
+
+const downloadTemplate = async () => {
+    try {
+        const data = await shipmentService.exportUnmappedStocks();
+        const url = window.URL.createObjectURL(new Blob([data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', 'EslestirilecekStoklar.xlsx');
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+    } catch (e) {
+        console.error(e);
+        notificationStore.add(ApiErrorUtils.getErrorMessage(e) || "Dosya indirilemedi.", 'error');
+    }
+};
+
+onMounted(refreshbi);
+</script>

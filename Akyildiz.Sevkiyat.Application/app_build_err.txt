@@ -1,0 +1,18 @@
+  Geri y??klenecek projeler belirleniyor...
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Application\Akyildiz.Sevkiyat.Application.csproj : warning NU1510: PackageReference System.Text.Encoding.CodePages ay??klanmayacak. Bu paketi ba????ml??l??klar??n??zdan kald??rmay?? d??????n??n, ????nk?? muhtemelen gereksizdir.
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Application\Akyildiz.Sevkiyat.Application.csproj : error NU1605: Hata Olarak Uyar??: FluentValidation paketi i??in 12.1.1 s??r??m??nden 11.9.0 s??r??m??ne d??????rme alg??land??. Farkl?? bir s??r??m se??mek i??in do??rudan projeden pakete ba??vurun. 
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Application\Akyildiz.Sevkiyat.Application.csproj : error NU1605:  Akyildiz.Sevkiyat.Application -> FluentValidation.DependencyInjectionExtensions 12.1.1 -> FluentValidation (>= 12.1.1) 
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Application\Akyildiz.Sevkiyat.Application.csproj : error NU1605:  Akyildiz.Sevkiyat.Application -> FluentValidation (>= 11.9.0)
+  D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Application\Akyildiz.Sevkiyat.Application.csproj geri y??klenemedi (238 ms i??inde).
+  Geri y??kleme i??in 2 proje i??inden 1 tanesi g??ncel.
+
+Olu??turma BA??ARISIZ OLDU.
+
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Application\Akyildiz.Sevkiyat.Application.csproj : warning NU1510: PackageReference System.Text.Encoding.CodePages ay??klanmayacak. Bu paketi ba????ml??l??klar??n??zdan kald??rmay?? d??????n??n, ????nk?? muhtemelen gereksizdir.
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Application\Akyildiz.Sevkiyat.Application.csproj : error NU1605: Hata Olarak Uyar??: FluentValidation paketi i??in 12.1.1 s??r??m??nden 11.9.0 s??r??m??ne d??????rme alg??land??. Farkl?? bir s??r??m se??mek i??in do??rudan projeden pakete ba??vurun. 
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Application\Akyildiz.Sevkiyat.Application.csproj : error NU1605:  Akyildiz.Sevkiyat.Application -> FluentValidation.DependencyInjectionExtensions 12.1.1 -> FluentValidation (>= 12.1.1) 
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Application\Akyildiz.Sevkiyat.Application.csproj : error NU1605:  Akyildiz.Sevkiyat.Application -> FluentValidation (>= 11.9.0)
+    1 Uyar??
+    1 Hata
+
+Ge??en S??re 00:00:00.69

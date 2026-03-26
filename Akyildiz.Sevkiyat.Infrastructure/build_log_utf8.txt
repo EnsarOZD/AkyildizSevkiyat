@@ -1,0 +1,21 @@
+﻿  Determining projects to restore...
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Application\Akyildiz.Sevkiyat.Application.csproj : warning NU1510: PackageReference System.Text.Encoding.CodePages ay─▒klanmayacak. Bu paketi ba─ş─▒ml─▒l─▒klar─▒n─▒zdan kald─▒rmay─▒ d├╝┼ş├╝n├╝n, ├ğ├╝nk├╝ muhtemelen gereksizdir. [D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Infrastructure\Akyildiz.Sevkiyat.Infrastructure.csproj]
+  All projects are up-to-date for restore.
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Application\Akyildiz.Sevkiyat.Application.csproj : warning NU1510: PackageReference System.Text.Encoding.CodePages ay─▒klanmayacak. Bu paketi ba─ş─▒ml─▒l─▒klar─▒n─▒zdan kald─▒rmay─▒ d├╝┼ş├╝n├╝n, ├ğ├╝nk├╝ muhtemelen gereksizdir.
+  Akyildiz.Sevkiyat.Domain -> D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Domain\bin\Debug\net10.0\Akyildiz.Sevkiyat.Domain.dll
+  Akyildiz.Sevkiyat.Application -> D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Application\bin\Debug\net10.0\Akyildiz.Sevkiyat.Application.dll
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Infrastructure\Persistence\SevkiyatDbContext.cs(10,49): error CS0535: 'SevkiyatDbContext' does not implement interface member 'IApplicationDbContext.ShipmentHistories' [D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Infrastructure\Akyildiz.Sevkiyat.Infrastructure.csproj]
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Infrastructure\Persistence\SevkiyatDbContext.cs(10,49): error CS0535: 'SevkiyatDbContext' does not implement interface member 'IApplicationDbContext.Zones' [D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Infrastructure\Akyildiz.Sevkiyat.Infrastructure.csproj]
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Infrastructure\Persistence\SevkiyatDbContext.cs(10,49): error CS0535: 'SevkiyatDbContext' does not implement interface member 'IApplicationDbContext.StockMasters' [D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Infrastructure\Akyildiz.Sevkiyat.Infrastructure.csproj]
+
+Build FAILED.
+
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Application\Akyildiz.Sevkiyat.Application.csproj : warning NU1510: PackageReference System.Text.Encoding.CodePages ay─▒klanmayacak. Bu paketi ba─ş─▒ml─▒l─▒klar─▒n─▒zdan kald─▒rmay─▒ d├╝┼ş├╝n├╝n, ├ğ├╝nk├╝ muhtemelen gereksizdir. [D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Infrastructure\Akyildiz.Sevkiyat.Infrastructure.csproj]
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Application\Akyildiz.Sevkiyat.Application.csproj : warning NU1510: PackageReference System.Text.Encoding.CodePages ay─▒klanmayacak. Bu paketi ba─ş─▒ml─▒l─▒klar─▒n─▒zdan kald─▒rmay─▒ d├╝┼ş├╝n├╝n, ├ğ├╝nk├╝ muhtemelen gereksizdir.
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Infrastructure\Persistence\SevkiyatDbContext.cs(10,49): error CS0535: 'SevkiyatDbContext' does not implement interface member 'IApplicationDbContext.ShipmentHistories' [D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Infrastructure\Akyildiz.Sevkiyat.Infrastructure.csproj]
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Infrastructure\Persistence\SevkiyatDbContext.cs(10,49): error CS0535: 'SevkiyatDbContext' does not implement interface member 'IApplicationDbContext.Zones' [D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Infrastructure\Akyildiz.Sevkiyat.Infrastructure.csproj]
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Infrastructure\Persistence\SevkiyatDbContext.cs(10,49): error CS0535: 'SevkiyatDbContext' does not implement interface member 'IApplicationDbContext.StockMasters' [D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Infrastructure\Akyildiz.Sevkiyat.Infrastructure.csproj]
+    2 Warning(s)
+    3 Error(s)
+
+Time Elapsed 00:00:01.46

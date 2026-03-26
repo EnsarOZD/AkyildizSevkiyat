@@ -1,0 +1,213 @@
+--- Import Start: 29.01.2026 11:20:30 ---
+Table found: 'Eslesmeyen Stoklar'. Rows: 171. Columns: 4
+Processing: 1000096 -> 1000096
+  Local stock not found for code: 1000096
+Processing: 1000102 -> 1000102
+  Local stock not found for code: 1000102
+Processing: 1000103 -> 1000103
+  Local stock not found for code: 1000103
+Processing: 10031114 -> 10031114
+  Local stock not found for code: 10031114
+Processing: 10031115 -> 10031115
+  Local stock not found for code: 10031115
+Processing: 11087340-SRF.110616 -> srf.0648
+Processing: 11087676-SRF.110595 -> srf.0614
+Processing: 11087676-SRF.110597 -> srf.0625
+Processing: 15050099-SRF.110614 -> srf.0646
+Processing: 15050099-SRF.110680 -> srf.0543
+Processing: 15050250-SRF.1.10438 -> srf.0182
+Processing: 15050250-SRF.1.10440 -> srf.0184
+Processing: 15050487-SRF.1.10474 -> srf.0751
+Processing: 15050487-SRF.1.10475 -> srf.0752
+Processing: 15050720-SRF.110631 -> Dem_00002
+  Local stock not found for code: Dem_00002
+Processing: 15050866-SRF.110561 -> srf.0579
+Processing: 1505137-SRF.110740 -> srf.0614
+Processing: 21058 -> 21058
+  Local stock not found for code: 21058
+Processing: 2210274-SRF.110585 -> srf.0743
+Processing: 37760 -> 37760
+  Local stock not found for code: 37760
+Processing: 41923268-SRF.110573 -> srf.0606
+Processing: 41923268-SRF.110574 -> srf.0607
+Processing: 41923268-SRF.110575 -> srf.0608
+Processing: 41923268-SRF.110576 -> srf.0609
+Processing: 41923415-SRF.110655 -> srf.0377
+Processing: 4516612335-SRF.1.10090 -> srf.0096
+Processing: 4516612356-SRF.110639 -> srf.0664
+Processing: 4516612356-SRF.110641 -> srf.0666
+Processing: 4516612356-SRF.110713 -> srf.0744
+Processing: 474547874-SRF.1.10022 -> srf.0015
+Processing: 49154225-SRF.1.10367 -> srf.0421
+Processing: 4915602-G.150.10001 -> srf.0579
+Processing: 4915715-SRF.1.10308 -> srf.0680
+Processing: 4915719-SRF.1.10019 -> srf.0011
+Processing: 4915719-SRF.1.10020 -> srf.0012
+Processing: 4915723-SRF.1.10079 -> srf.0085
+Processing: 4915723-SRF.1.10206 -> srf.0240
+Processing: 4915735-GID.1.10046 -> gıd.0102
+Processing: 4915778-GID.1.10146 -> gıd.0196
+Processing: 4915898-GID.1.10036 -> gıd.0094
+Processing: 4915921-SRF.1.10262 -> srf.0446
+Processing: 4915921-SRF.1.10380 -> srf.0446
+Processing: 4915946-SRF.1.10496 -> srf.0509
+Processing: 4915946-SRF.1.10564 -> srf.0509
+Processing: 4916110-GID.1.10043 -> Gıd.0100
+Processing: 49162861-GID.1.10050 -> gıd.0107
+Processing: 4916331-SRF.110539 -> srf.0556
+Processing: 4916342-SRF.1.10058 -> srf.0059
+Processing: 4916342-SRF.1.10215 -> srf.0266
+Processing: 4916377-SRF.1.10027 -> srf.0020
+Processing: 4916721-SRF.110563 -> srf.0572
+Processing: 4916783-G.1.10051 -> srf.0069
+Processing: 4916784-SRF.1.10379 -> srf.0445
+Processing: 4917016-SRF.110567 -> srf.0380
+Processing: 4917290-SRF.1.10321 -> srf.0082
+Processing: 4917290-SRF.1.10364 -> srf.0671
+Processing: 4917637-GID.1.10090 -> gıd.0146
+Processing: 4917761-SRF.1.10491 -> srf.0490
+Processing: 493749711-GID.1.10044 -> Gıd.0101
+Processing: 68245 -> 68245
+  Local stock not found for code: 68245
+Processing: 70023668-SRF.110671 -> srf.0728
+Processing: 70023669-SRF.110606 -> srf.0639
+Processing: 7002367951-SRF.110629 -> SRF.0668
+Processing: 71037 -> 71037
+  Local stock not found for code: 71037
+Processing: 77010431-SRF.110703 -> SRF.0670
+Processing: 77010432-SRF.110732 -> srf.0762
+Processing: 77010432-SRF.110733 -> srf.0764
+Processing: 77010770 -> 0
+  Local stock not found for code: 0
+Processing: 77010868-GID.1.10224 -> gıd.0264
+Processing: 82002 -> 81996
+  Local stock not found for code: 81996
+Processing: 83609 -> 83609
+  Local stock not found for code: 83609
+Processing: 83883 -> 83883
+  Local stock not found for code: 83883
+Processing: 84051 -> 84051
+  Local stock not found for code: 84051
+Processing: 85156 -> 85156
+  Local stock not found for code: 85156
+Processing: 86190 -> 86190
+  Local stock not found for code: 86190
+Processing: 86299 -> 86299
+  Local stock not found for code: 86299
+Processing: 86350 -> 86350
+  Local stock not found for code: 86350
+Processing: 87993 -> 87993
+  Local stock not found for code: 87993
+Processing: 89367 -> 89367
+  Local stock not found for code: 89367
+Processing: 89383 -> 89383
+  Local stock not found for code: 89383
+Processing: 89391 -> 89391
+  Local stock not found for code: 89391
+Processing: 9266975-SRF.1.10409 -> srf.0474
+Processing: 96524 -> 96524
+  Local stock not found for code: 96524
+Processing: 96525 -> 96525
+  Local stock not found for code: 96525
+Processing: 96658 -> 96658
+  Local stock not found for code: 96658
+Processing: CT-88812 -> CT-88812
+  Local stock not found for code: CT-88812
+Processing: CT-88813 -> CT-88813
+  Local stock not found for code: CT-88813
+Processing: m111-GID.1.10051 -> gıd.0108
+Processing: m128-GID.1.10218 -> gıd.0260
+Processing: m16696-SRF.110552 -> srf.0577
+Processing: m16697-SRF.1.10507 -> srf.0539
+Processing: m177-GID.1.10213 -> gıd.0073
+Processing: m184-GID.1.10222 -> gıd.0261
+Processing: m186-G.118.10639 -> gıd.0200
+Processing: m186-GID.1.10149 -> gıd.0197
+Processing: m186-GID.1.10150 -> gıd.0198
+Processing: m186-GID.1.10151 -> gıd.0199
+Processing: m186-GID.1.10152 -> gıd.0200
+Processing: m191-GID.1.10091 -> gıd.0203
+Processing: m19-GID.1.10229 -> gıd.0152
+Processing: m239-GID.1.10139 -> gıd.0189
+Processing: m239-GID.1.10140 -> gıd.0190
+Processing: m239-GID.1.10210 -> gıd.0253
+Processing: m34540-SRF.1.10211 -> srf.0260
+Processing: M390-SRF.1.10148 -> srf.0159
+Processing: M391-SRF.1.10431 -> srf.0491
+Processing: M391-SRF.1.10458 -> srf.0497
+Processing: M391-SRF.110555 -> srf.0488
+Processing: M409-SRF.1.10386 -> srf.0452
+Processing: M409-SRF.1.10387 -> srf.0453
+Processing: u189282746-SRF.110693 -> srf.0755
+Processing: u234128762-SRF.110587 -> srf.0592
+Processing: u234128852-SRF.110543 -> srf.0561
+Processing: u48837-SRF.1.10185 -> srf.0211
+Processing: u48837-SRF.1.10187 -> srf.0213
+Processing: u48842-G.1.10442 -> gıd.0111
+Processing: u48842-GID.1.10054 -> gıd.0111
+Processing: u48856-SRF.1.10509 -> srf.0500
+Processing: u48886-SRF.1.10072 -> srf.0076
+Processing: u48950-SRF.1.10293 -> srf.0344
+Processing: u49047-SRF.1.10175 -> srf.0199
+Processing: u49047-SRF.110588 -> srf.0620
+Processing: u49047-SRF.110591 -> srf.0623
+Processing: u4915373-SRF.1.10176 -> srf.0200
+Processing: u504-GID.1.10110 -> Gıd.0163
+Processing: u505-GID.1.10030 -> gıd.0271
+Processing: u505-GID.1.10234 -> gıd.0270
+Processing: u508760-SRF.1.10309 -> srf.0361
+Processing: u508763-SRF.1.10198 -> srf.0607
+Processing: u510-G.1.10565 -> gıd.0269
+Processing: u510-GID.1.10052 -> gıd.0269
+Processing: u510-GID.1.10232 -> gıd.0269
+Processing: u514-GID.1.10055 -> gıd.0112
+Processing: u573-SRF.1.10494 -> srf.0097
+Processing: u574-SRF.110696 -> srf.0752
+Processing: u575-SRF.1.10208 -> srf.0242
+Processing: u575-SRF.1.10311 -> srf.0363
+Processing: u580-SRF.1.10018 -> srf.0444
+Processing: u581-SRF.1.10219 -> srf.0270
+Processing: u582-SRF.110676 -> srf.0041
+Processing: u583-SRF.1.10565 -> srf.0603
+Processing: u585-SRF.1.10346 -> srf.0400
+Processing: u588-SRF.1.10031 -> srf.0024
+Processing: u588-SRF.110651 -> srf.0695
+Processing: u589-SRF.1.10166 -> srf.0178
+Processing: u589-SRF.1.10167 -> srf.0179
+Processing: u590-SRF.1.10012 -> srf.0004
+Processing: u591-SRF.1.10347 -> srf.0401
+Processing: u592-SRF.1.10207 -> srf.0241
+Processing: u592-SRF.1.10310 -> srf.0362
+Processing: u594-SRF.1.10180 -> srf.0206
+Processing: u595-SRF.110632 -> srf.0674
+Processing: u595-SRF.110633 -> srf.0675
+Processing: u601-SRF.1.10129 -> srf.0138
+Processing: u603-SRF.1.10037 -> srf.0696
+Processing: u61441-GID.1.10225 -> gıd.0265
+Processing: u61493-SRF.110653 -> srf.0764
+Processing: u61493-SRF.110654 -> srf.0762
+Processing: u61507-SRF.1.10188 -> SRF.0734
+Processing: u61509-GID.1.10212 -> gıd.0195
+Processing: u693-SRF.1.10043 -> srf.0038
+Processing: u694-SRF.1.10039 -> srf.0034
+Processing: u696-SRF.1.10133 -> srf.0142
+Processing: u698-SRF.110656 -> srf.0701
+Processing: u698-SRF.110677 -> srf.0702
+Processing: u699-SRF.1.10123 -> srf.0131
+Processing: u700-SRF.1.10385 -> srf.0451
+Processing: u716-SRF.1.10149 -> srf.0160
+Processing: u719-SRF.1.10021 -> srf.0013
+Processing: u719-SRF.110537 -> srf.0554
+Processing: u725-SRF.1.10171 -> srf.0193
+Saving 143 mappings...
+--- ERROR: Unable to cast object of type 'System.String' to type 'System.Int32'.
+   at Microsoft.Data.SqlClient.SqlBuffer.get_Int32()
+   at Microsoft.Data.SqlClient.SqlDataReader.GetInt32(Int32 i)
+   at lambda_method295(Closure, QueryContext, DbDataReader, ResultContext, SingleQueryResultCoordinator)
+   at Microsoft.EntityFrameworkCore.Query.RelationalShapedQueryCompilingExpressionVisitor.ShaperProcessingExpressionVisitor.<PopulateIncludeCollection>g__ProcessCurrentElementRow|24_0[TIncludingEntity,TIncludedEntity](<>c__DisplayClass24_0`2&)
+   at Microsoft.EntityFrameworkCore.Query.RelationalShapedQueryCompilingExpressionVisitor.ShaperProcessingExpressionVisitor.PopulateIncludeCollection[TIncludingEntity,TIncludedEntity](Int32 collectionId, QueryContext queryContext, DbDataReader dbDataReader, SingleQueryResultCoordinator resultCoordinator, Func`3 parentIdentifier, Func`3 outerIdentifier, Func`3 selfIdentifier, IReadOnlyList`1 parentIdentifierValueComparers, IReadOnlyList`1 outerIdentifierValueComparers, IReadOnlyList`1 selfIdentifierValueComparers, Func`5 innerShaper, INavigationBase inverseNavigation, Action`2 fixup, Boolean trackingQuery)
+   at lambda_method294(Closure, QueryContext, DbDataReader, ResultContext, SingleQueryResultCoordinator)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Akyildiz.Sevkiyat.Application.Stocks.Commands.ImportStockMappings.ImportStockMappingsCommandHandler.Handle(ImportStockMappingsCommand request, CancellationToken cancellationToken) in D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Application\Stocks\Commands\ImportStockMappings\ImportStockMappingsCommand.cs:line 112

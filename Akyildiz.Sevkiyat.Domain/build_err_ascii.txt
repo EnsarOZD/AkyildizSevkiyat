@@ -1,0 +1,17 @@
+  Geri y??klenecek projeler belirleniyor...
+  Geri y??kleme i??in t??m projeler g??ncel.
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Domain\Entities\GoodsReceipt.cs(7,33): error CS0246: 'AuditableEntity' t??r?? veya ad alan?? ad?? bulunamad?? (bir using y??nergeniz veya derleme ba??vurunuz mu eksik?) [D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Domain\Akyildiz.Sevkiyat.Domain.csproj]
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Domain\Entities\GoodsReceipt.cs(32,37): error CS0246: 'AuditableEntity' t??r?? veya ad alan?? ad?? bulunamad?? (bir using y??nergeniz veya derleme ba??vurunuz mu eksik?) [D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Domain\Akyildiz.Sevkiyat.Domain.csproj]
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Domain\Entities\PurchaseOrder.cs(7,34): error CS0246: 'AuditableEntity' t??r?? veya ad alan?? ad?? bulunamad?? (bir using y??nergeniz veya derleme ba??vurunuz mu eksik?) [D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Domain\Akyildiz.Sevkiyat.Domain.csproj]
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Domain\Entities\PurchaseOrder.cs(29,38): error CS0246: 'AuditableEntity' t??r?? veya ad alan?? ad?? bulunamad?? (bir using y??nergeniz veya derleme ba??vurunuz mu eksik?) [D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Domain\Akyildiz.Sevkiyat.Domain.csproj]
+
+Olu??turma BA??ARISIZ OLDU.
+
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Domain\Entities\GoodsReceipt.cs(7,33): error CS0246: 'AuditableEntity' t??r?? veya ad alan?? ad?? bulunamad?? (bir using y??nergeniz veya derleme ba??vurunuz mu eksik?) [D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Domain\Akyildiz.Sevkiyat.Domain.csproj]
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Domain\Entities\GoodsReceipt.cs(32,37): error CS0246: 'AuditableEntity' t??r?? veya ad alan?? ad?? bulunamad?? (bir using y??nergeniz veya derleme ba??vurunuz mu eksik?) [D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Domain\Akyildiz.Sevkiyat.Domain.csproj]
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Domain\Entities\PurchaseOrder.cs(7,34): error CS0246: 'AuditableEntity' t??r?? veya ad alan?? ad?? bulunamad?? (bir using y??nergeniz veya derleme ba??vurunuz mu eksik?) [D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Domain\Akyildiz.Sevkiyat.Domain.csproj]
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Domain\Entities\PurchaseOrder.cs(29,38): error CS0246: 'AuditableEntity' t??r?? veya ad alan?? ad?? bulunamad?? (bir using y??nergeniz veya derleme ba??vurunuz mu eksik?) [D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Domain\Akyildiz.Sevkiyat.Domain.csproj]
+    0 Uyar??
+    4 Hata
+
+Ge??en S??re 00:00:00.80

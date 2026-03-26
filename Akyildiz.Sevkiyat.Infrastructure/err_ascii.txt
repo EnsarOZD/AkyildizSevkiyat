@@ -1,0 +1,19 @@
+  Geri y??klenecek projeler belirleniyor...
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Application\Akyildiz.Sevkiyat.Application.csproj : warning NU1510: PackageReference System.Text.Encoding.CodePages ay??klanmayacak. Bu paketi ba????ml??l??klar??n??zdan kald??rmay?? d??????n??n, ????nk?? muhtemelen gereksizdir. [D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Infrastructure\Akyildiz.Sevkiyat.Infrastructure.csproj]
+  Geri y??kleme i??in t??m projeler g??ncel.
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Application\Akyildiz.Sevkiyat.Application.csproj : warning NU1510: PackageReference System.Text.Encoding.CodePages ay??klanmayacak. Bu paketi ba????ml??l??klar??n??zdan kald??rmay?? d??????n??n, ????nk?? muhtemelen gereksizdir.
+  Akyildiz.Sevkiyat.Domain -> D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Domain\bin\Debug\net10.0\Akyildiz.Sevkiyat.Domain.dll
+  Akyildiz.Sevkiyat.Application -> D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Application\bin\Debug\net10.0\Akyildiz.Sevkiyat.Application.dll
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Infrastructure\Persistence\SevkiyatDbContext.cs(10,49): error CS0535: 'SevkiyatDbContext', 'IApplicationDbContext.Suppliers' arabirim ??yesini uygulamaz [D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Infrastructure\Akyildiz.Sevkiyat.Infrastructure.csproj]
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Infrastructure\Persistence\SevkiyatDbContext.cs(10,49): error CS0535: 'SevkiyatDbContext', 'IApplicationDbContext.PurchaseOrderNumberCounters' arabirim ??yesini uygulamaz [D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Infrastructure\Akyildiz.Sevkiyat.Infrastructure.csproj]
+
+Olu??turma BA??ARISIZ OLDU.
+
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Application\Akyildiz.Sevkiyat.Application.csproj : warning NU1510: PackageReference System.Text.Encoding.CodePages ay??klanmayacak. Bu paketi ba????ml??l??klar??n??zdan kald??rmay?? d??????n??n, ????nk?? muhtemelen gereksizdir. [D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Infrastructure\Akyildiz.Sevkiyat.Infrastructure.csproj]
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Application\Akyildiz.Sevkiyat.Application.csproj : warning NU1510: PackageReference System.Text.Encoding.CodePages ay??klanmayacak. Bu paketi ba????ml??l??klar??n??zdan kald??rmay?? d??????n??n, ????nk?? muhtemelen gereksizdir.
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Infrastructure\Persistence\SevkiyatDbContext.cs(10,49): error CS0535: 'SevkiyatDbContext', 'IApplicationDbContext.Suppliers' arabirim ??yesini uygulamaz [D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Infrastructure\Akyildiz.Sevkiyat.Infrastructure.csproj]
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Infrastructure\Persistence\SevkiyatDbContext.cs(10,49): error CS0535: 'SevkiyatDbContext', 'IApplicationDbContext.PurchaseOrderNumberCounters' arabirim ??yesini uygulamaz [D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Infrastructure\Akyildiz.Sevkiyat.Infrastructure.csproj]
+    2 Uyar??
+    2 Hata
+
+Ge??en S??re 00:00:00.98

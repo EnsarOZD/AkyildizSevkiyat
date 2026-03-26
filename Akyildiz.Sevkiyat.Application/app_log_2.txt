@@ -1,0 +1,14 @@
+﻿  Geri y├╝klenecek projeler belirleniyor...
+  Geri y├╝kleme i├ğin t├╝m projeler g├╝ncel.
+  Akyildiz.Sevkiyat.Domain -> D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Domain\bin\Debug\net10.0\Akyildiz.Sevkiyat.Domain.dll
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Application\Shipments\Commands\CreateShipmentCommandHandler.cs(63,21): error CS0200: 'ShipmentLine.DeliveredQty' ├Âzelli─şine veya dizin olu┼şturucusuna, salt okunur oldu─şu i├ğin atama yap─▒lamaz [D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Application\Akyildiz.Sevkiyat.Application.csproj]
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Application\Shipments\Queries\GetShipmentsByOrderId\GetShipmentsByOrderIdQuery.cs(29,33): error CS1061: 'Shipment' bir 'ShipmentDate' tan─▒m─▒ i├ğermiyor ve 'Shipment' t├╝r├╝nde bir ilk ba─ş─▒ms─▒z de─şi┼şken kabul eden hi├ğbir eri┼şilebilir 'ShipmentDate' geni┼şletme y├Ântemi bulunamad─▒ (bir kullanma y├Ânergeniz veya derleme ba┼şvurunuz eksik olabilir mi?) [D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Application\Akyildiz.Sevkiyat.Application.csproj]
+
+Olu┼şturma BA┼ŞARISIZ OLDU.
+
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Application\Shipments\Commands\CreateShipmentCommandHandler.cs(63,21): error CS0200: 'ShipmentLine.DeliveredQty' ├Âzelli─şine veya dizin olu┼şturucusuna, salt okunur oldu─şu i├ğin atama yap─▒lamaz [D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Application\Akyildiz.Sevkiyat.Application.csproj]
+D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Application\Shipments\Queries\GetShipmentsByOrderId\GetShipmentsByOrderIdQuery.cs(29,33): error CS1061: 'Shipment' bir 'ShipmentDate' tan─▒m─▒ i├ğermiyor ve 'Shipment' t├╝r├╝nde bir ilk ba─ş─▒ms─▒z de─şi┼şken kabul eden hi├ğbir eri┼şilebilir 'ShipmentDate' geni┼şletme y├Ântemi bulunamad─▒ (bir kullanma y├Ânergeniz veya derleme ba┼şvurunuz eksik olabilir mi?) [D:\vue\AkyildizSevkiyat\Akyildiz.Sevkiyat.Application\Akyildiz.Sevkiyat.Application.csproj]
+    0 Uyar─▒
+    2 Hata
+
+Ge├ğen S├╝re 00:00:01.20

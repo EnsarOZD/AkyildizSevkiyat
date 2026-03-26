@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Akyildiz Sevkiyat — Analiz ve Geliştirme Durumu</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 32px 24px;
+    }
+
+    header {
+      margin-bottom: 40px;
+    }
+
+    header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: #f8fafc;
+      letter-spacing: -0.02em;
+    }
+
+    header p {
+      color: #94a3b8;
+      margin-top: 6px;
+      font-size: 0.9rem;
+    }
+
+    .meta {
+      display: flex;
+      gap: 24px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: #64748b;
+    }
+
+    .meta-item span {
+      color: #94a3b8;
+    }
+
+    /* Summary bar */
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin-bottom: 40px;
+    }
+
+    .summary-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .summary-card .count {
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .summary-card .label {
+      font-size: 0.75rem;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .count-done   { color: #22c55e; }
+    .count-active { color: #f59e0b; }
+    .count-todo   { color: #60a5fa; }
+    .count-defer  { color: #64748b; }
+
+    /* Sections */
+    .section {
+      margin-bottom: 36px;
+    }
+
+    .section-title {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 12px;
+      padding-left: 4px;
+      border-left: 3px solid #334155;
+      padding-left: 10px;
+    }
+
+    /* Phase cards */
+    .phase {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      margin-bottom: 10px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .phase:hover { border-color: #475569; }
+
+    .phase.done   { border-left: 4px solid #22c55e; }
+    .phase.active { border-left: 4px solid #f59e0b; }
+    .phase.todo   { border-left: 4px solid #3b82f6; }
+    .phase.defer  { border-left: 4px solid #334155; }
+    .phase.block  { border-left: 4px solid #ef4444; }
+
+    .phase-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 16px 20px;
+      cursor: pointer;
+    }
+
+    .phase-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .done   .phase-icon { background: #14532d; color: #22c55e; }
+    .active .phase-icon { background: #451a03; color: #f59e0b; }
+    .todo   .phase-icon { background: #1e3a5f; color: #60a5fa; }
+    .defer  .phase-icon { background: #1e293b; color: #475569; border: 1px solid #334155; }
+    .block  .phase-icon { background: #450a0a; color: #ef4444; }
+
+    .phase-title-area { flex: 1; }
+
+    .phase-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #f1f5f9;
+      line-height: 1.3;
+    }
+
+    .phase-desc {
+      font-size: 0.8rem;
+      color: #64748b;
+      margin-top: 3px;
+    }
+
+    .phase-badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+      white-space: nowrap;
+      align-self: flex-start;
+      margin-top: 2px;
+    }
+
+    .badge-done   { background: #14532d; color: #4ade80; }
+    .badge-active { background: #451a03; color: #fbbf24; }
+    .badge-todo   { background: #1e3a5f; color: #93c5fd; }
+    .badge-defer  { background: #1e293b; color: #475569; border: 1px solid #334155; }
+    .badge-block  { background: #450a0a; color: #f87171; }
+
+    /* Items inside phase */
+    .phase-body {
+      padding: 0 20px 16px 62px;
+      display: none;
+    }
+
+    .phase-body.open { display: block; }
+
+    .item-list {
+      list-style: none;
+    }
+
+    .item-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 4px 0;
+      font-size: 0.82rem;
+      color: #94a3b8;
+      border-bottom: 1px solid #1e293b;
+    }
+
+    .item-list li:last-child { border-bottom: none; }
+
+    .item-list .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      margin-top: 5px;
+      flex-shrink: 0;
+    }
+
+    .dot-done   { background: #22c55e; }
+    .dot-active { background: #f59e0b; }
+    .dot-todo   { background: #3b82f6; }
+    .dot-skip   { background: #475569; }
+
+    .item-list .file-ref {
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.75rem;
+      color: #475569;
+    }
+
+    /* Build status */
+    .build-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #14532d;
+      color: #4ade80;
+      border-radius: 6px;
+      padding: 4px 12px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      margin-top: 10px;
+    }
+
+    .build-status.fail { background: #450a0a; color: #f87171; }
+
+    /* Next actions */
+    .next-section {
+      background: linear-gradient(135deg, #1e293b 0%, #0f1f3d 100%);
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 32px;
+    }
+
+    .next-section h3 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #60a5fa;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 14px;
+    }
+
+    .next-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid #1e293b;
+    }
+
+    .next-item:last-child { border-bottom: none; }
+
+    .next-num {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #1e3a5f;
+      color: #60a5fa;
+      font-size: 0.72rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .next-text {
+      font-size: 0.85rem;
+      color: #cbd5e1;
+      line-height: 1.4;
+    }
+
+    .next-text strong { color: #f1f5f9; }
+
+    .next-note {
+      font-size: 0.75rem;
+      color: #475569;
+      margin-top: 2px;
+    }
+
+    /* Toggle all */
+    .toolbar {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .toolbar button {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #94a3b8;
+      padding: 5px 14px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      cursor: pointer;
+    }
+
+    .toolbar button:hover { background: #334155; color: #e2e8f0; }
+
+    /* Updated badge */
+    .updated-at {
+      font-size: 0.72rem;
+      color: #334155;
+      text-align: right;
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Akyildiz Sevkiyat — Analiz & Geliştirme Takibi</h1>
+  <p>Başlangıç sistem analizi üzerinden yürütülen üretim sertleştirme ve iyileştirme fazları.</p>
+  <div class="meta">
+    <div class="meta-item">Backend: <span>ASP.NET Core 10 · Clean Architecture · MediatR</span></div>
+    <div class="meta-item">Frontend: <span>Vue 3 · TypeScript · Pinia · TailwindCSS</span></div>
+    <div class="meta-item">DB: <span>SQL Server · EF Core 10</span></div>
+  </div>
+</header>
+
+<!-- Summary -->
+<div class="summary">
+  <div class="summary-card">
+    <div class="count count-done">10</div>
+    <div class="label">Tamamlandi</div>
+  </div>
+  <div class="summary-card">
+    <div class="count count-active">0</div>
+    <div class="label">Planlandi</div>
+  </div>
+  <div class="summary-card">
+    <div class="count count-todo">1</div>
+    <div class="label">Bekliyor</div>
+  </div>
+  <div class="summary-card">
+    <div class="count count-defer">2</div>
+    <div class="label">Ertelendi</div>
+  </div>
+</div>
+
+<div class="toolbar">
+  <button onclick="toggleAll(true)">Tümünü Aç</button>
+  <button onclick="toggleAll(false)">Tümünü Kapat</button>
+</div>
+
+<!-- TAMAMLANDI -->
+<div class="section">
+  <div class="section-title">Tamamlandi</div>
+
+  <!-- 0 -->
+  <div class="phase done" onclick="toggle(this)">
+    <div class="phase-header">
+      <div class="phase-icon">✓</div>
+      <div class="phase-title-area">
+        <div class="phase-title">Faz 0 — Sistem Analizi</div>
+        <div class="phase-desc">Login → ISS-IP Import → Shipment → Picking → Delivery uçtan uca analiz</div>
+      </div>
+      <div class="phase-badge badge-done">Tamamlandi</div>
+    </div>
+    <div class="phase-body">
+      <ul class="item-list">
+        <li><span class="dot dot-done"></span>Auth/JWT akışı incelendi</li>
+        <li><span class="dot dot-done"></span>ISS-IP entegrasyon akışı incelendi</li>
+        <li><span class="dot dot-done"></span>Shipment lifecycle (Draft → Delivered) incelendi</li>
+        <li><span class="dot dot-done"></span>Picking / ZonePreparation akışı incelendi</li>
+        <li><span class="dot dot-done"></span>Delivery ve vehicle assignment akışı incelendi</li>
+        <li><span class="dot dot-done"></span>Authorization, validation, infrastructure zayıflıkları tespit edildi</li>
+      </ul>
+      <div class="build-status">✓ Analiz tamamlandi — production hardening planı oluşturuldu</div>
+    </div>
+  </div>
+
+  <!-- 1 -->
+  <div class="phase done" onclick="toggle(this)">
+    <div class="phase-header">
+      <div class="phase-icon">✓</div>
+      <div class="phase-title-area">
+        <div class="phase-title">Faz 1 — Authorization Hardening</div>
+        <div class="phase-desc">Tüm command'lara IRequireRoles + MediatR pipeline AuthorizationBehavior</div>
+      </div>
+      <div class="phase-badge badge-done">Tamamlandi</div>
+    </div>
+    <div class="phase-body">
+      <ul class="item-list">
+        <li><span class="dot dot-done"></span>IRequireRoles interface oluşturuldu <span class="file-ref">Application/Common/Interfaces/IRequireRoles.cs</span></li>
+        <li><span class="dot dot-done"></span>AuthorizationBehavior&lt;TRequest,TResponse&gt; MediatR pipeline'a eklendi</li>
+        <li><span class="dot dot-done"></span>38 command'a AllowedRoles tanımlandı (Shipment, Orders, Warehouse, Stock, Transport, PurchaseOrder, GoodsReceipt, Users)</li>
+        <li><span class="dot dot-done"></span>Program.cs'de AuthorizationBehavior, ValidationBehavior'dan önce register edildi</li>
+        <li><span class="dot dot-done"></span>GlobalExceptionMiddleware — stack trace sızdırılmaması düzeltildi</li>
+      </ul>
+      <div class="build-status">✓ Build: 0 hata</div>
+    </div>
+  </div>
+
+  <!-- 2 -->
+  <div class="phase done" onclick="toggle(this)">
+    <div class="phase-header">
+      <div class="phase-icon">✓</div>
+      <div class="phase-title-area">
+        <div class="phase-title">Faz 2 — FluentValidation Tamamlama</div>
+        <div class="phase-desc">22 eksik validator oluşturuldu; eski aggregate validator dosyaları silindi</div>
+      </div>
+      <div class="phase-badge badge-done">Tamamlandi</div>
+    </div>
+    <div class="phase-body">
+      <ul class="item-list">
+        <li><span class="dot dot-done"></span>PurchaseOrders: Create, Approve, Cancel, Close, AddLine (5 validator)</li>
+        <li><span class="dot dot-done"></span>GoodsReceipts: Create, Post, Cancel, AddLine, UpdateLine (5 validator)</li>
+        <li><span class="dot dot-done"></span>Stocks: Create, Update, Delete, MapStock (4 validator)</li>
+        <li><span class="dot dot-done"></span>Warehouse: StartZonePrep, MarkZoneMacroReady, ConfirmZoneLoading, MarkProjectMicroReady, InitializeZonePrep (5 validator)</li>
+        <li><span class="dot dot-done"></span>Suppliers: CreateSupplier (1 validator)</li>
+        <li><span class="dot dot-done"></span>Projects: Create, Update (2 validator)</li>
+        <li><span class="dot dot-done"></span>MarkShipmentDelivered validator eklendi</li>
+        <li><span class="dot dot-done"></span>Eski PurchaseOrders/Validators.cs ve GoodsReceipts/Validators.cs silindi</li>
+      </ul>
+      <div class="build-status">✓ Build: 0 hata</div>
+    </div>
+  </div>
+
+  <!-- 3 -->
+  <div class="phase done" onclick="toggle(this)">
+    <div class="phase-header">
+      <div class="phase-icon">✓</div>
+      <div class="phase-title-area">
+        <div class="phase-title">Faz 3 — Infrastructure Hardening</div>
+        <div class="phase-desc">Polly retry, token refresh, transaction güvenliği, CreateShipment double-save fix</div>
+      </div>
+      <div class="phase-badge badge-done">Tamamlandi</div>
+    </div>
+    <div class="phase-body">
+      <ul class="item-list">
+        <li><span class="dot dot-done"></span>ISS-IP HttpClient — Polly retry policy (3 deneme, 2s/4s/8s exponential)</li>
+        <li><span class="dot dot-done"></span>Stateless token refresh: POST /api/auth/refresh endpoint</li>
+        <li><span class="dot dot-done"></span>Frontend apiClient.ts — 401'de otomatik token refresh + retry</li>
+        <li><span class="dot dot-done"></span>CreateShipmentCommandHandler — double SaveChangesAsync kaldırıldı</li>
+        <li><span class="dot dot-done"></span>StockMaster RowVersion + DbUpdateConcurrencyException — Architect onaylı, yeterli</li>
+      </ul>
+      <div class="build-status">✓ Build: 0 hata</div>
+    </div>
+  </div>
+
+  <!-- 4 -->
+  <div class="phase done" onclick="toggle(this)">
+    <div class="phase-header">
+      <div class="phase-icon">✓</div>
+      <div class="phase-title-area">
+        <div class="phase-title">Faz 4 — Entity Encapsulation</div>
+        <div class="phase-desc">User, ShipmentLine, Shipment — factory method'lar, domain method'lar, private set</div>
+      </div>
+      <div class="phase-badge badge-done">Tamamlandi</div>
+    </div>
+    <div class="phase-body">
+      <ul class="item-list">
+        <li><span class="dot dot-done"></span>User.Create() factory + UpdateProfile/UpdateRole/ResetPassword/SetActive domain method'ları</li>
+        <li><span class="dot dot-done"></span>ShipmentLine.Create() factory + RecordReturn() + UpdateStockInfo() + UpdateOrderedQty()</li>
+        <li><span class="dot dot-done"></span>Shipment — SetIrsaliyeInfo, MarkNetsisTransferred, RecordDelivery, RecordVehicleReturn, RecordDispatch</li>
+        <li><span class="dot dot-done"></span>SetZoneDriverInfo bypass fix — doğrudan property assignment → SetDriverInfo() çağrısı</li>
+        <li><span class="dot dot-done"></span>Etkilenen 15+ handler güncellendi, ShipmentSeeder uyumlu hale getirildi</li>
+      </ul>
+      <div class="build-status">✓ Build: 0 hata</div>
+    </div>
+  </div>
+
+  <!-- 5 -->
+  <div class="phase done" onclick="toggle(this)">
+    <div class="phase-header">
+      <div class="phase-icon">✓</div>
+      <div class="phase-title-area">
+        <div class="phase-title">Faz 5 — DriverWarning (Araç Atama)</div>
+        <div class="phase-desc">Şoför bugün başka sevkiyattaysa soft warning — hard block değil</div>
+      </div>
+      <div class="phase-badge badge-done">Tamamlandi</div>
+    </div>
+    <div class="phase-body">
+      <ul class="item-list">
+        <li><span class="dot dot-done"></span>AssignVehicleResult + DriverWarning record — backend</li>
+        <li><span class="dot dot-done"></span>AssignVehicleCommandHandler — bugün aktif sevkiyat sayısı kontrolü, soft warning</li>
+        <li><span class="dot dot-done"></span>IsActive=false → hard block (DomainException)</li>
+        <li><span class="dot dot-done"></span>shipmentService.ts — AssignVehicleResult type'ı eklendi</li>
+        <li><span class="dot dot-done"></span>ShipmentDetailView.vue + ShipmentListView.vue — warning notification gösterimi</li>
+      </ul>
+      <div class="build-status">✓ Build: 0 hata (Backend + Frontend)</div>
+    </div>
+  </div>
+
+  <!-- 6 -->
+  <div class="phase done" onclick="toggle(this)">
+    <div class="phase-header">
+      <div class="phase-icon">✓</div>
+      <div class="phase-title-area">
+        <div class="phase-title">Faz 6 — Frontend Error State Bazı Ekranlar</div>
+        <div class="phase-desc">WarehouseDashboard, PurchaseOrdersView, GoodsReceiptsView + OrderImport uyarı banner</div>
+      </div>
+      <div class="phase-badge badge-done">Tamamlandi</div>
+    </div>
+    <div class="phase-body">
+      <ul class="item-list">
+        <li><span class="dot dot-done"></span>WarehouseDashboard.vue — error ref + catch + tekrar dene butonu</li>
+        <li><span class="dot dot-done"></span>PurchaseOrdersView.vue — error ref + catch + tekrar dene butonu</li>
+        <li><span class="dot dot-done"></span>GoodsReceiptsView.vue — error ref + catch + tekrar dene butonu</li>
+        <li><span class="dot dot-done"></span>OrderImportView.vue — giysi/tekstil operasyon uyarı banner</li>
+      </ul>
+      <div class="build-status">✓ Build: 0 hata</div>
+    </div>
+  </div>
+
+  <!-- 7 -->
+  <div class="phase done" onclick="toggle(this)">
+    <div class="phase-header">
+      <div class="phase-icon">✓</div>
+      <div class="phase-title-area">
+        <div class="phase-title">Faz 7 — ISS-IP Periyodik Import (Hosted Service)</div>
+        <div class="phase-desc">IImportOrchestrator pattern + BackgroundService + PeriodicTimer + SemaphoreSlim</div>
+      </div>
+      <div class="phase-badge badge-done">Tamamlandi</div>
+    </div>
+    <div class="phase-body">
+      <ul class="item-list">
+        <li><span class="dot dot-done"></span>IIssOrderImportOrchestrator interface — Application/Common/Interfaces</li>
+        <li><span class="dot dot-done"></span>IssOrderImportOrchestrator implementasyonu — Infrastructure/Services (MediatR pipeline dışı)</li>
+        <li><span class="dot dot-done"></span>ImportIssOrdersCommandHandler — orchestrator'a delegate eden ince handler</li>
+        <li><span class="dot dot-done"></span>IssOrderImportBackgroundService — PeriodicTimer + SemaphoreSlim(1,1) + scoped DI</li>
+        <li><span class="dot dot-done"></span>appsettings: IssImport:IntervalMinutes / LookbackDays (SET_BY_ENV_ placeholder)</li>
+        <li><span class="dot dot-done"></span>AuthorizationBehavior bypass yapılmadi — güvenlik korundu</li>
+      </ul>
+      <div class="build-status">✓ Build: 0 hata</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- TAMAMLANDI EK -->
+<div class="section">
+  <div class="section-title">Tamamlandi (devam)</div>
+
+  <!-- Faz A -->
+  <div class="phase done" onclick="toggle(this)">
+    <div class="phase-header">
+      <div class="phase-icon">✓</div>
+      <div class="phase-title-area">
+        <div class="phase-title">Faz A — Build Warning'ler (Nullable Safety)</div>
+        <div class="phase-desc">8 CS* warning → 0; sadece 2 pre-existing NU1510 kaldi</div>
+      </div>
+      <div class="phase-badge badge-done">Tamamlandi</div>
+    </div>
+    <div class="phase-body">
+      <ul class="item-list">
+        <li><span class="dot dot-done"></span>GetImportedOrdersQuery.cs — Project / Zone null-conditional guard eklendi (CS8602)</li>
+        <li><span class="dot dot-done"></span>GetZoneMaterialReportQuery.cs:41 — null-forgiving operator (CS8602)</li>
+        <li><span class="dot dot-done"></span>GetZoneMaterialReportQuery.cs:105 — ShipmentLines null-forgiving (CS8602)</li>
+        <li><span class="dot dot-done"></span>GetShipmentsQuery.cs — IssOrder / Zone null guard + ternary (CS8602 x2)</li>
+        <li><span class="dot dot-done"></span>GetShipmentDetailQueryHandler.cs:92 — null-forgiving .Value (CS8629)</li>
+        <li><span class="dot dot-done"></span>UpdateMicroLinesBulkCommand.cs:79 — null-forgiving .Value (CS8629)</li>
+        <li><span class="dot dot-done"></span>InitializeZonePreparationCommand.cs:49 — catch (DbUpdateException) (CS0168)</li>
+        <li><span class="dot dot-done"></span>FetchZoneIrsaliyeCommand.cs:103 — belgeNo ?? string.Empty (CS8601)</li>
+      </ul>
+      <div class="build-status">✓ Build: 0 hata, 0 yeni warning (2 pre-existing NU1510 kaldi)</div>
+    </div>
+  </div>
+
+  <!-- Faz B -->
+  <div class="phase done" onclick="toggle(this)">
+    <div class="phase-header">
+      <div class="phase-icon">✓</div>
+      <div class="phase-title-area">
+        <div class="phase-title">Faz B — Frontend Error/Loading State</div>
+        <div class="phase-desc">7 view'a error banner + "Tekrar dene" eklendi; 4 view zaten iyiydi</div>
+      </div>
+      <div class="phase-badge badge-done">Tamamlandi</div>
+    </div>
+    <div class="phase-body">
+      <ul class="item-list">
+        <li><span class="dot dot-done"></span>TransportManagementView.vue — error ref + fetchDrivers/fetchVehicles catch + banner</li>
+        <li><span class="dot dot-done"></span>ZoneListView.vue — error ref + fetchZones catch + banner</li>
+        <li><span class="dot dot-done"></span>ZoneProjectOrderView.vue — loadData() named function + error ref + banner</li>
+        <li><span class="dot dot-done"></span>ProjectMappingView.vue — error ref + fetchZones/fetchProjects catch + banner</li>
+        <li><span class="dot dot-done"></span>StockCountView.vue — catch eklendi (sadece finally vardı) + banner</li>
+        <li><span class="dot dot-done"></span>StockLocationsView.vue — error ref + ApiErrorUtils import + banner</li>
+        <li><span class="dot dot-done"></span>WarehouseLocationsView.vue — catch eklendi + ApiErrorUtils import + banner</li>
+        <li><span class="dot dot-skip"></span>DriverShipmentListView.vue — zaten iyiydi</li>
+        <li><span class="dot dot-skip"></span>DriverDeliveryView.vue — zaten iyiydi</li>
+        <li><span class="dot dot-skip"></span>HomeView.vue — zaten iyiydi</li>
+        <li><span class="dot dot-skip"></span>ReportsDashboardView.vue — kullanici tetiklemeli ekran, notify.error() yeterli</li>
+      </ul>
+      <div class="build-status">✓ Build: 0 hata (552 modül)</div>
+    </div>
+  </div>
+
+  <!-- Faz C -->
+  <div class="phase done" onclick="toggle(this)">
+    <div class="phase-header">
+      <div class="phase-icon">✓</div>
+      <div class="phase-title-area">
+        <div class="phase-title">Faz C — Pagination (PurchaseOrders + FloatingReturns)</div>
+        <div class="phase-desc">Operations Agent kararı: Picking listeleri tam liste kalır; PO + FR sayfalanır; ShipmentsByDate null guard zaten mevcuttu</div>
+      </div>
+      <div class="phase-badge badge-done">Tamamlandi</div>
+    </div>
+    <div class="phase-body">
+      <ul class="item-list">
+        <li><span class="dot dot-done"></span>GetPurchaseOrdersQuery — PaginatedList&lt;PurchaseOrderDto&gt; (PageNumber=1, PageSize=20)</li>
+        <li><span class="dot dot-done"></span>GetFloatingReturnsQuery — PaginatedList&lt;FloatingReturnDto&gt; (PageNumber=1, PageSize=20)</li>
+        <li><span class="dot dot-skip"></span>GetShipmentsByDateQuery — null guard zaten mevcuttu (DateTime? ?? DateTime.Today)</li>
+        <li><span class="dot dot-skip"></span>GetZoneMacroPickListQuery / GetProjectMicroPickListQuery — tam liste kalır (picking akışı)</li>
+        <li><span class="dot dot-skip"></span>GetStockCountsQuery / GetOrdersByDeliveryDateQuery — operasyonel tam liste, ertelendi</li>
+        <li><span class="dot dot-done"></span>purchaseOrderService.ts — PaginatedList&lt;T&gt; interface + pageNumber/pageSize params</li>
+        <li><span class="dot dot-done"></span>floatingReturnService.ts — pageNumber/pageSize params eklendi</li>
+        <li><span class="dot dot-done"></span>PurchaseOrdersView.vue — currentPage/totalPages/totalCount refs + sayfalama UI</li>
+        <li><span class="dot dot-done"></span>FloatingReturnsView.vue — currentPage/totalPages/totalCount refs + sayfalama UI</li>
+      </ul>
+      <div class="build-status">✓ Build: 0 hata (552 modül)</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- BEKLIYOR -->
+<div class="section">
+  <div class="section-title">Bekliyor — Karar / Danisma Gerekli</div>
+
+  <!-- Netsis -->
+  <div class="phase block" onclick="toggle(this)">
+    <div class="phase-header">
+      <div class="phase-icon">!</div>
+      <div class="phase-title-area">
+        <div class="phase-title">Faz D — Netsis Entegrasyonu</div>
+        <div class="phase-desc">API dokumantasyonu ve kullanici bilgileri bekleniyor</div>
+      </div>
+      <div class="phase-badge badge-block">Bloke</div>
+    </div>
+    <div class="phase-body">
+      <ul class="item-list">
+        <li><span class="dot dot-skip"></span>NetsisClient scaffold hazir (Infrastructure/ExternalServices/Netsis)</li>
+        <li><span class="dot dot-skip"></span>NetsisOptions yapi hazir — BaseUrl, KullaniciAdi, Sifre, FirmaKodu, SubeKodu</li>
+        <li><span class="dot dot-skip"></span>LoginPath, SiparisPath, StokBakiyePath — PENDING_NETSIS_API_DOCS</li>
+        <li><span class="dot dot-skip"></span>ExportShipmentToNetsis, SyncIrsaliyeFromNetsis handler'lari mevcut ama endpoint bilgisi yok</li>
+      </ul>
+      <div class="build-status fail">✗ Bloke — Netsis API dokümantasyonu gerekli</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ERTELENDI -->
+<div class="section">
+  <div class="section-title">Ertelendi — Dusuk Oncelik</div>
+
+  <div class="phase defer" onclick="toggle(this)">
+    <div class="phase-header">
+      <div class="phase-icon">–</div>
+      <div class="phase-title-area">
+        <div class="phase-title">SmtpEmailService — Aktif, Düsük Oncelik</div>
+        <div class="phase-desc">AssignedToVehicle event'inde mail atiliyor, SMTP config gerekiyor — defer</div>
+      </div>
+      <div class="phase-badge badge-defer">Ertelendi</div>
+    </div>
+    <div class="phase-body">
+      <ul class="item-list">
+        <li><span class="dot dot-skip"></span>ShipmentAssignedToVehicleEmailHandler — event handler aktif</li>
+        <li><span class="dot dot-skip"></span>YoneticiMailAdresleri'ne mail gönderiliyor</li>
+        <li><span class="dot dot-skip"></span>Production SMTP config gerektiriyor (Smtp:Host vs SET_BY_ENV_)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="phase defer" onclick="toggle(this)">
+    <div class="phase-header">
+      <div class="phase-icon">–</div>
+      <div class="phase-title-area">
+        <div class="phase-title">NU1510 NuGet Warning — System.Text.Encoding.CodePages</div>
+        <div class="phase-desc">Application.csproj'dan gereksiz paket kaldirilabilir</div>
+      </div>
+      <div class="phase-badge badge-defer">Ertelendi</div>
+    </div>
+    <div class="phase-body">
+      <ul class="item-list">
+        <li><span class="dot dot-skip"></span>Akyildiz.Sevkiyat.Application.csproj — System.Text.Encoding.CodePages paketi</li>
+        <li><span class="dot dot-skip"></span>.NET 10'da framework içinde geliyor, ayrıca paket olarak gerekmiyor</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<!-- Next actions -->
+<div class="next-section">
+  <h3>Siradaki Aksiyonlar</h3>
+
+  <div class="next-item">
+    <div class="next-num">1</div>
+    <div>
+      <div class="next-text"><strong>Faz D — Netsis Entegrasyonu</strong>: API dokümantasyonu gelince başlatılabilir</div>
+      <div class="next-note">Bloke — Netsis API docs bekleniyor</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="updated-at">Son güncelleme: 2026-03-26 — Faz A (Nullable Warnings) + Faz B (Frontend Error States) + Faz C (Pagination) tamamlandi</div>
+
+<script>
+  function toggle(el) {
+    const body = el.querySelector('.phase-body');
+    if (body) body.classList.toggle('open');
+  }
+
+  function toggleAll(open) {
+    document.querySelectorAll('.phase-body').forEach(b => {
+      open ? b.classList.add('open') : b.classList.remove('open');
+    });
+  }
+
+  // Tamamlandi olanlari kapali, aktif olanlari acik baslat
+  document.querySelectorAll('.phase.active .phase-body').forEach(b => b.classList.add('open'));
+</script>
+
+</body>
+</html>

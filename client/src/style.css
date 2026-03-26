@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Accessibility: keyboard focus ring ────────────────────────────────────── */
+/* Tailwind's preflight removes the default browser outline. Restore it for
+   keyboard users via focus-visible (doesn't affect mouse clicks). */
+:focus-visible {
+  @apply outline-none ring-2 ring-blue-500 ring-offset-1;
+}
+
+/* Darker ring for elements on dark backgrounds (sidebar) */
+.dark :focus-visible {
+  @apply ring-blue-400 ring-offset-gray-900;
+}
+
+/* Skip-to-content link for screen readers */
+.skip-link {
+  @apply absolute -top-full left-4 z-[9999] px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-b-lg transition-all;
+}
+.skip-link:focus {
+  @apply top-0;
+}
+
+/* ── Page route transitions ────────────────────────────────────────────────── */
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}

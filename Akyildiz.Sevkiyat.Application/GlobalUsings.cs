@@ -1,0 +1,15 @@
+global using MediatR;
+global using Microsoft.EntityFrameworkCore;
+global using Akyildiz.Sevkiyat.Application.Interfaces;
+global using Akyildiz.Sevkiyat.Domain.Entities;
+global using Akyildiz.Sevkiyat.Domain.Enums;
+global using Akyildiz.Sevkiyat.Domain.Exceptions;
+global using Akyildiz.Sevkiyat.Application.External.IssIp.Dtos;
+global using Microsoft.Extensions.Logging;
+global using System.Text.Json;
+global using System.Globalization;
+global using System;
+global using System.Collections.Generic;
+global using System.Linq;
+global using System.Threading;
+global using System.Threading.Tasks;
