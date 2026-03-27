@@ -69,11 +69,11 @@
       </div>
 
       <div class="mt-6 flex justify-end gap-3">
-        <button @click="$emit('close')" class="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-300 dark:border-gray-700">İptal</button>
+        <button @click="$emit('close')" class="px-4 py-3 min-h-[44px] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-300 dark:border-gray-700">İptal</button>
         <button
           @click="save"
           :disabled="!canSave"
-          class="px-6 py-2 bg-blue-600 text-white rounded font-bold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          class="px-6 py-3 min-h-[44px] bg-blue-600 text-white rounded font-bold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
           <span v-if="isSaving" class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
           <span>{{ isSaving ? 'KAYDEDİLİYOR...' : 'KAYDET VE TRANSFERE HAZIRLA' }}</span>
@@ -85,7 +85,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import transportService from '../services/transportService';
 import warehouseService, { type PreDispatchSummaryDto } from '../services/warehouseService';
 import { ApiErrorUtils } from '../utils/apiError';
@@ -107,6 +107,9 @@ const isSaving = ref(false);
 const summary = ref<PreDispatchSummaryDto | null>(null);
 const summaryLoading = ref(false);
 const summaryLoaded = ref(false);
+
+document.body.style.overflow = 'hidden';
+onUnmounted(() => { document.body.style.overflow = ''; });
 
 const canSave = computed(() =>
   selectedDriverId.value !== null &&
