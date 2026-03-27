@@ -120,6 +120,11 @@
               class="w-5 h-5 text-green-500 flex-shrink-0"
               aria-hidden="true"
             />
+            <ArrowUturnLeftIcon
+              v-else-if="shipment.status === 'ReturnedToWarehouse'"
+              class="w-5 h-5 text-amber-500 flex-shrink-0"
+              aria-hidden="true"
+            />
             <ClipboardDocumentListIcon
               v-else
               class="w-5 h-5 text-blue-500 flex-shrink-0"
@@ -214,7 +219,7 @@
 
           <!-- Recipient -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teslim Alan Kişi</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teslim Alan Kişi <span class="text-red-500">*</span></label>
             <input
               v-model="bulkForm.deliveryRecipient"
               type="text"
@@ -285,7 +290,7 @@
             </button>
             <button
               @click="markAllDelivered"
-              :disabled="bulkSubmitting"
+              :disabled="bulkSubmitting || !bulkForm.deliveryRecipient.trim()"
               class="flex-2 flex-1 py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
             >
               <span v-if="bulkSubmitting" class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
