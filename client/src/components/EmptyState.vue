@@ -1,11 +1,11 @@
 <template>
-  <div class="flex flex-col items-center justify-center py-16 px-6 text-center">
+  <div class="flex flex-col items-center justify-center py-8 sm:py-16 px-6 text-center">
     <component
       v-if="icon"
       :is="icon"
-      class="w-12 h-12 text-gray-300 mb-4"
+      class="w-8 h-8 sm:w-12 sm:h-12 text-gray-300 mb-4"
     />
-    <div v-else class="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
+    <div v-else class="w-8 h-8 sm:w-12 sm:h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
       <InboxIcon class="w-6 h-6 text-gray-400 dark:text-gray-600" />
     </div>
 
