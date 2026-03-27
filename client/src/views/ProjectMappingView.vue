@@ -2,13 +2,26 @@
   <div class="h-full flex flex-col p-4">
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Proje - Bölge Yönetimi</h1>
-      <div class="flex gap-4">
+      <div class="flex gap-4 items-center">
            <input
               v-model="searchTerm"
               type="text"
               placeholder="Proje Ara..."
               class="border dark:border-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none w-64 dark:bg-gray-800 dark:text-gray-100"
             />
+            <button 
+              @click="exportToExcel" 
+              class="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors shadow-sm text-sm font-medium"
+              title="Excel'e Aktar"
+            >
+              <i class="fas fa-file-export"></i>
+              Excel'e Aktar
+            </button>
+            <label class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors cursor-pointer shadow-sm text-sm font-medium" title="Excel'den Yükle">
+              <i class="fas fa-file-import"></i>
+              Excel'den Yükle
+              <input type="file" class="hidden" @change="importFromExcel" accept=".xlsx, .xls" />
+            </label>
       </div>
     </div>
 
@@ -36,7 +49,9 @@
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{{ project.code }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ project.name }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                <label :for="`zone-${project.id}`" class="sr-only">Bölge</label>
                 <select
+                    :id="`zone-${project.id}`"
                     :value="project.zoneId || ''"
                     @change="updateZone(project, $event)"
                     class="border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-1 dark:bg-gray-800 dark:text-gray-100"
@@ -49,7 +64,9 @@
                 </select>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm">
+              <label :for="`cari-${project.id}`" class="sr-only">Netsis Cari Kodu</label>
               <input
+                :id="`cari-${project.id}`"
                 :value="project.netsisCariKodu || ''"
                 type="text"
                 placeholder="Cari Kodu..."
@@ -59,7 +76,9 @@
               />
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
+              <label :for="`sira-${project.id}`" class="sr-only">Teslimat Sırası</label>
               <input
+                :id="`sira-${project.id}`"
                 :value="project.deliveryOrder ?? ''"
                 type="number"
                 min="1"
@@ -191,6 +210,37 @@ const updateZone = async (project: Project, event: Event) => {
         project.zoneId = oldZoneId; // Revert
         notificationStore.add(ApiErrorUtils.getErrorMessage(err) || 'Güncelleme başarısız.', 'error');
     }
+};
+
+const exportToExcel = async () => {
+  try {
+    await projectService.exportMappings();
+    notificationStore.add('Excel dosyası indiriliyor...', 'success');
+  } catch (err) {
+    notificationStore.add(ApiErrorUtils.getErrorMessage(err) || 'Excel\'e aktarma başarısız.', 'error');
+  }
+};
+
+const importFromExcel = async (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  if (!input.files?.length) return;
+
+  const file = input.files[0];
+  if (!file) return;
+  
+  try {
+    const result = await projectService.importMappings(file);
+    notificationStore.add(`${result.updatedCount} proje güncellendi.`, 'success');
+    
+    // Refresh lists
+    await fetchProjects();
+    
+    // Clear input
+    input.value = '';
+  } catch (err) {
+    notificationStore.add(ApiErrorUtils.getErrorMessage(err) || 'Yükleme başarısız.', 'error');
+    input.value = '';
+  }
 };
 
 onMounted(() => {
