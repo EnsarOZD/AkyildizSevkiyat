@@ -9,11 +9,28 @@
 
     <!-- Step indicator -->
     <div class="flex items-center gap-2 text-sm">
-      <StepBadge :step="1" :active="step === 1" :done="step > 1" label="Proje Seç" />
-      <div class="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
-      <StepBadge :step="2" :active="step === 2" :done="step > 2" label="ISS Karşılaştır" />
-      <div class="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
-      <StepBadge :step="3" :active="step === 3" :done="false" label="Rota Sonucu" />
+      <div v-for="(s, i) in stepDefs" :key="s.label" class="contents">
+        <div class="flex items-center gap-1.5 flex-shrink-0">
+          <div
+            class="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center"
+            :class="step > s.n
+              ? 'bg-indigo-600 text-white'
+              : step === s.n
+                ? 'bg-indigo-600 text-white'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'"
+          >
+            <svg v-if="step > s.n" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            <span v-else>{{ s.n }}</span>
+          </div>
+          <span
+            class="text-xs font-medium hidden sm:inline"
+            :class="step === s.n ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400 dark:text-gray-500'"
+          >{{ s.label }}</span>
+        </div>
+        <div v-if="i < stepDefs.length - 1" class="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+      </div>
     </div>
 
     <!-- ────────────────────────────── STEP 1: Project Selection ────────────────────────────── -->
@@ -317,33 +334,12 @@ import projectService from '../services/projectService';
 import { useNotificationStore } from '../stores/notification';
 import { ApiErrorUtils } from '../utils/apiError';
 
-// ── Step badge inline component ──────────────────────────────────────────────
-const StepBadge = {
-  props: { step: Number, active: Boolean, done: Boolean, label: String },
-  template: `
-    <div class="flex items-center gap-1.5 flex-shrink-0">
-      <div
-        class="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center"
-        :class="done
-          ? 'bg-indigo-600 text-white'
-          : active
-            ? 'bg-indigo-600 text-white'
-            : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'"
-      >
-        <svg v-if="done" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-        </svg>
-        <span v-else>{{ step }}</span>
-      </div>
-      <span
-        class="text-xs font-medium hidden sm:inline"
-        :class="active ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400 dark:text-gray-500'"
-      >{{ label }}</span>
-    </div>
-  `,
-};
-
 // ── State ────────────────────────────────────────────────────────────────────
+const stepDefs = [
+  { n: 1, label: 'Proje Seç' },
+  { n: 2, label: 'ISS Karşılaştır' },
+  { n: 3, label: 'Rota Sonucu' },
+];
 const notificationStore = useNotificationStore();
 
 interface ProjectItem {
