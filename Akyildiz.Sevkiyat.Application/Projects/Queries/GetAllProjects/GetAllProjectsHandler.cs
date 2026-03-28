@@ -31,7 +31,8 @@ namespace Akyildiz.Sevkiyat.Application.Projects.Queries
                     p.NetsisCariKodu,
                     p.DeliveryOrder,
                     p.Latitude,
-                    p.Longitude
+                    p.Longitude,
+                    p.Address
                 )).ToListAsync(cancellationToken);
         }
     }

@@ -11,6 +11,7 @@ namespace Akyildiz.Sevkiyat.Application.Common.Dtos
         string? NetsisCariKodu,
         int? DeliveryOrder,
         double? Latitude,
-        double? Longitude
+        double? Longitude,
+        string? Address
     );
 }
