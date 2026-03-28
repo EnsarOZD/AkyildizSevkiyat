@@ -8,6 +8,7 @@ namespace Akyildiz.Sevkiyat.Application.RouteOptimization.Interfaces
             List<string> addresses,
             string? startAddress,
             List<string> projectCodes,
+            List<string> projectNames,
             CancellationToken cancellationToken = default);
     }
 }

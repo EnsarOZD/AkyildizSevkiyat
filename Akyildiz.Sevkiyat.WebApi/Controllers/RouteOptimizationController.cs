@@ -133,8 +133,12 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
                 .Select(code => projects.FirstOrDefault(p => p.Code == code)?.Address ?? "")
                 .ToList();
 
+            var names = body.ProjectCodes
+                .Select(code => projects.FirstOrDefault(p => p.Code == code)?.Name ?? code)
+                .ToList();
+
             var result = await _routeService.OptimizeRouteAsync(
-                addresses, body.StartAddress, body.ProjectCodes, ct);
+                addresses, body.StartAddress, body.ProjectCodes, names, ct);
 
             return Ok(result);
         }

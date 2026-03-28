@@ -283,11 +283,11 @@
               {{ stop.order }}
             </div>
             <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2">
-                <span class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ stop.projectCode }}</span>
-                <span class="text-sm text-gray-500 dark:text-gray-400 truncate">{{ stop.projectName }}</span>
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-xs font-mono bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded">{{ stop.projectCode }}</span>
+                <span v-if="stop.projectName !== stop.projectCode" class="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{{ stop.projectName }}</span>
               </div>
-              <div class="text-xs text-gray-400 mt-0.5 truncate">{{ stop.address || 'Adres yok' }}</div>
+              <div class="text-xs text-gray-400 mt-0.5 truncate">{{ stop.address || 'Adres tanımlı değil' }}</div>
             </div>
             <div v-if="stop.estimatedDistanceFromPrevious != null" class="flex-shrink-0 text-right">
               <div class="text-xs font-medium text-gray-600 dark:text-gray-400">{{ formatDistance(stop.estimatedDistanceFromPrevious) }}</div>

@@ -29,18 +29,20 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
             List<string> addresses,
             string? startAddress,
             List<string> projectCodes,
+            List<string> projectNames,
             CancellationToken cancellationToken = default)
         {
             var excludedProjects = new List<string>();
-            var validPairs = new List<(string Code, string Address)>();
+            var validPairs = new List<(string Code, string Name, string Address)>();
 
             for (int i = 0; i < projectCodes.Count; i++)
             {
                 var addr = i < addresses.Count ? addresses[i] : null;
+                var name = i < projectNames.Count ? projectNames[i] : projectCodes[i];
                 if (string.IsNullOrWhiteSpace(addr))
                     excludedProjects.Add(projectCodes[i]);
                 else
-                    validPairs.Add((projectCodes[i], addr));
+                    validPairs.Add((projectCodes[i], name, addr));
             }
 
             if (validPairs.Count == 0)
@@ -51,7 +53,7 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
 
             // Determine origin and waypoints
             string originAddress;
-            List<(string Code, string Address)> waypointPairs;
+            List<(string Code, string Name, string Address)> waypointPairs;
 
             if (!string.IsNullOrWhiteSpace(startAddress))
             {
@@ -66,15 +68,15 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
 
             // destination = last waypoint (open route, no depot return)
             string destinationAddress;
-            List<(string Code, string Address)> intermediatePairs;
+            List<(string Code, string Name, string Address)> intermediatePairs;
 
             if (waypointPairs.Count == 0)
             {
-                // only origin, no waypoints
+                // Only origin, no further waypoints
                 return new RouteOptimizationResultDto(
                     new List<RouteStopDto>
                     {
-                        new(1, validPairs[0].Code, validPairs[0].Code, validPairs[0].Address, null, null)
+                        new(1, validPairs[0].Code, validPairs[0].Name, validPairs[0].Address, null, null)
                     },
                     0, 0, excludedProjects);
             }
@@ -104,12 +106,14 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
 
             using var httpRequest = new HttpRequestMessage(HttpMethod.Post, url);
             httpRequest.Content = JsonContent.Create(requestBody);
+            // Explicit field mask — routes.legs alone does NOT return sub-fields
             httpRequest.Headers.Add("X-Goog-FieldMask",
-                "routes.duration,routes.distanceMeters,routes.optimizedIntermediateWaypointIndex,routes.legs");
+                "routes.distanceMeters,routes.duration,routes.optimizedIntermediateWaypointIndex," +
+                "routes.legs.distanceMeters,routes.legs.duration");
 
             using var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
             var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
-            _logger.LogInformation("Google Routes API yanıtı: {StatusCode}", response.StatusCode);
+            _logger.LogInformation("Google Routes API yanıtı: {StatusCode} Body: {Body}", response.StatusCode, rawJson);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -129,11 +133,12 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
             double totalDurationS = 0;
             if (route.TryGetProperty("duration", out var dur))
             {
+                // duration is returned as "1234s" string
                 var durStr = dur.GetString() ?? "0s";
-                totalDurationS = double.Parse(durStr.TrimEnd('s'));
+                totalDurationS = double.TryParse(durStr.TrimEnd('s'), out var ds) ? ds : 0;
             }
 
-            // Build optimized stop order
+            // Build optimized stop order for intermediates
             var optimizedOrder = new List<int>();
             if (route.TryGetProperty("optimizedIntermediateWaypointIndex", out var orderArr))
             {
@@ -147,40 +152,46 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
                     optimizedOrder.Add(i);
             }
 
-            // Build stops list
-            var stops = new List<RouteStopDto>();
-            var legs = route.TryGetProperty("legs", out var legsEl) ? legsEl.EnumerateArray().ToList() : new List<JsonElement>();
+            // Legs array: leg[k] is the segment arriving at the (k+1)-th stop in optimized order.
+            // leg[0]: origin → 1st optimized intermediate (or destination if no intermediates)
+            // leg[k]: k-th → (k+1)-th optimized stop
+            // leg[N]: last intermediate → destination
+            var legs = route.TryGetProperty("legs", out var legsEl)
+                ? legsEl.EnumerateArray().ToList()
+                : new List<JsonElement>();
 
-            // Stop 1: origin
-            // If startAddress was given, origin is a separate start point (not a project)
-            // If not, origin is validPairs[0]
+            var stops = new List<RouteStopDto>();
             int stopOrder = 1;
+
+            // If no startAddress given, validPairs[0] is the origin project stop (no incoming leg)
             if (string.IsNullOrWhiteSpace(startAddress))
             {
-                stops.Add(new RouteStopDto(stopOrder++, validPairs[0].Code, validPairs[0].Code, validPairs[0].Address, null, null));
+                stops.Add(new RouteStopDto(stopOrder++, validPairs[0].Code, validPairs[0].Name, validPairs[0].Address, null, null));
             }
 
-            // Intermediates in optimized order
+            // Intermediate stops in optimized order.
+            // leg[rank] is the leg ARRIVING at intermediate rank (0-based).
             for (int rank = 0; rank < optimizedOrder.Count; rank++)
             {
                 var originalIdx = optimizedOrder[rank];
                 var pair = intermediatePairs[originalIdx];
-                var legIdx = string.IsNullOrWhiteSpace(startAddress) ? rank + 1 : rank + 1;
+                var legIdx = rank; // leg[rank] arrives at this stop
                 double? legDist = legIdx < legs.Count && legs[legIdx].TryGetProperty("distanceMeters", out var legDistEl)
                     ? legDistEl.GetDouble() : null;
                 double? legDur = legIdx < legs.Count ? GetLegDurationSeconds(legs[legIdx]) : null;
-                stops.Add(new RouteStopDto(stopOrder++, pair.Code, pair.Code, pair.Address,
+                stops.Add(new RouteStopDto(stopOrder++, pair.Code, pair.Name, pair.Address,
                     legDist.HasValue ? legDist / 1000.0 : null,
                     legDur.HasValue ? legDur / 60.0 : null));
             }
 
-            // Last stop: destination
+            // Destination stop — the last leg arrives here
             {
                 var lastLegIdx = legs.Count - 1;
-                double? legDist = lastLegIdx >= 0 && legs[lastLegIdx].TryGetProperty("distanceMeters", out var ld2) ? ld2.GetDouble() : null;
+                double? legDist = lastLegIdx >= 0 && legs[lastLegIdx].TryGetProperty("distanceMeters", out var ld2)
+                    ? ld2.GetDouble() : null;
                 double? legDur = lastLegIdx >= 0 ? GetLegDurationSeconds(legs[lastLegIdx]) : null;
                 var lastPair = waypointPairs[^1];
-                stops.Add(new RouteStopDto(stopOrder, lastPair.Code, lastPair.Code, lastPair.Address,
+                stops.Add(new RouteStopDto(stopOrder, lastPair.Code, lastPair.Name, lastPair.Address,
                     legDist.HasValue ? legDist / 1000.0 : null,
                     legDur.HasValue ? legDur / 60.0 : null));
             }
