@@ -21,6 +21,7 @@ import {
   DevicePhoneMobileIcon,
   ListBulletIcon,
   ShieldExclamationIcon,
+  ArrowTrendingUpIcon,
 } from '@heroicons/vue/24/outline';
 
 export type UserRole = 'Admin' | 'Warehouse' | 'Accounting' | 'Dispatcher' | 'Manager';
@@ -58,6 +59,7 @@ export const NAV_ITEMS: NavGroup[] = [
             { label: 'Şoför & Araç',     to: '/transport',        icon: TruckIcon,              roles: ['Admin', 'Manager', 'Dispatcher'] },
             { label: 'Şoför Paneli',     to: '/driver',           icon: DevicePhoneMobileIcon,  roles: ['Admin', 'Manager', 'Dispatcher'] },
             { label: 'Belirsiz İadeler', to: '/floating-returns', icon: ArrowPathIcon,          roles: ['Admin', 'Manager', 'Warehouse', 'Dispatcher'] },
+            { label: 'Rota Optimizasyonu', to: '/route-optimization', icon: ArrowTrendingUpIcon, roles: ['Admin', 'Manager', 'Dispatcher'] },
         ],
     },
     {

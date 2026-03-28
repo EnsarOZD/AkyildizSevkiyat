@@ -167,6 +167,12 @@ const router = createRouter({
                     component: () => import('../views/ReconciliationView.vue'),
                     meta: { title: 'Mutabakat Kontrolleri', roles: ['Admin', 'Manager'] }
                 },
+                {
+                    path: 'route-optimization',
+                    name: 'RouteOptimization',
+                    component: () => import('../views/RouteOptimizationView.vue'),
+                    meta: { title: 'Rota Optimizasyonu', roles: ['Admin', 'Manager', 'Dispatcher'] }
+                },
             ]
         },
         {
