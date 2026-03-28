@@ -66,28 +66,34 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
                     new List<RouteStopDto>(), 0, 0, excludedProjects);
             }
 
-            // Determine origin and waypoints
+            // TSP approach: origin = depot (or first project), destination = same as origin.
+            // ALL projects are intermediates so Google optimizes the full order.
+            // The "return to depot" last leg is excluded from output.
             string originAddress;
-            List<(string Code, string Name, string Address)> waypointPairs;
+            bool originIsProject; // true when origin = first project (no dedicated depot)
 
             if (!string.IsNullOrWhiteSpace(startAddress))
             {
                 originAddress = NormalizeAddress(startAddress);
-                waypointPairs = validPairs;
+                originIsProject = false;
             }
             else
             {
                 originAddress = validPairs[0].Address;
-                waypointPairs = validPairs.Skip(1).ToList();
+                originIsProject = true;
             }
 
-            // destination = last waypoint (open route, no depot return)
-            string destinationAddress;
-            List<(string Code, string Name, string Address)> intermediatePairs;
+            // All valid projects become intermediates (Google optimizes all of them)
+            var intermediatePairs = originIsProject
+                ? validPairs.Skip(1).ToList()
+                : validPairs;
 
-            if (waypointPairs.Count == 0)
+            // Destination = same as origin (round trip / TSP; last leg will be dropped)
+            var destinationAddress = originAddress;
+
+            if (intermediatePairs.Count == 0)
             {
-                // Only origin, no further waypoints
+                // Single project, nothing to optimize
                 return new RouteOptimizationResultDto(
                     new List<RouteStopDto>
                     {
@@ -95,9 +101,6 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
                     },
                     0, 0, excludedProjects);
             }
-
-            destinationAddress = waypointPairs[^1].Address;
-            intermediatePairs  = waypointPairs.Take(waypointPairs.Count - 1).ToList();
 
             // vehicleType → routeModifiers
             // Kamyon: heavy vehicle profile (avoidFerries added)
@@ -189,19 +192,20 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
             var stops = new List<RouteStopDto>();
             int stopOrder = 1;
 
-            // If no startAddress given, validPairs[0] is the origin project stop (no incoming leg)
-            if (string.IsNullOrWhiteSpace(startAddress))
+            // Stop 1: origin project (no incoming leg, so null distance)
+            if (originIsProject)
             {
                 stops.Add(new RouteStopDto(stopOrder++, validPairs[0].Code, validPairs[0].Name, validPairs[0].Address, null, null));
             }
 
-            // Intermediate stops in optimized order.
-            // leg[rank] is the leg ARRIVING at intermediate rank (0-based).
+            // Intermediates in optimized order.
+            // leg[rank] arrives at the (rank)-th optimized intermediate.
+            // The LAST leg (legs[N]) is origin→return, which we discard.
             for (int rank = 0; rank < optimizedOrder.Count; rank++)
             {
                 var originalIdx = optimizedOrder[rank];
                 var pair = intermediatePairs[originalIdx];
-                var legIdx = rank; // leg[rank] arrives at this stop
+                var legIdx = rank; // leg[rank] delivers us to this stop
                 double? legDist = legIdx < legs.Count && legs[legIdx].TryGetProperty("distanceMeters", out var legDistEl)
                     ? legDistEl.GetDouble() : null;
                 double? legDur = legIdx < legs.Count ? GetLegDurationSeconds(legs[legIdx]) : null;
@@ -210,22 +214,20 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
                     legDur.HasValue ? legDur / 60.0 : null));
             }
 
-            // Destination stop — the last leg arrives here
+            // Total distance/duration: subtract the last (return-to-depot) leg
+            // so the displayed totals reflect only the delivery route.
+            double returnLegDistM = 0, returnLegDurS = 0;
+            if (legs.Count > 0)
             {
-                var lastLegIdx = legs.Count - 1;
-                double? legDist = lastLegIdx >= 0 && legs[lastLegIdx].TryGetProperty("distanceMeters", out var ld2)
-                    ? ld2.GetDouble() : null;
-                double? legDur = lastLegIdx >= 0 ? GetLegDurationSeconds(legs[lastLegIdx]) : null;
-                var lastPair = waypointPairs[^1];
-                stops.Add(new RouteStopDto(stopOrder, lastPair.Code, lastPair.Name, lastPair.Address,
-                    legDist.HasValue ? legDist / 1000.0 : null,
-                    legDur.HasValue ? legDur / 60.0 : null));
+                var returnLeg = legs[^1];
+                if (returnLeg.TryGetProperty("distanceMeters", out var rld)) returnLegDistM = rld.GetDouble();
+                returnLegDurS = GetLegDurationSeconds(returnLeg) ?? 0;
             }
 
             return new RouteOptimizationResultDto(
                 stops,
-                totalDistanceM / 1000.0,
-                totalDurationS / 60.0,
+                (totalDistanceM - returnLegDistM) / 1000.0,
+                (totalDurationS - returnLegDurS) / 60.0,
                 excludedProjects);
         }
 
