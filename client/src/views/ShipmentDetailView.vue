@@ -7,6 +7,15 @@
   </div>
   <div v-else class="p-6">
 
+    <!-- Back button -->
+    <button
+      @click="router.back()"
+      class="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors mb-4"
+    >
+      <ChevronLeftIcon class="w-4 h-4" />
+      Sevkiyatlar
+    </button>
+
     <!-- Page Header -->
     <div class="mb-5">
       <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Sevkiyat #{{ shipment.id }}</h1>
@@ -704,7 +713,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
+import { ChevronLeftIcon } from '@heroicons/vue/24/outline';
 import shipmentService from '../services/shipmentService';
 import projectService from '../services/projectService';
 import StockCombobox from '../components/StockCombobox.vue';
@@ -759,6 +769,7 @@ interface ShipmentDetail {
 }
 
 const route = useRoute();
+const router = useRouter();
 const notificationStore = useNotificationStore();
 const shipment = ref<ShipmentDetail | null>(null);
 const loading = ref(false);
