@@ -286,6 +286,20 @@
         </div>
       </div>
 
+      <!-- Bridge crossing notice -->
+      <div
+        v-if="optimizationResult.bridgeNotice"
+        class="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-600 rounded-lg p-3 flex items-center gap-3"
+      >
+        <svg class="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 12h18M3 12c0-4.418 4.03-8 9-8s9 3.582 9 8M3 12c0 4.418 4.03 8 9 8s9-3.582 9-8M9 12v4m6-4v4" />
+        </svg>
+        <div class="text-sm text-amber-800 dark:text-amber-200">
+          <span class="font-semibold">Zorunlu Köprü Geçişi:</span>
+          {{ optimizationResult.bridgeNotice }}'nden geçiniz.
+        </div>
+      </div>
+
       <!-- Excluded projects warning -->
       <div
         v-if="optimizationResult.excludedProjects.length > 0"
@@ -316,26 +330,12 @@
             v-for="stop in optimizationResult.optimizedStops"
             :key="stop.order"
             class="flex items-start gap-4 px-4 py-3"
-            :class="stop.projectCode === '__BRIDGE__' ? 'bg-amber-50 dark:bg-amber-900/10' : ''"
           >
-            <!-- Bridge stop: special icon -->
-            <div v-if="stop.projectCode === '__BRIDGE__'" class="flex-shrink-0 w-7 h-7 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M3 12h18M3 12c0-4.418 4.03-8 9-8s9 3.582 9 8M3 12c0 4.418 4.03 8 9 8s9-3.582 9-8M9 12v4m6-4v4" />
-              </svg>
-            </div>
-            <!-- Normal project stop -->
-            <div v-else class="flex-shrink-0 w-7 h-7 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 flex items-center justify-center text-xs font-bold">
+            <div class="flex-shrink-0 w-7 h-7 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 flex items-center justify-center text-xs font-bold">
               {{ stop.order }}
             </div>
             <div class="flex-1 min-w-0">
-              <!-- Bridge label -->
-              <div v-if="stop.projectCode === '__BRIDGE__'" class="flex items-center gap-2">
-                <span class="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wide">Köprü Geçişi</span>
-                <span class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ stop.projectName }}</span>
-              </div>
-              <!-- Project label -->
-              <div v-else class="flex items-center gap-2 flex-wrap">
+              <div class="flex items-center gap-2 flex-wrap">
                 <span class="text-xs font-mono bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded">{{ stop.projectCode }}</span>
                 <span v-if="stop.projectName !== stop.projectCode" class="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{{ stop.projectName }}</span>
               </div>

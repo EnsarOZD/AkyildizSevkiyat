@@ -39,6 +39,7 @@ export interface RouteOptimizationResultDto {
   totalDistance: number;
   totalDuration: number;
   excludedProjects: string[];
+  bridgeNotice: string | null;
 }
 
 const routeOptimizationService = {

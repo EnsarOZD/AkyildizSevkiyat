@@ -40,6 +40,7 @@ namespace Akyildiz.Sevkiyat.Application.RouteOptimization.Dtos
         List<RouteStopDto> OptimizedStops,
         double TotalDistance,
         double TotalDuration,
-        List<string> ExcludedProjects
+        List<string> ExcludedProjects,
+        string? BridgeNotice  // e.g. "Yavuz Sultan Selim Köprüsü"
     );
 }

@@ -72,7 +72,7 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
             if (validPairs.Count == 0)
             {
                 return new RouteOptimizationResultDto(
-                    new List<RouteStopDto>(), 0, 0, excludedProjects);
+                    new List<RouteStopDto>(), 0, 0, excludedProjects, null);
             }
 
             // TSP approach: origin = depot (or first project), destination = same as origin.
@@ -97,15 +97,10 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
                 ? validPairs.Skip(1).ToList()
                 : validPairs.ToList();
 
-            // Inject bridge waypoint if requested and vehicle type has a mapped bridge
-            if (forceBridgeCrossing
-                && !string.IsNullOrWhiteSpace(vehicleType)
-                && BridgeWaypoints.TryGetValue(vehicleType, out var bridge))
-            {
-                // Insert at position 0 — Google will reorder it to the optimal crossing point
-                intermediatePairs.Insert(0, bridge);
-                _logger.LogInformation("Köprü geçiş noktası eklendi: {Bridge}", bridge.Name);
-            }
+            // Bridge waypoint injection is intentionally NOT done here.
+            // Google reorders all intermediates freely with optimizeWaypointOrder=true,
+            // causing the bridge to land at the wrong position (e.g., last stop).
+            // Bridge restriction is communicated to the driver via UI notice instead.
 
             // Destination = same as origin (round trip / TSP; last leg will be dropped)
             var destinationAddress = originAddress;
@@ -118,7 +113,7 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
                     {
                         new(1, validPairs[0].Code, validPairs[0].Name, validPairs[0].Address, null, null)
                     },
-                    0, 0, excludedProjects);
+                    0, 0, excludedProjects, null);
             }
 
             // vehicleType → routeModifiers
@@ -243,11 +238,15 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
                 returnLegDurS = GetLegDurationSeconds(returnLeg) ?? 0;
             }
 
+            string? bridgeNotice = forceBridgeCrossing && !string.IsNullOrWhiteSpace(vehicleType)
+                && BridgeWaypoints.TryGetValue(vehicleType, out var bw) ? bw.Name : null;
+
             return new RouteOptimizationResultDto(
                 stops,
                 (totalDistanceM - returnLegDistM) / 1000.0,
                 (totalDurationS - returnLegDurS) / 60.0,
-                excludedProjects);
+                excludedProjects,
+                bridgeNotice);
         }
 
         private static double? GetLegDurationSeconds(JsonElement leg)
