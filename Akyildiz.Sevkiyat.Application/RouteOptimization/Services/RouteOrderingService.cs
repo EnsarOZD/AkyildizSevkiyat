@@ -172,7 +172,9 @@ namespace Akyildiz.Sevkiyat.Application.RouteOptimization.Services
         }
 
         /// <summary>
-        /// Greedy nearest-neighbor chain: always picks the closest unvisited stop from current position.
+        /// Nearest-neighbor chain starting from the FARTHEST stop.
+        /// First stop: farthest from current position (reference point).
+        /// Subsequent stops: nearest unvisited from the last visited stop.
         /// Returns ordered stops and the exit coordinates (last stop's position).
         /// </summary>
         private static (List<StopInfo> Ordered, double ExitLat, double ExitLon) NearestNeighborChain(
@@ -181,6 +183,19 @@ namespace Akyildiz.Sevkiyat.Application.RouteOptimization.Services
             var remaining = new List<StopInfo>(stops);
             var ordered = new List<StopInfo>(stops.Count);
 
+            // Start from the farthest stop
+            var first = remaining
+                .OrderByDescending(s => Haversine(curLat, curLon,
+                    s.Latitude  ?? curLat,
+                    s.Longitude ?? curLon))
+                .First();
+
+            ordered.Add(first);
+            remaining.Remove(first);
+            curLat = first.Latitude  ?? curLat;
+            curLon = first.Longitude ?? curLon;
+
+            // Continue with nearest-neighbor
             while (remaining.Count > 0)
             {
                 var nearest = remaining
