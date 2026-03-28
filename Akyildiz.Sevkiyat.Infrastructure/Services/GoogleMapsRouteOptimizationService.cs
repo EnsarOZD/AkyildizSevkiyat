@@ -85,11 +85,11 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
             // Build request body
             var requestBody = new
             {
-                origin = new { address = new { addressLine1 = originAddress } },
-                destination = new { address = new { addressLine1 = destinationAddress } },
+                origin = new { address = originAddress },
+                destination = new { address = destinationAddress },
                 intermediates = intermediatePairs.Select(p => new
                 {
-                    address = new { addressLine1 = p.Address }
+                    address = p.Address
                 }).ToArray(),
                 travelMode = "DRIVE",
                 optimizeWaypointOrder = true,
