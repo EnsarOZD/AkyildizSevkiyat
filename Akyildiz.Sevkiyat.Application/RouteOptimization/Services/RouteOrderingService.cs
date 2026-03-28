@@ -81,8 +81,23 @@ namespace Akyildiz.Sevkiyat.Application.RouteOptimization.Services
 
             if (!crossesBosphorus)
             {
-                // Single side — no bridge
-                result.AddRange(startIsEurope ? sortedEurope : sortedAnatolia);
+                // All stops on the same side — take whichever side has stops (may differ from start side)
+                result.AddRange(europeStops.Count > 0 ? sortedEurope : sortedAnatolia);
+
+                // If ForceBridgeCrossing is set and stops are on the opposite side from start,
+                // inject a bridge waypoint so the driver crosses to the correct side first.
+                if (forceBridgeCrossing && result.Count > 0)
+                {
+                    bool stopsAreEurope = europeStops.Count > 0;
+                    bool needsBridge = stopsAreEurope != startIsEurope;
+                    if (needsBridge && !string.IsNullOrWhiteSpace(vehicleType) &&
+                        BridgeWaypoints.TryGetValue(vehicleType, out var bridge))
+                    {
+                        result.Insert(0, new StopInfo(bridge.Code, bridge.Name, bridge.Address, null, null, null, null));
+                        bridgeNotice = bridge.Name;
+                        hasBridge = true;
+                    }
+                }
             }
             else
             {
