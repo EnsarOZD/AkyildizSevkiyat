@@ -22,6 +22,7 @@ export interface RouteOptimizationRequestDto {
   projectCodes: string[];
   startAddress: string | null;
   vehicleType: string;
+  forceBridgeCrossing: boolean;
 }
 
 export interface RouteStopDto {

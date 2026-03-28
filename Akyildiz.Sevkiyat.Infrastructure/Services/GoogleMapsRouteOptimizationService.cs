@@ -39,12 +39,21 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
                 .Trim();
         }
 
+        // Bridge waypoints per vehicle type (Istanbul Bosphorus crossings)
+        private static readonly Dictionary<string, (string Code, string Name, string Address)> BridgeWaypoints =
+            new(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Kamyon"]   = ("__BRIDGE__", "Yavuz Sultan Selim Köprüsü", "Yavuz Sultan Selim Bridge, Istanbul, Turkey"),
+                ["Kamyonet"] = ("__BRIDGE__", "Fatih Sultan Mehmet Köprüsü", "Fatih Sultan Mehmet Bridge, Istanbul, Turkey"),
+            };
+
         public async Task<RouteOptimizationResultDto> OptimizeRouteAsync(
             List<string> addresses,
             string? startAddress,
             List<string> projectCodes,
             List<string> projectNames,
             string? vehicleType,
+            bool forceBridgeCrossing,
             CancellationToken cancellationToken = default)
         {
             var excludedProjects = new List<string>();
@@ -86,7 +95,17 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
             // All valid projects become intermediates (Google optimizes all of them)
             var intermediatePairs = originIsProject
                 ? validPairs.Skip(1).ToList()
-                : validPairs;
+                : validPairs.ToList();
+
+            // Inject bridge waypoint if requested and vehicle type has a mapped bridge
+            if (forceBridgeCrossing
+                && !string.IsNullOrWhiteSpace(vehicleType)
+                && BridgeWaypoints.TryGetValue(vehicleType, out var bridge))
+            {
+                // Insert at position 0 — Google will reorder it to the optimal crossing point
+                intermediatePairs.Insert(0, bridge);
+                _logger.LogInformation("Köprü geçiş noktası eklendi: {Bridge}", bridge.Name);
+            }
 
             // Destination = same as origin (round trip / TSP; last leg will be dropped)
             var destinationAddress = originAddress;

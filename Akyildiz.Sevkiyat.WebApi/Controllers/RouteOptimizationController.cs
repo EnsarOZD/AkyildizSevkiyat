@@ -138,7 +138,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
                 .ToList();
 
             var result = await _routeService.OptimizeRouteAsync(
-                addresses, body.StartAddress, body.ProjectCodes, names, body.VehicleType, ct);
+                addresses, body.StartAddress, body.ProjectCodes, names, body.VehicleType, body.ForceBridgeCrossing, ct);
 
             return Ok(result);
         }

@@ -39,8 +39,8 @@
         <!-- Vehicle type + start address row -->
         <div class="flex flex-col sm:flex-row gap-3">
           <!-- Vehicle type -->
-          <div class="sm:w-48 flex-shrink-0">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Araç Tipi</label>
+          <div class="sm:w-56 flex-shrink-0 space-y-2">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Araç Tipi</label>
             <div class="flex rounded-lg border border-gray-300 dark:border-gray-700 overflow-hidden text-sm">
               <button
                 v-for="v in vehicleTypes"
@@ -52,6 +52,21 @@
                   : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'"
               >{{ v.label }}</button>
             </div>
+            <!-- Bridge crossing checkbox -->
+            <label
+              v-if="vehicleTypes.find(v => v.value === vehicleType)?.bridge"
+              class="flex items-center gap-2 cursor-pointer select-none"
+            >
+              <input
+                type="checkbox"
+                v-model="forceBridgeCrossing"
+                class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              <span class="text-xs text-gray-600 dark:text-gray-400">
+                <span class="font-medium">{{ vehicleTypes.find(v => v.value === vehicleType)?.bridge }}</span>
+                Köprüsü'nden geç
+              </span>
+            </label>
           </div>
           <!-- Start address -->
           <div class="flex-1">
@@ -301,12 +316,26 @@
             v-for="stop in optimizationResult.optimizedStops"
             :key="stop.order"
             class="flex items-start gap-4 px-4 py-3"
+            :class="stop.projectCode === '__BRIDGE__' ? 'bg-amber-50 dark:bg-amber-900/10' : ''"
           >
-            <div class="flex-shrink-0 w-7 h-7 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 flex items-center justify-center text-xs font-bold">
+            <!-- Bridge stop: special icon -->
+            <div v-if="stop.projectCode === '__BRIDGE__'" class="flex-shrink-0 w-7 h-7 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 12h18M3 12c0-4.418 4.03-8 9-8s9 3.582 9 8M3 12c0 4.418 4.03 8 9 8s9-3.582 9-8M9 12v4m6-4v4" />
+              </svg>
+            </div>
+            <!-- Normal project stop -->
+            <div v-else class="flex-shrink-0 w-7 h-7 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 flex items-center justify-center text-xs font-bold">
               {{ stop.order }}
             </div>
             <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2 flex-wrap">
+              <!-- Bridge label -->
+              <div v-if="stop.projectCode === '__BRIDGE__'" class="flex items-center gap-2">
+                <span class="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wide">Köprü Geçişi</span>
+                <span class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ stop.projectName }}</span>
+              </div>
+              <!-- Project label -->
+              <div v-else class="flex items-center gap-2 flex-wrap">
                 <span class="text-xs font-mono bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded">{{ stop.projectCode }}</span>
                 <span v-if="stop.projectName !== stop.projectCode" class="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{{ stop.projectName }}</span>
               </div>
@@ -341,7 +370,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import {
   ChevronRightIcon,
   CheckCircleIcon,
@@ -365,11 +394,18 @@ const stepDefs = [
 ];
 
 const vehicleTypes = [
-  { value: 'Kamyon',   label: 'Kamyon' },
-  { value: 'Kamyonet', label: 'Kamyonet' },
-  { value: 'Minibus',  label: 'Minibüs' },
+  { value: 'Kamyon',   label: 'Kamyon',   bridge: 'Yavuz Sultan Selim' },
+  { value: 'Kamyonet', label: 'Kamyonet', bridge: 'Fatih Sultan Mehmet' },
+  { value: 'Minibus',  label: 'Minibüs',  bridge: null },
 ];
 const vehicleType = ref('Kamyon');
+const forceBridgeCrossing = ref(true);
+
+// Auto-toggle bridge checkbox based on vehicle type
+watch(vehicleType, v => {
+  const vt = vehicleTypes.find(x => x.value === v);
+  forceBridgeCrossing.value = vt?.bridge != null;
+});
 const notificationStore = useNotificationStore();
 
 interface ProjectItem {
@@ -510,6 +546,7 @@ async function runOptimization() {
       projectCodes: Array.from(selectedCodes.value),
       startAddress: startAddress.value.trim() || null,
       vehicleType: vehicleType.value,
+      forceBridgeCrossing: forceBridgeCrossing.value,
     });
     step.value = 3;
   } catch (err) {
@@ -526,6 +563,7 @@ function resetWizard() {
   syncApprovals.value = new Map();
   optimizationResult.value = null;
   vehicleType.value = 'Kamyon';
+  forceBridgeCrossing.value = true;
 }
 
 // ── Formatters ────────────────────────────────────────────────────────────────

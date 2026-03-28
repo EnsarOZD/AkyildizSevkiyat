@@ -10,6 +10,7 @@ namespace Akyildiz.Sevkiyat.Application.RouteOptimization.Interfaces
             List<string> projectCodes,
             List<string> projectNames,
             string? vehicleType,
+            bool forceBridgeCrossing,
             CancellationToken cancellationToken = default);
     }
 }

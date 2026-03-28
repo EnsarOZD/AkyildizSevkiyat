@@ -23,7 +23,8 @@ namespace Akyildiz.Sevkiyat.Application.RouteOptimization.Dtos
     public record RouteOptimizationRequestDto(
         List<string> ProjectCodes,
         string? StartAddress,
-        string? VehicleType  // "Kamyon" | "Kamyonet" | "Minibus"
+        string? VehicleType,         // "Kamyon" | "Kamyonet" | "Minibus"
+        bool ForceBridgeCrossing     // inject bridge as mandatory waypoint
     );
 
     public record RouteStopDto(
