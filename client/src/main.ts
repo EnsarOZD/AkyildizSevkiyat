@@ -11,6 +11,8 @@ const pinia = createPinia()
 const app = createApp(App)
 
 app.use(pinia)
+useAuthStore().init()
+useThemeStore().init()
 app.use(router)
 app.directive('role', vRole)
 
@@ -37,8 +39,5 @@ router.onError((error, to) => {
     window.location.assign(to.fullPath)
   }
 })
-
-useAuthStore().init()
-useThemeStore().init()
 
 app.mount('#app')
