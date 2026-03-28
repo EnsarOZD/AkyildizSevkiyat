@@ -1,4 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 using Polly;
 using Polly.Extensions.Http;
 using Akyildiz.Sevkiyat.Application;
@@ -129,6 +131,11 @@ builder.Services.AddOptions<SmtpOptions>()
 
 builder.Services.AddScoped<IEmailService, SmtpEmailService>();
 
+// Route Optimization Services
+builder.Services.AddScoped<Akyildiz.Sevkiyat.Application.RouteOptimization.Interfaces.IIssSyncComparisonService, IssSyncComparisonService>();
+builder.Services.AddScoped<Akyildiz.Sevkiyat.Application.RouteOptimization.Interfaces.IRouteOptimizationService, GoogleMapsRouteOptimizationService>();
+builder.Services.AddHttpClient<GoogleMapsRouteOptimizationService>();
+
 // ISS-IP Import Orchestrator + Background Service
 builder.Services.AddScoped<Akyildiz.Sevkiyat.Application.Common.Interfaces.IIssOrderImportOrchestrator, IssOrderImportOrchestrator>();
 builder.Services.Configure<IssImportOptions>(builder.Configuration.GetSection("IssImport"));
@@ -193,6 +200,33 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+// Rate Limiting — Login endpoint'ini brute-force'a karşı koru
+builder.Services.AddRateLimiter(rateLimiter =>
+{
+    rateLimiter.AddFixedWindowLimiter("login", options =>
+    {
+        options.PermitLimit = 5;
+        options.Window = TimeSpan.FromMinutes(15);
+        options.QueueLimit = 0;
+    });
+    rateLimiter.AddFixedWindowLimiter("optimize", opt =>
+    {
+        opt.PermitLimit = 5;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 0;
+    });
+    rateLimiter.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    rateLimiter.OnRejected = async (context, _) =>
+    {
+        context.HttpContext.Response.ContentType = "application/json";
+        var payload = new { type = "rate_limit_exceeded", message = "Çok fazla giriş denemesi yapıldı. 15 dakika sonra tekrar deneyin." };
+        await context.HttpContext.Response.WriteAsync(
+            System.Text.Json.JsonSerializer.Serialize(payload,
+                new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }));
+    };
+});
+
 // DbContext
 var connectionString = builder.Configuration.GetConnectionString("SevkiyatConnection");
 builder.Services.AddDbContext<SevkiyatDbContext>(options => options.UseSqlServer(connectionString));
@@ -251,6 +285,7 @@ app.UseCors("AllowVueApp");
 // ✅ Exception middleware her ortamda en üstte
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
