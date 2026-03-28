@@ -318,9 +318,10 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
                 : totalDurationS / 60.0;
 
             // ── Time window warnings ──────────────────────────────────────────
+            var effectiveDepartureTime = (request.DepartureTime is { } dt && dt != default)
+                ? dt : new TimeOnly(8, 0);
             var timeWindowWarnings = BuildTimeWindowWarnings(
-                stops, intermediates, legs, optimizedOrder,
-                request.DepartureTime ?? new TimeOnly(8, 0));
+                stops, intermediates, legs, optimizedOrder, effectiveDepartureTime);
 
             return new RouteOptimizationResultDto(
                 stops,
@@ -341,7 +342,11 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
             var warnings = new List<TimeWindowWarningDto>();
             const double dwellMinutes = 15.0;
 
-            double cumulativeMinutes = 0;
+            // Guard: if DepartureTime came as 00:00 (TimeOnly default / deserialization fallback) use 08:00
+            var effectiveDeparture = (departureTime == default) ? new TimeOnly(8, 0) : departureTime;
+
+            // Track absolute minutes-since-midnight so we don't confuse relative and absolute offsets
+            double currentMinutes = effectiveDeparture.Hour * 60.0 + effectiveDeparture.Minute;
             int legIdx = 0;
 
             for (int rank = 0; rank < optimizedOrder.Count; rank++)
@@ -350,16 +355,16 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
                 if (originalIdx >= intermediates.Count) continue;
                 var stop = intermediates[originalIdx];
 
-                if (stop.Code == "__BRIDGE__") continue; // no leg boundary for via waypoints
+                if (stop.Code == "__BRIDGE__") continue; // via waypoint — no leg boundary
 
-                double? legDurS = legIdx < legs.Count ? GetLegDurationSeconds(legs[legIdx]) : null;
+                // Arrival = current position in time + travel leg duration
+                double legDurMin = legIdx < legs.Count ? (GetLegDurationSeconds(legs[legIdx]) ?? 0) / 60.0 : 0;
                 legIdx++;
-                cumulativeMinutes += (legDurS ?? 0) / 60.0 + dwellMinutes;
+                currentMinutes += legDurMin;
 
                 if (stop.DeliveryWindowStart.HasValue && stop.DeliveryWindowEnd.HasValue)
                 {
-                    var arrivalMinutes = departureTime.Hour * 60 + departureTime.Minute + cumulativeMinutes;
-                    var arrivalTime = TimeOnly.FromTimeSpan(TimeSpan.FromMinutes(arrivalMinutes % (24 * 60)));
+                    var arrivalTime = TimeOnly.FromTimeSpan(TimeSpan.FromMinutes(currentMinutes % (24 * 60)));
                     bool isLate = arrivalTime > stop.DeliveryWindowEnd.Value;
 
                     if (isLate)
@@ -373,6 +378,9 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
                             true));
                     }
                 }
+
+                // Dwell at this stop — add AFTER arrival so it feeds into next stop's travel start
+                currentMinutes += dwellMinutes;
             }
 
             return warnings;
