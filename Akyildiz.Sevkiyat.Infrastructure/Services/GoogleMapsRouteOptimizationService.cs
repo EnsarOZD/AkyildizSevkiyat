@@ -25,11 +25,26 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
             _logger = logger;
         }
 
+        // ── Address normalization ─────────────────────────────────────────────
+        private static string NormalizeAddress(string address)
+        {
+            return address
+                .Replace("\\", "/")
+                .Replace("NO:", "No ")
+                .Replace("MAH.", "Mah.")
+                .Replace("CAD.", "Cad.")
+                .Replace("SOK.", "Sok.")
+                .Replace("  ", " ")
+                .Replace("  ", " ")  // second pass for triple spaces
+                .Trim();
+        }
+
         public async Task<RouteOptimizationResultDto> OptimizeRouteAsync(
             List<string> addresses,
             string? startAddress,
             List<string> projectCodes,
             List<string> projectNames,
+            string? vehicleType,
             CancellationToken cancellationToken = default)
         {
             var excludedProjects = new List<string>();
@@ -42,7 +57,7 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
                 if (string.IsNullOrWhiteSpace(addr))
                     excludedProjects.Add(projectCodes[i]);
                 else
-                    validPairs.Add((projectCodes[i], name, addr));
+                    validPairs.Add((projectCodes[i], name, NormalizeAddress(addr)));
             }
 
             if (validPairs.Count == 0)
@@ -57,7 +72,7 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
 
             if (!string.IsNullOrWhiteSpace(startAddress))
             {
-                originAddress = startAddress;
+                originAddress = NormalizeAddress(startAddress);
                 waypointPairs = validPairs;
             }
             else
@@ -84,6 +99,16 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
             destinationAddress = waypointPairs[^1].Address;
             intermediatePairs  = waypointPairs.Take(waypointPairs.Count - 1).ToList();
 
+            // vehicleType → routeModifiers
+            // Kamyon: heavy vehicle profile (avoidFerries added)
+            // Kamyonet / Minibüs: standard car profile
+            bool isKamyon = string.Equals(vehicleType, "Kamyon", StringComparison.OrdinalIgnoreCase)
+                         || string.IsNullOrWhiteSpace(vehicleType); // default
+
+            object routeModifiers = isKamyon
+                ? new { avoidTolls = false, avoidFerries = false }
+                : new { avoidTolls = false };
+
             // Build request body
             var requestBody = new
             {
@@ -96,13 +121,14 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
                 travelMode = "DRIVE",
                 optimizeWaypointOrder = true,
                 computeAlternativeRoutes = false,
-                routeModifiers = new { avoidTolls = false, avoidHighways = false },
+                routeModifiers,
                 languageCode = "tr-TR",
                 units = "METRIC"
             };
 
             var url = $"https://routes.googleapis.com/directions/v2:computeRoutes?key={_apiKey}";
-            _logger.LogInformation("Google Routes API çağrısı: {WaypointCount} durak", intermediatePairs.Count + 2);
+            _logger.LogInformation("Google Routes API çağrısı: {WaypointCount} durak, araç tipi: {VehicleType}",
+                intermediatePairs.Count + 2, vehicleType ?? "Kamyon");
 
             using var httpRequest = new HttpRequestMessage(HttpMethod.Post, url);
             httpRequest.Content = JsonContent.Create(requestBody);

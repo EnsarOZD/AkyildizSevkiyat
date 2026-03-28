@@ -22,7 +22,8 @@ namespace Akyildiz.Sevkiyat.Application.RouteOptimization.Dtos
 
     public record RouteOptimizationRequestDto(
         List<string> ProjectCodes,
-        string? StartAddress
+        string? StartAddress,
+        string? VehicleType  // "Kamyon" | "Kamyonet" | "Minibus"
     );
 
     public record RouteStopDto(

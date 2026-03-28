@@ -9,6 +9,7 @@ namespace Akyildiz.Sevkiyat.Application.RouteOptimization.Interfaces
             string? startAddress,
             List<string> projectCodes,
             List<string> projectNames,
+            string? vehicleType,
             CancellationToken cancellationToken = default);
     }
 }
