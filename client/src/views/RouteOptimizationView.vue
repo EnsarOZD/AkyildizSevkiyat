@@ -497,13 +497,14 @@ function resetWizard() {
 }
 
 // ── Formatters ────────────────────────────────────────────────────────────────
-function formatDistance(meters: number): string {
-  if (meters >= 1000) return `${(meters / 1000).toFixed(1)} km`;
-  return `${Math.round(meters)} m`;
+// Backend sends distance in km, duration in minutes
+function formatDistance(km: number): string {
+  if (km >= 1) return `${km.toFixed(1)} km`;
+  return `${Math.round(km * 1000)} m`;
 }
 
-function formatDuration(seconds: number): string {
-  const m = Math.round(seconds / 60);
+function formatDuration(minutes: number): string {
+  const m = Math.round(minutes);
   if (m < 60) return `${m} dk`;
   const h = Math.floor(m / 60);
   const rem = m % 60;
