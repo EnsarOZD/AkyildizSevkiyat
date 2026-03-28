@@ -21,6 +21,7 @@ export interface SyncApprovalRequestDto {
 export interface RouteOptimizationRequestDto {
   projectCodes: string[];
   startAddress: string | null;
+  vehicleType: string;
 }
 
 export interface RouteStopDto {

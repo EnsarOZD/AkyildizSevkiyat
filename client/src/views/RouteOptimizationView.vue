@@ -36,17 +36,35 @@
     <!-- ────────────────────────────── STEP 1: Project Selection ────────────────────────────── -->
     <div v-if="step === 1" class="space-y-4">
       <div class="bg-white dark:bg-gray-900 rounded-lg shadow p-4 space-y-4">
-        <!-- Start address -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Başlangıç Adresi <span class="text-gray-400 font-normal">(opsiyonel)</span>
-          </label>
-          <input
-            v-model="startAddress"
-            type="text"
-            placeholder="Depo adresi veya başlangıç noktası..."
-            class="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
+        <!-- Vehicle type + start address row -->
+        <div class="flex flex-col sm:flex-row gap-3">
+          <!-- Vehicle type -->
+          <div class="sm:w-48 flex-shrink-0">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Araç Tipi</label>
+            <div class="flex rounded-lg border border-gray-300 dark:border-gray-700 overflow-hidden text-sm">
+              <button
+                v-for="v in vehicleTypes"
+                :key="v.value"
+                @click="vehicleType = v.value"
+                class="flex-1 py-2 text-center transition-colors"
+                :class="vehicleType === v.value
+                  ? 'bg-indigo-600 text-white font-medium'
+                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'"
+              >{{ v.label }}</button>
+            </div>
+          </div>
+          <!-- Start address -->
+          <div class="flex-1">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Başlangıç Adresi <span class="text-gray-400 font-normal">(opsiyonel)</span>
+            </label>
+            <input
+              v-model="startAddress"
+              type="text"
+              placeholder="Depo adresi veya başlangıç noktası..."
+              class="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
         </div>
 
         <!-- Project search + select all -->
@@ -268,7 +286,12 @@
       <!-- Route stops -->
       <div class="bg-white dark:bg-gray-900 rounded-lg shadow overflow-hidden">
         <div class="px-4 py-3 border-b dark:border-gray-700 flex items-center justify-between">
-          <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Optimize Edilmiş Rota</h2>
+          <div class="flex items-center gap-3">
+            <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Optimize Edilmiş Rota</h2>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300">
+              {{ vehicleTypes.find(v => v.value === vehicleType)?.label ?? vehicleType }}
+            </span>
+          </div>
           <button @click="step = 2" class="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
             ← Geri
           </button>
@@ -340,6 +363,13 @@ const stepDefs = [
   { n: 2, label: 'ISS Karşılaştır' },
   { n: 3, label: 'Rota Sonucu' },
 ];
+
+const vehicleTypes = [
+  { value: 'Kamyon',   label: 'Kamyon' },
+  { value: 'Kamyonet', label: 'Kamyonet' },
+  { value: 'Minibus',  label: 'Minibüs' },
+];
+const vehicleType = ref('Kamyon');
 const notificationStore = useNotificationStore();
 
 interface ProjectItem {
@@ -479,6 +509,7 @@ async function runOptimization() {
     optimizationResult.value = await routeOptimizationService.optimize({
       projectCodes: Array.from(selectedCodes.value),
       startAddress: startAddress.value.trim() || null,
+      vehicleType: vehicleType.value,
     });
     step.value = 3;
   } catch (err) {
@@ -494,6 +525,7 @@ function resetWizard() {
   comparisonResults.value = [];
   syncApprovals.value = new Map();
   optimizationResult.value = null;
+  vehicleType.value = 'Kamyon';
 }
 
 // ── Formatters ────────────────────────────────────────────────────────────────
