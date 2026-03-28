@@ -3,6 +3,8 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Akyildiz.Sevkiyat.Application.RouteOptimization.Dtos;
 using Akyildiz.Sevkiyat.Application.RouteOptimization.Interfaces;
+using Akyildiz.Sevkiyat.Application.RouteOptimization.Services;
+using Akyildiz.Sevkiyat.Domain.Enums;
 using Akyildiz.Sevkiyat.Domain.Exceptions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -14,6 +16,13 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
         private readonly HttpClient _httpClient;
         private readonly string _apiKey;
         private readonly ILogger<GoogleMapsRouteOptimizationService> _logger;
+        private readonly RouteOrderingService _ordering = new();
+
+        private const int MaxWaypoints = 25; // origin + non-via intermediates + destination
+
+        // Bridge via-waypoint coordinates (lat/lng pins on the bridge mid-span)
+        private static readonly (double Lat, double Lon) YavuzSultanSelim   = (41.2027, 29.0656);
+        private static readonly (double Lat, double Lon) FatihSultanMehmet  = (41.0882, 29.0594);
 
         public GoogleMapsRouteOptimizationService(
             HttpClient httpClient,
@@ -34,109 +43,174 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
                 .Replace("MAH.", "Mah.")
                 .Replace("CAD.", "Cad.")
                 .Replace("SOK.", "Sok.")
+                .Replace("   ", " ")
                 .Replace("  ", " ")
-                .Replace("  ", " ")  // second pass for triple spaces
                 .Trim();
         }
 
-        // Bridge waypoints per vehicle type (Istanbul Bosphorus crossings)
-        private static readonly Dictionary<string, (string Code, string Name, string Address)> BridgeWaypoints =
-            new(StringComparer.OrdinalIgnoreCase)
+        // ── Waypoint builder — Routes API v2 requires latLng for coordinates ──
+        private static object BuildWaypoint(string? address, double? lat, double? lon)
+        {
+            if (lat.HasValue && lon.HasValue)
+                return new { location = new { latLng = new { latitude = lat.Value, longitude = lon.Value } } };
+            return new { address };
+        }
+
+        private static object BuildWaypointFromStop(RouteOrderingService.StopInfo stop)
+        {
+            if (stop.Code == "__BRIDGE__")
             {
-                ["Kamyon"]   = ("__BRIDGE__", "Yavuz Sultan Selim Köprüsü", "Yavuz Sultan Selim Bridge, Istanbul, Turkey"),
-                ["Kamyonet"] = ("__BRIDGE__", "Fatih Sultan Mehmet Köprüsü", "Fatih Sultan Mehmet Bridge, Istanbul, Turkey"),
-            };
+                // Via waypoint — not a stop, just forces the route through the bridge.
+                // "via: true" means no leg boundary is created for this waypoint.
+                var coords = stop.Name.Contains("Yavuz") ? YavuzSultanSelim : FatihSultanMehmet;
+                return new
+                {
+                    via = true,
+                    location = new { latLng = new { latitude = coords.Lat, longitude = coords.Lon } }
+                };
+            }
+            if (stop.Latitude.HasValue && stop.Longitude.HasValue)
+                return new { location = new { latLng = new { latitude = stop.Latitude.Value, longitude = stop.Longitude.Value } } };
+            return new { address = stop.Address };
+        }
 
         public async Task<RouteOptimizationResultDto> OptimizeRouteAsync(
+            RouteOptimizationRequestDto request,
             List<string> addresses,
-            string? startAddress,
             List<string> projectCodes,
             List<string> projectNames,
-            string? vehicleType,
-            bool forceBridgeCrossing,
+            List<double?> latitudes,
+            List<double?> longitudes,
+            List<TimeOnly?> deliveryWindowStarts,
+            List<TimeOnly?> deliveryWindowEnds,
             CancellationToken cancellationToken = default)
         {
             var excludedProjects = new List<string>();
-            var validPairs = new List<(string Code, string Name, string Address)>();
+            var validStops = new List<RouteOrderingService.StopInfo>();
 
             for (int i = 0; i < projectCodes.Count; i++)
             {
                 var addr = i < addresses.Count ? addresses[i] : null;
                 var name = i < projectNames.Count ? projectNames[i] : projectCodes[i];
                 if (string.IsNullOrWhiteSpace(addr))
+                {
                     excludedProjects.Add(projectCodes[i]);
-                else
-                    validPairs.Add((projectCodes[i], name, NormalizeAddress(addr)));
+                    continue;
+                }
+                validStops.Add(new RouteOrderingService.StopInfo(
+                    projectCodes[i],
+                    name,
+                    NormalizeAddress(addr),
+                    i < latitudes.Count ? latitudes[i] : null,
+                    i < longitudes.Count ? longitudes[i] : null,
+                    i < deliveryWindowStarts.Count ? deliveryWindowStarts[i] : null,
+                    i < deliveryWindowEnds.Count ? deliveryWindowEnds[i] : null
+                ));
             }
 
-            if (validPairs.Count == 0)
-            {
-                return new RouteOptimizationResultDto(
-                    new List<RouteStopDto>(), 0, 0, excludedProjects, null);
-            }
+            if (validStops.Count == 0)
+                return new RouteOptimizationResultDto(new List<RouteStopDto>(), 0, 0, excludedProjects, null);
 
-            // TSP approach: origin = depot (or first project), destination = same as origin.
-            // ALL projects are intermediates so Google optimizes the full order.
-            // The "return to depot" last leg is excluded from output.
-            string originAddress;
-            bool originIsProject; // true when origin = first project (no dedicated depot)
+            // ── Determine start point ─────────────────────────────────────────
+            bool useNewOrdering = request.StartLocationType.HasValue;
+            string? originAddress = null;
+            double? startLat = request.StartLatitude;
+            double? startLon = request.StartLongitude;
 
-            if (!string.IsNullOrWhiteSpace(startAddress))
+            if (useNewOrdering)
             {
-                originAddress = NormalizeAddress(startAddress);
-                originIsProject = false;
+                // StartAddress for ManualAddress case (already geocoded by frontend)
+                if (!string.IsNullOrWhiteSpace(request.StartAddress))
+                    originAddress = NormalizeAddress(request.StartAddress);
+                // For Depot/CurrentLocation: lat/lon will be used directly in waypoint (no address needed)
             }
             else
             {
-                originAddress = validPairs[0].Address;
-                originIsProject = true;
+                // Legacy behaviour
+                if (!string.IsNullOrWhiteSpace(request.StartAddress))
+                    originAddress = NormalizeAddress(request.StartAddress);
             }
 
-            // All valid projects become intermediates (Google optimizes all of them)
-            var intermediatePairs = originIsProject
-                ? validPairs.Skip(1).ToList()
-                : validPairs.ToList();
-
-            // Bridge waypoint injection is intentionally NOT done here.
-            // Google reorders all intermediates freely with optimizeWaypointOrder=true,
-            // causing the bridge to land at the wrong position (e.g., last stop).
-            // Bridge restriction is communicated to the driver via UI notice instead.
-
-            // Destination = same as origin (round trip / TSP; last leg will be dropped)
-            var destinationAddress = originAddress;
-
-            if (intermediatePairs.Count == 0)
+            bool originIsProject = !useNewOrdering && originAddress == null;
+            if (originIsProject)
             {
-                // Single project, nothing to optimize
+                originAddress = validStops[0].Address;
+                startLat = null;
+                startLon = null;
+            }
+            else if (useNewOrdering && originAddress == null && !startLat.HasValue)
+            {
+                // No start defined at all — fall back to first project
+                originIsProject = true;
+                originAddress = validStops[0].Address;
+            }
+
+            // ── New ordering algorithm ────────────────────────────────────────
+            List<RouteOrderingService.StopInfo> orderedStops;
+            string? bridgeNotice = null;
+            bool hasBridge = false;
+
+            if (useNewOrdering)
+            {
+                var ordered = _ordering.OrderStops(
+                    validStops, startLat, startLon,
+                    request.VehicleType, request.ForceBridgeCrossing, request.ReturnToStart);
+
+                orderedStops = ordered.Stops;
+                bridgeNotice = ordered.BridgeNotice;
+                hasBridge = ordered.HasBridgeCrossing;
+
+                // Waypoint limit check — via waypoints (bridge) do NOT count against the limit
+                int totalWps = 1 + orderedStops.Count(s => s.Code != "__BRIDGE__") + 1;
+                if (request.ReturnToStart) totalWps += 1;
+                if (totalWps > MaxWaypoints)
+                    throw new DomainException($"Maksimum {MaxWaypoints} durak desteklenmektedir. Köprü geçişi 1 durak sayılır. Mevcut: {totalWps}");
+            }
+            else
+            {
+                // Legacy: keep original order (Google reorders with optimizeWaypointOrder=true)
+                orderedStops = originIsProject ? validStops.Skip(1).ToList() : validStops.ToList();
+                if (request.ForceBridgeCrossing && !string.IsNullOrWhiteSpace(request.VehicleType))
+                    bridgeNotice = null; // legacy: just show UI notice
+            }
+
+            // ── Build Google Routes API request ───────────────────────────────
+            bool isKamyon = string.Equals(request.VehicleType, "Kamyon", StringComparison.OrdinalIgnoreCase)
+                         || string.IsNullOrWhiteSpace(request.VehicleType);
+
+            // avoidFerries: true — ferries could be alternative Bosphorus crossings (Kabataş-Üsküdar etc.)
+            // avoidTolls: false — bridges are tolled, we still want to use them
+            // avoidHighways: false — highways are needed for truck routes
+            object routeModifiers = new { avoidTolls = false, avoidHighways = false, avoidFerries = true };
+
+            // For new ordering: intermediates = orderedStops in order (no reorder by Google)
+            // For legacy: all valid stops as intermediates (Google reorders)
+            // destination is always same as origin (TSP round-trip approach)
+            List<RouteOrderingService.StopInfo> intermediates = orderedStops;
+
+            bool optimizeWaypointOrder = !useNewOrdering; // false = backend-ordered
+
+            if (intermediates.Count == 0)
+            {
                 return new RouteOptimizationResultDto(
                     new List<RouteStopDto>
                     {
-                        new(1, validPairs[0].Code, validPairs[0].Name, validPairs[0].Address, null, null)
+                        new(1, validStops[0].Code, validStops[0].Name, validStops[0].Address, null, null)
                     },
-                    0, 0, excludedProjects, null);
+                    0, 0, excludedProjects, bridgeNotice);
             }
 
-            // vehicleType → routeModifiers
-            // Kamyon: heavy vehicle profile (avoidFerries added)
-            // Kamyonet / Minibüs: standard car profile
-            bool isKamyon = string.Equals(vehicleType, "Kamyon", StringComparison.OrdinalIgnoreCase)
-                         || string.IsNullOrWhiteSpace(vehicleType); // default
+            // Build origin/destination waypoints — use latLng when coordinates are available
+            // destination is always same as origin (TSP round-trip trick)
+            var originWaypoint = BuildWaypoint(originAddress, startLat, startLon);
 
-            object routeModifiers = isKamyon
-                ? new { avoidTolls = false, avoidFerries = false }
-                : new { avoidTolls = false };
-
-            // Build request body
             var requestBody = new
             {
-                origin = new { address = originAddress },
-                destination = new { address = destinationAddress },
-                intermediates = intermediatePairs.Select(p => new
-                {
-                    address = p.Address
-                }).ToArray(),
+                origin      = originWaypoint,
+                destination = originWaypoint,
+                intermediates = intermediates.Select(p => BuildWaypointFromStop(p)).ToArray(),
                 travelMode = "DRIVE",
-                optimizeWaypointOrder = true,
+                optimizeWaypointOrder,
                 computeAlternativeRoutes = false,
                 routeModifiers,
                 languageCode = "tr-TR",
@@ -144,24 +218,23 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
             };
 
             var url = $"https://routes.googleapis.com/directions/v2:computeRoutes?key={_apiKey}";
-            _logger.LogInformation("Google Routes API çağrısı: {WaypointCount} durak, araç tipi: {VehicleType}",
-                intermediatePairs.Count + 2, vehicleType ?? "Kamyon");
+            _logger.LogInformation("Google Routes API çağrısı: {Count} durak, araç: {Vehicle}, optimize: {Opt}",
+                intermediates.Count + 2, request.VehicleType ?? "Kamyon", optimizeWaypointOrder);
 
             using var httpRequest = new HttpRequestMessage(HttpMethod.Post, url);
             httpRequest.Content = JsonContent.Create(requestBody);
-            // Explicit field mask — routes.legs alone does NOT return sub-fields
             httpRequest.Headers.Add("X-Goog-FieldMask",
                 "routes.distanceMeters,routes.duration,routes.optimizedIntermediateWaypointIndex," +
                 "routes.legs.distanceMeters,routes.legs.duration");
 
             using var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
             var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
-            _logger.LogInformation("Google Routes API yanıtı: {StatusCode}", response.StatusCode);
+            _logger.LogInformation("Google Routes API yanıtı: {Status}", response.StatusCode);
 
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogError("Google Routes API hatası: {StatusCode} {Body}", response.StatusCode, rawJson);
-                throw new DomainException($"Google Routes API hatası: {(int)response.StatusCode} — Rota hesaplanamadı. API anahtarını veya proje adreslerini kontrol edin.");
+                _logger.LogError("Google Routes API hatası: {Status} {Body}", response.StatusCode, rawJson);
+                throw new DomainException($"Google Routes API hatası: {(int)response.StatusCode} — Rota hesaplanamadı.");
             }
 
             using var doc = JsonDocument.Parse(rawJson);
@@ -176,29 +249,22 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
             double totalDurationS = 0;
             if (route.TryGetProperty("duration", out var dur))
             {
-                // duration is returned as "1234s" string
                 var durStr = dur.GetString() ?? "0s";
                 totalDurationS = double.TryParse(durStr.TrimEnd('s'), out var ds) ? ds : 0;
             }
 
-            // Build optimized stop order for intermediates
+            // Optimized order (legacy only; new ordering returns identity)
             var optimizedOrder = new List<int>();
-            if (route.TryGetProperty("optimizedIntermediateWaypointIndex", out var orderArr))
+            if (!useNewOrdering && route.TryGetProperty("optimizedIntermediateWaypointIndex", out var orderArr))
             {
                 foreach (var idx in orderArr.EnumerateArray())
                     optimizedOrder.Add(idx.GetInt32());
             }
             else
             {
-                // No reordering — sequential
-                for (int i = 0; i < intermediatePairs.Count; i++)
-                    optimizedOrder.Add(i);
+                for (int i = 0; i < intermediates.Count; i++) optimizedOrder.Add(i);
             }
 
-            // Legs array: leg[k] is the segment arriving at the (k+1)-th stop in optimized order.
-            // leg[0]: origin → 1st optimized intermediate (or destination if no intermediates)
-            // leg[k]: k-th → (k+1)-th optimized stop
-            // leg[N]: last intermediate → destination
             var legs = route.TryGetProperty("legs", out var legsEl)
                 ? legsEl.EnumerateArray().ToList()
                 : new List<JsonElement>();
@@ -206,30 +272,35 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
             var stops = new List<RouteStopDto>();
             int stopOrder = 1;
 
-            // Stop 1: origin project (no incoming leg, so null distance)
-            if (originIsProject)
-            {
-                stops.Add(new RouteStopDto(stopOrder++, validPairs[0].Code, validPairs[0].Name, validPairs[0].Address, null, null));
-            }
+            // Stop 1: origin project (legacy, no incoming leg)
+            if (!useNewOrdering && originIsProject)
+                stops.Add(new RouteStopDto(stopOrder++, validStops[0].Code, validStops[0].Name, validStops[0].Address, null, null));
 
-            // Intermediates in optimized order.
-            // leg[rank] arrives at the (rank)-th optimized intermediate.
-            // The LAST leg (legs[N]) is origin→return, which we discard.
+            // Via waypoints (bridges) don't create leg boundaries — track leg index separately.
+            // legs.Count = non-via intermediates + 1 (return leg)
+            int legIndex = 0;
             for (int rank = 0; rank < optimizedOrder.Count; rank++)
             {
                 var originalIdx = optimizedOrder[rank];
-                var pair = intermediatePairs[originalIdx];
-                var legIdx = rank; // leg[rank] delivers us to this stop
-                double? legDist = legIdx < legs.Count && legs[legIdx].TryGetProperty("distanceMeters", out var legDistEl)
-                    ? legDistEl.GetDouble() : null;
-                double? legDur = legIdx < legs.Count ? GetLegDurationSeconds(legs[legIdx]) : null;
+                var pair = intermediates[originalIdx];
+
+                if (pair.Code == "__BRIDGE__")
+                {
+                    // Via waypoint — no leg boundary, don't advance legIndex
+                    continue;
+                }
+
+                double? legDist = legIndex < legs.Count && legs[legIndex].TryGetProperty("distanceMeters", out var ldEl)
+                    ? ldEl.GetDouble() : null;
+                double? legDur = legIndex < legs.Count ? GetLegDurationSeconds(legs[legIndex]) : null;
+
                 stops.Add(new RouteStopDto(stopOrder++, pair.Code, pair.Name, pair.Address,
                     legDist.HasValue ? legDist / 1000.0 : null,
                     legDur.HasValue ? legDur / 60.0 : null));
+                legIndex++;
             }
 
-            // Total distance/duration: subtract the last (return-to-depot) leg
-            // so the displayed totals reflect only the delivery route.
+            // Subtract return-to-depot leg from totals
             double returnLegDistM = 0, returnLegDurS = 0;
             if (legs.Count > 0)
             {
@@ -238,15 +309,73 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
                 returnLegDurS = GetLegDurationSeconds(returnLeg) ?? 0;
             }
 
-            string? bridgeNotice = forceBridgeCrossing && !string.IsNullOrWhiteSpace(vehicleType)
-                && BridgeWaypoints.TryGetValue(vehicleType, out var bw) ? bw.Name : null;
+            // Only subtract return leg if NOT ReturnToStart (TSP round-trip subtraction)
+            double finalDistKm = !request.ReturnToStart
+                ? (totalDistanceM - returnLegDistM) / 1000.0
+                : totalDistanceM / 1000.0;
+            double finalDurMin = !request.ReturnToStart
+                ? (totalDurationS - returnLegDurS) / 60.0
+                : totalDurationS / 60.0;
+
+            // ── Time window warnings ──────────────────────────────────────────
+            var timeWindowWarnings = BuildTimeWindowWarnings(
+                stops, intermediates, legs, optimizedOrder,
+                request.DepartureTime ?? new TimeOnly(8, 0));
 
             return new RouteOptimizationResultDto(
                 stops,
-                (totalDistanceM - returnLegDistM) / 1000.0,
-                (totalDurationS - returnLegDurS) / 60.0,
+                finalDistKm,
+                finalDurMin,
                 excludedProjects,
-                bridgeNotice);
+                bridgeNotice,
+                timeWindowWarnings.Count > 0 ? timeWindowWarnings : null);
+        }
+
+        private List<TimeWindowWarningDto> BuildTimeWindowWarnings(
+            List<RouteStopDto> stops,
+            List<RouteOrderingService.StopInfo> intermediates,
+            List<JsonElement> legs,
+            List<int> optimizedOrder,
+            TimeOnly departureTime)
+        {
+            var warnings = new List<TimeWindowWarningDto>();
+            const double dwellMinutes = 15.0;
+
+            double cumulativeMinutes = 0;
+            int legIdx = 0;
+
+            for (int rank = 0; rank < optimizedOrder.Count; rank++)
+            {
+                var originalIdx = optimizedOrder[rank];
+                if (originalIdx >= intermediates.Count) continue;
+                var stop = intermediates[originalIdx];
+
+                if (stop.Code == "__BRIDGE__") continue; // no leg boundary for via waypoints
+
+                double? legDurS = legIdx < legs.Count ? GetLegDurationSeconds(legs[legIdx]) : null;
+                legIdx++;
+                cumulativeMinutes += (legDurS ?? 0) / 60.0 + dwellMinutes;
+
+                if (stop.DeliveryWindowStart.HasValue && stop.DeliveryWindowEnd.HasValue)
+                {
+                    var arrivalMinutes = departureTime.Hour * 60 + departureTime.Minute + cumulativeMinutes;
+                    var arrivalTime = TimeOnly.FromTimeSpan(TimeSpan.FromMinutes(arrivalMinutes % (24 * 60)));
+                    bool isLate = arrivalTime > stop.DeliveryWindowEnd.Value;
+
+                    if (isLate)
+                    {
+                        warnings.Add(new TimeWindowWarningDto(
+                            stop.Code,
+                            stop.Name,
+                            stop.DeliveryWindowStart.Value,
+                            stop.DeliveryWindowEnd.Value,
+                            arrivalTime,
+                            true));
+                    }
+                }
+            }
+
+            return warnings;
         }
 
         private static double? GetLegDurationSeconds(JsonElement leg)
