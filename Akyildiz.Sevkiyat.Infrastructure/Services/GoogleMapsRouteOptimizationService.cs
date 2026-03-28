@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Akyildiz.Sevkiyat.Application.RouteOptimization.Dtos;
 using Akyildiz.Sevkiyat.Application.RouteOptimization.Interfaces;
+using Akyildiz.Sevkiyat.Domain.Exceptions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -20,7 +21,7 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
             ILogger<GoogleMapsRouteOptimizationService> logger)
         {
             _httpClient = httpClient;
-            _apiKey = configuration["GoogleMaps:ApiKey"] ?? throw new InvalidOperationException("GoogleMaps:ApiKey yapılandırması eksik.");
+            _apiKey = configuration["GoogleMaps:ApiKey"] ?? throw new DomainException("GoogleMaps:ApiKey yapılandırması eksik.");
             _logger = logger;
         }
 
@@ -113,14 +114,14 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
             if (!response.IsSuccessStatusCode)
             {
                 _logger.LogError("Google Routes API hatası: {StatusCode} {Body}", response.StatusCode, rawJson);
-                throw new InvalidOperationException($"Google Routes API hatası: {response.StatusCode}");
+                throw new DomainException($"Google Routes API hatası: {(int)response.StatusCode} — Rota hesaplanamadı. API anahtarını veya proje adreslerini kontrol edin.");
             }
 
             using var doc = JsonDocument.Parse(rawJson);
             var root = doc.RootElement;
 
             if (!root.TryGetProperty("routes", out var routes) || routes.GetArrayLength() == 0)
-                throw new InvalidOperationException("Google Routes API geçerli rota döndürmedi.");
+                throw new DomainException("Google Routes API geçerli rota döndürmedi. Adreslerin doğruluğunu kontrol edin.");
 
             var route = routes[0];
 
