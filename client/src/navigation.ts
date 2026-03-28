@@ -41,8 +41,14 @@ export interface NavGroup {
 export const NAV_ITEMS: NavGroup[] = [
     {
         items: [
-            { label: 'Dashboard',   to: '/',         icon: HomeIcon },
-            { label: 'Sevkiyatlar', to: '/shipments', icon: ClipboardDocumentListIcon },
+            { label: 'Dashboard', to: '/', icon: HomeIcon },
+        ],
+    },
+    {
+        title: 'Sipariş & Sevkiyat',
+        items: [
+            { label: 'ISS Entegrasyon', to: '/orders/import', icon: SignalIcon,                 roles: ['Admin', 'Accounting', 'Manager'], badge: 'Beta' },
+            { label: 'Sevkiyatlar',     to: '/shipments',      icon: ClipboardDocumentListIcon },
         ],
     },
     {
@@ -55,38 +61,42 @@ export const NAV_ITEMS: NavGroup[] = [
         ],
     },
     {
-        title: 'Stok & Depo',
+        title: 'Stok',
         items: [
-            { label: 'Stok Yönetimi',    to: '/stocks',                 icon: ArchiveBoxIcon,   roles: ['Admin', 'Accounting', 'Manager'] },
-            { label: 'Stok Sayımı',     to: '/stock-counts',           icon: CalculatorIcon,   roles: ['Admin', 'Manager', 'Warehouse'] },
-            { label: 'Depo Adresleri',  to: '/warehouse/locations',       icon: MapPinIcon,           roles: ['Admin', 'Manager', 'Warehouse', 'Accounting'], badge: 'Yeni' },
-            { label: 'Stok Haritası',   to: '/warehouse/stock-locations', icon: ArrowsRightLeftIcon,  roles: ['Admin', 'Manager', 'Warehouse', 'Accounting'], badge: 'Yeni' },
-            { label: 'Bölge Yönetimi',  to: '/zones',                  icon: MapIcon,          roles: ['Admin', 'Manager'] },
-            { label: 'Proje - Bölge',   to: '/projects/zone-mapping',  icon: PuzzlePieceIcon,  roles: ['Admin', 'Manager'] },
-            { label: 'Teslimat Sırası', to: '/zones/project-order',    icon: ListBulletIcon,   roles: ['Admin', 'Manager'] },
+            { label: 'Stok Yönetimi', to: '/stocks',       icon: ArchiveBoxIcon, roles: ['Admin', 'Accounting', 'Manager'] },
+            { label: 'Stok Sayımı',   to: '/stock-counts', icon: CalculatorIcon, roles: ['Admin', 'Manager', 'Warehouse'] },
+        ],
+    },
+    {
+        title: 'Depo & Yerleşim',
+        items: [
+            { label: 'Depo Adresleri',  to: '/warehouse/locations',       icon: MapPinIcon,          roles: ['Admin', 'Manager', 'Warehouse', 'Accounting'], badge: 'Yeni' },
+            { label: 'Stok Haritası',   to: '/warehouse/stock-locations', icon: ArrowsRightLeftIcon, roles: ['Admin', 'Manager', 'Warehouse', 'Accounting'], badge: 'Yeni' },
+            { label: 'Bölge Yönetimi', to: '/zones',                  icon: MapIcon,         roles: ['Admin', 'Manager'] },
+            { label: 'Proje - Bölge',  to: '/projects/zone-mapping',  icon: PuzzlePieceIcon, roles: ['Admin', 'Manager'] },
+            { label: 'Teslimat Sırası', to: '/zones/project-order',    icon: ListBulletIcon,  roles: ['Admin', 'Manager'] },
         ],
     },
     {
         title: 'Satınalma',
         items: [
-            { label: 'Satınalma Siparişleri',  to: '/purchase-orders', icon: ShoppingCartIcon,    roles: ['Admin', 'Accounting', 'Manager'] },
-            { label: 'Mal Kabul İrsaliyeleri', to: '/goods-receipts',  icon: InboxArrowDownIcon,  roles: ['Admin', 'Warehouse', 'Manager'] },
-            { label: 'Tedarikçiler',           to: '/suppliers',        icon: BuildingOfficeIcon,  roles: ['Admin', 'Accounting', 'Manager'] },
+            { label: 'Satınalma Siparişleri',  to: '/purchase-orders', icon: ShoppingCartIcon,   roles: ['Admin', 'Accounting', 'Manager'] },
+            { label: 'Mal Kabul İrsaliyeleri', to: '/goods-receipts',  icon: InboxArrowDownIcon, roles: ['Admin', 'Warehouse', 'Manager'] },
+            { label: 'Tedarikçiler',           to: '/suppliers',        icon: BuildingOfficeIcon, roles: ['Admin', 'Accounting', 'Manager'] },
         ],
     },
     {
         title: 'Raporlar',
         items: [
             { label: 'Raporlar',             to: '/reports',               icon: ChartBarIcon,  roles: ['Admin', 'Accounting', 'Warehouse', 'Manager'] },
-            { label: 'Bölge Malzeme Raporu', to: '/reports/zone-material', icon: TableCellsIcon },
+            { label: 'Bölge Malzeme Raporu', to: '/reports/zone-material', icon: TableCellsIcon, roles: ['Admin', 'Warehouse', 'Dispatcher', 'Manager', 'Accounting'] },
         ],
     },
     {
         title: 'Sistem',
         items: [
-            { label: 'Kullanıcı Yönetimi',    to: '/users',            icon: UsersIcon,              roles: ['Admin'] },
-            { label: 'ISS Entegrasyon',        to: '/orders/import',    icon: SignalIcon,              roles: ['Admin', 'Accounting', 'Manager'], badge: 'Beta' },
-            { label: 'Mutabakat Kontrolleri',  to: '/reconciliation',   icon: ShieldExclamationIcon,  roles: ['Admin', 'Manager'] },
+            { label: 'Kullanıcı Yönetimi',   to: '/users',          icon: UsersIcon,             roles: ['Admin'] },
+            { label: 'Mutabakat Kontrolleri', to: '/reconciliation', icon: ShieldExclamationIcon, roles: ['Admin', 'Manager'] },
         ],
     },
 ];
