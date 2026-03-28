@@ -438,7 +438,7 @@ const zones = ref<ZoneItem[]>([]);
 
 const filters = ref({
   date: typeof q.date === 'string' ? q.date : '',
-  status: typeof q.status === 'string' ? q.status : '0',
+  status: typeof q.status === 'string' ? q.status : '',
   zoneId: typeof q.zone === 'string' ? q.zone : '',
 });
 
