@@ -175,13 +175,12 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
             }
 
             // ── Build Google Routes API request ───────────────────────────────
-            bool isKamyon = string.Equals(request.VehicleType, "Kamyon", StringComparison.OrdinalIgnoreCase)
-                         || string.IsNullOrWhiteSpace(request.VehicleType);
-
-            // avoidFerries: true — ferries could be alternative Bosphorus crossings (Kabataş-Üsküdar etc.)
-            // avoidTolls: false — bridges are tolled, we still want to use them
-            // avoidHighways: false — highways are needed for truck routes
-            object routeModifiers = new { avoidTolls = false, avoidHighways = false, avoidFerries = true };
+            // avoidFerries: only within Istanbul metro area (lon < 29.3).
+            // For Kocaeli/Gebze depots (lon ≥ 29.3) avoidFerries can block the return leg
+            // (Google may want to route via Gulf-of-Izmit ferry shortcuts) and return {}.
+            // When bridge via-waypoints are used, ferry avoidance is redundant anyway.
+            bool avoidFerries = !startLon.HasValue || startLon.Value < 29.3;
+            object routeModifiers = new { avoidTolls = false, avoidHighways = false, avoidFerries };
 
             // For new ordering: intermediates = orderedStops in order (no reorder by Google)
             // For legacy: all valid stops as intermediates (Google reorders)
@@ -218,6 +217,8 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
             };
 
             var url = $"https://routes.googleapis.com/directions/v2:computeRoutes?key={_apiKey}";
+            var requestBodyJson = System.Text.Json.JsonSerializer.Serialize(requestBody,
+                new System.Text.Json.JsonSerializerOptions { WriteIndented = false });
             _logger.LogInformation("Google Routes API çağrısı: {Count} durak, araç: {Vehicle}, optimize: {Opt}",
                 intermediates.Count + 2, request.VehicleType ?? "Kamyon", optimizeWaypointOrder);
 
@@ -266,7 +267,10 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
             var root = doc.RootElement;
 
             if (!root.TryGetProperty("routes", out var routes) || routes.GetArrayLength() == 0)
-                throw new DomainException("Google Routes API geçerli rota döndürmedi. Adreslerin doğruluğunu kontrol edin.");
+            {
+                _logger.LogWarning("Google Routes API boş rota döndürdü. İstek: {Req} | Yanıt: {Body}", requestBodyJson, rawJson);
+                throw new DomainException($"Google Routes API geçerli rota döndürmedi. İstek: {requestBodyJson}");
+            }
 
             var route = routes[0];
 
