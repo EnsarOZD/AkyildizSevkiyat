@@ -113,7 +113,7 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
 
             using var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
             var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
-            _logger.LogInformation("Google Routes API yanıtı: {StatusCode} Body: {Body}", response.StatusCode, rawJson);
+            _logger.LogInformation("Google Routes API yanıtı: {StatusCode}", response.StatusCode);
 
             if (!response.IsSuccessStatusCode)
             {
