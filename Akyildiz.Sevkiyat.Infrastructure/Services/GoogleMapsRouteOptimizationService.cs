@@ -227,17 +227,42 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
                 "routes.distanceMeters,routes.duration,routes.optimizedIntermediateWaypointIndex," +
                 "routes.legs.distanceMeters,routes.legs.duration");
 
-            using var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
-            var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
-            _logger.LogInformation("Google Routes API yanıtı: {Status}", response.StatusCode);
-
-            if (!response.IsSuccessStatusCode)
+            string rawJson = string.Empty;
+            JsonDocument doc;
+            try
             {
-                _logger.LogError("Google Routes API hatası: {Status} {Body}", response.StatusCode, rawJson);
-                throw new DomainException($"Google Routes API hatası: {(int)response.StatusCode} — Rota hesaplanamadı.");
+                using var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+                rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                _logger.LogInformation("Google Routes API yanıtı: {Status}", response.StatusCode);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogError("Google Routes API hatası: {Status} {Body}", response.StatusCode, rawJson);
+                    var snippet = rawJson.Length > 400 ? rawJson[..400] : rawJson;
+                    throw new DomainException($"Google Routes API hatası: {(int)response.StatusCode} — {snippet}");
+                }
+
+                doc = JsonDocument.Parse(rawJson);
+            }
+            catch (DomainException) { throw; }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "Google Routes API bağlantı hatası");
+                throw new DomainException("Google Routes API'ye bağlanılamadı. İnternet bağlantısını kontrol edin.");
+            }
+            catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogError(ex, "Google Routes API zaman aşımı");
+                throw new DomainException("Google Routes API zaman aşımına uğradı. Lütfen tekrar deneyin.");
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogError(ex, "Google Routes API JSON parse hatası. Yanıt: {Raw}", rawJson);
+                throw new DomainException("Google Routes API geçersiz yanıt döndürdü.");
             }
 
-            using var doc = JsonDocument.Parse(rawJson);
+            using (doc)
+            {
             var root = doc.RootElement;
 
             if (!root.TryGetProperty("routes", out var routes) || routes.GetArrayLength() == 0)
@@ -330,6 +355,7 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
                 excludedProjects,
                 bridgeNotice,
                 timeWindowWarnings.Count > 0 ? timeWindowWarnings : null);
+            } // end using (doc)
         }
 
         private List<TimeWindowWarningDto> BuildTimeWindowWarnings(
