@@ -7,8 +7,8 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.AssignVehicle
         public AssignVehicleCommandValidator()
         {
             RuleFor(x => x.ShipmentId).GreaterThan(0);
-            RuleFor(x => x.DriverName).NotEmpty().WithMessage("Sürücü ismi gereklidir.");
-            RuleFor(x => x.PlateNumber).NotEmpty().WithMessage("Plaka gereklidir.");
+            RuleFor(x => x.DriverId).GreaterThan(0).WithMessage("Şoför seçimi zorunludur.");
+            RuleFor(x => x.VehicleId).GreaterThan(0).WithMessage("Araç seçimi zorunludur.");
         }
     }
 }

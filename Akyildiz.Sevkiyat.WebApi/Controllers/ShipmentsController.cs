@@ -171,7 +171,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         [Authorize(Roles = "Admin,Dispatcher,Manager")]
         public async Task<IActionResult> AssignVehicle(int id, [FromBody] AssignVehicleRequest request)
         {
-            var result = await _mediator.Send(new AssignVehicleCommand(id, request.DriverName, request.PlateNumber));
+            var result = await _mediator.Send(new AssignVehicleCommand(id, request.DriverId, request.VehicleId));
             return Ok(result);
         }
 
@@ -195,7 +195,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         [Authorize(Roles = "Admin,Dispatcher,Manager")]
         public async Task<IActionResult> BulkAssignVehicle([FromBody] BulkAssignVehicleRequest request)
         {
-            var result = await _mediator.Send(new BulkAssignVehicleCommand(request.ShipmentIds, request.DriverName, request.PlateNumber));
+            var result = await _mediator.Send(new BulkAssignVehicleCommand(request.ShipmentIds, request.DriverId, request.VehicleId));
             return Ok(result);
         }
 

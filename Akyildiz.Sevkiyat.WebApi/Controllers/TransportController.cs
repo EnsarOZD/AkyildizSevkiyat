@@ -32,6 +32,13 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             return await _mediator.Send(new GetDriversQuery());
         }
 
+        [HttpGet("drivers/active")]
+        public async Task<ActionResult<List<DriverDto>>> GetActiveDrivers()
+        {
+            var all = await _mediator.Send(new GetDriversQuery());
+            return all.Where(d => d.IsActive).ToList();
+        }
+
         [HttpPost("drivers")]
         public async Task<ActionResult<int>> CreateDriver([FromBody] CreateDriverCommand command)
         {
@@ -56,6 +63,13 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         public async Task<ActionResult<List<VehicleDto>>> GetVehicles()
         {
             return await _mediator.Send(new GetVehiclesQuery());
+        }
+
+        [HttpGet("vehicles/active")]
+        public async Task<ActionResult<List<VehicleDto>>> GetActiveVehicles()
+        {
+            var all = await _mediator.Send(new GetVehiclesQuery());
+            return all.Where(v => v.IsActive).ToList();
         }
 
         [HttpPost("vehicles")]
