@@ -151,7 +151,7 @@
                     <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Lütfen doğru depo toplama tipini seçiniz.</p>
                   </div>
 
-                  <div class="grid grid-cols-3 gap-2">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                       <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Birim</label>
                         <select v-model.number="form.unit" class="w-full border p-2 rounded dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100">
@@ -185,7 +185,7 @@
                   <!-- Brand, MinStockQty, WarehouseLocation -->
                   <div class="border-t dark:border-gray-700 pt-4 mt-2">
                     <p class="text-xs text-gray-400 dark:text-gray-600 uppercase font-semibold mb-3">Ek Bilgiler</p>
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Marka</label>
                         <input v-model="form.brand" type="text" placeholder="Ör: Ariel" class="w-full border p-2 rounded dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100" />

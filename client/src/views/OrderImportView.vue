@@ -320,7 +320,7 @@
                 <button @click="selectedOrder = null" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 font-bold text-xl">&times;</button>
             </div>
             <div class="p-6 space-y-4">
-                 <div class="grid grid-cols-2 gap-4 text-sm">
+                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                      <div>
                          <span class="block text-gray-500 dark:text-gray-400 text-xs">Talep No</span>
                          <span class="font-medium dark:text-gray-100">{{ selectedOrder.talepNo || '-' }}</span>

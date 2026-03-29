@@ -190,7 +190,7 @@
           <span class="ml-2 text-blue-600 dark:text-blue-400 font-medium">({{ bulkPreviewCount }} adres)</span>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Koridor</label>
             <select v-model.number="bulk.koridorNo"
@@ -265,7 +265,7 @@
         </h2>
 
         <template v-if="!editTarget">
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Koridor</label>
               <select v-model.number="form.koridorNo"

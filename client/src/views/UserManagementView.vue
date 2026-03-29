@@ -66,7 +66,7 @@
       <div class="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full">
         <h3 class="text-lg font-medium mb-4 dark:text-gray-100">{{ editingUser ? 'Kullanıcı Düzenle' : 'Yeni Kullanıcı Ekle' }}</h3>
         <div class="space-y-4">
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Ad</label>
               <input v-model="form.firstName" type="text" class="mt-1 block w-full border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border p-2 dark:bg-gray-800 dark:text-gray-100" />
