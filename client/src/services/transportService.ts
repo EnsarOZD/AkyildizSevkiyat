@@ -10,7 +10,10 @@ export interface Driver {
 export interface Vehicle {
   id: number;
   plateNumber: string;
-  capacity: string;
+  capacity: string | null;
+  vehicleType: number;
+  vehicleTypeName: string;
+  description: string | null;
   isActive: boolean;
 }
 
@@ -38,7 +41,7 @@ const transportService = {
     return response.data || [];
   },
 
-  async createVehicle(data: { plateNumber: string; capacity: string }): Promise<Vehicle> {
+  async createVehicle(data: { plateNumber: string; capacity: string | null; vehicleType: number; description: string | null }): Promise<Vehicle> {
     const response = await apiClient.post('/transport/vehicles', data);
     return response.data;
   },

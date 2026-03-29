@@ -15,16 +15,23 @@
         </p>
       </div>
       <div class="flex items-center gap-2">
-        <!-- Show completed toggle -->
-        <button
-          @click="showCompleted = !showCompleted"
-          class="text-xs px-3 py-1.5 rounded-lg border transition-colors"
-          :class="showCompleted
-            ? 'bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900 border-gray-800 dark:border-gray-200'
-            : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'"
-        >
-          {{ showCompleted ? 'Tümü Gösteriliyor' : 'Aktifler' }}
-        </button>
+        <!-- 3-sekme filtre -->
+        <div class="flex rounded-lg border border-gray-300 dark:border-gray-700 overflow-hidden text-xs">
+          <button
+            v-for="tab in tabOptions" :key="tab.key"
+            @click="activeTab = tab.key"
+            class="relative px-3 py-1.5 transition-colors"
+            :class="activeTab === tab.key
+              ? 'bg-blue-600 text-white'
+              : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'"
+          >
+            {{ tab.label }}
+            <span
+              v-if="tab.key === 'irsaliye' && irsaliyePendingCount > 0"
+              class="ml-1 bg-red-500 text-white rounded-full px-1.5 py-0.5 text-[10px] font-bold"
+            >{{ irsaliyePendingCount }}</span>
+          </button>
+        </div>
         <!-- Refresh -->
         <button
           @click="fetchAll"
@@ -310,7 +317,13 @@ const error = ref('');
 const isStarting = ref(false);
 const fetchingIrsaliyeId = ref<number | null>(null);
 const confirmingLoadingId = ref<number | null>(null);
-const showCompleted = ref(false);
+type TabKey = 'active' | 'irsaliye' | 'all';
+const activeTab = ref<TabKey>('active');
+const tabOptions: { key: TabKey; label: string }[] = [
+  { key: 'active',    label: 'Aktifler' },
+  { key: 'irsaliye',  label: 'İrsaliye Bekleyenler' },
+  { key: 'all',       label: 'Tümü' },
+];
 const expandedIds = ref<Set<number>>(new Set());
 
 interface ZonePrepWithDate extends DashboardZoneDto {
@@ -393,10 +406,16 @@ const fetchAll = async () => {
 };
 
 // ── Filtered / grouped data ──
-const visibleZones = computed(() =>
-  showCompleted.value
-    ? allZones.value
-    : allZones.value.filter(z => z.statusId < 6)  // Show up to ReadyForTransfer(5), hide Dispatched(6)
+const visibleZones = computed(() => {
+  if (activeTab.value === 'irsaliye')
+    return allZones.value.filter(z => z.statusId === 4 && !z.irsaliyeFetched);
+  if (activeTab.value === 'active')
+    return allZones.value.filter(z => z.statusId < 5);
+  return allZones.value; // 'all'
+});
+
+const irsaliyePendingCount = computed(
+  () => allZones.value.filter(z => z.statusId === 4 && !z.irsaliyeFetched).length
 );
 
 const activeCount = computed(() => allZones.value.filter(z => z.statusId < 6).length);

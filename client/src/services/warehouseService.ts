@@ -145,8 +145,15 @@ export interface MarkProjectMicroReadyResult {
 
 export interface SetZoneDriverInfoRequest {
   ZonePreparationId: number;
-  DriverId: number;
+  DriverIds: number[];
   VehicleId: number;
+  DepartureTime?: string | null;
+}
+
+export interface SetZoneDriverInfoResult {
+  success: boolean;
+  optimizationApplied: boolean;
+  optimizationWarning: string | null;
 }
 
 const warehouseService = {
@@ -200,8 +207,9 @@ const warehouseService = {
     return response.data;
   },
 
-  async setDriverInfo(data: SetZoneDriverInfoRequest): Promise<void> {
-    await apiClient.post('/warehouse/set-driver-info', data);
+  async setDriverInfo(data: SetZoneDriverInfoRequest): Promise<SetZoneDriverInfoResult> {
+    const response = await apiClient.post('/warehouse/set-driver-info', data);
+    return response.data;
   },
 
   async fetchIrsaliye(zonePreparationId: number): Promise<{ exported: number; skipped: number; errors: string[] }> {

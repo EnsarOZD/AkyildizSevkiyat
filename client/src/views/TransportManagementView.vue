@@ -87,7 +87,8 @@
                 <thead class="bg-gray-50 dark:bg-gray-800">
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Plaka</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Kapasite / Tip</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Araç Tipi</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Kapasite / Notlar</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Durum</th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">İşlemler</th>
                     </tr>
@@ -95,7 +96,15 @@
                 <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                     <tr v-for="vehicle in vehicles" :key="vehicle.id">
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{{ vehicle.plateNumber }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ vehicle.capacity }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <span class="px-2 py-0.5 text-xs rounded-full font-medium"
+                            :class="{
+                              'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300': vehicle.vehicleType === 0,
+                              'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300': vehicle.vehicleType === 1,
+                              'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300': vehicle.vehicleType === 2,
+                            }">{{ vehicle.vehicleTypeName || ['Kamyon','Kamyonet','Minibüs'][vehicle.vehicleType] ?? 'Kamyon' }}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ vehicle.description || vehicle.capacity || '—' }}</td>
                          <td class="px-6 py-4 whitespace-nowrap">
                             <span v-if="vehicle.isActive" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Aktif</span>
                             <span v-else class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Pasif</span>
@@ -141,9 +150,21 @@
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Plaka</label>
                     <input v-model="vehicleForm.plateNumber" type="text" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border p-2 uppercase dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100">
                 </div>
-                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Kapasite / Tip</label>
-                    <input v-model="vehicleForm.capacity" type="text" placeholder="Örn: Tır, Kamyonet" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border p-2 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Araç Tipi</label>
+                    <select v-model="vehicleForm.vehicleType" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border p-2 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100">
+                      <option :value="0">Kamyon</option>
+                      <option :value="1">Kamyonet</option>
+                      <option :value="2">Minibüs</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Kapasite / Notlar <span class="text-gray-400 font-normal">(opsiyonel)</span></label>
+                    <input v-model="vehicleForm.capacity" type="text" placeholder="Örn: 5 ton" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border p-2 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Açıklama <span class="text-gray-400 font-normal">(opsiyonel)</span></label>
+                    <input v-model="vehicleForm.description" type="text" placeholder="Araç hakkında ek bilgi" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border p-2 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100">
                 </div>
             </div>
             <div class="mt-5 flex justify-end gap-2">
@@ -177,7 +198,7 @@ const driverForm = ref({ fullName: '', phone: '' });
 // Vehicle State
 const showVehicleModal = ref(false);
 const editingVehicle = ref<any>(null);
-const vehicleForm = ref({ plateNumber: '', capacity: '' });
+const vehicleForm = ref({ plateNumber: '', capacity: '', vehicleType: 0, description: '' });
 
 onMounted(() => {
     fetchDrivers();
@@ -246,9 +267,14 @@ const deleteDriver = async (id: number) => {
 const openVehicleModal = (vehicle: any = null) => {
     editingVehicle.value = vehicle;
     if (vehicle) {
-        vehicleForm.value = { plateNumber: vehicle.plateNumber, capacity: vehicle.capacity };
+        vehicleForm.value = {
+            plateNumber: vehicle.plateNumber,
+            capacity:    vehicle.capacity ?? '',
+            vehicleType: vehicle.vehicleType ?? 0,
+            description: vehicle.description ?? '',
+        };
     } else {
-        vehicleForm.value = { plateNumber: '', capacity: '' };
+        vehicleForm.value = { plateNumber: '', capacity: '', vehicleType: 0, description: '' };
     }
     showVehicleModal.value = true;
 };
