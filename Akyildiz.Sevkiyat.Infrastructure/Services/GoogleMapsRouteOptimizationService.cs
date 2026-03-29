@@ -183,11 +183,8 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
             object routeModifiers = new { avoidTolls = false, avoidHighways = false, avoidFerries };
 
             // For new ordering: intermediates = orderedStops in order (no reorder by Google)
-            // For legacy: all valid stops as intermediates (Google reorders)
-            // destination is always same as origin (TSP round-trip approach)
             List<RouteOrderingService.StopInfo> intermediates = orderedStops;
-
-            bool optimizeWaypointOrder = !useNewOrdering; // false = backend-ordered
+            bool optimizeWaypointOrder = !useNewOrdering;
 
             if (intermediates.Count == 0)
             {
@@ -199,15 +196,48 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
                     0, 0, excludedProjects, bridgeNotice);
             }
 
-            // Build origin/destination waypoints — use latLng when coordinates are available
-            // destination is always same as origin (TSP round-trip trick)
+            // ── DÜZELTME 1&2: Destination = last real stop (ReturnToStart=false)
+            //                              or origin           (ReturnToStart=true) ──────
+            RouteOrderingService.StopInfo? destinationStop = null;
+            List<RouteOrderingService.StopInfo> requestIntermediates;
+
+            if (!request.ReturnToStart)
+            {
+                // Find the last non-bridge stop; it becomes destination
+                int lastRealIdx = -1;
+                for (int i = intermediates.Count - 1; i >= 0; i--)
+                {
+                    if (intermediates[i].Code != "__BRIDGE__") { lastRealIdx = i; break; }
+                }
+                if (lastRealIdx >= 0)
+                {
+                    destinationStop = intermediates[lastRealIdx];
+                    requestIntermediates = intermediates.Where((_, i) => i != lastRealIdx).ToList();
+                }
+                else
+                {
+                    requestIntermediates = intermediates;
+                }
+            }
+            else
+            {
+                requestIntermediates = intermediates;
+            }
+
+            // ── DÜZELTME 3: origin == destination (ReturnToStart=true) ile durak yoksa hata ──
+            if (request.ReturnToStart && requestIntermediates.Count(s => s.Code != "__BRIDGE__") == 0)
+                throw new DomainException("Rota hesaplanamadı: Başlangıç ve bitiş noktası aynı, en az 1 durak gereklidir.");
+
             var originWaypoint = BuildWaypoint(originAddress, startLat, startLon);
+            var destinationWaypoint = destinationStop != null
+                ? BuildWaypointFromStop(destinationStop)
+                : originWaypoint;
 
             var requestBody = new
             {
-                origin      = originWaypoint,
-                destination = originWaypoint,
-                intermediates = intermediates.Select(p => BuildWaypointFromStop(p)).ToArray(),
+                origin        = originWaypoint,
+                destination   = destinationWaypoint,
+                intermediates = requestIntermediates.Select(p => BuildWaypointFromStop(p)).ToArray(),
                 travelMode = "DRIVE",
                 optimizeWaypointOrder,
                 computeAlternativeRoutes = false,
@@ -220,7 +250,7 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
             var requestBodyJson = System.Text.Json.JsonSerializer.Serialize(requestBody,
                 new System.Text.Json.JsonSerializerOptions { WriteIndented = false });
             _logger.LogInformation("Google Routes API çağrısı: {Count} durak, araç: {Vehicle}, optimize: {Opt}",
-                intermediates.Count + 2, request.VehicleType ?? "Kamyon", optimizeWaypointOrder);
+                requestIntermediates.Count + 2, request.VehicleType ?? "Kamyon", optimizeWaypointOrder);
 
             using var httpRequest = new HttpRequestMessage(HttpMethod.Post, url);
             httpRequest.Content = JsonContent.Create(requestBody);
@@ -282,7 +312,7 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
                 totalDurationS = double.TryParse(durStr.TrimEnd('s'), out var ds) ? ds : 0;
             }
 
-            // Optimized order (legacy only; new ordering returns identity)
+            // Optimized order — indices into requestIntermediates
             var optimizedOrder = new List<int>();
             if (!useNewOrdering && route.TryGetProperty("optimizedIntermediateWaypointIndex", out var orderArr))
             {
@@ -291,7 +321,7 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
             }
             else
             {
-                for (int i = 0; i < intermediates.Count; i++) optimizedOrder.Add(i);
+                for (int i = 0; i < requestIntermediates.Count; i++) optimizedOrder.Add(i);
             }
 
             var legs = route.TryGetProperty("legs", out var legsEl)
@@ -305,19 +335,14 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
             if (!useNewOrdering && originIsProject)
                 stops.Add(new RouteStopDto(stopOrder++, validStops[0].Code, validStops[0].Name, validStops[0].Address, null, null));
 
-            // Via waypoints (bridges) don't create leg boundaries — track leg index separately.
-            // legs.Count = non-via intermediates + 1 (return leg)
+            // Via waypoints don't create leg boundaries — track legIndex separately
             int legIndex = 0;
             for (int rank = 0; rank < optimizedOrder.Count; rank++)
             {
                 var originalIdx = optimizedOrder[rank];
-                var pair = intermediates[originalIdx];
+                var pair = requestIntermediates[originalIdx];
 
-                if (pair.Code == "__BRIDGE__")
-                {
-                    // Via waypoint — no leg boundary, don't advance legIndex
-                    continue;
-                }
+                if (pair.Code == "__BRIDGE__") continue;
 
                 double? legDist = legIndex < legs.Count && legs[legIndex].TryGetProperty("distanceMeters", out var ldEl)
                     ? ldEl.GetDouble() : null;
@@ -329,28 +354,28 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
                 legIndex++;
             }
 
-            // Subtract return-to-depot leg from totals
-            double returnLegDistM = 0, returnLegDurS = 0;
-            if (legs.Count > 0)
+            // For ReturnToStart=false: destinationStop is the last leg's endpoint
+            if (destinationStop != null)
             {
-                var returnLeg = legs[^1];
-                if (returnLeg.TryGetProperty("distanceMeters", out var rld)) returnLegDistM = rld.GetDouble();
-                returnLegDurS = GetLegDurationSeconds(returnLeg) ?? 0;
+                double? legDist = legIndex < legs.Count && legs[legIndex].TryGetProperty("distanceMeters", out var ldEl2)
+                    ? ldEl2.GetDouble() : null;
+                double? legDur = legIndex < legs.Count ? GetLegDurationSeconds(legs[legIndex]) : null;
+                stops.Add(new RouteStopDto(stopOrder++, destinationStop.Code, destinationStop.Name, destinationStop.Address,
+                    legDist.HasValue ? legDist / 1000.0 : null,
+                    legDur.HasValue ? legDur / 60.0 : null));
             }
 
-            // Only subtract return leg if NOT ReturnToStart (TSP round-trip subtraction)
-            double finalDistKm = !request.ReturnToStart
-                ? (totalDistanceM - returnLegDistM) / 1000.0
-                : totalDistanceM / 1000.0;
-            double finalDurMin = !request.ReturnToStart
-                ? (totalDurationS - returnLegDurS) / 60.0
-                : totalDurationS / 60.0;
+            // Total distance/duration:
+            // ReturnToStart=false → totalDistanceM = origin→last stop (no return leg in request)
+            // ReturnToStart=true  → totalDistanceM = full round trip (return leg included)
+            double finalDistKm = totalDistanceM / 1000.0;
+            double finalDurMin = totalDurationS / 60.0;
 
             // ── Time window warnings ──────────────────────────────────────────
             var effectiveDepartureTime = (request.DepartureTime is { } dt && dt != default)
                 ? dt : new TimeOnly(8, 0);
             var timeWindowWarnings = BuildTimeWindowWarnings(
-                stops, intermediates, legs, optimizedOrder, effectiveDepartureTime);
+                requestIntermediates, destinationStop, legs, optimizedOrder, effectiveDepartureTime);
 
             return new RouteOptimizationResultDto(
                 stops,
@@ -363,8 +388,8 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
         }
 
         private List<TimeWindowWarningDto> BuildTimeWindowWarnings(
-            List<RouteStopDto> stops,
-            List<RouteOrderingService.StopInfo> intermediates,
+            List<RouteOrderingService.StopInfo> requestIntermediates,
+            RouteOrderingService.StopInfo? destinationStop,
             List<JsonElement> legs,
             List<int> optimizedOrder,
             TimeOnly departureTime)
@@ -372,45 +397,44 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
             var warnings = new List<TimeWindowWarningDto>();
             const double dwellMinutes = 15.0;
 
-            // Guard: if DepartureTime came as 00:00 (TimeOnly default / deserialization fallback) use 08:00
             var effectiveDeparture = (departureTime == default) ? new TimeOnly(8, 0) : departureTime;
-
-            // Track absolute minutes-since-midnight so we don't confuse relative and absolute offsets
             double currentMinutes = effectiveDeparture.Hour * 60.0 + effectiveDeparture.Minute;
             int legIdx = 0;
+
+            void CheckWindow(RouteOrderingService.StopInfo stop, bool addDwell)
+            {
+                if (stop.DeliveryWindowStart.HasValue && stop.DeliveryWindowEnd.HasValue)
+                {
+                    var arrivalTime = TimeOnly.FromTimeSpan(TimeSpan.FromMinutes(currentMinutes % (24 * 60)));
+                    if (arrivalTime > stop.DeliveryWindowEnd.Value)
+                        warnings.Add(new TimeWindowWarningDto(
+                            stop.Code, stop.Name,
+                            stop.DeliveryWindowStart.Value, stop.DeliveryWindowEnd.Value,
+                            arrivalTime, true));
+                }
+                if (addDwell) currentMinutes += dwellMinutes;
+            }
 
             for (int rank = 0; rank < optimizedOrder.Count; rank++)
             {
                 var originalIdx = optimizedOrder[rank];
-                if (originalIdx >= intermediates.Count) continue;
-                var stop = intermediates[originalIdx];
+                if (originalIdx >= requestIntermediates.Count) continue;
+                var stop = requestIntermediates[originalIdx];
 
-                if (stop.Code == "__BRIDGE__") continue; // via waypoint — no leg boundary
+                if (stop.Code == "__BRIDGE__") continue;
 
-                // Arrival = current position in time + travel leg duration
                 double legDurMin = legIdx < legs.Count ? (GetLegDurationSeconds(legs[legIdx]) ?? 0) / 60.0 : 0;
                 legIdx++;
                 currentMinutes += legDurMin;
+                CheckWindow(stop, addDwell: true);
+            }
 
-                if (stop.DeliveryWindowStart.HasValue && stop.DeliveryWindowEnd.HasValue)
-                {
-                    var arrivalTime = TimeOnly.FromTimeSpan(TimeSpan.FromMinutes(currentMinutes % (24 * 60)));
-                    bool isLate = arrivalTime > stop.DeliveryWindowEnd.Value;
-
-                    if (isLate)
-                    {
-                        warnings.Add(new TimeWindowWarningDto(
-                            stop.Code,
-                            stop.Name,
-                            stop.DeliveryWindowStart.Value,
-                            stop.DeliveryWindowEnd.Value,
-                            arrivalTime,
-                            true));
-                    }
-                }
-
-                // Dwell at this stop — add AFTER arrival so it feeds into next stop's travel start
-                currentMinutes += dwellMinutes;
+            // Check destination stop (ReturnToStart=false only)
+            if (destinationStop != null && destinationStop.Code != "__BRIDGE__")
+            {
+                double legDurMin = legIdx < legs.Count ? (GetLegDurationSeconds(legs[legIdx]) ?? 0) / 60.0 : 0;
+                currentMinutes += legDurMin;
+                CheckWindow(destinationStop, addDwell: false);
             }
 
             return warnings;
