@@ -1,3 +1,4 @@
+using Akyildiz.Sevkiyat.Application.Common.Interfaces;
 using Akyildiz.Sevkiyat.Application.External.Netsis.Dtos;
 using Akyildiz.Sevkiyat.Application.Interfaces;
 using Akyildiz.Sevkiyat.Domain.Enums;
@@ -8,7 +9,11 @@ using System.Linq;
 
 namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.FetchZoneIrsaliye
 {
-    public record FetchZoneIrsaliyeCommand(int ZonePreparationId) : IRequest<FetchZoneIrsaliyeResult>;
+    public record FetchZoneIrsaliyeCommand(int ZonePreparationId) : IRequest<FetchZoneIrsaliyeResult>, IRequireRoles
+    {
+        public IReadOnlyList<string> AllowedRoles =>
+            new[] { "Admin", "Manager", "Warehouse", "Dispatcher" };
+    }
 
     public record FetchZoneIrsaliyeResult(int Exported, int Skipped, List<string> Errors);
 

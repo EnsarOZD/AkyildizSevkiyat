@@ -14,7 +14,7 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.StartZonePreparation
     public record StartZonePreparationCommand(int ZonePreparationId) : IRequest<bool>, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles =>
-            new[] { "Admin", "Manager", "Warehouse" };
+            new[] { "Admin", "Manager", "Warehouse", "Dispatcher" };
     }
 
     public class StartZonePreparationCommandHandler : IRequestHandler<StartZonePreparationCommand, bool>

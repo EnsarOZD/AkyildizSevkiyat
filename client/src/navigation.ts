@@ -48,14 +48,14 @@ export const NAV_ITEMS: NavGroup[] = [
     {
         title: 'Sipariş & Sevkiyat',
         items: [
-            { label: 'ISS Entegrasyon', to: '/orders/import', icon: SignalIcon,                 roles: ['Admin', 'Accounting', 'Manager'], badge: 'Beta' },
+            { label: 'ISS Entegrasyon', to: '/orders/import', icon: SignalIcon,                 roles: ['Admin', 'Accounting', 'Manager', 'Dispatcher'], badge: 'Beta' },
             { label: 'Sevkiyatlar',     to: '/shipments',      icon: ClipboardDocumentListIcon },
         ],
     },
     {
         title: 'Operasyon',
         items: [
-            { label: 'Depo Hazırlık',    to: '/warehouse',        icon: BuildingStorefrontIcon, roles: ['Admin', 'Warehouse', 'Manager'] },
+            { label: 'Depo Hazırlık',    to: '/warehouse',        icon: BuildingStorefrontIcon, roles: ['Admin', 'Warehouse', 'Manager', 'Dispatcher'] },
             { label: 'Şoför & Araç',     to: '/transport',        icon: TruckIcon,              roles: ['Admin', 'Manager', 'Dispatcher'] },
             { label: 'Şoför Paneli',     to: '/driver',           icon: DevicePhoneMobileIcon,  roles: ['Admin', 'Manager', 'Dispatcher'] },
             { label: 'Belirsiz İadeler', to: '/floating-returns', icon: ArrowPathIcon,          roles: ['Admin', 'Manager', 'Warehouse', 'Dispatcher'] },

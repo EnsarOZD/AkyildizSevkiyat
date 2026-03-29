@@ -10,7 +10,7 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.ConfirmZoneLoading
     public record ConfirmZoneLoadingCommand(int ZonePreparationId) : IRequest<bool>, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles =>
-            new[] { "Admin", "Manager", "Warehouse" };
+            new[] { "Admin", "Manager", "Warehouse", "Dispatcher" };
     }
 
     public class ConfirmZoneLoadingCommandHandler : IRequestHandler<ConfirmZoneLoadingCommand, bool>

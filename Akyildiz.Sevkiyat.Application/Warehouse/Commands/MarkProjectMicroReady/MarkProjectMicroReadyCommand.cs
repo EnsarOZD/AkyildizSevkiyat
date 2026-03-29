@@ -21,7 +21,7 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.MarkProjectMicroReady
     ) : IRequest<MarkProjectMicroReadyResult>, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles =>
-            new[] { "Admin", "Manager", "Warehouse" };
+            new[] { "Admin", "Manager", "Warehouse", "Dispatcher" };
     }
 
     public class MarkProjectMicroReadyResult

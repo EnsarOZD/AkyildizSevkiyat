@@ -57,7 +57,7 @@ const router = createRouter({
                     path: 'orders/import',
                     name: 'OrderImport',
                     component: () => import('../views/OrderImportView.vue'),
-                    meta: { title: 'ISS Entegrasyon', roles: ['Admin', 'Accounting', 'Manager'] }
+                    meta: { title: 'ISS Entegrasyon', roles: ['Admin', 'Accounting', 'Manager', 'Dispatcher'] }
                 },
                 {
                     path: 'stocks',
@@ -69,7 +69,7 @@ const router = createRouter({
                     path: 'warehouse',
                     name: 'WarehouseDashboard',
                     component: () => import('../views/WarehouseDashboard.vue'),
-                    meta: { title: 'Depo Hazırlık', roles: ['Admin', 'Warehouse', 'Manager'] }
+                    meta: { title: 'Depo Hazırlık', roles: ['Admin', 'Warehouse', 'Manager', 'Dispatcher'] }
                 },
                 {
                     path: 'transport',

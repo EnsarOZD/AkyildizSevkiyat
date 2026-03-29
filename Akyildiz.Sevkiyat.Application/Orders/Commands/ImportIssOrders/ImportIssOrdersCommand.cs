@@ -9,7 +9,7 @@ namespace Akyildiz.Sevkiyat.Application.Orders.Commands.ImportIssOrders
     public record ImportIssOrdersCommand(DateTime StartDate, DateTime EndDate) : IRequest<ImportIssOrdersResult>, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles =>
-            new[] { "Admin", "Manager", "Accounting" };
+            new[] { "Admin", "Manager", "Accounting", "Dispatcher" };
     }
 
     public class ImportIssOrdersResult

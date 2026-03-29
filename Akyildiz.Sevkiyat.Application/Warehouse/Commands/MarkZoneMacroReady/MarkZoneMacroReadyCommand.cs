@@ -23,7 +23,7 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.MarkZoneMacroReady
         public string? ForceReason { get; init; }
 
         public IReadOnlyList<string> AllowedRoles =>
-            new[] { "Admin", "Manager", "Warehouse" };
+            new[] { "Admin", "Manager", "Warehouse", "Dispatcher" };
     }
 
     public class MarkZoneMacroReadyResult
