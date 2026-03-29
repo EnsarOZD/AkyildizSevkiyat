@@ -310,6 +310,7 @@ import stockLocationService, { type StockLocationDto, type TransferHistoryDto } 
 import warehouseLocationService from '../services/warehouseLocationService';
 import { stockService } from '../services/stockService';
 import { ApiErrorUtils } from '../utils/apiError';
+import { turkishIncludes } from '../utils/turkishSearch';
 
 const authStore  = useAuthStore();
 const notify     = useNotificationStore();
@@ -336,10 +337,10 @@ const filteredItems = computed(() => {
   if (filterZone.value)
     list = list.filter(i => i.zone === filterZone.value);
   if (searchQuery.value.trim()) {
-    const q = searchQuery.value.trim().toLowerCase();
+    const q = searchQuery.value.trim();
     list = list.filter(i =>
-      i.stockCode.toLowerCase().includes(q) ||
-      i.stockName.toLowerCase().includes(q)
+      turkishIncludes(i.stockCode, q) ||
+      turkishIncludes(i.stockName, q)
     );
   }
   return list;

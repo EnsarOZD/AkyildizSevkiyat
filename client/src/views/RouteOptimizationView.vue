@@ -448,6 +448,7 @@ import routeOptimizationService, {
 import projectService from '../services/projectService';
 import { useNotificationStore } from '../stores/notification';
 import { ApiErrorUtils } from '../utils/apiError';
+import { turkishIncludes } from '../utils/turkishSearch';
 import systemSettingsService from '../services/systemSettingsService';
 
 // ── State ────────────────────────────────────────────────────────────────────
@@ -509,9 +510,8 @@ const optimizing = ref(false);
 // ── Computed ─────────────────────────────────────────────────────────────────
 const filteredProjects = computed(() => {
   if (!projectSearch.value) return projects.value;
-  const term = projectSearch.value.toLowerCase();
   return projects.value.filter(
-    p => p.code.toLowerCase().includes(term) || p.name.toLowerCase().includes(term)
+    p => turkishIncludes(p.code, projectSearch.value) || turkishIncludes(p.name, projectSearch.value)
   );
 });
 

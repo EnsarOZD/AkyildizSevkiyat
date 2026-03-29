@@ -126,6 +126,7 @@
 import { ref, onMounted, computed } from 'vue';
 import projectService from '../services/projectService';
 import { ApiErrorUtils } from '../utils/apiError';
+import { turkishIncludes } from '../utils/turkishSearch';
 import { useNotificationStore } from '../stores/notification';
 
 const notificationStore = useNotificationStore();
@@ -173,10 +174,9 @@ const fetchProjects = async () => {
 
 const filteredProjects = computed(() => {
     if(!searchTerm.value) return projects.value;
-    const term = searchTerm.value.toLowerCase();
     return projects.value.filter(p =>
-        p.code.toLowerCase().includes(term) ||
-        p.name.toLowerCase().includes(term)
+        turkishIncludes(p.code, searchTerm.value) ||
+        turkishIncludes(p.name, searchTerm.value)
     );
 });
 

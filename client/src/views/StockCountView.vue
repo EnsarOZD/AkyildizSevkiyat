@@ -309,6 +309,7 @@ import BaseModal from '../components/BaseModal.vue';
 import stockCountService, { type StockCountDetail, type StockCountLineDetail, type StockCountSummary } from '../services/stockCountService';
 import { useNotificationStore } from '../stores/notification';
 import { ApiErrorUtils } from '../utils/apiError';
+import { turkishIncludes } from '../utils/turkishSearch';
 
 const notificationStore = useNotificationStore();
 
@@ -333,8 +334,8 @@ const diffFilter = ref('');
 const filteredLines = computed(() => {
   if (!activeCount.value) return [];
   return activeCount.value.lines.filter(l => {
-    const q = searchFilter.value.toLowerCase();
-    if (q && !l.stockCode.toLowerCase().includes(q) && !l.stockName.toLowerCase().includes(q)) return false;
+    const q = searchFilter.value;
+    if (q && !turkishIncludes(l.stockCode, q) && !turkishIncludes(l.stockName, q)) return false;
 
     const edit = lineEdits.value[l.id];
     const actual = edit ? edit.actualQty : l.actualQty;

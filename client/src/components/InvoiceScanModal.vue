@@ -229,6 +229,7 @@ import BaseModal from './BaseModal.vue';
 import { scanInvoice, type OcrInvoiceResult, type OcrInvoiceLineResult } from '../services/ocrService';
 import { stockService, type Stock } from '../services/stockService';
 import { useNotificationStore } from '../stores/notification';
+import { turkishLower } from '../utils/turkishSearch';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -343,9 +344,9 @@ const matchAllStocks = async () => {
       
       if (res.items && res.items.length > 0) {
         // Exact match or first match
-        const exactMatch = res.items.find(s => 
-          s.stockName.toLowerCase() === searchTerm.toLowerCase() || 
-          s.stockCode.toLowerCase() === searchTerm.toLowerCase()
+        const exactMatch = res.items.find(s =>
+          turkishLower(s.stockName) === turkishLower(searchTerm) ||
+          turkishLower(s.stockCode) === turkishLower(searchTerm)
         );
         line.matchedStock = exactMatch || res.items[0];
       }
