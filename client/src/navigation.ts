@@ -3,11 +3,9 @@ import {
   HomeIcon,
   ClipboardDocumentListIcon,
   BuildingStorefrontIcon,
-  TruckIcon,
   ArrowPathIcon,
   ArchiveBoxIcon,
   CalculatorIcon,
-  MapIcon,
   MapPinIcon,
   ArrowsRightLeftIcon,
   PuzzlePieceIcon,
@@ -22,6 +20,7 @@ import {
   ListBulletIcon,
   ShieldExclamationIcon,
   ArrowTrendingUpIcon,
+  Cog6ToothIcon,
 } from '@heroicons/vue/24/outline';
 
 export type UserRole = 'Admin' | 'Warehouse' | 'Accounting' | 'Dispatcher' | 'Manager';
@@ -56,7 +55,7 @@ export const NAV_ITEMS: NavGroup[] = [
         title: 'Operasyon',
         items: [
             { label: 'Depo Hazırlık',    to: '/warehouse',        icon: BuildingStorefrontIcon, roles: ['Admin', 'Warehouse', 'Manager', 'Dispatcher'] },
-            { label: 'Şoför & Araç',     to: '/transport',        icon: TruckIcon,              roles: ['Admin', 'Manager', 'Dispatcher'] },
+            { label: 'Tanımlamalar',     to: '/settings',         icon: Cog6ToothIcon,          roles: ['Admin', 'Manager'] },
             { label: 'Şoför Paneli',     to: '/driver',           icon: DevicePhoneMobileIcon,  roles: ['Admin', 'Manager', 'Dispatcher'] },
             { label: 'Belirsiz İadeler', to: '/floating-returns', icon: ArrowPathIcon,          roles: ['Admin', 'Manager', 'Warehouse', 'Dispatcher'] },
             { label: 'Rota Optimizasyonu', to: '/route-optimization', icon: ArrowTrendingUpIcon, roles: ['Admin', 'Manager', 'Dispatcher'] },
@@ -74,7 +73,6 @@ export const NAV_ITEMS: NavGroup[] = [
         items: [
             { label: 'Depo Adresleri',  to: '/warehouse/locations',       icon: MapPinIcon,          roles: ['Admin', 'Manager', 'Warehouse', 'Accounting'], badge: 'Yeni' },
             { label: 'Stok Haritası',   to: '/warehouse/stock-locations', icon: ArrowsRightLeftIcon, roles: ['Admin', 'Manager', 'Warehouse', 'Accounting'], badge: 'Yeni' },
-            { label: 'Bölge Yönetimi', to: '/zones',                  icon: MapIcon,         roles: ['Admin', 'Manager'] },
             { label: 'Proje - Bölge',  to: '/projects/zone-mapping',  icon: PuzzlePieceIcon, roles: ['Admin', 'Manager'] },
             { label: 'Teslimat Sırası', to: '/zones/project-order',    icon: ListBulletIcon,  roles: ['Admin', 'Manager'] },
         ],
@@ -99,7 +97,6 @@ export const NAV_ITEMS: NavGroup[] = [
         items: [
             { label: 'Kullanıcı Yönetimi',   to: '/users',          icon: UsersIcon,             roles: ['Admin'] },
             { label: 'Mutabakat Kontrolleri', to: '/reconciliation', icon: ShieldExclamationIcon, roles: ['Admin', 'Manager'] },
-            { label: 'Depo Tanımları', to: '/settings/depot', icon: BuildingStorefrontIcon, roles: ['Admin', 'Manager'] },
         ],
     },
 ];

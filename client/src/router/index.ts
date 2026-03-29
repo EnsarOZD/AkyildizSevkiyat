@@ -36,10 +36,14 @@ const router = createRouter({
                     meta: { title: 'Sevkiyat Detayı', breadcrumb: [{ label: 'Sevkiyatlar', to: '/shipments' }] }
                 },
                 {
+                    path: 'settings',
+                    name: 'Settings',
+                    component: () => import('../views/SettingsView.vue'),
+                    meta: { title: 'Tanımlamalar', roles: ['Admin', 'Manager'] }
+                },
+                {
                     path: 'zones',
-                    name: 'ZoneList',
-                    component: () => import('../views/ZoneListView.vue'),
-                    meta: { title: 'Bölge Yönetimi', roles: ['Admin', 'Manager'] }
+                    redirect: '/settings',
                 },
                 {
                     path: 'projects/zone-mapping',
@@ -73,9 +77,7 @@ const router = createRouter({
                 },
                 {
                     path: 'transport',
-                    name: 'TransportManagement',
-                    component: () => import('../views/TransportManagementView.vue'),
-                    meta: { title: 'Şoför & Araç Yönetimi', roles: ['Admin', 'Manager', 'Dispatcher'] }
+                    redirect: '/settings',
                 },
                 {
                     path: 'purchase-orders',
@@ -175,9 +177,7 @@ const router = createRouter({
                 },
                 {
                     path: 'settings/depot',
-                    name: 'DepotSettings',
-                    component: () => import('../views/DepotSettingsView.vue'),
-                    meta: { title: 'Depo Tanımları', roles: ['Admin', 'Manager'] }
+                    redirect: '/settings',
                 },
             ]
         },
