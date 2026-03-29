@@ -5,7 +5,7 @@
       <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
       <!-- Wide Modal -->
-      <div class="inline-block align-bottom bg-white dark:bg-gray-900 rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full sm:p-6">
+      <div class="inline-block align-bottom bg-white dark:bg-gray-900 rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all w-full mx-4 sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full sm:p-6">
         <div>
           <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100 border-b dark:border-gray-700 pb-2">Yeni Satınalma Siparişi</h3>
 
@@ -45,11 +45,11 @@
                 <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <thead class="bg-gray-100 dark:bg-gray-800">
                         <tr>
-                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-1/3">Stok Kodu / Arama <span class="text-red-500">*</span></th>
-                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Stok Adı</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-[120px]">Stok Kodu / Arama <span class="text-red-500">*</span></th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">Stok Adı</th>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Miktar <span class="text-red-500">*</span></th>
-                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Birim</th>
-                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Not</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden sm:table-cell">Birim</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">Not</th>
                             <th scope="col" class="relative px-4 py-3">
                                 <span class="sr-only">Sil</span>
                             </th>
@@ -60,16 +60,16 @@
                             <td class="px-4 py-2">
                                 <StockCombobox v-model="line.stockMasterId" @select="onStockSelect(line, $event)" />
                             </td>
-                            <td class="px-4 py-2">
+                            <td class="px-4 py-2 hidden lg:table-cell">
                                 <span class="text-sm text-gray-900 dark:text-gray-100">{{ line.stockName || '-' }}</span>
                             </td>
                             <td class="px-4 py-2">
                                 <input v-model.number="line.orderedQty" type="number" step="0.01" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 rounded-md" placeholder="0.00">
                             </td>
-                            <td class="px-4 py-2">
+                            <td class="px-4 py-2 hidden sm:table-cell">
                                 <input v-model="line.unit" disabled type="text" class="bg-gray-100 dark:bg-gray-700 dark:border-gray-700 dark:text-gray-100 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                             </td>
-                            <td class="px-4 py-2">
+                            <td class="px-4 py-2 hidden lg:table-cell">
                                 <input v-model="line.note" type="text" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 rounded-md">
                             </td>
                             <td class="px-4 py-2 text-right">
