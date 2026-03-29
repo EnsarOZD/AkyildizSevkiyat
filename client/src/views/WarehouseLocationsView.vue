@@ -95,6 +95,7 @@
         <div class="w-7 h-7 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
       </div>
       <template v-else>
+        <div class="overflow-x-auto">
         <table v-if="items.length > 0" class="w-full text-sm">
           <thead class="bg-gray-50 dark:bg-white/5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
             <tr>
@@ -153,6 +154,7 @@
             </tr>
           </tbody>
         </table>
+        </div>
         <div v-else class="text-center py-12 text-gray-400 dark:text-gray-500">Henüz adres kaydı yok.</div>
       </template>
 

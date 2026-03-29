@@ -24,6 +24,7 @@
       <div v-if="loadingList" class="py-12 text-center text-gray-400">Yükleniyor...</div>
       <div v-else-if="counts.length === 0" class="py-12 text-center text-gray-400">Henüz sayım kaydı yok.</div>
       <div v-else class="bg-white dark:bg-gray-900 shadow rounded-lg overflow-hidden">
+        <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
           <thead class="bg-gray-50 dark:bg-gray-800">
             <tr>
@@ -63,6 +64,7 @@
             </tr>
           </tbody>
         </table>
+        </div>
       </div>
     </template>
 
@@ -167,6 +169,7 @@
       </div>
 
       <div class="bg-white dark:bg-gray-900 shadow rounded-lg overflow-hidden">
+        <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
           <thead class="bg-gray-50 dark:bg-gray-800">
             <tr>
@@ -220,6 +223,7 @@
             </tr>
           </tbody>
         </table>
+        </div>
       </div>
     </template>
 

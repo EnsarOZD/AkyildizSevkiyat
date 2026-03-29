@@ -52,6 +52,7 @@
       </div>
 
       <div v-if="shipSummary" class="bg-white dark:bg-gray-900 shadow rounded overflow-hidden">
+        <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
           <thead class="bg-gray-50 dark:bg-gray-800">
             <tr>
@@ -77,6 +78,7 @@
             </tr>
           </tbody>
         </table>
+        </div>
       </div>
       <div v-if="!shipSummary && !loadingShip" class="text-center py-10 text-gray-400">Tarih aralığı seçip "Filtrele" butonuna tıklayın.</div>
       <div v-if="loadingShip" class="text-center py-10 text-gray-400">Yükleniyor...</div>
@@ -128,6 +130,7 @@
           <div class="px-4 py-3 border-b dark:border-gray-700">
             <h3 class="font-medium text-gray-900 dark:text-gray-100">Bölge Bazında Performans</h3>
           </div>
+          <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
             <thead class="bg-gray-50 dark:bg-gray-800">
               <tr>
@@ -150,6 +153,7 @@
               </tr>
             </tbody>
           </table>
+          </div>
         </div>
 
         <!-- Detail rows -->
@@ -161,6 +165,7 @@
               Sadece gecikmişler
             </label>
           </div>
+          <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
             <thead class="bg-gray-50 dark:bg-gray-800">
               <tr>
@@ -184,6 +189,7 @@
               </tr>
             </tbody>
           </table>
+          </div>
         </div>
       </template>
       <div v-if="!perfData && !loadingPerf" class="text-center py-10 text-gray-400">Tarih aralığı seçip "Filtrele" butonuna tıklayın.</div>
@@ -221,6 +227,7 @@
         </div>
 
         <div class="bg-white dark:bg-gray-900 shadow rounded overflow-hidden">
+          <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
             <thead class="bg-gray-50 dark:bg-gray-800">
               <tr>
@@ -255,6 +262,7 @@
               </tr>
             </tbody>
           </table>
+          </div>
         </div>
       </template>
       <div v-if="!stockData && !loadingStock" class="text-center py-10 text-gray-400">Yükleniyor...</div>
@@ -296,6 +304,7 @@
           <div class="px-4 py-3 border-b dark:border-gray-700">
             <h3 class="font-medium text-gray-900 dark:text-gray-100">Neden Bazında Özet</h3>
           </div>
+          <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
             <thead class="bg-gray-50 dark:bg-gray-800">
               <tr>
@@ -312,6 +321,7 @@
               </tr>
             </tbody>
           </table>
+          </div>
         </div>
 
         <!-- Detail -->
@@ -319,6 +329,7 @@
           <div class="px-4 py-3 border-b dark:border-gray-700">
             <h3 class="font-medium text-gray-900 dark:text-gray-100">İade Detayları ({{ retData.rows.length }})</h3>
           </div>
+          <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
             <thead class="bg-gray-50 dark:bg-gray-800">
               <tr>
@@ -344,6 +355,7 @@
               </tr>
             </tbody>
           </table>
+          </div>
         </div>
       </template>
       <div v-if="!retData && !loadingRet" class="text-center py-10 text-gray-400">Tarih aralığı seçip "Filtrele" butonuna tıklayın.</div>
@@ -363,6 +375,7 @@
             </button>
           </div>
         </div>
+        <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
           <thead class="bg-gray-50 dark:bg-gray-800">
             <tr>
@@ -394,6 +407,7 @@
             </tr>
           </tbody>
         </table>
+        </div>
       </div>
     </div>
 
@@ -410,6 +424,7 @@
             </button>
           </div>
         </div>
+        <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
           <thead class="bg-gray-50 dark:bg-gray-800">
             <tr>
@@ -432,6 +447,7 @@
             </tr>
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   </div>

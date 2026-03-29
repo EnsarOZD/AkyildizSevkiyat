@@ -47,6 +47,7 @@
         </div>
 
         <div class="bg-white dark:bg-gray-900 shadow overflow-hidden rounded-lg">
+          <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead class="bg-gray-50 dark:bg-gray-800">
                     <tr>
@@ -71,6 +72,7 @@
                     </tr>
                 </tbody>
             </table>
+          </div>
         </div>
     </div>
 
@@ -83,6 +85,7 @@
         </div>
 
         <div class="bg-white dark:bg-gray-900 shadow overflow-hidden rounded-lg">
+          <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead class="bg-gray-50 dark:bg-gray-800">
                     <tr>
@@ -102,7 +105,7 @@
                               'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300': vehicle.vehicleType === 0,
                               'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300': vehicle.vehicleType === 1,
                               'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300': vehicle.vehicleType === 2,
-                            }">{{ vehicle.vehicleTypeName || ['Kamyon','Kamyonet','Minibüs'][vehicle.vehicleType] ?? 'Kamyon' }}</span>
+                            }">{{ (vehicle.vehicleTypeName || ['Kamyon','Kamyonet','Minibüs'][vehicle.vehicleType]) ?? 'Kamyon' }}</span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ vehicle.description || vehicle.capacity || '—' }}</td>
                          <td class="px-6 py-4 whitespace-nowrap">
@@ -116,6 +119,7 @@
                     </tr>
                 </tbody>
             </table>
+          </div>
         </div>
     </div>
 
