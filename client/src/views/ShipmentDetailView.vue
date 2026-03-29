@@ -30,7 +30,7 @@
 
         <!-- Info card -->
         <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-4">
-          <div class="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-3 text-sm">
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-3 text-sm">
             <div>
               <div class="text-xs text-gray-500 dark:text-gray-400 font-medium mb-0.5">Proje</div>
               <div class="font-medium text-gray-800 dark:text-gray-200">{{ shipment.projectName }}</div>
@@ -152,7 +152,7 @@
           <!-- Araç & Sürücü -->
           <div class="p-5">
             <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Araç & Sürücü</h3>
-            <div class="grid grid-cols-2 gap-4 text-sm">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
               <div>
                 <div class="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Sürücü</div>
                 <div class="font-medium text-gray-800 dark:text-gray-200">{{ shipment.driverName || '—' }}</div>
@@ -166,7 +166,7 @@
           <!-- İrsaliye -->
           <div class="p-5">
             <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">İrsaliye</h3>
-            <div class="grid grid-cols-2 gap-4 text-sm">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
               <div>
                 <div class="text-xs text-gray-500 dark:text-gray-400 mb-0.5">İrsaliye No</div>
                 <div class="flex items-center gap-2">
@@ -182,7 +182,7 @@
                 <div class="text-xs text-gray-500 dark:text-gray-400 mb-0.5">İrsaliye Tarihi</div>
                 <div class="text-gray-700 dark:text-gray-300">{{ shipment.irsaliyeDate }}</div>
               </div>
-              <div v-if="shipment.netsisTransferredAt" class="col-span-2">
+              <div v-if="shipment.netsisTransferredAt" class="col-span-full">
                 <div class="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Netsis Aktarım</div>
                 <div class="text-xs text-green-700 font-medium">{{ new Date(shipment.netsisTransferredAt).toLocaleString('tr-TR') }}</div>
               </div>
@@ -191,7 +191,7 @@
           <!-- Teslim Bilgisi -->
           <div v-if="shipment.deliveredAt" class="p-5 bg-green-50 dark:bg-green-900/10">
             <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Teslim Bilgisi</h3>
-            <div class="grid grid-cols-2 gap-4 text-sm">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
               <div>
                 <div class="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Teslim Zamanı</div>
                 <div class="font-medium text-green-700">{{ new Date(shipment.deliveredAt).toLocaleString('tr-TR') }}</div>
@@ -258,7 +258,7 @@
       </div>
 
       <!-- ── RIGHT: Sticky sidebar ── -->
-      <div class="w-full lg:w-72 shrink-0 lg:sticky lg:top-6 space-y-4">
+      <div class="w-full lg:w-72 shrink-0 lg:sticky lg:top-4 space-y-4">
 
         <!-- Status card -->
         <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
