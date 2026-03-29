@@ -20,9 +20,20 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
 
         private const int MaxWaypoints = 25; // origin + non-via intermediates + destination
 
-        // Bridge via-waypoint coordinates (lat/lng pins on the bridge mid-span)
-        private static readonly (double Lat, double Lon) YavuzSultanSelim   = (41.2027, 29.0656);
-        private static readonly (double Lat, double Lon) FatihSultanMehmet  = (41.0882, 29.0594);
+        // Bridge waypoint coordinates.
+        // YSS: köprü ortası — çalışıyor.
+        // FSM: 3 aday sırayla denenir; ilk boş rota döndürende sonrakine geçilir.
+        private static readonly (double Lat, double Lon) YavuzSultanSelim = (41.2027, 29.0656);
+
+        // FSM adayları: (lat, lon, via). via=false = normal stop, via=true = pass-through waypoint.
+        private static readonly (double Lat, double Lon, bool Via)[] FsmCandidates =
+        [
+            (41.0773, 29.0542, false),   // köprü ortası — birincil aday
+            (41.0741, 29.0689, false),   // Anadolu giriş noktası
+            (41.0800, 29.0500, false),   // alternatif merkez
+            (41.0773, 29.0542, true),    // birincil + via=true
+            (41.0741, 29.0689, true),    // Anadolu giriş + via=true
+        ];
 
         public GoogleMapsRouteOptimizationService(
             HttpClient httpClient,
@@ -56,18 +67,31 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
             return new { address };
         }
 
-        private static object BuildWaypointFromStop(RouteOrderingService.StopInfo stop)
+        private static object BuildWaypointFromStop(
+            RouteOrderingService.StopInfo stop,
+            (double Lat, double Lon, bool Via)? fsmOverride = null)
         {
             if (stop.Code == "__BRIDGE__")
             {
-                // Via waypoint — not a stop, just forces the route through the bridge.
-                // "via: true" means no leg boundary is created for this waypoint.
-                var coords = stop.Name.Contains("Yavuz") ? YavuzSultanSelim : FatihSultanMehmet;
-                return new
+                if (stop.Name.Contains("Yavuz"))
                 {
-                    via = true,
-                    location = new { latLng = new { latitude = coords.Lat, longitude = coords.Lon } }
-                };
+                    // YSS — via=false (normal waypoint; via=true also works but normal is more reliable)
+                    return new
+                    {
+                        via = false,
+                        location = new { latLng = new { latitude = YavuzSultanSelim.Lat, longitude = YavuzSultanSelim.Lon } }
+                    };
+                }
+                else
+                {
+                    // FSM — use the provided candidate
+                    var c = fsmOverride ?? FsmCandidates[0];
+                    return new
+                    {
+                        via = c.Via,
+                        location = new { latLng = new { latitude = c.Lat, longitude = c.Lon } }
+                    };
+                }
             }
             if (stop.Latitude.HasValue && stop.Longitude.HasValue)
                 return new { location = new { latLng = new { latitude = stop.Latitude.Value, longitude = stop.Longitude.Value } } };
@@ -229,78 +253,117 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
                 throw new DomainException("Rota hesaplanamadı: Başlangıç ve bitiş noktası aynı, en az 1 durak gereklidir.");
 
             var originWaypoint = BuildWaypoint(originAddress, startLat, startLon);
-            var destinationWaypoint = destinationStop != null
-                ? BuildWaypointFromStop(destinationStop)
-                : originWaypoint;
 
-            var requestBody = new
-            {
-                origin        = originWaypoint,
-                destination   = destinationWaypoint,
-                intermediates = requestIntermediates.Select(p => BuildWaypointFromStop(p)).ToArray(),
-                travelMode = "DRIVE",
-                optimizeWaypointOrder,
-                computeAlternativeRoutes = false,
-                routeModifiers,
-                languageCode = "tr-TR",
-                units = "METRIC"
-            };
+            // FSM fallback zinciri: köprü varsa sırayla FsmCandidates denenir;
+            // köprü yoksa tek deneme (fsmOverride = null, ilk aday kullanılır).
+            bool hasFsm = hasBridge && requestIntermediates.Any(s => s.Code == "__BRIDGE__" && !s.Name.Contains("Yavuz"));
+            var candidatesToTry = hasFsm
+                ? FsmCandidates.Select(c => ((double Lat, double Lon, bool Via)?)c).ToList()
+                : new List<(double Lat, double Lon, bool Via)?> { null };
 
             var url = $"https://routes.googleapis.com/directions/v2:computeRoutes?key={_apiKey}";
-            var requestBodyJson = System.Text.Json.JsonSerializer.Serialize(requestBody,
-                new System.Text.Json.JsonSerializerOptions { WriteIndented = false });
-            _logger.LogInformation("Google Routes API çağrısı: {Count} durak, araç: {Vehicle}, optimize: {Opt}",
-                requestIntermediates.Count + 2, request.VehicleType ?? "Kamyon", optimizeWaypointOrder);
-
-            using var httpRequest = new HttpRequestMessage(HttpMethod.Post, url);
-            httpRequest.Content = JsonContent.Create(requestBody);
-            httpRequest.Headers.Add("X-Goog-FieldMask",
-                "routes.distanceMeters,routes.duration,routes.optimizedIntermediateWaypointIndex," +
-                "routes.legs.distanceMeters,routes.legs.duration");
+            _logger.LogInformation("Google Routes API çağrısı: {Count} durak, araç: {Vehicle}, optimize: {Opt}, FSM aday sayısı: {Fsm}",
+                requestIntermediates.Count + 2, request.VehicleType ?? "Kamyon", optimizeWaypointOrder,
+                hasFsm ? FsmCandidates.Length : 0);
 
             string rawJson = string.Empty;
-            JsonDocument doc;
-            try
-            {
-                using var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
-                rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
-                _logger.LogInformation("Google Routes API yanıtı: {Status}", response.StatusCode);
+            string requestBodyJson = string.Empty;
+            JsonDocument doc = null!;
 
-                if (!response.IsSuccessStatusCode)
+            foreach (var fsmOverride in candidatesToTry)
+            {
+                var destinationWaypoint = destinationStop != null
+                    ? BuildWaypointFromStop(destinationStop, fsmOverride)
+                    : originWaypoint;
+
+                var requestBody = new
                 {
-                    _logger.LogError("Google Routes API hatası: {Status} {Body}", response.StatusCode, rawJson);
-                    var snippet = rawJson.Length > 400 ? rawJson[..400] : rawJson;
-                    throw new DomainException($"Google Routes API hatası: {(int)response.StatusCode} — {snippet}");
-                }
+                    origin        = originWaypoint,
+                    destination   = destinationWaypoint,
+                    intermediates = requestIntermediates.Select(p => BuildWaypointFromStop(p, fsmOverride)).ToArray(),
+                    travelMode = "DRIVE",
+                    optimizeWaypointOrder,
+                    computeAlternativeRoutes = false,
+                    routeModifiers,
+                    languageCode = "tr-TR",
+                    units = "METRIC"
+                };
 
-                doc = JsonDocument.Parse(rawJson);
+                requestBodyJson = System.Text.Json.JsonSerializer.Serialize(requestBody,
+                    new System.Text.Json.JsonSerializerOptions { WriteIndented = false });
+
+                if (fsmOverride.HasValue)
+                    _logger.LogInformation("FSM deneniyor: lat={Lat}, lon={Lon}, via={Via}",
+                        fsmOverride.Value.Item1, fsmOverride.Value.Item2, fsmOverride.Value.Item3);
+
+                try
+                {
+                    using var httpRequest = new HttpRequestMessage(HttpMethod.Post, url);
+                    httpRequest.Content = JsonContent.Create(requestBody);
+                    httpRequest.Headers.Add("X-Goog-FieldMask",
+                        "routes.distanceMeters,routes.duration,routes.optimizedIntermediateWaypointIndex," +
+                        "routes.legs.distanceMeters,routes.legs.duration");
+
+                    using var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+                    rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                    _logger.LogInformation("Google Routes API yanıtı: {Status}", response.StatusCode);
+
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        _logger.LogError("Google Routes API hatası: {Status} {Body}", response.StatusCode, rawJson);
+                        var snippet = rawJson.Length > 400 ? rawJson[..400] : rawJson;
+                        throw new DomainException($"Google Routes API hatası: {(int)response.StatusCode} — {snippet}");
+                    }
+
+                    var parsed = JsonDocument.Parse(rawJson);
+                    var root2 = parsed.RootElement;
+
+                    if (!root2.TryGetProperty("routes", out var routes2) || routes2.GetArrayLength() == 0)
+                    {
+                        parsed.Dispose();
+                        if (fsmOverride.HasValue)
+                            _logger.LogWarning("FSM adayı boş rota döndürdü: lat={Lat}, lon={Lon}, via={Via} | Yanıt: {Body}",
+                                fsmOverride.Value.Item1, fsmOverride.Value.Item2, fsmOverride.Value.Item3, rawJson);
+                        else
+                            _logger.LogWarning("Google Routes API boş rota döndürdü. İstek: {Req} | Yanıt: {Body}", requestBodyJson, rawJson);
+                        continue; // sonraki adaya geç
+                    }
+
+                    if (fsmOverride.HasValue)
+                        _logger.LogInformation("FSM başarılı: lat={Lat}, lon={Lon}, via={Via}",
+                            fsmOverride.Value.Item1, fsmOverride.Value.Item2, fsmOverride.Value.Item3);
+
+                    doc = parsed;
+                    break;
+                }
+                catch (DomainException) { throw; }
+                catch (HttpRequestException ex)
+                {
+                    _logger.LogError(ex, "Google Routes API bağlantı hatası");
+                    throw new DomainException("Google Routes API'ye bağlanılamadı. İnternet bağlantısını kontrol edin.");
+                }
+                catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
+                {
+                    _logger.LogError(ex, "Google Routes API zaman aşımı");
+                    throw new DomainException("Google Routes API zaman aşımına uğradı. Lütfen tekrar deneyin.");
+                }
+                catch (JsonException ex)
+                {
+                    _logger.LogError(ex, "Google Routes API JSON parse hatası. Yanıt: {Raw}", rawJson);
+                    throw new DomainException("Google Routes API geçersiz yanıt döndürdü.");
+                }
             }
-            catch (DomainException) { throw; }
-            catch (HttpRequestException ex)
+
+            if (doc is null)
             {
-                _logger.LogError(ex, "Google Routes API bağlantı hatası");
-                throw new DomainException("Google Routes API'ye bağlanılamadı. İnternet bağlantısını kontrol edin.");
-            }
-            catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
-            {
-                _logger.LogError(ex, "Google Routes API zaman aşımı");
-                throw new DomainException("Google Routes API zaman aşımına uğradı. Lütfen tekrar deneyin.");
-            }
-            catch (JsonException ex)
-            {
-                _logger.LogError(ex, "Google Routes API JSON parse hatası. Yanıt: {Raw}", rawJson);
-                throw new DomainException("Google Routes API geçersiz yanıt döndürdü.");
+                _logger.LogWarning("Tüm FSM adayları boş rota döndürdü. Son istek: {Req}", requestBodyJson);
+                throw new DomainException($"Google Routes API geçerli rota döndürmedi. İstek: {requestBodyJson}");
             }
 
             using (doc)
             {
             var root = doc.RootElement;
-
-            if (!root.TryGetProperty("routes", out var routes) || routes.GetArrayLength() == 0)
-            {
-                _logger.LogWarning("Google Routes API boş rota döndürdü. İstek: {Req} | Yanıt: {Body}", requestBodyJson, rawJson);
-                throw new DomainException($"Google Routes API geçerli rota döndürmedi. İstek: {requestBodyJson}");
-            }
+            var routes = root.GetProperty("routes");
 
             var route = routes[0];
 
