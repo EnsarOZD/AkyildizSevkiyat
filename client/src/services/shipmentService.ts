@@ -112,24 +112,17 @@ export interface VehicleAssignmentRequest {
 
 export interface BulkAssignVehicleRequest {
   shipmentIds: number[];
-  driverName: string;
-  plateNumber: string;
+  driverId: number;
+  vehicleId: number;
 }
 
 export interface BulkAssignVehicleResult {
   successCount: number;
   errors: string[];
-  warning?: DriverWarning;
-}
-
-export interface DriverWarning {
-  activeShipmentCount: number;
-  message: string;
 }
 
 export interface AssignVehicleResult {
   shipmentId: number;
-  warning?: DriverWarning;
 }
 
 export interface ZoneItem {

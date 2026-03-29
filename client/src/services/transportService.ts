@@ -23,6 +23,11 @@ const transportService = {
     return response.data || [];
   },
 
+  async getActiveDrivers(): Promise<Driver[]> {
+    const response = await apiClient.get('/transport/drivers/active');
+    return response.data || [];
+  },
+
   async createDriver(data: { fullName: string; phone: string }): Promise<Driver> {
     const response = await apiClient.post('/transport/drivers', data);
     return response.data;
@@ -38,6 +43,11 @@ const transportService = {
 
   async getVehicles(): Promise<Vehicle[]> {
     const response = await apiClient.get('/transport/vehicles');
+    return response.data || [];
+  },
+
+  async getActiveVehicles(): Promise<Vehicle[]> {
+    const response = await apiClient.get('/transport/vehicles/active');
     return response.data || [];
   },
 

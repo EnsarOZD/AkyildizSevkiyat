@@ -392,25 +392,44 @@
             Bu sevkiyat için henüz irsaliye numarası girilmemiş. Devam edebilirsiniz ancak irsaliye numarasını araç çıkışından önce kaydetmeniz önerilir.
           </p>
         </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sürücü Adı</label>
-          <input v-model="vehicleForm.driverName" type="text" class="w-full border dark:border-gray-700 p-2 rounded focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100" />
+
+        <div v-if="assignListsLoading" class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+          <span class="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></span>
+          Yükleniyor...
         </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Plaka</label>
-          <input v-model="vehicleForm.plateNumber" type="text" class="w-full border dark:border-gray-700 p-2 rounded focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100" />
-        </div>
-        <div v-if="assignWarning" class="mt-3 rounded-md bg-amber-50 border border-amber-200 p-3 flex items-start gap-2">
-          <svg class="w-4 h-4 text-amber-600 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.538-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-          </svg>
-          <p class="text-amber-700 text-sm">{{ assignWarning }}</p>
+
+        <div v-else>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Şoför <span class="text-red-500">*</span></label>
+            <select v-model="vehicleForm.driverId"
+                    class="w-full border dark:border-gray-700 p-2 rounded focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100">
+              <option :value="null">Seçiniz...</option>
+              <option v-for="d in activeDrivers" :key="d.id" :value="d.id">{{ d.fullName }}</option>
+            </select>
+          </div>
+          <div class="mt-3">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Araç <span class="text-red-500">*</span></label>
+            <select v-model="vehicleForm.vehicleId"
+                    class="w-full border dark:border-gray-700 p-2 rounded focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100">
+              <option :value="null">Seçiniz...</option>
+              <option v-for="v in activeVehicles" :key="v.id" :value="v.id">{{ v.plateNumber }}</option>
+            </select>
+            <div v-if="vehicleForm.vehicleId" class="mt-1.5">
+              <span v-for="v in activeVehicles.filter(v => v.id === vehicleForm.vehicleId)" :key="v.id"
+                    :class="['text-xs font-medium px-2 py-0.5 rounded',
+                      v.vehicleType === 0 ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' :
+                      v.vehicleType === 1 ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' :
+                                            'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300']">
+                {{ v.vehicleTypeName }}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
       <template #footer>
         <button @click="showVehicleModal = false" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">İptal</button>
-        <button @click="confirmAssignVehicle" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 font-bold">Kaydet</button>
+        <button @click="confirmAssignVehicle" :disabled="!vehicleForm.driverId || !vehicleForm.vehicleId"
+                class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 font-bold disabled:opacity-50 disabled:cursor-not-allowed">Kaydet</button>
       </template>
     </BaseModal>
 
@@ -717,6 +736,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { ChevronLeftIcon } from '@heroicons/vue/24/outline';
 import shipmentService from '../services/shipmentService';
 import projectService from '../services/projectService';
+import transportService, { type Driver, type Vehicle } from '../services/transportService';
 import StockCombobox from '../components/StockCombobox.vue';
 import BaseModal from '../components/BaseModal.vue';
 import StatusBadge from '../components/StatusBadge.vue';
@@ -779,8 +799,10 @@ const activeDetailTab = ref<'lines' | 'delivery' | 'history'>('lines');
 
 // Modal State
 const showVehicleModal = ref(false);
-const vehicleForm = ref({ driverName: '', plateNumber: '' });
-const assignWarning = ref<string | null>(null);
+const vehicleForm = ref<{ driverId: number | null; vehicleId: number | null }>({ driverId: null, vehicleId: null });
+const activeDrivers = ref<Driver[]>([]);
+const activeVehicles = ref<Vehicle[]>([]);
+const assignListsLoading = ref(false);
 
 // Zone Logic
 const showZoneModal = ref(false);
@@ -890,9 +912,24 @@ const confirmRevert = async () => {
   }
 };
 
-const openAssignVehicleModal = () => {
-  assignWarning.value = null;
+const openAssignVehicleModal = async () => {
+  vehicleForm.value = { driverId: null, vehicleId: null };
   showVehicleModal.value = true;
+  if (activeDrivers.value.length === 0 || activeVehicles.value.length === 0) {
+    assignListsLoading.value = true;
+    try {
+      const [dList, vList] = await Promise.all([
+        transportService.getActiveDrivers(),
+        transportService.getActiveVehicles(),
+      ]);
+      activeDrivers.value = dList;
+      activeVehicles.value = vList;
+    } catch {
+      notificationStore.add('Şoför/araç listesi yüklenemedi.', 'error');
+    } finally {
+      assignListsLoading.value = false;
+    }
+  }
 };
 
 // Delivery Proof Modal
@@ -982,18 +1019,18 @@ const saveIrsaliye = async () => {
 
 const confirmAssignVehicle = async () => {
   if (!shipment.value) return;
-  if (!vehicleForm.value.driverName || !vehicleForm.value.plateNumber) {
-    notificationStore.add('Sürücü adı ve plaka zorunludur.', 'warning');
+  if (!vehicleForm.value.driverId || !vehicleForm.value.vehicleId) {
+    notificationStore.add('Şoför ve araç seçimi zorunludur.', 'warning');
     return;
   }
   try {
-    const result = await shipmentService.assignVehicle(shipment.value.id, vehicleForm.value as any);
+    await shipmentService.assignVehicle(shipment.value.id, {
+      driverId: vehicleForm.value.driverId,
+      vehicleId: vehicleForm.value.vehicleId,
+    });
     showVehicleModal.value = false;
     await fetchShipmentDetail();
     notificationStore.add('Araç atandı.', 'success');
-    if (result?.warning) {
-      notificationStore.add(result.warning.message, 'warning');
-    }
   } catch (error) {
     notificationStore.add(ApiErrorUtils.getErrorMessage(error) || 'İşlem başarısız.', 'error');
   }

@@ -321,7 +321,7 @@
         <div class="w-px h-5 bg-white/20 dark:bg-gray-900/20"></div>
         <button
           v-role="['Admin', 'Dispatcher', 'Manager']"
-          @click="showBulkModal = true"
+          @click="openBulkModal"
           class="flex items-center gap-1.5 bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold px-3 py-1.5 rounded-lg transition-colors"
         >
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" /></svg>
@@ -348,25 +348,43 @@
           aynı araç ve sürücüye atanacak.
         </p>
 
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sürücü Adı <span class="text-red-500">*</span></label>
-          <input
-            v-model="bulkForm.driverName"
-            type="text"
-            placeholder="Ad Soyad"
-            class="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+        <div v-if="bulkListsLoading" class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 py-2">
+          <span class="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></span>
+          Yükleniyor...
         </div>
 
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Plaka <span class="text-red-500">*</span></label>
-          <input
-            v-model="bulkForm.plateNumber"
-            type="text"
-            placeholder="34 ABC 123"
-            class="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+        <template v-else>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Şoför <span class="text-red-500">*</span></label>
+            <select
+              v-model="bulkForm.driverId"
+              class="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option :value="null">Seçiniz...</option>
+              <option v-for="d in bulkActiveDrivers" :key="d.id" :value="d.id">{{ d.fullName }}</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Araç <span class="text-red-500">*</span></label>
+            <select
+              v-model="bulkForm.vehicleId"
+              class="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option :value="null">Seçiniz...</option>
+              <option v-for="v in bulkActiveVehicles" :key="v.id" :value="v.id">{{ v.plateNumber }}</option>
+            </select>
+            <div v-if="bulkForm.vehicleId" class="mt-1.5">
+              <span v-for="v in bulkActiveVehicles.filter(v => v.id === bulkForm.vehicleId)" :key="v.id"
+                    :class="['text-xs font-medium px-2 py-0.5 rounded',
+                      v.vehicleType === 0 ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' :
+                      v.vehicleType === 1 ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' :
+                                            'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300']">
+                {{ v.vehicleTypeName }}
+              </span>
+            </div>
+          </div>
+        </template>
 
         <div class="flex gap-3 pt-1">
           <button
@@ -377,7 +395,7 @@
           </button>
           <button
             @click="submitBulkAssign"
-            :disabled="bulkSubmitting"
+            :disabled="bulkSubmitting || !bulkForm.driverId || !bulkForm.vehicleId"
             class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2"
           >
             <span v-if="bulkSubmitting" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
@@ -396,6 +414,7 @@ import { ref, computed, reactive, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ClipboardDocumentListIcon } from '@heroicons/vue/24/outline';
 import shipmentService, { type ZoneItem } from '../services/shipmentService';
+import transportService, { type Driver, type Vehicle } from '../services/transportService';
 import { useNotificationStore } from '../stores/notification';
 import { ApiErrorUtils } from '../utils/apiError';
 import StatusBadge from '../components/StatusBadge.vue';
@@ -469,19 +488,42 @@ function toggleSelectAll() {
 // ── Bulk assign modal ─────────────────────────────────────────────────────────
 const showBulkModal = ref(false);
 const bulkSubmitting = ref(false);
-const bulkForm = ref({ driverName: '', plateNumber: '' });
+const bulkForm = ref<{ driverId: number | null; vehicleId: number | null }>({ driverId: null, vehicleId: null });
+const bulkActiveDrivers = ref<Driver[]>([]);
+const bulkActiveVehicles = ref<Vehicle[]>([]);
+const bulkListsLoading = ref(false);
+
+async function openBulkModal() {
+  bulkForm.value = { driverId: null, vehicleId: null };
+  showBulkModal.value = true;
+  if (bulkActiveDrivers.value.length === 0 || bulkActiveVehicles.value.length === 0) {
+    bulkListsLoading.value = true;
+    try {
+      const [dList, vList] = await Promise.all([
+        transportService.getActiveDrivers(),
+        transportService.getActiveVehicles(),
+      ]);
+      bulkActiveDrivers.value = dList;
+      bulkActiveVehicles.value = vList;
+    } catch {
+      notificationStore.add('Şoför/araç listesi yüklenemedi.', 'error');
+    } finally {
+      bulkListsLoading.value = false;
+    }
+  }
+}
 
 async function submitBulkAssign() {
-  if (!bulkForm.value.driverName.trim() || !bulkForm.value.plateNumber.trim()) {
-    notificationStore.add('Sürücü adı ve plaka zorunludur.', 'warning');
+  if (!bulkForm.value.driverId || !bulkForm.value.vehicleId) {
+    notificationStore.add('Şoför ve araç seçimi zorunludur.', 'warning');
     return;
   }
   bulkSubmitting.value = true;
   try {
     const result = await shipmentService.bulkAssignVehicle({
       shipmentIds: [...selectedIds],
-      driverName: bulkForm.value.driverName.trim(),
-      plateNumber: bulkForm.value.plateNumber.trim(),
+      driverId: bulkForm.value.driverId,
+      vehicleId: bulkForm.value.vehicleId,
     });
     if (result.successCount > 0) {
       notificationStore.add(`${result.successCount} sevkiyat araca atandı.`, 'success');
@@ -489,11 +531,8 @@ async function submitBulkAssign() {
     if (result.errors.length > 0) {
       notificationStore.add(`${result.errors.length} sevkiyat atanamadı: ${result.errors[0]}`, 'warning');
     }
-    if (result.warning) {
-      notificationStore.add(result.warning.message, 'warning');
-    }
     showBulkModal.value = false;
-    bulkForm.value = { driverName: '', plateNumber: '' };
+    bulkForm.value = { driverId: null, vehicleId: null };
     selectedIds.clear();
     fetchShipments();
   } catch (error) {
