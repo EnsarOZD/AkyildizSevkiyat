@@ -46,82 +46,66 @@ namespace Akyildiz.Sevkiyat.Application.RouteOptimization.Services
         );
 
         /// <summary>
-        /// Orders stops using Europe/Anatolia split, delivery windows, and farthest-first.
+        /// Orders stops using Europe/Anatolia split, delivery windows, and nearest-neighbor chain.
+        /// Bridge waypoint is injected automatically based on start side vs stop sides.
         /// </summary>
         public OrderedRoute OrderStops(
             List<StopInfo> stops,
             double? startLatitude,
             double? startLongitude,
             string? vehicleType,
-            bool forceBridgeCrossing,
+            bool forceBridgeCrossing, // kept for API compatibility, not used — bridge is auto-determined
             bool returnToStart)
         {
             if (stops.Count == 0)
                 return new OrderedRoute(stops, false, null);
 
-            // 1. Split into Europe and Anatolia
-            var europeStops = stops.Where(s => IsEurope(s)).ToList();
+            // 1. Split by Bosphorus
+            var europeStops   = stops.Where(s =>  IsEurope(s)).ToList();
             var anatoliaStops = stops.Where(s => !IsEurope(s)).ToList();
 
-            bool crossesBosphorus = europeStops.Count > 0 && anatoliaStops.Count > 0;
+            // 2. Determine start side (default: Europe when no coords)
+            bool hasStartCoords = startLongitude.HasValue;
+            bool startIsEurope  = !hasStartCoords || startLongitude!.Value < BosphorusLongitude;
 
-            // 2. Determine start side
-            bool startIsEurope = true; // default
-            if (startLatitude.HasValue && startLongitude.HasValue)
-                startIsEurope = startLongitude.Value < BosphorusLongitude;
+            // 3. Bridge needed when start and at least one stop are on opposite sides
+            bool needsBridge = hasStartCoords
+                ? (startIsEurope ? anatoliaStops.Count > 0 : europeStops.Count > 0)
+                : (europeStops.Count > 0 && anatoliaStops.Count > 0);
 
-            // 3. Sort each side: DeliveryWindowStart asc (null last), then farthest-first within same window
-            var sortedEurope = SortSide(europeStops, startLatitude, startLongitude, startIsEurope ? null : GetSideCenter(anatoliaStops));
-            var sortedAnatolia = SortSide(anatoliaStops, startLatitude, startLongitude, !startIsEurope ? null : GetSideCenter(europeStops));
+            // 4. Resolve bridge stop for the vehicle type
+            StopInfo? bridgeStop = null;
+            if (needsBridge && !string.IsNullOrWhiteSpace(vehicleType) &&
+                BridgeWaypoints.TryGetValue(vehicleType, out var bridge))
+                bridgeStop = new StopInfo(bridge.Code, bridge.Name, bridge.Address, null, null, null, null);
 
-            // 4. Combine: start side first → [bridge] → other side
+            var firstSideStops  = startIsEurope ? europeStops   : anatoliaStops;
+            var secondSideStops = startIsEurope ? anatoliaStops : europeStops;
+
+            // 5. Sort first side starting from depot
+            var sortedFirst = SortSide(firstSideStops, startLatitude, startLongitude, null);
+
+            // 6. Sort second side starting from bridge exit point
+            double? secondRefLat = null, secondRefLon = null;
+            if (bridgeStop != null)
+            {
+                if (bridgeStop.Name.Contains("Yavuz")) { secondRefLat = 41.2027; secondRefLon = 29.0656; }
+                else                                    { secondRefLat = 41.0882; secondRefLon = 29.0594; }
+            }
+            var sortedSecond = SortSide(secondSideStops, secondRefLat, secondRefLon,
+                bridgeStop == null ? GetSideCenter(firstSideStops) : null);
+
+            // 7. Combine: first side → [bridge] → second side
             var result = new List<StopInfo>();
-            string? bridgeNotice = null;
-            bool hasBridge = false;
+            result.AddRange(sortedFirst);
+            if (bridgeStop != null) result.Add(bridgeStop);
+            result.AddRange(sortedSecond);
 
-            if (!crossesBosphorus)
-            {
-                // All stops on the same side — take whichever side has stops (may differ from start side)
-                result.AddRange(europeStops.Count > 0 ? sortedEurope : sortedAnatolia);
+            // 8. ReturnToStart: add second bridge crossing so Google routes back through the bridge
+            if (returnToStart && bridgeStop != null)
+                result.Add(bridgeStop);
 
-                // If ForceBridgeCrossing is set and stops are on the opposite side from start,
-                // inject a bridge waypoint so the driver crosses to the correct side first.
-                if (forceBridgeCrossing && result.Count > 0)
-                {
-                    bool stopsAreEurope = europeStops.Count > 0;
-                    bool needsBridge = stopsAreEurope != startIsEurope;
-                    if (needsBridge && !string.IsNullOrWhiteSpace(vehicleType) &&
-                        BridgeWaypoints.TryGetValue(vehicleType, out var bridge))
-                    {
-                        result.Insert(0, new StopInfo(bridge.Code, bridge.Name, bridge.Address, null, null, null, null));
-                        bridgeNotice = bridge.Name;
-                        hasBridge = true;
-                    }
-                }
-            }
-            else
-            {
-                var firstSide  = startIsEurope ? sortedEurope   : sortedAnatolia;
-                var secondSide = startIsEurope ? sortedAnatolia : sortedEurope;
-
-                result.AddRange(firstSide);
-
-                // Bridge waypoint
-                if (!string.IsNullOrWhiteSpace(vehicleType) &&
-                    BridgeWaypoints.TryGetValue(vehicleType, out var bridge))
-                {
-                    result.Add(new StopInfo(bridge.Code, bridge.Name, bridge.Address, null, null, null, null));
-                    bridgeNotice = bridge.Name;
-                    hasBridge = true;
-                }
-
-                result.AddRange(secondSide);
-            }
-
-            // 5. ReturnToStart — add start coords as last stop marker (handled by caller)
-            // We just return the ordered list; the caller appends the return destination.
-
-            return new OrderedRoute(result, hasBridge, bridgeNotice);
+            return new OrderedRoute(result, bridgeStop != null, bridgeStop?.Name);
         }
 
         private static bool IsEurope(StopInfo stop)
