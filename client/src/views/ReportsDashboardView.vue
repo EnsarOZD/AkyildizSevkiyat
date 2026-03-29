@@ -58,11 +58,11 @@
             <tr>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">#</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Proje</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Bölge</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase hidden sm:table-cell">Bölge</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Durum</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Teslim Tarihi</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Talep No</th>
-              <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Kalem</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase hidden sm:table-cell">Teslim Tarihi</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase hidden lg:table-cell">Talep No</th>
+              <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase hidden lg:table-cell">Kalem</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -70,11 +70,11 @@
             <tr v-for="row in shipSummary.rows" :key="row.id" class="hover:bg-gray-50 dark:hover:bg-gray-800">
               <td class="px-4 py-3 font-mono text-xs text-gray-500 dark:text-gray-400">{{ row.id }}</td>
               <td class="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">{{ row.projectName }}</td>
-              <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ row.zoneName || '-' }}</td>
+              <td class="px-4 py-3 text-gray-500 dark:text-gray-400 hidden sm:table-cell">{{ row.zoneName || '-' }}</td>
               <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs rounded-full font-semibold" :class="statusClass(row.status)">{{ row.status }}</span></td>
-              <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ fmtDate(row.deliveryDate) }}</td>
-              <td class="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs">{{ row.talepNo || '-' }}</td>
-              <td class="px-4 py-3 text-right text-gray-600 dark:text-gray-400">{{ row.lineCount }}</td>
+              <td class="px-4 py-3 text-gray-600 dark:text-gray-400 hidden sm:table-cell">{{ fmtDate(row.deliveryDate) }}</td>
+              <td class="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs hidden lg:table-cell">{{ row.talepNo || '-' }}</td>
+              <td class="px-4 py-3 text-right text-gray-600 dark:text-gray-400 hidden lg:table-cell">{{ row.lineCount }}</td>
             </tr>
           </tbody>
         </table>

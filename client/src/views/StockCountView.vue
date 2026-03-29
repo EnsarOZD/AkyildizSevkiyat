@@ -31,10 +31,10 @@
               <th class="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400">#</th>
               <th class="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400">Tarih</th>
               <th class="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400">Durum</th>
-              <th class="px-4 py-3 text-right font-medium text-gray-500 dark:text-gray-400">Toplam</th>
-              <th class="px-4 py-3 text-right font-medium text-gray-500 dark:text-gray-400">Sayılan</th>
-              <th class="px-4 py-3 text-right font-medium text-gray-500 dark:text-gray-400">Düzeltilen</th>
-              <th class="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400">Not</th>
+              <th class="px-4 py-3 text-right font-medium text-gray-500 dark:text-gray-400 hidden lg:table-cell">Toplam</th>
+              <th class="px-4 py-3 text-right font-medium text-gray-500 dark:text-gray-400 hidden lg:table-cell">Sayılan</th>
+              <th class="px-4 py-3 text-right font-medium text-gray-500 dark:text-gray-400 hidden lg:table-cell">Düzeltilen</th>
+              <th class="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400 hidden lg:table-cell">Not</th>
               <th class="px-4 py-3 text-right font-medium text-gray-500 dark:text-gray-400">İşlem</th>
             </tr>
           </thead>
@@ -47,12 +47,12 @@
                   {{ statusLabel(c.status) }}
                 </span>
               </td>
-              <td class="px-4 py-3 text-right">{{ c.totalLines }}</td>
-              <td class="px-4 py-3 text-right">{{ c.countedLines }}</td>
-              <td class="px-4 py-3 text-right" :class="{ 'text-red-600 font-semibold': c.adjustedLines > 0 }">
+              <td class="px-4 py-3 text-right hidden lg:table-cell">{{ c.totalLines }}</td>
+              <td class="px-4 py-3 text-right hidden lg:table-cell">{{ c.countedLines }}</td>
+              <td class="px-4 py-3 text-right hidden lg:table-cell" :class="{ 'text-red-600 font-semibold': c.adjustedLines > 0 }">
                 {{ c.adjustedLines }}
               </td>
-              <td class="px-4 py-3 text-gray-500 dark:text-gray-400 truncate max-w-xs">{{ c.note || '—' }}</td>
+              <td class="px-4 py-3 text-gray-500 dark:text-gray-400 truncate max-w-xs hidden lg:table-cell">{{ c.note || '—' }}</td>
               <td class="px-4 py-3 text-right">
                 <button
                   @click="openCount(c.id)"
@@ -174,13 +174,13 @@
           <thead class="bg-gray-50 dark:bg-gray-800">
             <tr>
               <th class="px-3 py-3 text-left font-medium text-gray-500 dark:text-gray-400 w-8">#</th>
-              <th class="px-3 py-3 text-left font-medium text-gray-500 dark:text-gray-400">Stok Kodu</th>
+              <th class="px-3 py-3 text-left font-medium text-gray-500 dark:text-gray-400 hidden sm:table-cell">Stok Kodu</th>
               <th class="px-3 py-3 text-left font-medium text-gray-500 dark:text-gray-400">Stok Adı</th>
-              <th class="px-3 py-3 text-left font-medium text-gray-500 dark:text-gray-400">Lokasyon</th>
-              <th class="px-3 py-3 text-right font-medium text-gray-500 dark:text-gray-400">Beklenen</th>
+              <th class="px-3 py-3 text-left font-medium text-gray-500 dark:text-gray-400 hidden lg:table-cell">Lokasyon</th>
+              <th class="px-3 py-3 text-right font-medium text-gray-500 dark:text-gray-400 hidden lg:table-cell">Beklenen</th>
               <th class="px-3 py-3 text-right font-medium text-gray-500 dark:text-gray-400">Sayılan</th>
               <th class="px-3 py-3 text-right font-medium text-gray-500 dark:text-gray-400">Fark</th>
-              <th class="px-3 py-3 text-left font-medium text-gray-500 dark:text-gray-400">Not</th>
+              <th class="px-3 py-3 text-left font-medium text-gray-500 dark:text-gray-400 hidden lg:table-cell">Not</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -190,10 +190,10 @@
               :class="rowClass(line)"
             >
               <td class="px-3 py-2 text-gray-400 text-xs">{{ idx + 1 }}</td>
-              <td class="px-3 py-2 font-mono text-gray-800 dark:text-gray-200">{{ line.stockCode }}</td>
+              <td class="px-3 py-2 font-mono text-gray-800 dark:text-gray-200 hidden sm:table-cell">{{ line.stockCode }}</td>
               <td class="px-3 py-2 text-gray-700 dark:text-gray-300">{{ line.stockName }}</td>
-              <td class="px-3 py-2 text-gray-500 dark:text-gray-400 font-mono text-xs">{{ line.warehouseLocation || '—' }}</td>
-              <td class="px-3 py-2 text-right text-gray-600 dark:text-gray-400">{{ line.expectedQty }}</td>
+              <td class="px-3 py-2 text-gray-500 dark:text-gray-400 font-mono text-xs hidden lg:table-cell">{{ line.warehouseLocation || '—' }}</td>
+              <td class="px-3 py-2 text-right text-gray-600 dark:text-gray-400 hidden lg:table-cell">{{ line.expectedQty }}</td>
               <td class="px-3 py-2 text-right">
                 <input
                   v-if="activeCount.status === 'Draft' && lineEdits[line.id]"
@@ -210,7 +210,7 @@
               <td class="px-3 py-2 text-right font-semibold" :class="diffClass(line)">
                 {{ formatDiff(line) }}
               </td>
-              <td class="px-3 py-2">
+              <td class="px-3 py-2 hidden lg:table-cell">
                 <input
                   v-if="activeCount.status === 'Draft' && lineEdits[line.id]"
                   v-model="lineEdits[line.id]!.note"

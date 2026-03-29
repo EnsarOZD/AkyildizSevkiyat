@@ -100,12 +100,12 @@
           <thead class="bg-gray-50 dark:bg-white/5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
             <tr>
               <th class="px-4 py-3 text-left">Adres Kodu</th>
-              <th class="px-4 py-3 text-left">Koridor</th>
-              <th class="px-4 py-3 text-left">Taraf</th>
-              <th class="px-4 py-3 text-left">Modül</th>
-              <th class="px-4 py-3 text-left">Kat</th>
-              <th class="px-4 py-3 text-left">Tip</th>
-              <th class="px-4 py-3 text-left">Açıklama</th>
+              <th class="px-4 py-3 text-left hidden sm:table-cell">Koridor</th>
+              <th class="px-4 py-3 text-left hidden sm:table-cell">Taraf</th>
+              <th class="px-4 py-3 text-left hidden lg:table-cell">Modül</th>
+              <th class="px-4 py-3 text-left hidden lg:table-cell">Kat</th>
+              <th class="px-4 py-3 text-left hidden sm:table-cell">Tip</th>
+              <th class="px-4 py-3 text-left hidden lg:table-cell">Açıklama</th>
               <th class="px-4 py-3 text-left">Durum</th>
               <th v-if="canManage" class="px-4 py-3"></th>
             </tr>
@@ -117,8 +117,8 @@
               class="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
             >
               <td class="px-4 py-3 font-mono font-semibold text-blue-700 dark:text-blue-300">{{ loc.code }}</td>
-              <td class="px-4 py-3 text-gray-900 dark:text-white">{{ loc.koridorNo }}</td>
-              <td class="px-4 py-3">
+              <td class="px-4 py-3 text-gray-900 dark:text-white hidden sm:table-cell">{{ loc.koridorNo }}</td>
+              <td class="px-4 py-3 hidden sm:table-cell">
                 <span
                   class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
                   :class="loc.taraf === 'K'
@@ -128,14 +128,14 @@
                   {{ loc.taraf === 'K' ? 'Kuzey' : 'Güney' }}
                 </span>
               </td>
-              <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ loc.modulNo.toString().padStart(3,'0') }}</td>
-              <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ loc.kat.toString().padStart(2,'0') }}</td>
-              <td class="px-4 py-3">
+              <td class="px-4 py-3 text-gray-700 dark:text-gray-300 hidden lg:table-cell">{{ loc.modulNo.toString().padStart(3,'0') }}</td>
+              <td class="px-4 py-3 text-gray-700 dark:text-gray-300 hidden lg:table-cell">{{ loc.kat.toString().padStart(2,'0') }}</td>
+              <td class="px-4 py-3 hidden sm:table-cell">
                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
                   {{ locationTypeLabel(loc.locationTypeId) }}
                 </span>
               </td>
-              <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ loc.description ?? '—' }}</td>
+              <td class="px-4 py-3 text-gray-500 dark:text-gray-400 hidden lg:table-cell">{{ loc.description ?? '—' }}</td>
               <td class="px-4 py-3">
                 <span
                   class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
