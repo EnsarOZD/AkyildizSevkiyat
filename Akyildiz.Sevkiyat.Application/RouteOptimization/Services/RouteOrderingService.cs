@@ -5,11 +5,15 @@ namespace Akyildiz.Sevkiyat.Application.RouteOptimization.Services
 {
     /// <summary>
     /// Rota sıralama servisi: Boğaz geçişine göre Avrupa/Anadolu ayırımı,
-    /// teslimat penceresi sıralaması, farthest-first, köprü waypoint enjeksiyonu.
+    /// nearest-neighbor sıralama, pencere ihlali düzeltmesi (Haversine-tabanlı
+    /// ön hesaplama), köprü waypoint enjeksiyonu.
     /// </summary>
     public class RouteOrderingService
     {
         private const double BosphorusLongitude = 29.05;
+        private const double AvgSpeedKmh        = 50.0;   // şehir içi ortalama
+        private const double DwellMinutes        = 15.0;   // durak bekleme süresi
+        private const double BridgeCrossingMin   = 10.0;   // köprü geçiş tahmini
 
         // Anatolian district keywords for address-based fallback
         private static readonly HashSet<string> AnatolianKeywords = new(StringComparer.OrdinalIgnoreCase)
@@ -39,41 +43,56 @@ namespace Akyildiz.Sevkiyat.Application.RouteOptimization.Services
             TimeOnly? DeliveryWindowEnd
         );
 
+        /// <summary>Ön hesaplama uyarısı — Google API öncesi Haversine tabanlı.</summary>
+        public record PreliminaryWarning(
+            string ProjectCode,
+            string ProjectName,
+            TimeOnly WindowStart,
+            TimeOnly WindowEnd,
+            TimeOnly EstimatedArrival,
+            bool IsLate,
+            string WarningType   // "EarlyArrival" | "LateArrival"
+        );
+
         public record OrderedRoute(
-            List<StopInfo> Stops,        // ordered stops including bridge if needed
+            List<StopInfo> Stops,              // bridge marker'ları dahil sıralı duraklar
             bool HasBridgeCrossing,
-            string? BridgeNotice
+            string? BridgeNotice,
+            List<PreliminaryWarning> PreliminaryWarnings
         );
 
         /// <summary>
-        /// Orders stops using Europe/Anatolia split, delivery windows, and nearest-neighbor chain.
-        /// Bridge waypoint is injected automatically based on start side vs stop sides.
+        /// Durakları sıralar:
+        /// 1. Her taraf için nearest-neighbor (farthest-first)
+        /// 2. Her taraf için Haversine tabanlı pencere ihlali düzeltmesi
+        /// 3. Köprü waypoint enjeksiyonu
         /// </summary>
         public OrderedRoute OrderStops(
             List<StopInfo> stops,
             double? startLatitude,
             double? startLongitude,
             string? vehicleType,
-            bool forceBridgeCrossing, // kept for API compatibility, not used — bridge is auto-determined
-            bool returnToStart)
+            bool forceBridgeCrossing,   // API uyumluluğu için tutuldu, kullanılmıyor
+            bool returnToStart,
+            TimeOnly? departureTime = null)
         {
             if (stops.Count == 0)
-                return new OrderedRoute(stops, false, null);
+                return new OrderedRoute(stops, false, null, []);
 
-            // 1. Split by Bosphorus
+            // 1. Boğaz'a göre ayır
             var europeStops   = stops.Where(s =>  IsEurope(s)).ToList();
             var anatoliaStops = stops.Where(s => !IsEurope(s)).ToList();
 
-            // 2. Determine start side (default: Europe when no coords)
+            // 2. Başlangıç tarafını belirle (koordinat yoksa Avrupa varsayılır)
             bool hasStartCoords = startLongitude.HasValue;
             bool startIsEurope  = !hasStartCoords || startLongitude!.Value < BosphorusLongitude;
 
-            // 3. Bridge needed when start and at least one stop are on opposite sides
+            // 3. Köprü gereksinimi
             bool needsBridge = hasStartCoords
                 ? (startIsEurope ? anatoliaStops.Count > 0 : europeStops.Count > 0)
                 : (europeStops.Count > 0 && anatoliaStops.Count > 0);
 
-            // 4. Resolve bridge stop for the vehicle type
+            // 4. Köprü durağı
             StopInfo? bridgeStop = null;
             if (needsBridge && !string.IsNullOrWhiteSpace(vehicleType) &&
                 BridgeWaypoints.TryGetValue(vehicleType, out var bridge))
@@ -82,10 +101,24 @@ namespace Akyildiz.Sevkiyat.Application.RouteOptimization.Services
             var firstSideStops  = startIsEurope ? europeStops   : anatoliaStops;
             var secondSideStops = startIsEurope ? anatoliaStops : europeStops;
 
-            // 5. Sort first side starting from depot
-            var sortedFirst = SortSide(firstSideStops, startLatitude, startLongitude, null);
+            double startLat = startLatitude  ?? 41.0;
+            double startLon = startLongitude ?? 28.9;
+            var effectiveDeparture = departureTime ?? new TimeOnly(8, 0);
 
-            // 6. Sort second side starting from bridge exit point
+            // 5. İlk taraf: sırala + pencere düzelt
+            var sortedFirst = SortSide(firstSideStops, startLatitude, startLongitude, null);
+            var (fixedFirst, warningsFirst) = ApplyWindowFixes(
+                sortedFirst, startLat, startLon, effectiveDeparture);
+
+            // 6. İkinci taraf için başlangıç zamanını tahmin et
+            double firstEndMin = ComputeCumulativeMinutes(
+                fixedFirst, startLat, startLon,
+                effectiveDeparture.Hour * 60.0 + effectiveDeparture.Minute);
+            double secondStartMin = firstEndMin + (bridgeStop != null ? BridgeCrossingMin : 0.0);
+            var secondDeparture = TimeOnly.FromTimeSpan(
+                TimeSpan.FromMinutes(secondStartMin % (24 * 60)));
+
+            // 7. İkinci taraf referans noktası (köprü çıkış koordinatı)
             double? secondRefLat = null, secondRefLon = null;
             if (bridgeStop != null)
             {
@@ -95,43 +128,142 @@ namespace Akyildiz.Sevkiyat.Application.RouteOptimization.Services
             var sortedSecond = SortSide(secondSideStops, secondRefLat, secondRefLon,
                 bridgeStop == null ? GetSideCenter(firstSideStops) : null);
 
-            // 7. Combine: first side → [bridge] → second side
-            var result = new List<StopInfo>();
-            result.AddRange(sortedFirst);
+            double secStartLat = secondRefLat ?? GetSideCenter(firstSideStops)?.Lat ?? startLat;
+            double secStartLon = secondRefLon ?? GetSideCenter(firstSideStops)?.Lon ?? startLon;
+            var (fixedSecond, warningsSecond) = ApplyWindowFixes(
+                sortedSecond, secStartLat, secStartLon, secondDeparture);
+
+            // 8. Sonuç: birinci taraf → [köprü] → ikinci taraf → [geri dönüş köprüsü]
+            var result = new List<StopInfo>(fixedFirst.Count + fixedSecond.Count + 2);
+            result.AddRange(fixedFirst);
             if (bridgeStop != null) result.Add(bridgeStop);
-            result.AddRange(sortedSecond);
+            result.AddRange(fixedSecond);
+            if (returnToStart && bridgeStop != null) result.Add(bridgeStop);
 
-            // 8. ReturnToStart: add second bridge crossing so Google routes back through the bridge
-            if (returnToStart && bridgeStop != null)
-                result.Add(bridgeStop);
+            var allWarnings = new List<PreliminaryWarning>(warningsFirst.Count + warningsSecond.Count);
+            allWarnings.AddRange(warningsFirst);
+            allWarnings.AddRange(warningsSecond);
 
-            return new OrderedRoute(result, bridgeStop != null, bridgeStop?.Name);
+            return new OrderedRoute(result, bridgeStop != null, bridgeStop?.Name, allWarnings);
         }
 
-        private static bool IsEurope(StopInfo stop)
-        {
-            // Coordinate-based check (primary)
-            if (stop.Longitude.HasValue)
-                return stop.Longitude.Value < BosphorusLongitude;
+        // ── Pencere ihlali düzeltmesi ─────────────────────────────────────────
 
-            // Address-based fallback
-            if (!string.IsNullOrWhiteSpace(stop.Address))
+        /// <summary>
+        /// Haversine tahminleriyle pencere ihlallerini tespit eder ve durakları taşır:
+        /// - Erken varış → sona taşı (window açılana kadar diğerleri yapılır)
+        /// - Geç varış   → öne taşı (bir an önce ulaşılmaya çalışılır)
+        /// Taşıma sonrası yeni varışları hesaplar ve ön uyarıları üretir.
+        /// </summary>
+        private static (List<StopInfo> Fixed, List<PreliminaryWarning> Warnings) ApplyWindowFixes(
+            List<StopInfo> stops,
+            double startLat, double startLon,
+            TimeOnly departureTime)
+        {
+            if (stops.Count == 0)
+                return (stops, []);
+
+            // Adım 1: İlk sıralamaya göre tahmini varışları hesapla
+            var arrivals = EstimateArrivals(stops, startLat, startLon, departureTime);
+
+            // Adım 2: İhlalleri sınıflandır
+            var earlyStops  = new List<StopInfo>();   // erken → sona
+            var lateStops   = new List<StopInfo>();   // geç   → öne
+            var normalStops = new List<StopInfo>();
+
+            for (int i = 0; i < stops.Count; i++)
             {
-                var upper = stop.Address.ToUpperInvariant()
-                    .Replace("İ", "I").Replace("Ş", "S").Replace("Ğ", "G")
-                    .Replace("Ü", "U").Replace("Ö", "O").Replace("Ç", "C");
-                foreach (var kw in AnatolianKeywords)
+                var stop = stops[i];
+                if (!stop.DeliveryWindowStart.HasValue || !stop.DeliveryWindowEnd.HasValue)
                 {
-                    var kwNorm = kw.ToUpperInvariant()
-                        .Replace("İ", "I").Replace("Ş", "S").Replace("Ğ", "G")
-                        .Replace("Ü", "U").Replace("Ö", "O").Replace("Ç", "C");
-                    if (upper.Contains(kwNorm)) return false; // Anatolia
+                    normalStops.Add(stop);
+                    continue;
                 }
+                if (arrivals[i] < stop.DeliveryWindowStart.Value)
+                    earlyStops.Add(stop);
+                else if (arrivals[i] > stop.DeliveryWindowEnd.Value)
+                    lateStops.Add(stop);
+                else
+                    normalStops.Add(stop);
             }
 
-            return true; // Default: Europe
+            // Adım 3: Yeni sıra: geç öne + normal + erken sona
+            var reordered = new List<StopInfo>(stops.Count);
+            reordered.AddRange(lateStops);
+            reordered.AddRange(normalStops);
+            reordered.AddRange(earlyStops);
+
+            // Adım 4: Yeni sıralamaya göre varışları yeniden hesapla
+            var finalArrivals = EstimateArrivals(reordered, startLat, startLon, departureTime);
+
+            // Adım 5: Ön uyarıları üret
+            var warnings = new List<PreliminaryWarning>();
+            for (int i = 0; i < reordered.Count; i++)
+            {
+                var stop = reordered[i];
+                if (!stop.DeliveryWindowStart.HasValue || !stop.DeliveryWindowEnd.HasValue)
+                    continue;
+
+                var arrival = finalArrivals[i];
+                if (arrival < stop.DeliveryWindowStart.Value)
+                    warnings.Add(new PreliminaryWarning(
+                        stop.Code, stop.Name,
+                        stop.DeliveryWindowStart.Value, stop.DeliveryWindowEnd.Value,
+                        arrival, false, "EarlyArrival"));
+                else if (arrival > stop.DeliveryWindowEnd.Value)
+                    warnings.Add(new PreliminaryWarning(
+                        stop.Code, stop.Name,
+                        stop.DeliveryWindowStart.Value, stop.DeliveryWindowEnd.Value,
+                        arrival, true, "LateArrival"));
+            }
+
+            return (reordered, warnings);
         }
 
+        /// <summary>Haversine + 50 km/h + 15 dk bekleme ile tahmini varış listesi.</summary>
+        private static List<TimeOnly> EstimateArrivals(
+            List<StopInfo> stops, double startLat, double startLon, TimeOnly departure)
+        {
+            var arrivals = new List<TimeOnly>(stops.Count);
+            double curLat = startLat, curLon = startLon;
+            double minutes = departure.Hour * 60.0 + departure.Minute;
+
+            foreach (var stop in stops)
+            {
+                double lat = stop.Latitude  ?? curLat;
+                double lon = stop.Longitude ?? curLon;
+                minutes += (Haversine(curLat, curLon, lat, lon) / AvgSpeedKmh) * 60.0;
+                arrivals.Add(TimeOnly.FromTimeSpan(TimeSpan.FromMinutes(minutes % (24 * 60))));
+                minutes += DwellMinutes;
+                curLat = lat; curLon = lon;
+            }
+
+            return arrivals;
+        }
+
+        /// <summary>Durak listesi bitimindeki kümülatif dakikayı döner.</summary>
+        private static double ComputeCumulativeMinutes(
+            List<StopInfo> stops, double startLat, double startLon, double startMinutes)
+        {
+            double curLat = startLat, curLon = startLon;
+            double minutes = startMinutes;
+            foreach (var stop in stops)
+            {
+                double lat = stop.Latitude  ?? curLat;
+                double lon = stop.Longitude ?? curLon;
+                minutes += (Haversine(curLat, curLon, lat, lon) / AvgSpeedKmh) * 60.0
+                           + DwellMinutes;
+                curLat = lat; curLon = lon;
+            }
+            return minutes;
+        }
+
+        // ── Nearest-neighbor sıralama ─────────────────────────────────────────
+
+        /// <summary>
+        /// Bir tarafın duraklarını referans noktasından başlayarak sıralar.
+        /// Pencere gruplamadan arındırılmış; pencere düzeltmesi ApplyWindowFixes'ta yapılır.
+        /// </summary>
         private static List<StopInfo> SortSide(
             List<StopInfo> stops,
             double? refLat,
@@ -143,46 +275,21 @@ namespace Akyildiz.Sevkiyat.Application.RouteOptimization.Services
             double startLat = refLat ?? altRef?.Lat ?? stops[0].Latitude ?? 41.0;
             double startLon = refLon ?? altRef?.Lon ?? stops[0].Longitude ?? 28.9;
 
-            var result = new List<StopInfo>();
-            double curLat = startLat;
-            double curLon = startLon;
-
-            // Windowed stops: group by DeliveryWindowStart ascending, nearest-neighbor within each group
-            var windowGroups = stops
-                .Where(s => s.DeliveryWindowStart.HasValue)
-                .GroupBy(s => s.DeliveryWindowStart!.Value)
-                .OrderBy(g => g.Key);
-
-            foreach (var group in windowGroups)
-            {
-                (var ordered, curLat, curLon) = NearestNeighborChain(group.ToList(), curLat, curLon);
-                result.AddRange(ordered);
-            }
-
-            // Windowless stops: single nearest-neighbor chain continuing from last position
-            var windowless = stops.Where(s => !s.DeliveryWindowStart.HasValue).ToList();
-            if (windowless.Count > 0)
-            {
-                (var ordered, _, _) = NearestNeighborChain(windowless, curLat, curLon);
-                result.AddRange(ordered);
-            }
-
-            return result;
+            (var ordered, _, _) = NearestNeighborChain(stops, startLat, startLon);
+            return ordered;
         }
 
         /// <summary>
-        /// Nearest-neighbor chain starting from the FARTHEST stop.
-        /// First stop: farthest from current position (reference point).
-        /// Subsequent stops: nearest unvisited from the last visited stop.
-        /// Returns ordered stops and the exit coordinates (last stop's position).
+        /// Nearest-neighbor zinciri: ilk durak en uzaktan başlar,
+        /// sonraki duraklar en yakın olanı seçer.
         /// </summary>
         private static (List<StopInfo> Ordered, double ExitLat, double ExitLon) NearestNeighborChain(
             List<StopInfo> stops, double curLat, double curLon)
         {
             var remaining = new List<StopInfo>(stops);
-            var ordered = new List<StopInfo>(stops.Count);
+            var ordered   = new List<StopInfo>(stops.Count);
 
-            // Start from the farthest stop
+            // En uzak durarakla başla
             var first = remaining
                 .OrderByDescending(s => Haversine(curLat, curLon,
                     s.Latitude  ?? curLat,
@@ -194,7 +301,6 @@ namespace Akyildiz.Sevkiyat.Application.RouteOptimization.Services
             curLat = first.Latitude  ?? curLat;
             curLon = first.Longitude ?? curLon;
 
-            // Continue with nearest-neighbor
             while (remaining.Count > 0)
             {
                 var nearest = remaining
@@ -210,6 +316,30 @@ namespace Akyildiz.Sevkiyat.Application.RouteOptimization.Services
             }
 
             return (ordered, curLat, curLon);
+        }
+
+        // ── Yardımcı metotlar ─────────────────────────────────────────────────
+
+        private static bool IsEurope(StopInfo stop)
+        {
+            if (stop.Longitude.HasValue)
+                return stop.Longitude.Value < BosphorusLongitude;
+
+            if (!string.IsNullOrWhiteSpace(stop.Address))
+            {
+                var upper = stop.Address.ToUpperInvariant()
+                    .Replace("İ", "I").Replace("Ş", "S").Replace("Ğ", "G")
+                    .Replace("Ü", "U").Replace("Ö", "O").Replace("Ç", "C");
+                foreach (var kw in AnatolianKeywords)
+                {
+                    var kwNorm = kw.ToUpperInvariant()
+                        .Replace("İ", "I").Replace("Ş", "S").Replace("Ğ", "G")
+                        .Replace("Ü", "U").Replace("Ö", "O").Replace("Ç", "C");
+                    if (upper.Contains(kwNorm)) return false;
+                }
+            }
+
+            return true;
         }
 
         private static (double Lat, double Lon)? GetSideCenter(List<StopInfo> stops)

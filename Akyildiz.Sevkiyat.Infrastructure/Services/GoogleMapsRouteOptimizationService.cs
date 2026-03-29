@@ -178,7 +178,8 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
             {
                 var ordered = _ordering.OrderStops(
                     validStops, startLat, startLon,
-                    request.VehicleType, request.ForceBridgeCrossing, request.ReturnToStart);
+                    request.VehicleType, request.ForceBridgeCrossing, request.ReturnToStart,
+                    request.DepartureTime);
 
                 orderedStops = ordered.Stops;
                 bridgeNotice = ordered.BridgeNotice;
@@ -469,11 +470,16 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
                 if (stop.DeliveryWindowStart.HasValue && stop.DeliveryWindowEnd.HasValue)
                 {
                     var arrivalTime = TimeOnly.FromTimeSpan(TimeSpan.FromMinutes(currentMinutes % (24 * 60)));
-                    if (arrivalTime > stop.DeliveryWindowEnd.Value)
+                    if (arrivalTime < stop.DeliveryWindowStart.Value)
                         warnings.Add(new TimeWindowWarningDto(
                             stop.Code, stop.Name,
                             stop.DeliveryWindowStart.Value, stop.DeliveryWindowEnd.Value,
-                            arrivalTime, true));
+                            arrivalTime, false, "EarlyArrival"));
+                    else if (arrivalTime > stop.DeliveryWindowEnd.Value)
+                        warnings.Add(new TimeWindowWarningDto(
+                            stop.Code, stop.Name,
+                            stop.DeliveryWindowStart.Value, stop.DeliveryWindowEnd.Value,
+                            arrivalTime, true, "LateArrival"));
                 }
                 if (addDwell) currentMinutes += dwellMinutes;
             }

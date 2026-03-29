@@ -1,3 +1,5 @@
+using Akyildiz.Sevkiyat.Domain.Enums;
+
 namespace Akyildiz.Sevkiyat.Application.RouteOptimization.Dtos
 {
     public record ProjectSyncComparisonDto(
@@ -23,8 +25,13 @@ namespace Akyildiz.Sevkiyat.Application.RouteOptimization.Dtos
     public record RouteOptimizationRequestDto(
         List<string> ProjectCodes,
         string? StartAddress,
-        string? VehicleType,         // "Kamyon" | "Kamyonet" | "Minibus"
-        bool ForceBridgeCrossing     // inject bridge as mandatory waypoint
+        string? VehicleType,
+        bool ForceBridgeCrossing,
+        StartLocationType? StartLocationType = null,
+        double? StartLatitude = null,
+        double? StartLongitude = null,
+        bool ReturnToStart = false,
+        TimeOnly? DepartureTime = null
     );
 
     public record RouteStopDto(
@@ -36,11 +43,29 @@ namespace Akyildiz.Sevkiyat.Application.RouteOptimization.Dtos
         double? EstimatedDurationFromPrevious
     );
 
+    public record TimeWindowWarningDto(
+        string ProjectCode,
+        string ProjectName,
+        TimeOnly WindowStart,
+        TimeOnly WindowEnd,
+        TimeOnly EstimatedArrival,
+        bool IsLate,
+        string WarningType = "LateArrival"   // "EarlyArrival" | "LateArrival"
+    );
+
     public record RouteOptimizationResultDto(
         List<RouteStopDto> OptimizedStops,
         double TotalDistance,
         double TotalDuration,
         List<string> ExcludedProjects,
-        string? BridgeNotice  // e.g. "Yavuz Sultan Selim Köprüsü"
+        string? BridgeNotice,
+        List<TimeWindowWarningDto>? TimeWindowWarnings = null
+    );
+
+    public record DepotSettingsDto(
+        string? DepotName,
+        string? DepotAddress,
+        double? DepotLatitude,
+        double? DepotLongitude
     );
 }
