@@ -38,6 +38,7 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Persistence
         public DbSet<ZonePreparationProject> ZonePreparationProjects { get; set; } = null!;
         public DbSet<Driver> Drivers { get; set; } = null!;
         public DbSet<Vehicle> Vehicles { get; set; } = null!;
+        public DbSet<ZonePreparationDriver> ZonePreparationDrivers { get; set; } = null!;
         public DbSet<StockTransaction> StockTransactions { get; set; } = null!;
 
         // NEW MODULE: Purchase Order & Goods Receipt
@@ -62,8 +63,14 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Persistence
         public DbSet<ImportBatch> ImportBatches { get; set; } = null!;
         public DbSet<ImportBatchOrder> ImportBatchOrders { get; set; } = null!;
 
+        // Auth
+        public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
+
         // Reconciliation
         public DbSet<ReconciliationIssue> ReconciliationIssues { get; set; } = null!;
+
+        // System Settings
+        public DbSet<SystemSettings> SystemSettings { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -165,6 +172,10 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Persistence
             {
                 entity.HasIndex(s => s.DeliveryDate);
                 entity.HasIndex(s => s.Status);
+                entity.HasIndex(s => s.IssOrderId).IsUnique();
+
+                // Optimistic concurrency
+                entity.Property(s => s.RowVersion).IsRowVersion();
 
                 entity.HasOne(s => s.ZonePreparation)
                 .WithMany() // Or Add collection to ZonePreparation if needed
@@ -406,6 +417,45 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Persistence
                 entity.Property(e => e.AcknowledgementNote).HasMaxLength(500);
             });
 
+            // RefreshToken
+            modelBuilder.Entity<RefreshToken>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.TokenHash).HasMaxLength(64).IsRequired();
+                entity.HasIndex(e => e.TokenHash).IsUnique();
+                entity.HasIndex(e => new { e.UserId, e.RevokedAt });
+
+                entity.HasOne(e => e.User)
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // Vehicle
+            modelBuilder.Entity<Vehicle>(entity =>
+            {
+                entity.Property(e => e.VehicleType)
+                    .HasConversion<int>()
+                    .HasDefaultValueSql("0");
+                entity.Property(e => e.Description).HasMaxLength(500);
+            });
+
+            // ZonePreparationDriver
+            modelBuilder.Entity<ZonePreparationDriver>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasOne(e => e.ZonePreparation)
+                    .WithMany(z => z.DriverAssignments)
+                    .HasForeignKey(e => e.ZonePreparationId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(e => e.Driver)
+                    .WithMany()
+                    .HasForeignKey(e => e.DriverId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                entity.Property(e => e.IsPrimary).HasDefaultValue(false);
+                entity.HasIndex(e => new { e.ZonePreparationId, e.DriverId }).IsUnique();
+            });
+
             // SEED DATA
             // ---- Project ----
             modelBuilder.Entity<Project>().HasData(new Project
@@ -490,6 +540,22 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Persistence
                     .WithMany()
                     .HasForeignKey(e => e.StockMasterId)
                     .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // SystemSettings — singleton row (Id=1 always, no identity)
+            modelBuilder.Entity<SystemSettings>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.DepotName).HasMaxLength(200);
+                entity.Property(e => e.DepotAddress).HasMaxLength(500);
+            });
+
+            // Project — TimeOnly columns stored as TIME
+            modelBuilder.Entity<Project>(entity =>
+            {
+                entity.Property(e => e.DeliveryWindowStart).HasColumnType("time");
+                entity.Property(e => e.DeliveryWindowEnd).HasColumnType("time");
             });
         }
 

@@ -30,5 +30,6 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
         // Navigation Properties
         public Zone Zone { get; set; } = null!;
         public ICollection<ZonePreparationProject> Projects { get; set; } = new List<ZonePreparationProject>();
+        public ICollection<ZonePreparationDriver> DriverAssignments { get; set; } = new List<ZonePreparationDriver>();
     }
 }

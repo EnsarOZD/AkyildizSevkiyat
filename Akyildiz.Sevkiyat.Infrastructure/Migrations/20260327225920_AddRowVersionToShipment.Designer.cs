@@ -4,6 +4,7 @@ using Akyildiz.Sevkiyat.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
 {
     [DbContext(typeof(SevkiyatDbContext))]
-    partial class SevkiyatDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260327225920_AddRowVersionToShipment")]
+    partial class AddRowVersionToShipment
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -393,12 +396,12 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                         new
                         {
                             Id = 1,
-                            DeliveryDate = new DateTime(2026, 3, 30, 0, 0, 0, 0, DateTimeKind.Local),
+                            DeliveryDate = new DateTime(2026, 3, 29, 0, 0, 0, 0, DateTimeKind.Local),
                             ExternalOrderNumber = "SO-1001",
                             ImportStatus = 0,
                             IsActive = true,
                             IsTransferred = false,
-                            OrderDate = new DateTime(2026, 3, 29, 0, 0, 0, 0, DateTimeKind.Local),
+                            OrderDate = new DateTime(2026, 3, 28, 0, 0, 0, 0, DateTimeKind.Local),
                             ProjectId = 1,
                             Status = "Imported"
                         });
@@ -524,12 +527,6 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
 
                     b.Property<int?>("DeliveryOrder")
                         .HasColumnType("int");
-
-                    b.Property<TimeOnly?>("DeliveryWindowEnd")
-                        .HasColumnType("time");
-
-                    b.Property<TimeOnly?>("DeliveryWindowStart")
-                        .HasColumnType("time");
 
                     b.Property<string>("InstitutionCode")
                         .HasColumnType("nvarchar(max)");
@@ -769,39 +766,6 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                     b.HasIndex("Status", "DetectedAt");
 
                     b.ToTable("ReconciliationIssues");
-                });
-
-            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.RefreshToken", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("RevokedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("TokenHash")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TokenHash")
-                        .IsUnique();
-
-                    b.HasIndex("UserId", "RevokedAt");
-
-                    b.ToTable("RefreshTokens");
                 });
 
             modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.Shipment", b =>
@@ -1338,30 +1302,6 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                     b.ToTable("Suppliers");
                 });
 
-            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.SystemSettings", b =>
-                {
-                    b.Property<int>("Id")
-                        .HasColumnType("int");
-
-                    b.Property<string>("DepotAddress")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<double?>("DepotLatitude")
-                        .HasColumnType("float");
-
-                    b.Property<double?>("DepotLongitude")
-                        .HasColumnType("float");
-
-                    b.Property<string>("DepotName")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("SystemSettings");
-                });
-
             modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.User", b =>
                 {
                     b.Property<int>("Id")
@@ -1418,21 +1358,12 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                     b.Property<string>("Capacity")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
                     b.Property<string>("PlateNumber")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("VehicleType")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValueSql("0");
 
                     b.HasKey("Id");
 
@@ -1563,35 +1494,6 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("ZonePreparations");
-                });
-
-            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.ZonePreparationDriver", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("DriverId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsPrimary")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
-
-                    b.Property<int>("ZonePreparationId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DriverId");
-
-                    b.HasIndex("ZonePreparationId", "DriverId")
-                        .IsUnique();
-
-                    b.ToTable("ZonePreparationDrivers");
                 });
 
             modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.ZonePreparationProject", b =>
@@ -1788,17 +1690,6 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                     b.Navigation("StockMaster");
                 });
 
-            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.RefreshToken", b =>
-                {
-                    b.HasOne("Akyildiz.Sevkiyat.Domain.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.Shipment", b =>
                 {
                     b.HasOne("Akyildiz.Sevkiyat.Domain.Entities.Driver", "AssignedDriver")
@@ -1949,25 +1840,6 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                     b.Navigation("Zone");
                 });
 
-            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.ZonePreparationDriver", b =>
-                {
-                    b.HasOne("Akyildiz.Sevkiyat.Domain.Entities.Driver", "Driver")
-                        .WithMany()
-                        .HasForeignKey("DriverId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Akyildiz.Sevkiyat.Domain.Entities.ZonePreparation", "ZonePreparation")
-                        .WithMany("DriverAssignments")
-                        .HasForeignKey("ZonePreparationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Driver");
-
-                    b.Navigation("ZonePreparation");
-                });
-
             modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.ZonePreparationProject", b =>
                 {
                     b.HasOne("Akyildiz.Sevkiyat.Domain.Entities.Project", "Project")
@@ -2038,8 +1910,6 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
 
             modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.ZonePreparation", b =>
                 {
-                    b.Navigation("DriverAssignments");
-
                     b.Navigation("Projects");
                 });
 #pragma warning restore 612, 618

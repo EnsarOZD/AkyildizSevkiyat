@@ -19,6 +19,7 @@ namespace Akyildiz.Sevkiyat.Application.Interfaces
         DbSet<ZonePreparationProject> ZonePreparationProjects { get; }
         DbSet<Akyildiz.Sevkiyat.Domain.Entities.Driver> Drivers { get; }
         DbSet<Vehicle> Vehicles { get; }
+        DbSet<ZonePreparationDriver> ZonePreparationDrivers { get; }
         DbSet<StockTransaction> StockTransactions { get; }
         
         // PurchaseOrder & GoodsReceipt Module
@@ -39,6 +40,11 @@ namespace Akyildiz.Sevkiyat.Application.Interfaces
 
         // Reconciliation
         DbSet<ReconciliationIssue> ReconciliationIssues { get; }
+
+        DbSet<Akyildiz.Sevkiyat.Domain.Entities.SystemSettings> SystemSettings { get; }
+
+        // Auth
+        DbSet<RefreshToken> RefreshTokens { get; }
 
         // WMS Module
         DbSet<WarehouseLocation> WarehouseLocations { get; }
