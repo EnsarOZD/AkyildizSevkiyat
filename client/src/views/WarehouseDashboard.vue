@@ -350,6 +350,12 @@ const fetchAll = async () => {
     const offsets = Array.from({ length: 16 }, (_, i) => i - 13);
     const dates = offsets.map(o => dateStr(o));
 
+    // Sync Today and Tomorrow to ensure most active data is fresh
+    await Promise.allSettled([
+        warehouseService.syncDashboard(todayStr()),
+        warehouseService.syncDashboard(dateStr(1))
+    ]);
+
     const results = await Promise.allSettled(
       dates.map(d => warehouseService.getDashboardAll({ date: d }).then(zones =>
         zones.map(z => ({ ...z, deliveryDateStr: d }))

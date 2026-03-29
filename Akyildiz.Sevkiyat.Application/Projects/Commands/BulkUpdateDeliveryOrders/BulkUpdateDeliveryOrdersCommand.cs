@@ -1,3 +1,4 @@
+using Akyildiz.Sevkiyat.Application.Common.Interfaces;
 using Akyildiz.Sevkiyat.Application.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -6,7 +7,10 @@ namespace Akyildiz.Sevkiyat.Application.Projects.Commands.BulkUpdateDeliveryOrde
 {
     public record ProjectOrderItem(int ProjectId, int DeliveryOrder);
 
-    public record BulkUpdateDeliveryOrdersCommand(List<ProjectOrderItem> Orders) : IRequest;
+    public record BulkUpdateDeliveryOrdersCommand(List<ProjectOrderItem> Orders) : IRequest, IRequireRoles
+    {
+        public IReadOnlyList<string> AllowedRoles => new[] { "Admin", "Manager", "Dispatcher" };
+    }
 
     public class BulkUpdateDeliveryOrdersCommandHandler : IRequestHandler<BulkUpdateDeliveryOrdersCommand>
     {

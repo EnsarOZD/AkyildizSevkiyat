@@ -1,12 +1,20 @@
 using Akyildiz.Sevkiyat.Application.Common.Interfaces;
 using Akyildiz.Sevkiyat.Application.Interfaces;
+using Akyildiz.Sevkiyat.Domain.Enums;
 using MediatR;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Akyildiz.Sevkiyat.Application.Transport.Vehicles.Commands.UpdateVehicle
 {
-    public record UpdateVehicleCommand(int Id, string PlateNumber, string? Capacity, bool IsActive) : IRequest<bool>, IRequireRoles
+    public record UpdateVehicleCommand(
+        int Id,
+        string PlateNumber,
+        string? Capacity,
+        VehicleType VehicleType,
+        string? Description,
+        bool IsActive
+    ) : IRequest<bool>, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles =>
             new[] { "Admin", "Manager" };
@@ -23,8 +31,10 @@ namespace Akyildiz.Sevkiyat.Application.Transport.Vehicles.Commands.UpdateVehicl
             if (vehicle == null) return false;
 
             vehicle.PlateNumber = request.PlateNumber;
-            vehicle.Capacity = request.Capacity;
-            vehicle.IsActive = request.IsActive;
+            vehicle.Capacity    = request.Capacity;
+            vehicle.VehicleType = request.VehicleType;
+            vehicle.Description = request.Description;
+            vehicle.IsActive    = request.IsActive;
 
             await _context.SaveChangesAsync(cancellationToken);
             return true;

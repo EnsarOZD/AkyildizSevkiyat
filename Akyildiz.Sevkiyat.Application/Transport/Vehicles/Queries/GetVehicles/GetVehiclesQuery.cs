@@ -1,5 +1,5 @@
 using Akyildiz.Sevkiyat.Application.Interfaces;
-using Akyildiz.Sevkiyat.Domain.Entities;
+using Akyildiz.Sevkiyat.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -9,8 +9,15 @@ using System.Threading.Tasks;
 
 namespace Akyildiz.Sevkiyat.Application.Transport.Vehicles.Queries.GetVehicles
 {
-    public record VehicleDto(int Id, string PlateNumber, string? Capacity, bool IsActive);
-    
+    public record VehicleDto(
+        int Id,
+        string PlateNumber,
+        string? Capacity,
+        VehicleType VehicleType,
+        string VehicleTypeName,
+        string? Description,
+        bool IsActive);
+
     public record GetVehiclesQuery : IRequest<List<VehicleDto>>;
 
     public class GetVehiclesQueryHandler : IRequestHandler<GetVehiclesQuery, List<VehicleDto>>
@@ -22,7 +29,15 @@ namespace Akyildiz.Sevkiyat.Application.Transport.Vehicles.Queries.GetVehicles
         {
             return await _context.Vehicles
                 .OrderBy(v => v.PlateNumber)
-                .Select(v => new VehicleDto(v.Id, v.PlateNumber, v.Capacity, v.IsActive))
+                .Select(v => new VehicleDto(
+                    v.Id,
+                    v.PlateNumber,
+                    v.Capacity,
+                    v.VehicleType,
+                    v.VehicleType == VehicleType.Kamyon   ? "Kamyon"   :
+                    v.VehicleType == VehicleType.Kamyonet ? "Kamyonet" : "Minibüs",
+                    v.Description,
+                    v.IsActive))
                 .ToListAsync(cancellationToken);
         }
     }

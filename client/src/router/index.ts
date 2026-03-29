@@ -173,6 +173,12 @@ const router = createRouter({
                     component: () => import('../views/RouteOptimizationView.vue'),
                     meta: { title: 'Rota Optimizasyonu', roles: ['Admin', 'Manager', 'Dispatcher'] }
                 },
+                {
+                    path: 'settings/depot',
+                    name: 'DepotSettings',
+                    component: () => import('../views/DepotSettingsView.vue'),
+                    meta: { title: 'Depo Tanımları', roles: ['Admin', 'Manager'] }
+                },
             ]
         },
         {

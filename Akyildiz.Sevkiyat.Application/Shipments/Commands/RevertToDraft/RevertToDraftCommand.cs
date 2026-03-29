@@ -7,13 +7,15 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.RevertToDraft
 {
     public record RevertToDraftCommand(int ShipmentId, string Reason) : IRequest<Unit>, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles =>
-            new[] { "Admin", "Manager" };
+            new[] { "Admin", "Manager", "Warehouse", "User" };
     }
 
     public class RevertToDraftCommandHandler : IRequestHandler<RevertToDraftCommand, Unit>
@@ -79,6 +81,10 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.RevertToDraft
             // StockReserved flag'ini her zaman serbest bırak (mapped satır olmasa da)
             if (shipment.StockReserved)
                 shipment.MarkStockReleased();
+
+            // Clear warehouse linkage so it disappears from dashboard
+            shipment.ZonePreparationId = null;
+            shipment.ZonePreparation = null;
 
             // Picking verilerini temizle — sonraki turda kirli veri kalmasın.
             var dirtyLines = shipment.Lines.Where(l => l.DeliveredQty != 0).ToList();

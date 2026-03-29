@@ -7,6 +7,8 @@ using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System;
+using System.Collections.Generic;
 
 namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.MarkZoneMacroReady
 {
@@ -68,15 +70,40 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.MarkZoneMacroReady
                 throw new DomainException("Hâlâ tamamlanmamış Micro toplama yapılan projeler var.");
 
             // Tamamlanma kontrolü — bu zone'un Macro satırlarını sorgula
-            var unfilledMacroCount = await _context.ShipmentLines
+            var macroLinesData = await _context.ShipmentLines
                 .Where(l => l.Shipment.ZonePreparationId == zp.Id
                          && l.Shipment.Status != ShipmentStatus.Cancelled
                          && l.Shipment.Status != ShipmentStatus.Passive
-                         && l.StockMaster != null
-                         && l.StockMaster.PickingType == PickingType.Macro
-                         && l.DeliveredQty == 0
                          && l.OrderedQty > 0)
-                .CountAsync(cancellationToken);
+                .Select(l => new { 
+                    l.Id, 
+                    l.DeliveredQty, 
+                    l.StockMasterId, 
+                    StockCode = l.IssOrderLine != null ? l.IssOrderLine.StockCode : l.StockCode,
+                    PickingType = l.StockMaster != null ? (PickingType?)l.StockMaster.PickingType : null
+                })
+                .ToListAsync(cancellationToken);
+
+            var externalCodes = macroLinesData.Select(l => l.StockCode).Distinct().ToList();
+            var mappings = await _context.StockMappings
+                .Include(m => m.LocalStock)
+                .Where(m => externalCodes.Contains(m.ExternalStockCode))
+                .ToListAsync(cancellationToken);
+
+            var macroLines = macroLinesData.Where(line => {
+                if (line.StockMasterId.HasValue && line.PickingType.HasValue)
+                {
+                    return line.PickingType == PickingType.Macro;
+                }
+                var mapping = mappings.FirstOrDefault(m => m.ExternalStockCode.Equals(line.StockCode, StringComparison.OrdinalIgnoreCase));
+                if (mapping != null && mapping.LocalStock != null)
+                {
+                    return mapping.LocalStock.PickingType == PickingType.Macro;
+                }
+                return false; // Default is Micro
+            }).ToList();
+
+            var unfilledMacroCount = macroLines.Count(l => l.DeliveredQty == 0);
 
             if (unfilledMacroCount > 0 && !request.ForceComplete)
                 throw new DomainException(

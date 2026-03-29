@@ -65,16 +65,16 @@
     </div>
 
     <!-- Desktop Table -->
-    <div class="hidden md:block bg-white dark:bg-gray-900 shadow-sm rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+    <div class="hidden md:block bg-white dark:bg-gray-900 shadow-sm rounded-xl overflow-x-auto border border-gray-200 dark:border-gray-700">
       <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
         <thead class="bg-gray-50 dark:bg-gray-800">
           <tr>
             <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sipariş No</th>
             <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tedarikçi</th>
             <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tarih</th>
-            <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Teslim</th>
+            <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">Teslim</th>
             <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Durum</th>
-            <th class="px-5 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Kalem</th>
+            <th class="px-5 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">Kalem</th>
             <th class="px-5 py-3"></th>
           </tr>
         </thead>
@@ -104,13 +104,13 @@
             <td class="px-5 py-3 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
               {{ formatDate(order.orderDate || order.OrderDate) }}
             </td>
-            <td class="px-5 py-3 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+            <td class="px-5 py-3 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap hidden lg:table-cell">
               {{ formatDate(order.expectedDeliveryDate || order.ExpectedDeliveryDate) }}
             </td>
             <td class="px-5 py-3 whitespace-nowrap">
               <StatusBadge :status="order.status || order.Status" type="purchaseOrder" />
             </td>
-            <td class="px-5 py-3 text-sm text-gray-500 dark:text-gray-400 text-center">
+            <td class="px-5 py-3 text-sm text-gray-500 dark:text-gray-400 text-center hidden lg:table-cell">
               {{ order.lineCount || order.LineCount }}
             </td>
             <td class="px-5 py-3 text-right">

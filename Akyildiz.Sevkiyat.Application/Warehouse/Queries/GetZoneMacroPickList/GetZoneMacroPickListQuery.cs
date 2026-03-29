@@ -63,7 +63,8 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetZoneMacroPickList
             // Get all shipment lines
             var lines = await _context.ShipmentLines
                 .Include(sl => sl.Shipment)
-                .Include(sl => sl.IssOrderLine) // Ensure included for mapping
+                .Include(sl => sl.IssOrderLine) 
+                .Include(sl => sl.StockMaster)
                 .Where(sl => 
                     projectIds.Contains(sl.Shipment.ProjectId) && 
                     sl.Shipment.ZonePreparationId == zp.Id && 
@@ -79,7 +80,9 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetZoneMacroPickList
                    sl.StockName,
                    sl.Unit,
                    sl.Shipment.ProjectId,
-                   ProjectName = sl.Shipment.Project.Name // Retrieve Project Name
+                   ProjectName = sl.Shipment.Project.Name,
+                   sl.StockMasterId,
+                   PickingType = sl.StockMaster != null ? (PickingType?)sl.StockMaster.PickingType : null
                 })
                 .ToListAsync(cancellationToken);
 
@@ -99,27 +102,36 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetZoneMacroPickList
                 // Safety check for stockcode
                 if (string.IsNullOrEmpty(line.StockCode)) continue; 
 
-                var mapping = mappings.FirstOrDefault(m => m.ExternalStockCode == line.StockCode);
+                var mapping = mappings.FirstOrDefault(m => m.ExternalStockCode.Equals(line.StockCode, System.StringComparison.OrdinalIgnoreCase));
                 
                 bool isMacro = false;
-                string finalStockCode = line.StockCode;
-                string finalStockName = line.StockName;
-                string finalUnit = line.Unit.ToString();
-                string? category = null;
-                int? localStockId = null;
-
-                if (mapping != null && mapping.LocalStock != null)
+                
+                if (line.StockMasterId.HasValue && line.PickingType.HasValue)
+                {
+                    if (line.PickingType == PickingType.Macro) isMacro = true;
+                }
+                else if (mapping != null && mapping.LocalStock != null)
                 {
                     if (mapping.LocalStock.PickingType == PickingType.Macro) isMacro = true;
-                    finalStockCode = mapping.LocalStock.StockCode;
-                    finalStockName = mapping.LocalStock.StockName;
-                    finalUnit = mapping.LocalStock.Unit.ToString(); // Enum to String
-                    category = mapping.LocalStock.Category.ToString();
-                    localStockId = mapping.LocalStock.Id;
                 }
-                
+
                 if (isMacro)
                 {
+                    string finalStockCode = line.StockCode;
+                    string finalStockName = line.StockName;
+                    string finalUnit = line.Unit.ToString();
+                    string? category = null;
+                    int? localStockId = line.StockMasterId;
+
+                    if (mapping != null && mapping.LocalStock != null)
+                    {
+                        finalStockCode = mapping.LocalStock.StockCode;
+                        finalStockName = mapping.LocalStock.StockName;
+                        finalUnit = mapping.LocalStock.Unit.ToString(); 
+                        category = mapping.LocalStock.Category.ToString();
+                        localStockId = mapping.LocalStock.Id;
+                    }
+
                     rawItems.Add(new MacroRawItem {
                         LineId = line.Id,
                         ProjectId = line.ProjectId,

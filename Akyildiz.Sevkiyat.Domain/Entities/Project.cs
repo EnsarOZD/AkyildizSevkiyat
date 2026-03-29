@@ -39,5 +39,7 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
         public int? DeliveryOrder { get; set; }
         public double? Latitude { get; set; }
         public double? Longitude { get; set; }
+        public TimeOnly? DeliveryWindowStart { get; set; }
+        public TimeOnly? DeliveryWindowEnd { get; set; }
     }
 }

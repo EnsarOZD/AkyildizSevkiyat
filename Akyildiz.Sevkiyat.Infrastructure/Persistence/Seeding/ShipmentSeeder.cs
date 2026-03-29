@@ -66,16 +66,16 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Persistence.Seeding
                 };
 
                 // 5. Create ShipmentLines using factory method
-                var shipmentLine1 = ShipmentLine.Create(
-                    issOrderLine1.Id,
+                var shipmentLine1 = ShipmentLine.CreateWithEntities(
+                    issOrderLine1,
                     null,
                     issOrderLine1.StockCode,
                     issOrderLine1.StockName,
                     issOrderLine1.Unit,
                     issOrderLine1.OrderedQty);
 
-                var shipmentLine2 = ShipmentLine.Create(
-                    issOrderLine2.Id,
+                var shipmentLine2 = ShipmentLine.CreateWithEntities(
+                    issOrderLine2,
                     null,
                     issOrderLine2.StockCode,
                     issOrderLine2.StockName,
@@ -132,8 +132,8 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Persistence.Seeding
                 };
                 // Status default is Created
 
-                var shipmentLine2_1 = ShipmentLine.Create(
-                    issOrderLine2_1.Id,
+                var shipmentLine2_1 = ShipmentLine.CreateWithEntities(
+                    issOrderLine2_1,
                     null,
                     issOrderLine2_1.StockCode,
                     issOrderLine2_1.StockName,

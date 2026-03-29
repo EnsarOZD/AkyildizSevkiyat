@@ -38,7 +38,11 @@
         class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 flex items-center gap-2"
         :disabled="importing"
       >
-        <span v-if="importing">Aktarılıyor...</span>
+        <svg v-if="importing" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+        </svg>
+        <span v-if="importing">Aktarılıyor<span v-if="importBatchId"> (Batch #{{ importBatchId }})</span>...</span>
         <span v-else>Aktarımı Başlat</span>
       </button>
 
@@ -360,7 +364,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, computed } from 'vue';
+import { ref, watch, onMounted, computed, onUnmounted } from 'vue';
 import shipmentService from '../services/shipmentService';
 import projectService from '../services/projectService';
 import StockMappingManager from '../components/StockMappingManager.vue';
@@ -388,6 +392,8 @@ const activeTab = ref('Ready');
 const orders = ref<any[]>([]);
 const loading = ref(false);
 const importing = ref(false);
+const importBatchId = ref<number | null>(null);
+const importPollInterval = ref<ReturnType<typeof setInterval> | null>(null);
 const importResult = ref<null | { totalFromIss: number; newCount: number; skippedCount: number; needsMappingCount: number; failedCount: number; errors: string[] }>(null);
 const showMapping = ref(true);
 
@@ -511,24 +517,58 @@ const loadHistory = async () => {
     }
 };
 
+const stopImportPolling = () => {
+    if (importPollInterval.value) {
+        clearInterval(importPollInterval.value);
+        importPollInterval.value = null;
+    }
+};
+
 const importOrders = async () => {
     importing.value = true;
     importResult.value = null;
+    importBatchId.value = null;
+    stopImportPolling();
     try {
-        const res = await shipmentService.importOrders({
+        const { batchId } = await shipmentService.startImportAsync({
             startDate: startDate.value || '',
             endDate: endDate.value || ''
         });
-        importResult.value = res;
-        page.value = 1;
-        await loadOrders();
+        importBatchId.value = batchId;
+
+        // Poll every 3 seconds until batch completes
+        importPollInterval.value = setInterval(async () => {
+            try {
+                const batch = await shipmentService.getImportBatchStatus(batchId);
+                const done = batch.status !== 'Running';
+                if (done) {
+                    stopImportPolling();
+                    importing.value = false;
+                    importResult.value = {
+                        totalFromIss: batch.totalFromSource,
+                        newCount: batch.newCount,
+                        skippedCount: batch.skippedCount,
+                        needsMappingCount: batch.needsMappingCount,
+                        failedCount: batch.failedCount,
+                        errors: batch.errorSummary ? [batch.errorSummary] : []
+                    };
+                    page.value = 1;
+                    await loadOrders();
+                    await loadHistory();
+                }
+            } catch (e) {
+                console.error('Batch poll error:', e);
+                // Keep polling; transient errors should not stop monitoring
+            }
+        }, 3000);
     } catch (e) {
-        notificationStore.add(ApiErrorUtils.getErrorMessage(e) || "Import failed", 'error');
+        notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Aktarım başlatılamadı', 'error');
         console.error(e);
-    } finally {
         importing.value = false;
     }
 };
+
+onUnmounted(stopImportPolling);
 
 const syncing = ref(false);
 const syncProjects = async () => {

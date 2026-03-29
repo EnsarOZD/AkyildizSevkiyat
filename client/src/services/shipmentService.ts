@@ -258,6 +258,20 @@ const shipmentService = {
     return response.data;
   },
 
+  async startImportAsync(params: { startDate: string; endDate: string }): Promise<{ batchId: number }> {
+    const response = await apiClient.post('/issorders/import-async', params);
+    return response.data;
+  },
+
+  async getImportBatchStatus(batchId: number): Promise<{
+    id: number; status: string; totalFromSource: number; newCount: number;
+    skippedCount: number; needsMappingCount: number; failedCount: number;
+    durationMs: number; errorSummary: string | null; completedAt: string | null;
+  }> {
+    const response = await apiClient.get(`/issorders/import-batches/${batchId}`);
+    return response.data;
+  },
+
   async getImportBatches(page = 1, pageSize = 20): Promise<{
     items: Array<{
       id: number; requestedStartDate: string; requestedEndDate: string;

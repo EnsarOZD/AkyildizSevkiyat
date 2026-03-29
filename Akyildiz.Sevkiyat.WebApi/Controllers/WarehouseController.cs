@@ -98,7 +98,8 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         }
 
         [HttpPost("set-driver-info")]
-        public async Task<ActionResult<bool>> SetDriverInfo([FromBody] Akyildiz.Sevkiyat.Application.Warehouse.Commands.SetZoneDriverInfo.SetZoneDriverInfoCommand command)
+        public async Task<ActionResult<Akyildiz.Sevkiyat.Application.Warehouse.Commands.SetZoneDriverInfo.SetZoneDriverInfoResult>> SetDriverInfo(
+            [FromBody] Akyildiz.Sevkiyat.Application.Warehouse.Commands.SetZoneDriverInfo.SetZoneDriverInfoCommand command)
         {
             return await _mediator.Send(command);
         }

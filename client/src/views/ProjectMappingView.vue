@@ -41,6 +41,8 @@
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Bölge</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Netsis Cari Kodu</th>
             <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider" title="Bölge içindeki teslimat sırası (küçük = önce)">Sıra</th>
+            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider" title="Teslimat penceresi başlangıç saati">Pencere Başlangıç</th>
+            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider" title="Teslimat penceresi bitiş saati">Pencere Bitiş</th>
             <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Durum</th>
           </tr>
         </thead>
@@ -88,6 +90,24 @@
                 @keydown.enter="($event.target as HTMLInputElement).blur()"
               />
             </td>
+            <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
+              <input
+                :id="`win-start-${project.id}`"
+                :value="project.deliveryWindowStart ?? ''"
+                type="time"
+                class="border border-gray-300 dark:border-gray-700 rounded-md shadow-sm sm:text-sm p-1 dark:bg-gray-800 dark:text-gray-100"
+                @blur="updateDeliveryWindow(project, 'start', $event)"
+              />
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
+              <input
+                :id="`win-end-${project.id}`"
+                :value="project.deliveryWindowEnd ?? ''"
+                type="time"
+                class="border border-gray-300 dark:border-gray-700 rounded-md shadow-sm sm:text-sm p-1 dark:bg-gray-800 dark:text-gray-100"
+                @blur="updateDeliveryWindow(project, 'end', $event)"
+              />
+            </td>
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
                 <span v-if="project.zoneId" class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Eşleşti</span>
                 <span v-else class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">Tanımsız</span>
@@ -124,6 +144,8 @@ interface Project {
   zoneName: string | null;
   netsisCariKodu?: string | null;
   deliveryOrder?: number | null;
+  deliveryWindowStart?: string | null;
+  deliveryWindowEnd?: string | null;
 }
 
 const zones = ref<Zone[]>([]);
@@ -192,6 +214,36 @@ const updateDeliveryOrder = async (project: Project, event: Event) => {
     } catch (err) {
         project.deliveryOrder = old;
         input.value = old != null ? String(old) : '';
+        notificationStore.add(ApiErrorUtils.getErrorMessage(err) || 'Güncelleme başarısız.', 'error');
+    }
+};
+
+const updateDeliveryWindow = async (project: Project, field: 'start' | 'end', event: Event) => {
+    const input = event.target as HTMLInputElement;
+    const newValue = input.value || null;
+
+    const oldStart = project.deliveryWindowStart ?? null;
+    const oldEnd   = project.deliveryWindowEnd ?? null;
+
+    const newStart = field === 'start' ? newValue : oldStart;
+    const newEnd   = field === 'end'   ? newValue : oldEnd;
+
+    // Validation: if both set, start must be < end
+    if (newStart && newEnd && newStart >= newEnd) {
+        notificationStore.add('Başlangıç saati bitiş saatinden önce olmalıdır.', 'error');
+        input.value = (field === 'start' ? oldStart : oldEnd) ?? '';
+        return;
+    }
+
+    if (field === 'start') project.deliveryWindowStart = newValue;
+    else project.deliveryWindowEnd = newValue;
+
+    try {
+        await projectService.updateDeliveryWindow(project.id, newStart, newEnd);
+    } catch (err) {
+        project.deliveryWindowStart = oldStart;
+        project.deliveryWindowEnd   = oldEnd;
+        input.value = (field === 'start' ? oldStart : oldEnd) ?? '';
         notificationStore.add(ApiErrorUtils.getErrorMessage(err) || 'Güncelleme başarısız.', 'error');
     }
 };

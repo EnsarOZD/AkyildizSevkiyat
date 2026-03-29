@@ -99,6 +99,7 @@ export const NAV_ITEMS: NavGroup[] = [
         items: [
             { label: 'Kullanıcı Yönetimi',   to: '/users',          icon: UsersIcon,             roles: ['Admin'] },
             { label: 'Mutabakat Kontrolleri', to: '/reconciliation', icon: ShieldExclamationIcon, roles: ['Admin', 'Manager'] },
+            { label: 'Depo Tanımları', to: '/settings/depot', icon: BuildingStorefrontIcon, roles: ['Admin', 'Manager'] },
         ],
     },
 ];

@@ -58,7 +58,7 @@
               </div>
 
               <!-- Footer -->
-              <div v-if="hasFooter" class="px-6 py-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex flex-wrap items-center justify-end gap-3">
+              <div v-if="hasFooter" class="px-6 py-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex flex-wrap items-center justify-end gap-3 [&>button]:min-h-[44px] [&>button]:py-3 [&>button]:px-4 [&>button]:w-full [&>button]:sm:w-auto">
                 <slot name="footer"></slot>
               </div>
             </div>

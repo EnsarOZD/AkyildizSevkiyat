@@ -40,10 +40,15 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Commands.AutoMatchStockMappings
                 .Where(g => g.Count() == 1)
                 .ToDictionary(g => g.Key, g => g.First().Id);
 
+            _logger.LogInformation("AutoMatch: Found {TotalStocks} active stocks. Generated {UniqueKeys} unique normalization keys.", 
+                allStocks.Count, uniqueByName.Count);
+
             // Get all unmapped entries
             var unmapped = await _context.StockMappings
                 .Where(m => m.MatchStatus == MatchStatus.Unmapped)
                 .ToListAsync(cancellationToken);
+
+            _logger.LogInformation("AutoMatch: Processing {UnmappedCount} unmapped entries.", unmapped.Count);
 
             var result = new AutoMatchStockMappingsResult { UnmatchedCount = unmapped.Count };
 

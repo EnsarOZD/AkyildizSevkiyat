@@ -5,12 +5,14 @@ namespace Akyildiz.Sevkiyat.Application.RouteOptimization.Interfaces
     public interface IRouteOptimizationService
     {
         Task<RouteOptimizationResultDto> OptimizeRouteAsync(
+            RouteOptimizationRequestDto request,
             List<string> addresses,
-            string? startAddress,
             List<string> projectCodes,
             List<string> projectNames,
-            string? vehicleType,
-            bool forceBridgeCrossing,
+            List<double?> latitudes,
+            List<double?> longitudes,
+            List<TimeOnly?> deliveryWindowStarts,
+            List<TimeOnly?> deliveryWindowEnds,
             CancellationToken cancellationToken = default);
     }
 }

@@ -155,6 +155,10 @@ const warehouseService = {
     return response.data;
   },
 
+  async syncDashboard(date: string): Promise<void> {
+    await apiClient.post('/warehouse/dashboard/sync', { date });
+  },
+
   async startZonePreparation(payload: StartZonePreparationRequest): Promise<void> {
     await apiClient.post('/warehouse/start-zone-preparation', payload);
   },

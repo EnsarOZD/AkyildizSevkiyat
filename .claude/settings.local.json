@@ -40,7 +40,12 @@
       "Bash(while read:*)",
       "Bash(do if:*)",
       "Bash(then echo:*)",
-      "Bash(taskkill /PID 18104 /F)"
+      "Bash(taskkill /PID 18104 /F)",
+      "Bash(find D:vueAkyildizSevkiyat -name *Vehicles* -o -name *Drivers*)",
+      "Bash(find D:vueAkyildizSevkiyat -path *Queries* -name *DriverRoute* -type f)",
+      "Bash(taskkill /PID 26684 /F)",
+      "Bash(powershell -Command \"Get-Process | Where-Object { \\\\$_.Name -eq 'dotnet' } | Select-Object Id, Name, MainWindowTitle | Format-Table\")",
+      "Bash(powershell -Command \"Stop-Process -Name dotnet -Force\")"
     ]
   }
 }

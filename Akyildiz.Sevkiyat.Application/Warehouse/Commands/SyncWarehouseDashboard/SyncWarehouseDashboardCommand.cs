@@ -26,21 +26,19 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.SyncWarehouseDashboar
         {
             var date = request.Date.Date;
 
-            // 1. Fetch ALL eligible shipments for this date
-            var shipments = await _context.Shipments
-                .Include(s => s.Project)
-                .Where(s => 
-                    s.DeliveryDate.Date == date &&
-                    s.Status >= ShipmentStatus.AssignedToWarehouse && 
-                    s.Status != ShipmentStatus.Cancelled &&
-                    s.Status != ShipmentStatus.Passive
-                )
-                .ToListAsync(cancellationToken);
-
-            // 2. Fetch ALL Existing ZonePreparations for this Date
+            // 1. Fetch ALL Existing ZonePreparations for this Date
             var existingPreps = await _context.ZonePreparations
                 .Include(z => z.Projects)
                 .Where(z => z.DeliveryDate == date)
+                .ToListAsync(cancellationToken);
+
+            // 2. Fetch ALL eligible shipments for this date + current linked ones
+            var shipments = await _context.Shipments
+                .Include(s => s.Project)
+                .Where(s => 
+                    (s.DeliveryDate.Date == date) || 
+                    (s.ZonePreparationId != null && existingPreps.Select(p => p.Id).Contains(s.ZonePreparationId.Value))
+                )
                 .ToListAsync(cancellationToken);
 
             bool changesMade = false;
@@ -52,9 +50,36 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.SyncWarehouseDashboar
                 
                 int zoneId = shipment.Project.ZoneId.Value;
 
+                bool isEligible = shipment.DeliveryDate.Date == date && 
+                                  shipment.Status >= ShipmentStatus.AssignedToWarehouse && 
+                                  shipment.Status != ShipmentStatus.Cancelled && 
+                                  shipment.Status != ShipmentStatus.Passive;
+
+                if (!isEligible)
+                {
+                    if (shipment.ZonePreparationId.HasValue && existingPreps.Any(p => p.Id == shipment.ZonePreparationId.Value))
+                    {
+                        // Explicitly unlink ineligible shipment
+                        shipment.ZonePreparationId = null;
+                        shipment.ZonePreparation = null;
+                        changesMade = true;
+                    }
+                    continue; // Skip further processing for ineligible
+                }
+
                 if (shipment.ZonePreparationId.HasValue) 
                 {
-                    continue; 
+                    // Check for stale reference: if the existing ZonePreparation is for a different date or different zone, clear it
+                    var currentPrep = existingPreps.FirstOrDefault(p => p.Id == shipment.ZonePreparationId.Value);
+                    if (currentPrep != null && currentPrep.ZoneId == shipment.Project?.ZoneId)
+                    {
+                        // Already correctly assigned to this date's zone prep
+                        continue;
+                    }
+                    // Stale reference - clear it so it gets re-assigned below
+                    shipment.ZonePreparationId = null;
+                    shipment.ZonePreparation = null;
+                    changesMade = true;
                 }
 
                 // If not assigned, Find Open Batch for this Zone
@@ -85,8 +110,8 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.SyncWarehouseDashboar
                     existingPreps.Add(openPrep); 
                 }
 
-                shipment.ZonePreparationId = openPrep.Id == 0 ? null : openPrep.Id; 
-                shipment.ZonePreparation = openPrep; 
+                // Use navigation property so EF Core resolves IDs after SaveChanges
+                shipment.ZonePreparation = openPrep;
                 changesMade = true;
             }
 

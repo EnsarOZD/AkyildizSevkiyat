@@ -32,7 +32,9 @@ namespace Akyildiz.Sevkiyat.Application.Projects.Queries
                     p.DeliveryOrder,
                     p.Latitude,
                     p.Longitude,
-                    p.Address
+                    p.Address,
+                    p.DeliveryWindowStart,
+                    p.DeliveryWindowEnd
                 )).ToListAsync(cancellationToken);
         }
     }

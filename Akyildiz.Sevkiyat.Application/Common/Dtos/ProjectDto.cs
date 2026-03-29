@@ -12,6 +12,8 @@ namespace Akyildiz.Sevkiyat.Application.Common.Dtos
         int? DeliveryOrder,
         double? Latitude,
         double? Longitude,
-        string? Address
+        string? Address,
+        TimeOnly? DeliveryWindowStart = null,
+        TimeOnly? DeliveryWindowEnd = null
     );
 }

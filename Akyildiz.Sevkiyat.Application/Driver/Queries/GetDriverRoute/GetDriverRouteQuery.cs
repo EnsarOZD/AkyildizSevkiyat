@@ -97,7 +97,15 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Queries.GetDriverRoute
 
             if (driverId.HasValue)
             {
-                query = query.Where(s => s.AssignedDriverId == driverId.Value);
+                // Şoföre direkt atanan sevkiyatlar + çoklu şoför tablosundan atanan zone'lar
+                var assignedZoneIds = await _context.ZonePreparationDrivers
+                    .Where(zpd => zpd.DriverId == driverId.Value)
+                    .Select(zpd => zpd.ZonePreparationId)
+                    .ToListAsync(cancellationToken);
+
+                query = query.Where(s =>
+                    s.AssignedDriverId == driverId.Value ||
+                    (s.ZonePreparationId.HasValue && assignedZoneIds.Contains(s.ZonePreparationId.Value)));
             }
 
             var shipments = await query.ToListAsync(cancellationToken);

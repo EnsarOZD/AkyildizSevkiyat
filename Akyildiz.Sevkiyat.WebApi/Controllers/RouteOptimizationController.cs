@@ -128,7 +128,6 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
                 .Where(p => body.ProjectCodes.Contains(p.Code))
                 .ToListAsync(ct);
 
-            // Preserve input order
             var addresses = body.ProjectCodes
                 .Select(code => projects.FirstOrDefault(p => p.Code == code)?.Address ?? "")
                 .ToList();
@@ -137,8 +136,25 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
                 .Select(code => projects.FirstOrDefault(p => p.Code == code)?.Name ?? code)
                 .ToList();
 
+            var latitudes = body.ProjectCodes
+                .Select(code => projects.FirstOrDefault(p => p.Code == code)?.Latitude)
+                .ToList();
+
+            var longitudes = body.ProjectCodes
+                .Select(code => projects.FirstOrDefault(p => p.Code == code)?.Longitude)
+                .ToList();
+
+            var windowStarts = body.ProjectCodes
+                .Select(code => projects.FirstOrDefault(p => p.Code == code)?.DeliveryWindowStart)
+                .ToList();
+
+            var windowEnds = body.ProjectCodes
+                .Select(code => projects.FirstOrDefault(p => p.Code == code)?.DeliveryWindowEnd)
+                .ToList();
+
             var result = await _routeService.OptimizeRouteAsync(
-                addresses, body.StartAddress, body.ProjectCodes, names, body.VehicleType, body.ForceBridgeCrossing, ct);
+                body, addresses, body.ProjectCodes, names,
+                latitudes, longitudes, windowStarts, windowEnds, ct);
 
             return Ok(result);
         }

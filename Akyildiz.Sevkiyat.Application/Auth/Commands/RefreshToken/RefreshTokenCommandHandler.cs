@@ -1,51 +1,80 @@
 using Akyildiz.Sevkiyat.Application.Auth.Commands.Login;
+using Akyildiz.Sevkiyat.Application.Interfaces;
+using Akyildiz.Sevkiyat.Domain.Entities;
+using Akyildiz.Sevkiyat.Domain.Exceptions;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
 
 namespace Akyildiz.Sevkiyat.Application.Auth.Commands.RefreshToken
 {
     public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, LoginResponse>
     {
-        private readonly ICurrentUserService _currentUserService;
         private readonly IApplicationDbContext _context;
         private readonly ITokenService _tokenService;
 
-        public RefreshTokenCommandHandler(
-            ICurrentUserService currentUserService,
-            IApplicationDbContext context,
-            ITokenService tokenService)
+        public RefreshTokenCommandHandler(IApplicationDbContext context, ITokenService tokenService)
         {
-            _currentUserService = currentUserService;
             _context = context;
             _tokenService = tokenService;
         }
 
         public async Task<LoginResponse> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
         {
-            var userId = _currentUserService.UserId
-                ?? throw new UnauthorizedException("Kullanıcı kimliği doğrulanamadı.");
+            if (string.IsNullOrWhiteSpace(request.RefreshToken))
+                throw new UnauthorizedException("Refresh token gereklidir.");
 
-            var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken)
-                ?? throw new UnauthorizedException("Kullanıcı bulunamadı.");
+            var tokenHash = LoginCommandHandler.HashToken(request.RefreshToken);
 
-            if (!user.IsActive)
-            {
+            var existing = await _context.RefreshTokens
+                .Include(t => t.User)
+                .FirstOrDefaultAsync(t => t.TokenHash == tokenHash, cancellationToken);
+
+            if (existing == null || !existing.IsActive)
+                throw new UnauthorizedException("Geçersiz veya süresi dolmuş refresh token.");
+
+            if (!existing.User.IsActive)
                 throw new UnauthorizedException("Kullanıcı hesabı aktif değil.");
-            }
 
-            var token = _tokenService.GenerateToken(user);
+            // Token rotation — eskiyi iptal et
+            existing.Revoke();
+
+            // Yeni access token + yeni refresh token
+            var newAccessToken = _tokenService.GenerateToken(existing.User);
+
+            var rawNewRefresh = GenerateRawToken();
+            var newHash = LoginCommandHandler.HashToken(rawNewRefresh);
+
+            _context.RefreshTokens.Add(new Domain.Entities.RefreshToken
+            {
+                Id = Guid.NewGuid(),
+                UserId = existing.UserId,
+                TokenHash = newHash,
+                ExpiresAt = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            });
+
+            await _context.SaveChangesAsync(cancellationToken);
 
             return new LoginResponse
             {
-                AccessToken = token,
+                AccessToken = newAccessToken,
+                RefreshToken = rawNewRefresh,
                 User = new UserDto
                 {
-                    Id = user.Id,
-                    Email = user.Email,
-                    FirstName = user.FirstName,
-                    LastName = user.LastName,
-                    Role = user.Role.ToString()
+                    Id = existing.User.Id,
+                    Email = existing.User.Email,
+                    FirstName = existing.User.FirstName,
+                    LastName = existing.User.LastName,
+                    Role = existing.User.Role.ToString()
                 }
             };
+        }
+
+        private static string GenerateRawToken()
+        {
+            var bytes = RandomNumberGenerator.GetBytes(32);
+            return Convert.ToBase64String(bytes);
         }
     }
 }

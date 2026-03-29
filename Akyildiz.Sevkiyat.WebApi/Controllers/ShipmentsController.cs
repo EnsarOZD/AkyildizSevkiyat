@@ -21,7 +21,6 @@ using Akyildiz.Sevkiyat.Application.Shipments.Commands.ToggleShipmentStatus;
 using Akyildiz.Sevkiyat.Application.Shipments.Commands.UpdateShipmentDetails;
 using Akyildiz.Sevkiyat.Application.Shipments.Commands.UpdateIrsaliyeNo;
 using Akyildiz.Sevkiyat.Application.Shipments.Commands.RecordVehicleReturn;
-using Akyildiz.Sevkiyat.Application.Shipments.Commands.AssignVehicle;
 using Microsoft.AspNetCore.Authorization;
 
 namespace Akyildiz.Sevkiyat.WebApi.Controllers

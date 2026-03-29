@@ -1,4 +1,5 @@
 using System.Text;
+using System.Globalization;
 
 namespace Akyildiz.Sevkiyat.Application.Common
 {
@@ -11,20 +12,20 @@ namespace Akyildiz.Sevkiyat.Application.Common
     {
         private static readonly (char From, char To)[] TurkishMap =
         {
-            ('İ', 'i'), ('ı', 'i'),
-            ('Ğ', 'g'), ('ğ', 'g'),
-            ('Ş', 's'), ('ş', 's'),
-            ('Ç', 'c'), ('ç', 'c'),
-            ('Ö', 'o'), ('ö', 'o'),
-            ('Ü', 'u'), ('ü', 'u'),
+            ('İ', 'I'), ('ı', 'I'),
+            ('Ğ', 'G'), ('ğ', 'G'),
+            ('Ş', 'S'), ('ş', 'S'),
+            ('Ç', 'C'), ('ç', 'C'),
+            ('Ö', 'O'), ('ö', 'O'),
+            ('Ü', 'U'), ('ü', 'U'),
         };
 
         /// <summary>
         /// Metni karşılaştırma için normalleştirir:
-        /// 1. Türkçe karakterleri ASCII'ye çevirir
-        /// 2. Unicode diakritiği kaldırır (é→e, â→a vb.)
-        /// 3. Küçük harfe çevirir
-        /// 4. Baştaki/sondaki boşlukları siler, çoklu boşlukları teke indirir
+        /// 1. Türkçe karakterleri İngilizce karşılıklarına çevirir (İ->I, ş->s vb.)
+        /// 2. Unicode diakritiği kaldırır (é->e, â->a vb.)
+        /// 3. Büyük harfe çevirir (ToUpperInvariant)
+        /// 4. Boşlukları temizler
         /// </summary>
         public static string NormalizeForComparison(string? input)
         {
@@ -43,17 +44,18 @@ namespace Akyildiz.Sevkiyat.Application.Common
                 sb.Append(mapped);
             }
 
-            // 2. Unicode normalizasyon (é→e, â→a vb.)
-            var normalized = sb.ToString()
-                               .Normalize(NormalizationForm.FormD);
-
-            // 3. Diakriti işaretlerini filtrele, küçük harfe çevir
+            // 2. Unicode normalizasyon (é->e, â->a vb.) ve Diakritik filtreleme
+            var normalized = sb.ToString().Normalize(NormalizationForm.FormD);
             var result = new StringBuilder(normalized.Length);
+            
             foreach (var ch in normalized)
             {
                 var cat = CharUnicodeInfo.GetUnicodeCategory(ch);
                 if (cat != UnicodeCategory.NonSpacingMark)
-                    result.Append(char.ToLowerInvariant(ch));
+                {
+                    // 3. Büyük harfe çevir
+                    result.Append(char.ToUpperInvariant(ch));
+                }
             }
 
             // 4. Boşlukları temizle

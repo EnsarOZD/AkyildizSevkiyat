@@ -36,49 +36,100 @@
     <!-- ────────────────────────────── STEP 1: Project Selection ────────────────────────────── -->
     <div v-if="step === 1" class="space-y-4">
       <div class="bg-white dark:bg-gray-900 rounded-lg shadow p-4 space-y-4">
-        <!-- Vehicle type + start address row -->
-        <div class="flex flex-col sm:flex-row gap-3">
-          <!-- Vehicle type -->
-          <div class="sm:w-56 flex-shrink-0 space-y-2">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Araç Tipi</label>
-            <div class="flex rounded-lg border border-gray-300 dark:border-gray-700 overflow-hidden text-sm">
-              <button
-                v-for="v in vehicleTypes"
-                :key="v.value"
-                @click="vehicleType = v.value"
-                class="flex-1 py-2 text-center transition-colors"
-                :class="vehicleType === v.value
-                  ? 'bg-indigo-600 text-white font-medium'
-                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'"
-              >{{ v.label }}</button>
-            </div>
-            <!-- Bridge crossing checkbox -->
-            <label
-              v-if="vehicleTypes.find(v => v.value === vehicleType)?.bridge"
-              class="flex items-center gap-2 cursor-pointer select-none"
-            >
-              <input
-                type="checkbox"
-                v-model="forceBridgeCrossing"
-                class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-              />
-              <span class="text-xs text-gray-600 dark:text-gray-400">
-                <span class="font-medium">{{ vehicleTypes.find(v => v.value === vehicleType)?.bridge }}</span>
-                Köprüsü'nden geç
-              </span>
+        <!-- Vehicle type -->
+        <div class="sm:w-56 flex-shrink-0 space-y-2">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Araç Tipi</label>
+          <div class="flex rounded-lg border border-gray-300 dark:border-gray-700 overflow-hidden text-sm">
+            <button
+              v-for="v in vehicleTypes"
+              :key="v.value"
+              @click="vehicleType = v.value"
+              class="flex-1 py-2 text-center transition-colors"
+              :class="vehicleType === v.value
+                ? 'bg-indigo-600 text-white font-medium'
+                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'"
+            >{{ v.label }}</button>
+          </div>
+          <!-- Bridge crossing checkbox -->
+          <label
+            v-if="vehicleTypes.find(v => v.value === vehicleType)?.bridge"
+            class="flex items-center gap-2 cursor-pointer select-none"
+          >
+            <input
+              type="checkbox"
+              v-model="forceBridgeCrossing"
+              class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+            />
+            <span class="text-xs text-gray-600 dark:text-gray-400">
+              <span class="font-medium">{{ vehicleTypes.find(v => v.value === vehicleType)?.bridge }}</span>
+              Köprüsü'nden geç
+            </span>
+          </label>
+        </div>
+
+        <!-- Başlangıç Noktası -->
+        <div class="mt-5 border-t dark:border-gray-700 pt-5">
+          <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Başlangıç Noktası</h3>
+
+          <!-- Radio group -->
+          <div class="space-y-2">
+            <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors"
+              :class="startLocationType === 1 ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
+              <input type="radio" :value="1" v-model="startLocationType" class="mt-0.5 accent-indigo-600" />
+              <div class="flex-1">
+                <p class="text-sm font-medium text-gray-800 dark:text-gray-200">Depo</p>
+                <p v-if="depotLoaded && depotSettings?.depotName" class="text-xs text-gray-500 dark:text-gray-400">{{ depotSettings.depotName }}</p>
+                <p v-else-if="depotLoaded && !depotSettings?.depotLatitude" class="text-xs text-amber-600">
+                  Depo tanımlanmamış.
+                  <router-link to="/settings/depot" class="underline">Tanımlar sayfasına git</router-link>
+                </p>
+              </div>
+            </label>
+
+            <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors"
+              :class="startLocationType === 0 ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
+              <input type="radio" :value="0" v-model="startLocationType" class="mt-0.5 accent-indigo-600" />
+              <div class="flex-1">
+                <p class="text-sm font-medium text-gray-800 dark:text-gray-200">Mevcut Konum</p>
+                <p v-if="startLocationType === 0 && startLatitude && startLongitude" class="text-xs text-green-600">
+                  {{ startLatitude.toFixed(5) }}, {{ startLongitude.toFixed(5) }}
+                </p>
+                <button v-if="startLocationType === 0" @click.prevent="getCurrentLocation()"
+                  :disabled="gettingLocation"
+                  class="mt-1 text-xs text-indigo-600 hover:underline disabled:opacity-50">
+                  {{ gettingLocation ? 'Konum alınıyor...' : 'Konumu Yenile' }}
+                </button>
+              </div>
+            </label>
+
+            <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors"
+              :class="startLocationType === 2 ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
+              <input type="radio" :value="2" v-model="startLocationType" class="mt-0.5 accent-indigo-600" />
+              <div class="flex-1">
+                <p class="text-sm font-medium text-gray-800 dark:text-gray-200">Manuel Adres</p>
+                <input v-if="startLocationType === 2"
+                  v-model="startManualAddress"
+                  @click.stop
+                  type="text"
+                  placeholder="Başlangıç adresi girin"
+                  class="mt-2 w-full border dark:border-gray-600 rounded px-2 py-1.5 text-sm dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                />
+              </div>
             </label>
           </div>
-          <!-- Start address -->
-          <div class="flex-1">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Başlangıç Adresi <span class="text-gray-400 font-normal">(opsiyonel)</span>
-            </label>
-            <input
-              v-model="startAddress"
-              type="text"
-              placeholder="Depo adresi veya başlangıç noktası..."
-              class="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
+
+          <p v-if="startLocationError" class="mt-2 text-sm text-red-500">{{ startLocationError }}</p>
+        </div>
+
+        <!-- Seçenekler -->
+        <div class="mt-4 flex flex-wrap gap-4 items-center border-t dark:border-gray-700 pt-4">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" v-model="returnToStart" class="accent-indigo-600" />
+            <span class="text-sm text-gray-700 dark:text-gray-300">Dönüş: Başlangıca Geri Dön</span>
+          </label>
+          <div class="flex items-center gap-2">
+            <label class="text-sm text-gray-700 dark:text-gray-300">Kalkış Saati:</label>
+            <input type="time" v-model="departureTime" class="border dark:border-gray-700 rounded px-2 py-1 text-sm dark:bg-gray-800 dark:text-gray-100" />
           </div>
         </div>
 
@@ -300,6 +351,18 @@
         </div>
       </div>
 
+      <!-- Zaman Penceresi Uyarıları -->
+      <div v-if="optimizationResult?.timeWindowWarnings?.length" class="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg">
+        <p class="text-sm font-semibold text-amber-800 dark:text-amber-400 mb-2">
+          ⚠️ {{ optimizationResult.timeWindowWarnings.length }} proje için teslimat penceresi aşılabilir
+        </p>
+        <div class="space-y-1">
+          <div v-for="w in optimizationResult.timeWindowWarnings" :key="w.projectCode" class="text-xs text-amber-700 dark:text-amber-300">
+            <strong>{{ w.projectName }}</strong>: Pencere {{ w.windowStart }}–{{ w.windowEnd }}, Tahmini Varış {{ w.estimatedArrival }}
+          </div>
+        </div>
+      </div>
+
       <!-- Excluded projects warning -->
       <div
         v-if="optimizationResult.excludedProjects.length > 0"
@@ -385,6 +448,7 @@ import routeOptimizationService, {
 import projectService from '../services/projectService';
 import { useNotificationStore } from '../stores/notification';
 import { ApiErrorUtils } from '../utils/apiError';
+import systemSettingsService from '../services/systemSettingsService';
 
 // ── State ────────────────────────────────────────────────────────────────────
 const stepDefs = [
@@ -406,6 +470,20 @@ watch(vehicleType, v => {
   const vt = vehicleTypes.find(x => x.value === v);
   forceBridgeCrossing.value = vt?.bridge != null;
 });
+
+// Step 1 — Start point
+const startLocationType = ref<0 | 1 | 2>(1); // 0=CurrentLocation, 1=Depot, 2=ManualAddress
+const startLatitude = ref<number | null>(null);
+const startLongitude = ref<number | null>(null);
+const startManualAddress = ref('');
+const startLocationError = ref('');
+const gettingLocation = ref(false);
+const departureTime = ref('08:00');
+const returnToStart = ref(false);
+
+// Depot settings
+const depotSettings = ref<{ depotName: string | null; depotAddress: string | null; depotLatitude: number | null; depotLongitude: number | null } | null>(null);
+const depotLoaded = ref(false);
 const notificationStore = useNotificationStore();
 
 interface ProjectItem {
@@ -415,7 +493,6 @@ interface ProjectItem {
 }
 
 const step = ref<1 | 2 | 3>(1);
-const startAddress = ref('');
 const projectSearch = ref('');
 const projects = ref<ProjectItem[]>([]);
 const loadingProjects = ref(false);
@@ -486,6 +563,61 @@ function setSyncApproval(code: string, field: 'name' | 'address', value: boolean
   syncApprovals.value = next;
 }
 
+// ── Depot settings & location ─────────────────────────────────────────────────
+const loadDepotSettings = async () => {
+  try {
+    depotSettings.value = await systemSettingsService.getDepotSettings();
+    depotLoaded.value = true;
+    if (depotSettings.value?.depotLatitude && depotSettings.value?.depotLongitude) {
+      startLatitude.value = depotSettings.value.depotLatitude;
+      startLongitude.value = depotSettings.value.depotLongitude;
+    }
+  } catch (e) {
+    depotLoaded.value = true;
+  }
+};
+
+watch(startLocationType, async (type) => {
+  startLocationError.value = '';
+  startLatitude.value = null;
+  startLongitude.value = null;
+  if (type === 1 && depotSettings.value?.depotLatitude) {
+    startLatitude.value = depotSettings.value.depotLatitude;
+    startLongitude.value = depotSettings.value.depotLongitude;
+  } else if (type === 0) {
+    await getCurrentLocation();
+  }
+});
+
+const getCurrentLocation = () => {
+  return new Promise<void>((resolve) => {
+    gettingLocation.value = true;
+    startLocationError.value = '';
+    if (!navigator.geolocation) {
+      startLocationError.value = 'Tarayıcınız konum özelliğini desteklemiyor. Manuel adres girin.';
+      startLocationType.value = 2;
+      gettingLocation.value = false;
+      resolve();
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        startLatitude.value = pos.coords.latitude;
+        startLongitude.value = pos.coords.longitude;
+        gettingLocation.value = false;
+        resolve();
+      },
+      () => {
+        startLocationError.value = 'Konum alınamadı. Lütfen konum iznini kontrol edin veya manuel adres girin.';
+        startLocationType.value = 2;
+        gettingLocation.value = false;
+        resolve();
+      },
+      { timeout: 10000 }
+    );
+  });
+};
+
 // ── Step navigation ───────────────────────────────────────────────────────────
 async function goToStep2() {
   if (selectedCodes.value.size === 0) return;
@@ -540,13 +672,32 @@ async function applySync() {
 }
 
 async function runOptimization() {
+  // Validate start location
+  if (startLocationType.value === 0 && (!startLatitude.value || !startLongitude.value)) {
+    notificationStore.add('Konum alınamadı. Lütfen konumu yenileyin veya başka bir başlangıç noktası seçin.', 'error');
+    return;
+  }
+  if (startLocationType.value === 1 && (!depotSettings.value?.depotLatitude || !depotSettings.value?.depotLongitude)) {
+    notificationStore.add('Depo konumu tanımlanmamış. Tanımlar sayfasından depo bilgilerini girin.', 'error');
+    return;
+  }
+  if (startLocationType.value === 2 && !startManualAddress.value.trim()) {
+    notificationStore.add('Lütfen başlangıç adresi girin.', 'error');
+    return;
+  }
+
   optimizing.value = true;
   try {
     optimizationResult.value = await routeOptimizationService.optimize({
       projectCodes: Array.from(selectedCodes.value),
-      startAddress: startAddress.value.trim() || null,
+      startAddress: startLocationType.value === 2 ? startManualAddress.value : null,
       vehicleType: vehicleType.value,
       forceBridgeCrossing: forceBridgeCrossing.value,
+      startLocationType: startLocationType.value,
+      startLatitude: startLatitude.value,
+      startLongitude: startLongitude.value,
+      returnToStart: returnToStart.value,
+      departureTime: departureTime.value ? `${departureTime.value}:00` : null,
     });
     step.value = 3;
   } catch (err) {
@@ -610,5 +761,6 @@ onMounted(async () => {
   } finally {
     loadingProjects.value = false;
   }
+  await loadDepotSettings();
 });
 </script>

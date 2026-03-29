@@ -1,13 +1,19 @@
 using Akyildiz.Sevkiyat.Application.Common.Interfaces;
 using Akyildiz.Sevkiyat.Application.Interfaces;
 using Akyildiz.Sevkiyat.Domain.Entities;
+using Akyildiz.Sevkiyat.Domain.Enums;
 using MediatR;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Akyildiz.Sevkiyat.Application.Transport.Vehicles.Commands.CreateVehicle
 {
-    public record CreateVehicleCommand(string PlateNumber, string? Capacity) : IRequest<int>, IRequireRoles
+    public record CreateVehicleCommand(
+        string PlateNumber,
+        string? Capacity,
+        VehicleType VehicleType = VehicleType.Kamyon,
+        string? Description = null
+    ) : IRequest<int>, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles =>
             new[] { "Admin", "Manager" };
@@ -23,8 +29,10 @@ namespace Akyildiz.Sevkiyat.Application.Transport.Vehicles.Commands.CreateVehicl
             var vehicle = new Vehicle
             {
                 PlateNumber = request.PlateNumber,
-                Capacity = request.Capacity,
-                IsActive = true
+                Capacity    = request.Capacity,
+                VehicleType = request.VehicleType,
+                Description = request.Description,
+                IsActive    = true
             };
 
             _context.Vehicles.Add(vehicle);

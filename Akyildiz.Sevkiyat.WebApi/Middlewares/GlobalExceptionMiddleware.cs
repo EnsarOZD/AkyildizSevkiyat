@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using Akyildiz.Sevkiyat.Domain.Exceptions;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 
 namespace Akyildiz.Sevkiyat.WebApi.Middlewares
 {
@@ -68,6 +69,13 @@ namespace Akyildiz.Sevkiyat.WebApi.Middlewares
                     type = "conflict";
                     message = conflictException.Message;
                     _logger.LogWarning(exception, "Conflict occurred");
+                    break;
+
+                case DbUpdateConcurrencyException:
+                    code = StatusCodes.Status409Conflict;
+                    type = "concurrency_conflict";
+                    message = "Bu kayıt başka bir kullanıcı tarafından değiştirildi. Sayfayı yenileyip tekrar deneyin.";
+                    _logger.LogWarning(exception, "Optimistic concurrency conflict occurred");
                     break;
 
                 case UnauthorizedException unauthorizedException:

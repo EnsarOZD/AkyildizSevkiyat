@@ -29,6 +29,12 @@ public class IssOrderImportOrchestrator : IIssOrderImportOrchestrator
     }
 
     public async Task<IssOrderImportResult> RunAsync(DateTime start, DateTime end, CancellationToken cancellationToken = default)
+        => await RunCoreAsync(null, start, end, cancellationToken);
+
+    public async Task<IssOrderImportResult> RunAsync(int existingBatchId, DateTime start, DateTime end, CancellationToken cancellationToken = default)
+        => await RunCoreAsync(existingBatchId, start, end, cancellationToken);
+
+    private async Task<IssOrderImportResult> RunCoreAsync(int? existingBatchId, DateTime start, DateTime end, CancellationToken cancellationToken)
     {
         var sw = Stopwatch.StartNew();
         int added = 0;
@@ -36,16 +42,26 @@ public class IssOrderImportOrchestrator : IIssOrderImportOrchestrator
         int errors = 0;
         int needsMapping = 0;
 
-        // Create ImportBatch record
-        var batch = new Domain.Entities.ImportBatch
+        // Create or load ImportBatch record
+        Domain.Entities.ImportBatch batch;
+        if (existingBatchId.HasValue)
         {
-            RequestedStartDate = start,
-            RequestedEndDate = end,
-            StartedAt = DateTime.UtcNow,
-            Status = ImportBatchStatus.Running
-        };
-        _context.ImportBatches.Add(batch);
-        await _context.SaveChangesAsync(cancellationToken);
+            batch = await _context.ImportBatches.FindAsync(new object[] { existingBatchId.Value }, cancellationToken)
+                ?? throw new InvalidOperationException($"ImportBatch {existingBatchId} not found");
+            batch.StartedAt = DateTime.UtcNow; // refresh timestamp
+        }
+        else
+        {
+            batch = new Domain.Entities.ImportBatch
+            {
+                RequestedStartDate = start,
+                RequestedEndDate = end,
+                StartedAt = DateTime.UtcNow,
+                Status = ImportBatchStatus.Running
+            };
+            _context.ImportBatches.Add(batch);
+            await _context.SaveChangesAsync(cancellationToken);
+        }
 
         var batchErrors = new List<string>();
 

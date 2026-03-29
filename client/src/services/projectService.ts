@@ -50,6 +50,37 @@ const projectService = {
 
   async bulkUpdateDeliveryOrders(orders: { projectId: number; deliveryOrder: number }[]): Promise<void> {
     await apiClient.patch('/projects/bulk-delivery-orders', { orders });
+  },
+
+  async updateDeliveryWindow(projectId: number, start: string | null, end: string | null): Promise<void> {
+    await apiClient.patch(`/projects/${projectId}/delivery-window`, {
+      deliveryWindowStart: start,
+      deliveryWindowEnd: end,
+    });
+  },
+
+  async exportMappings(): Promise<void> {
+    const response = await apiClient.get('/projects/export-mappings', {
+      responseType: 'blob'
+    });
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'ProjeBolgeEslesmeleri.xlsx');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  },
+
+  async importMappings(file: File): Promise<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await apiClient.post('/projects/import-mappings', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
   }
 };
 

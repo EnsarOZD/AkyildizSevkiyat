@@ -83,6 +83,20 @@ namespace Akyildiz.Sevkiyat.Application.GoodsReceipts.Commands.CreateCorrectionG
                 var reversalQty = origLine.AcceptedQty ?? origLine.ReceivedQty;
                 if (reversalQty <= 0) continue;
 
+                // Stok pick edilmiş olabilir — düzeltme sonrası OnHandQty < ReservedQty durumunu önle
+                if (stockDict.TryGetValue(origLine.StockMasterId, out var checkStock))
+                {
+                    var projectedOnHand = checkStock.OnHandQty - reversalQty;
+                    if (projectedOnHand < checkStock.ReservedQty)
+                    {
+                        throw new DomainException(
+                            $"'{checkStock.StockName}' stoku için düzeltme yapılamaz: " +
+                            $"{reversalQty:G} adet geri alınmak isteniyor, ancak mevcut stoktan " +
+                            $"{checkStock.ReservedQty:G} adet zaten rezerve edilmiş (picking'de). " +
+                            $"Önce ilgili sevkiyatları tamamlayın veya iptal edin.");
+                    }
+                }
+
                 var corrLine = new GoodsReceiptLine
                 {
                     Id = Guid.NewGuid(),

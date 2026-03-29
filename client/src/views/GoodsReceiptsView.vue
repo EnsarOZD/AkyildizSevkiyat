@@ -63,7 +63,7 @@
     </div>
 
     <!-- Desktop Table -->
-    <div class="hidden md:block bg-white dark:bg-gray-900 shadow-sm rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+    <div class="hidden md:block bg-white dark:bg-gray-900 shadow-sm rounded-xl overflow-x-auto border border-gray-200 dark:border-gray-700">
       <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
         <thead class="bg-gray-50 dark:bg-gray-800">
           <tr>
@@ -72,7 +72,7 @@
             <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tedarikçi</th>
             <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tarih</th>
             <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Durum</th>
-            <th class="px-5 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Kalem</th>
+            <th class="px-5 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">Kalem</th>
             <th class="px-5 py-3"></th>
           </tr>
         </thead>
@@ -99,7 +99,7 @@
             <td class="px-5 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">{{ receipt.supplierNameSnapshot }}</td>
             <td class="px-5 py-3 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ formatDate(receipt.waybillDate) }}</td>
             <td class="px-5 py-3 whitespace-nowrap"><StatusBadge :status="receipt.status" type="goodsReceipt" /></td>
-            <td class="px-5 py-3 text-sm text-gray-500 dark:text-gray-400 text-center">{{ receipt.lineCount }}</td>
+            <td class="px-5 py-3 text-sm text-gray-500 dark:text-gray-400 text-center hidden lg:table-cell">{{ receipt.lineCount }}</td>
             <td class="px-5 py-3 text-right">
               <svg class="h-4 w-4 text-gray-400 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
@@ -136,77 +136,14 @@
       </div>
     </div>
 
-    <!-- Create Modal -->
-    <div v-if="showCreateModal" class="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center p-0 sm:p-4 z-50 overflow-y-auto">
-      <div class="bg-white dark:bg-gray-900 w-full sm:rounded-xl sm:max-w-lg relative min-h-screen sm:min-h-0 sm:my-8">
-        <div class="sticky top-0 z-10 bg-white dark:bg-gray-900 px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center gap-3">
-          <button @click="showCreateModal = false" class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors">
-            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-          <h3 class="text-base font-bold text-gray-900 dark:text-gray-100">Yeni Mal Kabul</h3>
-        </div>
-
-        <div class="px-4 sm:px-6 py-4 space-y-4">
-          <div v-if="duplicateWarning" class="bg-red-50 dark:bg-red-900/20 p-4 rounded-xl border border-red-200 dark:border-red-800">
-            <p class="text-red-800 dark:text-red-300 font-bold text-sm flex items-center gap-2">⚠️ Mükerrer İrsaliye!</p>
-            <p class="text-sm text-red-600 dark:text-red-400 mt-1">Bu tedarikçi ve irsaliye numarası ile daha önce kayıt yapılmış.</p>
-            <button @click="confirmCreateWithWarning" :disabled="creating" class="mt-3 text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg font-bold transition-colors disabled:opacity-50">
-              <span v-if="creating">İşleniyor...</span>
-              <span v-else>Yine de Kaydet</span>
-            </button>
-          </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Satınalma Siparişi <span class="text-red-500">*</span></label>
-            <select v-model="createForm.purchaseOrderId" class="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none dark:bg-gray-800 dark:text-gray-100">
-              <option :value="null" disabled>Lütfen bir sipariş seçin...</option>
-              <option v-for="po in poList" :key="(po as any).id" :value="(po as any).id">{{ (po as any).orderNumber }} — {{ (po as any).supplierNameSnapshot }}</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Tedarikçi</label>
-            <input type="text" :value="createForm.supplierName" readonly class="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400" />
-          </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">İrsaliye No</label>
-            <input type="text" v-model="createForm.waybillNo" class="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
-          </div>
-
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">İrsaliye Tarihi</label>
-              <input type="date" v-model="createForm.waybillDate" class="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Giriş Tarihi</label>
-              <input type="date" v-model="createForm.receiptDate" class="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Not</label>
-            <textarea v-model="createForm.note" rows="2" class="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none"></textarea>
-          </div>
-        </div>
-
-        <div class="px-4 sm:px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex gap-3">
-          <button @click="showCreateModal = false" :disabled="creating" class="flex-1 py-2.5 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 font-semibold rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-sm">İptal</button>
-          <button
-            @click="saveCreate(false)"
-            :disabled="!createForm.purchaseOrderId || creating"
-            class="flex-1 py-2.5 text-white font-semibold rounded-lg transition-all text-sm"
-            :class="!createForm.purchaseOrderId || creating ? 'bg-blue-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'"
-          >
-            <span v-if="creating">Kaydediliyor...</span>
-            <span v-else>Kaydet</span>
-          </button>
-        </div>
-      </div>
-    </div>
+    <!-- Create Modal (Shared Component) -->
+    <CreateGoodsReceiptModal
+      v-if="showCreateModal"
+      :isOpen="showCreateModal"
+      :purchaseOrder="selectedPoForCreate"
+      @close="showCreateModal = false"
+      @saved="onGRSaved"
+    />
 
     <!-- Detail Modal -->
     <div v-if="showDetailModal && selectedReceipt" class="fixed inset-0 bg-black/50 flex items-start justify-center p-0 sm:p-4 z-50 overflow-y-auto">
@@ -457,7 +394,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { InboxArrowDownIcon } from '@heroicons/vue/24/outline';
 import purchaseOrderService from '../services/purchaseOrderService';
@@ -469,6 +406,7 @@ import StockCombobox from '../components/StockCombobox.vue';
 import StatusBadge from '../components/StatusBadge.vue';
 import SkeletonTable from '../components/SkeletonTable.vue';
 import EmptyState from '../components/EmptyState.vue';
+import CreateGoodsReceiptModal from '../components/CreateGoodsReceiptModal.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -481,28 +419,16 @@ const filters = ref({ status: '', supplierName: '' });
 const showCreateModal = ref(false);
 const showDetailModal = ref(false);
 const selectedReceipt = ref<any>(null);
-const duplicateWarning = ref(false);
+const selectedPoForCreate = ref<any>(null);
 
-// N tuşu → yeni mal girişi oluştur
-useKeyboardShortcut('n', () => { if (!showCreateModal.value && !showDetailModal.value) showCreateModal.value = true; });
-
-const creating = ref(false);
 const posting = ref(false);
 const cancelling = ref(false);
 const updatingLineId = ref<string | null>(null);
 const addingLine = ref(false);
 const hasUnsavedChanges = ref(false);
 
-const poList = ref<any[]>([]);
-
-const createForm = ref({
-  purchaseOrderId: null as string | null,
-  supplierName: '',
-  waybillNo: '',
-  waybillDate: new Date().toISOString().split('T')[0],
-  receiptDate: new Date().toISOString().split('T')[0],
-  note: ''
-});
+// N tuşu → yeni mal girişi oluştur
+useKeyboardShortcut('n', () => { if (!showCreateModal.value && !showDetailModal.value) showCreateModal.value = true; });
 
 const lineForm = ref({ stockMasterId: 0, receivedQty: 0 });
 const rejectReasons = ['Hasarlı', 'Eksik / Kırık', 'Yanlış Ürün', 'Kalite Sorunu', 'Diğer'];
@@ -544,46 +470,22 @@ const fetchReceipts = async () => {
 
 const handleSearch = () => { fetchReceipts(); };
 
-watch(() => createForm.value.purchaseOrderId, (newVal) => {
-  if (newVal) {
-    const po = poList.value.find((p: any) => p.id === newVal);
-    if (po) createForm.value.supplierName = po.supplierNameSnapshot;
-  }
-});
+// saveCreate removed as it's handled by component
 
-const saveCreate = async (ignoreWarning: boolean) => {
-  if (creating.value) return;
-  creating.value = true;
-  try {
-    const payload = {
-      ignoreDuplicateWarning: ignoreWarning,
-      purchaseOrderId: String(createForm.value.purchaseOrderId),
-      supplierNameSnapshot: createForm.value.supplierName,
-      waybillNo: createForm.value.waybillNo,
-      waybillDate: createForm.value.waybillDate,
-      receiptDate: createForm.value.receiptDate,
-      note: createForm.value.note
-    };
-    const res = await goodsReceiptService.create(payload as any);
-    if (res.hasDuplicateWarning) {
-      duplicateWarning.value = true;
-      creating.value = false;
-      return;
-    }
-    showCreateModal.value = false;
-    notificationStore.add('Mal kabul kaydı oluşturuldu.', 'success');
-    openDetail(res.id);
-  } catch (e) {
-    notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Kayıt oluşturulamadı.', 'error');
-  } finally {
-    creating.value = false;
-  }
+const onGRSaved = (grId: string | number) => {
+  showCreateModal.value = false;
+  fetchReceipts();
+  openDetail(grId);
 };
 
-const confirmCreateWithWarning = () => { saveCreate(true); };
-
-const openDetail = (id: number | string) => {
-  router.push({ name: 'GoodsReceiptDetail', params: { id: String(id) } });
+const openDetail = async (id: any) => {
+  try {
+    selectedReceipt.value = await goodsReceiptService.getById(id);
+    hasUnsavedChanges.value = false;
+    showDetailModal.value = true;
+  } catch (e) {
+    notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Detay alınamadı.', 'error');
+  }
 };
 
 const addLine = async () => {
@@ -600,6 +502,8 @@ const addLine = async () => {
       stockMasterId: lineForm.value.stockMasterId,
       receivedQty: lineForm.value.receivedQty
     });
+    // Refresh
+    selectedReceipt.value = await goodsReceiptService.getById(selectedReceipt.value.id);
     lineForm.value.stockMasterId = 0;
     lineForm.value.receivedQty = 0;
     notificationStore.add('Kalem eklendi.', 'success');
@@ -645,6 +549,7 @@ const postReceipt = async () => {
   try {
     await goodsReceiptService.post(selectedReceipt.value.id);
     fetchReceipts();
+    showDetailModal.value = false;
     notificationStore.add('Mal kabul kesinleştirildi.', 'success');
   } catch (e) {
     notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Post işlemi başarısız.', 'error');
@@ -660,11 +565,25 @@ const cancelReceipt = async () => {
   try {
     await goodsReceiptService.cancel(selectedReceipt.value.id);
     fetchReceipts();
+    showDetailModal.value = false;
     notificationStore.add('Mal kabul iptal edildi.', 'success');
   } catch (e) {
     notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'İptal işlemi başarısız.', 'error');
   } finally {
     cancelling.value = false;
+  }
+};
+
+const openCreateModalFromSelection = async (poId: string) => {
+  try {
+    const po = await purchaseOrderService.getById(String(poId));
+    if (po) {
+      selectedPoForCreate.value = po;
+      showCreateModal.value = true;
+      router.replace({ query: { ...route.query, createPoId: undefined } });
+    }
+  } catch {
+    // ignore
   }
 };
 
@@ -674,27 +593,4 @@ onMounted(() => {
     openCreateModalFromSelection(route.query.createPoId as string);
   }
 });
-
-const openCreateModalFromSelection = async (poId: string) => {
-  createForm.value = {
-    purchaseOrderId: poId,
-    supplierName: '',
-    waybillNo: '',
-    waybillDate: new Date().toISOString().split('T')[0],
-    receiptDate: new Date().toISOString().split('T')[0],
-    note: ''
-  };
-  duplicateWarning.value = false;
-  try {
-    const po = await purchaseOrderService.getById(String(poId));
-    if (po) {
-      createForm.value.supplierName = po.supplierNameSnapshot;
-      poList.value = [po];
-      showCreateModal.value = true;
-      router.replace({ query: { ...route.query, createPoId: undefined } });
-    }
-  } catch {
-    // ignore
-  }
-};
 </script>

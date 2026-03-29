@@ -18,11 +18,18 @@ export interface SyncApprovalRequestDto {
   approveAddressUpdate: boolean;
 }
 
+export type StartLocationType = 0 | 1 | 2; // CurrentLocation=0, Depot=1, ManualAddress=2
+
 export interface RouteOptimizationRequestDto {
   projectCodes: string[];
   startAddress: string | null;
   vehicleType: string;
   forceBridgeCrossing: boolean;
+  startLocationType?: StartLocationType;
+  startLatitude?: number | null;
+  startLongitude?: number | null;
+  returnToStart?: boolean;
+  departureTime?: string | null; // "HH:mm"
 }
 
 export interface RouteStopDto {
@@ -34,12 +41,22 @@ export interface RouteStopDto {
   estimatedDurationFromPrevious: number | null;
 }
 
+export interface TimeWindowWarningDto {
+  projectCode: string;
+  projectName: string;
+  windowStart: string; // "HH:mm"
+  windowEnd: string;
+  estimatedArrival: string;
+  isLate: boolean;
+}
+
 export interface RouteOptimizationResultDto {
   optimizedStops: RouteStopDto[];
   totalDistance: number;
   totalDuration: number;
   excludedProjects: string[];
   bridgeNotice: string | null;
+  timeWindowWarnings?: TimeWindowWarningDto[] | null;
 }
 
 const routeOptimizationService = {

@@ -21,6 +21,21 @@
       <p class="text-xs text-blue-600 dark:text-blue-400 mt-0.5">{{ formatDate(purchaseOrder.orderDate) }}</p>
     </div>
 
+    <!-- OCR Scan Button -->
+    <div class="mb-4">
+      <button
+        @click="showScanModal = true"
+        type="button"
+        class="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-indigo-300 dark:border-indigo-700 rounded-xl text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+      >
+        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+        📷 İrsaliye Tara (OCR)
+      </button>
+    </div>
+
     <div class="space-y-4">
       <div>
         <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
@@ -90,14 +105,23 @@
       </button>
     </template>
   </BaseModal>
+
+  <!-- OCR Scan Modal -->
+  <InvoiceScanModal
+    :isOpen="showScanModal"
+    @close="showScanModal = false"
+    @apply="handleScanResult"
+  />
 </template>
 
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import BaseModal from './BaseModal.vue';
+import InvoiceScanModal from './InvoiceScanModal.vue';
 import goodsReceiptService from '../services/goodsReceiptService';
 import { useNotificationStore } from '../stores/notification';
 import { ApiErrorUtils } from '../utils/apiError';
+import type { OcrInvoiceLineResult } from '../services/ocrService';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -114,6 +138,7 @@ const today = new Date().toISOString().split('T')[0];
 
 const saving = ref(false);
 const duplicateWarning = ref(false);
+const showScanModal = ref(false);
 
 const form = ref({
   waybillNo: '',
@@ -133,10 +158,22 @@ const resetForm = () => {
   form.value = { waybillNo: '', waybillDate: today, receiptDate: today, note: '' };
   errors.value = {};
   duplicateWarning.value = false;
+  showScanModal.value = false;
 };
 
-watch(() => props.isOpen, (val) => {
-  if (val) resetForm();
+const handleScanResult = (data: { waybillNo: string; waybillDate: string; lines: OcrInvoiceLineResult[] }) => {
+  if (data.waybillNo) form.value.waybillNo = data.waybillNo;
+  if (data.waybillDate) form.value.waybillDate = data.waybillDate;
+  notificationStore.add(
+    `OCR sonuçları uygulandı. ${data.waybillNo ? 'İrsaliye No: ' + data.waybillNo : 'İrsaliye No tanınamadı.'} ${data.lines.length > 0 ? data.lines.length + ' malzeme satırı bulundu.' : ''}`,
+    'info'
+  );
+};
+
+watch(() => props.isOpen, (newVal, oldVal) => {
+  if (newVal && !oldVal) {
+    resetForm();
+  }
 });
 
 const validate = () => {

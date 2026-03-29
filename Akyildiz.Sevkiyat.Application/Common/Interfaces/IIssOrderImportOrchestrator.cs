@@ -12,4 +12,5 @@ public record IssOrderImportResult(
 public interface IIssOrderImportOrchestrator
 {
     Task<IssOrderImportResult> RunAsync(DateTime start, DateTime end, CancellationToken cancellationToken = default);
+    Task<IssOrderImportResult> RunAsync(int existingBatchId, DateTime start, DateTime end, CancellationToken cancellationToken = default);
 }

@@ -62,6 +62,9 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
         public DateTime? DispatchedAt { get; private set; }
         public string? DispatchConfirmedByName { get; private set; }
 
+        // Optimistic concurrency
+        public byte[] RowVersion { get; set; } = null!;
+
         // Stok rezervasyon durumu — double-reserve koruması
         public bool StockReserved { get; private set; } = false;
 
@@ -170,6 +173,9 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
                 throw new DomainException("Only 'Created' (Draft) shipments can be edited.");
 
             DeliveryDate = newDate;
+            // Clear stale zone preparation link so sync can re-assign for the new date
+            ZonePreparationId = null;
+            ZonePreparation = null;
         }
 
         public void SetIrsaliyeInfo(string? irsaliyeNo, DateOnly? irsaliyeDate)

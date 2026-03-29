@@ -1,6 +1,9 @@
 using Akyildiz.Sevkiyat.Application.Interfaces;
+using Akyildiz.Sevkiyat.Domain.Exceptions;
+using RefreshTokenEntity = Akyildiz.Sevkiyat.Domain.Entities.RefreshToken;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
 
 namespace Akyildiz.Sevkiyat.Application.Auth.Commands.Login
 {
@@ -26,25 +29,35 @@ namespace Akyildiz.Sevkiyat.Application.Auth.Commands.Login
                 .FirstOrDefaultAsync(u => u.Email == request.Email, cancellationToken);
 
             if (user == null)
-            {
                 throw new UnauthorizedException("Kullanıcı adı veya şifre hatalı.");
-            }
 
             if (!user.IsActive)
-            {
                 throw new UnauthorizedException("Kullanıcı hesabı aktif değil.");
-            }
 
             if (!_passwordHasher.Verify(request.Password, user.PasswordHash, user.PasswordSalt))
-            {
                 throw new UnauthorizedException("Kullanıcı adı veya şifre hatalı.");
-            }
 
-            var token = _tokenService.GenerateToken(user);
+            var accessToken = _tokenService.GenerateToken(user);
+
+            // Refresh token — raw token client'a gönderilir, hash'i DB'de saklanır
+            var rawRefreshToken = GenerateRawToken();
+            var tokenHash = HashToken(rawRefreshToken);
+
+            _context.RefreshTokens.Add(new RefreshTokenEntity
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                TokenHash = tokenHash,
+                ExpiresAt = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
+            });
+
+            await _context.SaveChangesAsync(cancellationToken);
 
             return new LoginResponse
             {
-                AccessToken = token,
+                AccessToken = accessToken,
+                RefreshToken = rawRefreshToken,
                 User = new UserDto
                 {
                     Id = user.Id,
@@ -54,6 +67,18 @@ namespace Akyildiz.Sevkiyat.Application.Auth.Commands.Login
                     Role = user.Role.ToString()
                 }
             };
+        }
+
+        private static string GenerateRawToken()
+        {
+            var bytes = RandomNumberGenerator.GetBytes(32);
+            return Convert.ToBase64String(bytes);
+        }
+
+        internal static string HashToken(string rawToken)
+        {
+            var bytes = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(rawToken));
+            return Convert.ToHexString(bytes).ToLowerInvariant();
         }
     }
 }

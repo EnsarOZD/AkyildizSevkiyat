@@ -1,4 +1,4 @@
-﻿using Akyildiz.Sevkiyat.Domain.Enums;
+using Akyildiz.Sevkiyat.Domain.Enums;
 using Akyildiz.Sevkiyat.Domain.Exceptions;
 
 namespace Akyildiz.Sevkiyat.Domain.Entities
@@ -10,11 +10,11 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
         public int ShipmentId { get; private set; }
         public Shipment Shipment { get; private set; } = null!;
 
-        public int? IssOrderLineId { get; private set; }
-        public IssOrderLine? IssOrderLine { get; private set; }
+        public int? IssOrderLineId { get; internal set; }
+        public IssOrderLine? IssOrderLine { get; internal set; }
 
-        public int? StockMasterId { get; private set; }
-        public StockMaster? StockMaster { get; private set; }
+        public int? StockMasterId { get; internal set; }
+        public StockMaster? StockMaster { get; internal set; }
 
         public string StockCode { get; private set; } = null!;
         public string StockName { get; private set; } = null!;
@@ -34,18 +34,34 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
 
         protected ShipmentLine() { }
 
-        public static ShipmentLine Create(int? issOrderLineId, int? stockMasterId,
+        public static ShipmentLine CreateWithEntities(IssOrderLine? issOrderLine, StockMaster? stockMaster,
             string stockCode, string stockName, StockUnit unit, decimal orderedQty)
         {
-            return new ShipmentLine
+            var line = new ShipmentLine
             {
-                IssOrderLineId = issOrderLineId,
-                StockMasterId = stockMasterId,
                 StockCode = stockCode,
                 StockName = stockName,
                 Unit = unit,
                 OrderedQty = orderedQty
             };
+            line.IssOrderLine = issOrderLine;
+            line.StockMaster = stockMaster;
+            return line;
+        }
+
+        public static ShipmentLine Create(int? issOrderLineId, int? stockMasterId,
+            string stockCode, string stockName, StockUnit unit, decimal orderedQty)
+        {
+            var line = new ShipmentLine
+            {
+                StockCode = stockCode,
+                StockName = stockName,
+                Unit = unit,
+                OrderedQty = orderedQty
+            };
+            line.IssOrderLineId = issOrderLineId;
+            line.StockMasterId = stockMasterId;
+            return line;
         }
 
         public void RecordReturn(decimal returnedQty, ReturnReason? returnReason)

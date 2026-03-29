@@ -134,7 +134,13 @@ builder.Services.AddScoped<IEmailService, SmtpEmailService>();
 // Route Optimization Services
 builder.Services.AddScoped<Akyildiz.Sevkiyat.Application.RouteOptimization.Interfaces.IIssSyncComparisonService, IssSyncComparisonService>();
 builder.Services.AddScoped<Akyildiz.Sevkiyat.Application.RouteOptimization.Interfaces.IRouteOptimizationService, GoogleMapsRouteOptimizationService>();
-builder.Services.AddHttpClient<GoogleMapsRouteOptimizationService>();
+builder.Services.AddHttpClient<GoogleMapsRouteOptimizationService>(client =>
+{
+    // Google Routes API v2 can reset HTTP/2 connections mid-response (ResponseEnded).
+    // Force HTTP/1.1 for stable communication.
+    client.DefaultRequestVersion = new Version(1, 1);
+    client.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower;
+});
 
 // ISS-IP Import Orchestrator + Background Service
 builder.Services.AddScoped<Akyildiz.Sevkiyat.Application.Common.Interfaces.IIssOrderImportOrchestrator, IssOrderImportOrchestrator>();

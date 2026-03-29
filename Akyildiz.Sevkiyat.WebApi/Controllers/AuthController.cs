@@ -1,8 +1,10 @@
 using Akyildiz.Sevkiyat.Application.Auth.Commands.Login;
+using Akyildiz.Sevkiyat.Application.Auth.Commands.Logout;
 using Akyildiz.Sevkiyat.Application.Auth.Commands.RefreshToken;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Akyildiz.Sevkiyat.WebApi.Controllers
 {
@@ -18,6 +20,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         }
 
         [HttpPost("login")]
+        [EnableRateLimiting("login")]
         public async Task<IActionResult> Login([FromBody] LoginCommand command)
         {
             var result = await _mediator.Send(command);
@@ -25,10 +28,21 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         }
 
         [HttpPost("refresh")]
-        public async Task<IActionResult> RefreshToken(CancellationToken cancellationToken)
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
         {
-            var result = await _mediator.Send(new RefreshTokenCommand(), cancellationToken);
+            var result = await _mediator.Send(new RefreshTokenCommand(request.RefreshToken), cancellationToken);
             return Ok(result);
         }
+
+        [HttpPost("logout")]
+        [Authorize]
+        public async Task<IActionResult> Logout([FromBody] LogoutRequest request, CancellationToken cancellationToken)
+        {
+            await _mediator.Send(new LogoutCommand(request.RefreshToken), cancellationToken);
+            return NoContent();
+        }
     }
+
+    public record RefreshTokenRequest(string RefreshToken);
+    public record LogoutRequest(string RefreshToken);
 }

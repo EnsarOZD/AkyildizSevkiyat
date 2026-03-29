@@ -15,33 +15,32 @@ export interface User {
 
 export interface AuthResponse {
     accessToken: string;
+    refreshToken: string;
     user: User;
 }
 
 export const authService = {
-    /**
-     * Authenticate user and return token + user info
-     */
     async login(credentials: LoginRequest): Promise<AuthResponse> {
         const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
         return response.data;
     },
 
-    /**
-     * POST /auth/refresh — mevcut token ile yeni token al
-     * Mevcut token Authorization header'da zaten gidecek (apiClient interceptor'ı ekliyor)
-     * Dönen response: { accessToken, user } (login ile aynı format)
-     */
-    async refreshToken(): Promise<AuthResponse> {
-        const response = await apiClient.post<AuthResponse>('/auth/refresh');
+    async refreshToken(refreshToken: string): Promise<AuthResponse> {
+        const response = await apiClient.post<AuthResponse>('/auth/refresh', { refreshToken });
         return response.data;
     },
 
-    /**
-     * Clear session tokens and local storage data
-     */
-    logout(): void {
+    async logout(refreshToken: string): Promise<void> {
+        try {
+            await apiClient.post('/auth/logout', { refreshToken });
+        } catch {
+            // Logout hatası session temizlemeyi engellememeli
+        }
+    },
+
+    clearStorage(): void {
         localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
     }
 };
