@@ -92,6 +92,12 @@ const router = createRouter({
                     meta: { title: 'Mal Kabul İrsaliyeleri', roles: ['Admin', 'Warehouse', 'Manager'] }
                 },
                 {
+                    path: 'goods-receipts/intake',
+                    name: 'MalKabulDashboard',
+                    component: () => import('../views/MalKabulDashboardView.vue'),
+                    meta: { title: 'Mal Kabul Merkezi', roles: ['Admin', 'Warehouse', 'Manager'], breadcrumb: [{ label: 'Mal Kabul', to: '/goods-receipts' }] }
+                },
+                {
                     path: 'goods-receipts/select-po',
                     name: 'PurchaseOrderSelection',
                     component: () => import('../views/PurchaseOrderSelectionView.vue'),
@@ -129,9 +135,9 @@ const router = createRouter({
                 },
                 {
                     path: 'reports/zone-material',
-                    name: 'ZoneMaterialReport',
-                    component: () => import('../views/ZoneMaterialReportView.vue'),
-                    meta: { title: 'Bölge Malzeme Raporu', roles: ['Admin', 'Warehouse', 'Dispatcher', 'Manager', 'Accounting'], breadcrumb: [{ label: 'Raporlar', to: '/reports' }] }
+                    redirect: () => {
+                        return { path: '/reports', query: { tab: 'zone-material' } };
+                    }
                 },
                 {
                     path: 'reports',
@@ -204,12 +210,7 @@ const router = createRouter({
                     component: () => import('../views/DriverDeliveryView.vue'),
                     meta: { title: 'Teslimat' }
                 },
-                {
-                    path: 'return/:id',
-                    name: 'DriverReturn',
-                    component: () => import('../views/DriverReturnView.vue'),
-                    meta: { title: 'Araç İadesi' }
-                },
+                // DriverReturn route kaldırıldı — iade işlemleri DriverStopView içindeki modal üzerinden yapılıyor
             ]
         },
     ],

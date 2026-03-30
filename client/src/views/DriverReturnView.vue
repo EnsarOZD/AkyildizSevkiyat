@@ -1,3 +1,8 @@
+<!--
+  DEPRECATED — Bu view artık kullanılmıyor.
+  İade işlemleri DriverStopView.vue içindeki Return Modal üzerinden yapılıyor.
+  Router'dan kaldırıldı. Dosya referans amaçlı korunuyor.
+-->
 <template>
   <div class="space-y-4 pb-8">
     <!-- Loading -->
