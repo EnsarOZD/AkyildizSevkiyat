@@ -170,8 +170,43 @@
           </div>
         </div>
 
+        <!-- Expanded: ReturnedToWarehouse -->
+        <div v-if="expandedIds.has(shipment.id) && shipment.status === 'ReturnedToWarehouse'" class="px-4 pb-4 space-y-3 border-t border-gray-100 dark:border-white/10 pt-3">
+          <div class="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-sm font-medium">
+            <ArrowUturnLeftIcon class="w-4 h-4" aria-hidden="true" />
+            İade Edildi
+          </div>
+          <div v-if="shipment.lines?.length" class="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+            <div class="px-3 py-2 bg-gray-50 dark:bg-gray-800 text-xs font-medium text-gray-500 dark:text-gray-400">
+              Kalemler ({{ shipment.lines.length }})
+            </div>
+            <div
+              v-for="line in shipment.lines"
+              :key="line.stockCode"
+              class="flex justify-between px-3 py-2 border-t border-gray-100 dark:border-gray-700 text-sm"
+            >
+              <span class="text-gray-700 dark:text-gray-300">{{ line.stockName }}</span>
+              <span class="text-gray-500 dark:text-gray-400 font-medium ml-2 whitespace-nowrap">{{ line.orderedQty }} {{ line.unit }}</span>
+            </div>
+          </div>
+        </div>
+
         <!-- Expanded: Action Buttons (Pending/Dispatched) -->
         <div v-if="expandedIds.has(shipment.id) && shipment.status !== 'Delivered' && shipment.status !== 'ReturnedToWarehouse'" class="px-4 pb-4 space-y-3 border-t border-gray-100 dark:border-white/10 pt-3">
+          <!-- Kalem listesi -->
+          <div v-if="shipment.lines?.length" class="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+            <div class="px-3 py-2 bg-gray-50 dark:bg-gray-800 text-xs font-medium text-gray-500 dark:text-gray-400">
+              Kalemler ({{ shipment.lines.length }})
+            </div>
+            <div
+              v-for="line in shipment.lines"
+              :key="line.stockCode"
+              class="flex justify-between px-3 py-2 border-t border-gray-100 dark:border-gray-700 text-sm"
+            >
+              <span class="text-gray-900 dark:text-gray-100">{{ line.stockName }}</span>
+              <span class="text-gray-500 dark:text-gray-400 font-medium ml-2 whitespace-nowrap">{{ line.orderedQty }} {{ line.unit }}</span>
+            </div>
+          </div>
           <div class="flex gap-3">
             <button
               @click.stop="router.push({ name: 'DriverDelivery', params: { id: shipment.id } })"

@@ -16,6 +16,13 @@ export interface DriverShipmentDto {
   lineCount: number;
 }
 
+export interface ShipmentLineDto {
+  stockCode: string;
+  stockName: string;
+  orderedQty: number;
+  unit: string;
+}
+
 export interface StopShipmentDto {
   id: number;
   talepNo?: string;
@@ -28,6 +35,7 @@ export interface StopShipmentDto {
   deliveryRecipient?: string;
   deliveryNote?: string;
   deliveryPhotoBase64?: string;
+  lines: ShipmentLineDto[];
 }
 
 export interface DeliveryStopDto {
