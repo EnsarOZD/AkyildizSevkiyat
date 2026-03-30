@@ -76,6 +76,26 @@
                   </div>
                </div>
 
+               <!-- PDF + Mail Actions (Approved+) -->
+               <div v-if="order.status !== 'Draft'" class="flex flex-wrap gap-2">
+                  <button
+                    @click="downloadPdf"
+                    class="px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-bold rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all flex items-center gap-2 text-sm"
+                    title="PDF İndir"
+                  >
+                    <svg class="h-4 w-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                    PDF
+                  </button>
+                  <button
+                    @click="openMail"
+                    class="px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-bold rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all flex items-center gap-2 text-sm"
+                    title="Mail Hazırla"
+                  >
+                    <svg class="h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                    Mail
+                  </button>
+               </div>
+
                <!-- Primary Actions -->
                <div class="flex flex-wrap gap-2">
                   <template v-if="order.status === 'Draft'">
@@ -260,6 +280,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { jsPDF } from 'jspdf';
 import purchaseOrderService from '../services/purchaseOrderService';
 import { useNotificationStore } from '../stores/notification';
 import { useAuthStore } from '../stores/auth';
@@ -427,6 +448,123 @@ const confirmRemoveLine = async (line: any) => {
 
 const goToMalKabul = () => {
   router.push({ name: 'MalKabulDashboard', query: { poId: order.value.id } });
+};
+
+const downloadPdf = () => {
+  const o = order.value;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const pageW = 210;
+  const margin = 18;
+
+  // Header bar
+  doc.setFillColor(67, 56, 202); // indigo-700
+  doc.rect(0, 0, pageW, 24, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('SATIN ALMA SİPARİŞİ', margin, 15);
+
+  // Company info (left) + PO info (right)
+  doc.setTextColor(30, 30, 30);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Akyıldız Lojistik', margin, 34);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Tesisler Mah. Lojistik Cad.', margin, 39);
+  doc.text('İstanbul, Türkiye', margin, 44);
+
+  doc.setFont('helvetica', 'bold');
+  doc.text('Sipariş No:', 130, 34);
+  doc.text('Tarih:', 130, 39);
+  if (o.expectedDeliveryDate) doc.text('Termin:', 130, 44);
+  doc.setFont('helvetica', 'normal');
+  doc.text(o.orderNumber, 155, 34);
+  doc.text(formatDate(o.orderDate), 155, 39);
+  if (o.expectedDeliveryDate) doc.text(formatDate(o.expectedDeliveryDate), 155, 44);
+
+  // Supplier box
+  doc.setFillColor(248, 249, 250);
+  doc.roundedRect(margin, 52, pageW - margin * 2, 18, 2, 2, 'F');
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(100, 100, 100);
+  doc.text('TEDARİKÇİ', margin + 3, 59);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(30, 30, 30);
+  doc.text(o.supplierNameSnapshot, margin + 3, 66);
+
+  // Table header
+  const tableTop = 77;
+  doc.setFillColor(67, 56, 202);
+  doc.rect(margin, tableTop, pageW - margin * 2, 8, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  doc.text('#', margin + 2, tableTop + 5.5);
+  doc.text('Stok Kodu', margin + 10, tableTop + 5.5);
+  doc.text('Ürün Adı', margin + 38, tableTop + 5.5);
+  doc.text('Miktar', margin + 118, tableTop + 5.5);
+  doc.text('Birim', margin + 138, tableTop + 5.5);
+
+  // Table rows
+  let y = tableTop + 8;
+  doc.setTextColor(30, 30, 30);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+  (o.lines || []).forEach((line: any, idx: number) => {
+    if (idx % 2 === 0) {
+      doc.setFillColor(248, 249, 252);
+      doc.rect(margin, y, pageW - margin * 2, 7, 'F');
+    }
+    doc.text(String(idx + 1), margin + 2, y + 5);
+    doc.text((line.stockCode || '').substring(0, 14), margin + 10, y + 5);
+    doc.text((line.stockName || '').substring(0, 42), margin + 38, y + 5);
+    doc.text(String(line.orderedQty ?? ''), margin + 118, y + 5);
+    doc.text(line.unit || '', margin + 138, y + 5);
+    y += 7;
+  });
+
+  // Bottom line
+  doc.setDrawColor(200, 200, 200);
+  doc.line(margin, y + 4, pageW - margin, y + 4);
+
+  // Footer notes
+  y += 10;
+  doc.setFontSize(8);
+  doc.setTextColor(80, 80, 80);
+  doc.setFont('helvetica', 'italic');
+  doc.text('• Sipariş numarasının irsaliye veya faturada belirtilmesi gerekmektedir.', margin, y);
+  doc.text('• Siparişten fazla teslimatta fazla mal kabul edilmeyecektir.', margin, y + 5);
+
+  // Signature
+  y += 18;
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(30, 30, 30);
+  doc.text('Yetkili İmza: ___________________________', margin, y);
+
+  const fileName = `PO-${o.orderNumber}-${new Date().toISOString().split('T')[0]}.pdf`;
+  doc.save(fileName);
+};
+
+const openMail = () => {
+  const o = order.value;
+  if (!o.supplierEmail) {
+    notificationStore.add('Tedarikçi mail adresi tanımlı değil. Tedarikçi sayfasından ekleyin.', 'warning');
+    return;
+  }
+  const subject = encodeURIComponent(`Satın Alma Siparişi - ${o.orderNumber} - ${o.supplierNameSnapshot}`);
+  const termin = o.expectedDeliveryDate ? `Termin tarihi: ${formatDate(o.expectedDeliveryDate)}\n\n` : '';
+  const body = encodeURIComponent(
+    `Sayın ${o.supplierNameSnapshot} yetkilileri,\n\n` +
+    `${o.orderNumber} numaralı satın alma siparişimiz ekte yer almaktadır.\n\n` +
+    `Sipariş numarasının irsaliye ve/veya faturada belirtilmesi gerekmektedir.\n\n` +
+    `Siparişte belirtilen miktarların üzerinde yapılacak teslimatlar kabul edilmeyecektir.\n\n` +
+    termin +
+    `İyi çalışmalar,\nAkyıldız Lojistik`
+  );
+  window.open(`mailto:${o.supplierEmail}?subject=${subject}&body=${body}`);
+  notificationStore.add('PDF otomatik ek olarak eklenemiyor. İndirdiğiniz PDF\'i Outlook\'ta manuel ekleyin.', 'info');
 };
 
 onMounted(() => {
