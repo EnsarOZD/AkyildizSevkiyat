@@ -15,6 +15,10 @@
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Tedarikçi Kodu (Opsiyonel)</label>
               <input v-model="form.supplierCode" type="text" class="mt-1 bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
             </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">E-posta (Opsiyonel)</label>
+              <input v-model="form.email" type="email" class="mt-1 bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="ornek@tedarikci.com">
+            </div>
           </div>
         </div>
         <div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
@@ -48,12 +52,14 @@ const { notify } = useNotification();
 
 const form = reactive({
   name: '',
-  supplierCode: ''
+  supplierCode: '',
+  email: ''
 });
 
 const close = () => {
   form.name = '';
   form.supplierCode = '';
+  form.email = '';
   emit('close');
 };
 
@@ -66,7 +72,8 @@ const save = async () => {
   try {
     const newSupplier = await supplierService.create({
       name: form.name,
-      supplierCode: form.supplierCode
+      supplierCode: form.supplierCode,
+      email: form.email || undefined
     });
 
     notify.success('Tedarikçi başarıyla oluşturuldu.');

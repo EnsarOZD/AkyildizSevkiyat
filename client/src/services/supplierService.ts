@@ -4,11 +4,19 @@ export interface Supplier {
     id: string;
     name: string;
     supplierCode?: string;
+    email?: string;
 }
 
 export interface SupplierCreateParams {
     name: string;
     supplierCode?: string;
+    email?: string;
+}
+
+export interface SupplierUpdateParams {
+    name: string;
+    supplierCode?: string;
+    email?: string;
 }
 
 export const supplierService = {
@@ -28,6 +36,13 @@ export const supplierService = {
     async create(data: SupplierCreateParams): Promise<Supplier> {
         const response = await apiClient.post<Supplier>('/suppliers', data);
         return response.data;
+    },
+
+    /**
+     * Update an existing supplier
+     */
+    async update(id: string, data: SupplierUpdateParams): Promise<void> {
+        await apiClient.put(`/suppliers/${id}`, data);
     },
 
     /**

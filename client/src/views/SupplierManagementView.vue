@@ -38,25 +38,28 @@
           <tr>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tedarikçi Adı</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Kod</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Oluşturulma Tarihi</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Durum</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden sm:table-cell">E-posta</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">Oluşturulma</th>
+            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">İşlemler</th>
           </tr>
         </thead>
         <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
            <tr v-if="loading">
-             <td colspan="4" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">Yükleniyor...</td>
+             <td colspan="5" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">Yükleniyor...</td>
            </tr>
            <tr v-else-if="!suppliers || suppliers.length === 0">
-             <td colspan="4" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">Kayıt bulunamadı.</td>
+             <td colspan="5" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">Kayıt bulunamadı.</td>
            </tr>
            <tr v-for="supplier in suppliers" :key="supplier.id" class="hover:bg-gray-50 dark:hover:bg-gray-800">
              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{{ supplier.name }}</td>
              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ supplier.supplierCode || '-' }}</td>
-             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ formatDate(supplier.createdAt) }}</td>
-             <td class="px-6 py-4 whitespace-nowrap">
-               <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                 Aktif
-               </span>
+             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden sm:table-cell">
+               <a v-if="supplier.email" :href="'mailto:' + supplier.email" class="text-blue-600 hover:underline">{{ supplier.email }}</a>
+               <span v-else class="text-gray-300 dark:text-gray-600">—</span>
+             </td>
+             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden lg:table-cell">{{ formatDate(supplier.createdAt) }}</td>
+             <td class="px-6 py-4 whitespace-nowrap text-right">
+               <button @click="openEdit(supplier)" class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">Düzenle</button>
              </td>
            </tr>
         </tbody>
@@ -69,10 +72,45 @@
         @close="showCreateModal = false"
         @saved="onSupplierSaved"
     />
+
+    <!-- Edit Supplier Modal -->
+    <Teleport to="body">
+      <div v-if="showEditModal" class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+          <div class="fixed inset-0 bg-gray-500 bg-opacity-75" @click="closeEdit"></div>
+          <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+          <div class="inline-block align-bottom bg-white dark:bg-gray-900 rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Tedarikçi Düzenle</h3>
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Tedarikçi Adı <span class="text-red-500">*</span></label>
+                <input v-model="editForm.name" type="text" class="mt-1 bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Tedarikçi Kodu (Opsiyonel)</label>
+                <input v-model="editForm.supplierCode" type="text" class="mt-1 bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">E-posta (Opsiyonel)</label>
+                <input v-model="editForm.email" type="email" class="mt-1 bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="ornek@tedarikci.com">
+              </div>
+            </div>
+            <div class="mt-5 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
+              <button @click="saveEdit" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 sm:col-start-2 sm:text-sm">
+                Kaydet
+              </button>
+              <button @click="closeEdit" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-700 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 sm:mt-0 sm:col-start-1 sm:text-sm">
+                İptal
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, reactive } from 'vue';
 import { supplierService } from '../services/supplierService';
 import { ApiErrorUtils } from '../utils/apiError';
 import { useNotificationStore } from '../stores/notification';
@@ -83,6 +121,10 @@ const loading = ref(false);
 const searchQuery = ref('');
 const showCreateModal = ref(false);
 const fileInput = ref<HTMLInputElement | null>(null);
+
+const showEditModal = ref(false);
+const editingId = ref<string>('');
+const editForm = reactive({ name: '', supplierCode: '', email: '' });
 
 const notificationStore = useNotificationStore();
 let searchTimeout: any = null;
@@ -107,6 +149,37 @@ const onSearch = () => {
 
 const onSupplierSaved = () => {
     fetchSuppliers();
+};
+
+const openEdit = (supplier: any) => {
+    editingId.value = supplier.id;
+    editForm.name = supplier.name;
+    editForm.supplierCode = supplier.supplierCode || '';
+    editForm.email = supplier.email || '';
+    showEditModal.value = true;
+};
+
+const closeEdit = () => {
+    showEditModal.value = false;
+};
+
+const saveEdit = async () => {
+    if (!editForm.name) {
+        notificationStore.add('Tedarikçi adı zorunludur.', 'warning');
+        return;
+    }
+    try {
+        await supplierService.update(editingId.value, {
+            name: editForm.name,
+            supplierCode: editForm.supplierCode || undefined,
+            email: editForm.email || undefined
+        });
+        notificationStore.add('Tedarikçi güncellendi.', 'success');
+        showEditModal.value = false;
+        fetchSuppliers();
+    } catch (e) {
+        notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Güncelleme başarısız.', 'error');
+    }
 };
 
 const triggerFileInput = () => {
