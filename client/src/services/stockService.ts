@@ -34,6 +34,9 @@ export interface StockQueryParams {
     search?: string | null;
     page?: number;
     size?: number;
+    categoryId?: number | null;
+    pickingTypeId?: number | null;
+    unitId?: number | null;
 }
 
 export interface StockCreateRequest {

@@ -29,7 +29,7 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Queries.GetStocks
         string? NetsisStockCode
     );
 
-    public record GetStocksQuery(string? SearchTerm, int PageNumber = 1, int PageSize = 15) : IRequest<PaginatedList<StockDto>>;
+    public record GetStocksQuery(string? SearchTerm, int PageNumber = 1, int PageSize = 15, int? CategoryId = null, int? PickingTypeId = null, int? UnitId = null) : IRequest<PaginatedList<StockDto>>;
 
     public class GetStocksQueryHandler : IRequestHandler<GetStocksQuery, PaginatedList<StockDto>>
     {
@@ -47,10 +47,19 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Queries.GetStocks
             if (!string.IsNullOrWhiteSpace(request.SearchTerm))
             {
                 var term = request.SearchTerm.Trim();
-                query = query.Where(s => 
-                    EF.Functions.Collate(s.StockCode, "Turkish_CI_AS").Contains(EF.Functions.Collate(term, "Turkish_CI_AS")) || 
+                query = query.Where(s =>
+                    EF.Functions.Collate(s.StockCode, "Turkish_CI_AS").Contains(EF.Functions.Collate(term, "Turkish_CI_AS")) ||
                     EF.Functions.Collate(s.StockName, "Turkish_CI_AS").Contains(EF.Functions.Collate(term, "Turkish_CI_AS")));
             }
+
+            if (request.CategoryId.HasValue)
+                query = query.Where(s => (int)s.Category == request.CategoryId.Value);
+
+            if (request.PickingTypeId.HasValue)
+                query = query.Where(s => (int)s.PickingType == request.PickingTypeId.Value);
+
+            if (request.UnitId.HasValue)
+                query = query.Where(s => (int)s.Unit == request.UnitId.Value);
 
             return await PaginatedList<StockDto>.CreateAsync(
                 query

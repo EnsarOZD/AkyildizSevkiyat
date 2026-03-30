@@ -131,12 +131,22 @@
           <input v-model="createForm.returnDate" type="date" class="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-orange-400 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100" />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Stok Kodu (Serbest)</label>
-          <input v-model="createForm.stockCodeFree" type="text" maxlength="50" placeholder="Ör: EKMEK-01" class="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-orange-400 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100" />
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Stok Adı (Serbest)</label>
-          <input v-model="createForm.stockNameFree" type="text" maxlength="200" placeholder="Ör: Somun Ekmek" class="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-orange-400 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100" />
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Stok</label>
+            <button type="button" @click="useManualStock = !useManualStock" class="text-xs text-blue-500 hover:underline">
+              {{ useManualStock ? 'Stok Kataloğundan Seç' : 'Manuel Giriş' }}
+            </button>
+          </div>
+          <template v-if="!useManualStock">
+            <StockCombobox placeholder="Stok kodu veya adı ara..." @select="onStockSelect" />
+            <div v-if="createForm.stockCodeFree" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Seçili: <span class="font-medium text-gray-700 dark:text-gray-200">{{ createForm.stockCodeFree }} — {{ createForm.stockNameFree }}</span>
+            </div>
+          </template>
+          <template v-else>
+            <input v-model="createForm.stockCodeFree" type="text" maxlength="50" placeholder="Stok kodu (serbest)" class="w-full border rounded px-3 py-2 mb-2 focus:ring-2 focus:ring-orange-400 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 text-sm" />
+            <input v-model="createForm.stockNameFree" type="text" maxlength="200" placeholder="Stok adı (serbest)" class="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-orange-400 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 text-sm" />
+          </template>
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Miktar <span class="text-red-500">*</span></label>
@@ -179,13 +189,29 @@
               <input type="radio" v-model.number="resolveForm.action" :value="1" />
               <span class="text-sm">Sevkiyata Eşleştir</span>
             </label>
-            <div v-if="resolveForm.action === 1" class="ml-6">
+            <div v-if="resolveForm.action === 1" class="ml-6 relative">
               <input
-                v-model.number="resolveForm.linkedShipmentId"
-                type="number"
-                placeholder="Sevkiyat ID"
+                v-model="shipmentSearch"
+                @input="onShipmentSearchInput"
+                type="text"
+                placeholder="Sevkiyat no veya proje adı ara..."
                 class="border rounded px-3 py-2 text-sm w-full focus:ring-2 focus:ring-blue-400 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100"
               />
+              <div v-if="shipmentResults.length > 0" class="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded shadow-lg max-h-48 overflow-y-auto text-sm">
+                <div
+                  v-for="s in shipmentResults"
+                  :key="s.id"
+                  @mousedown.prevent="selectShipment(s)"
+                  class="px-3 py-2 cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-700 border-b last:border-b-0"
+                >
+                  <span class="font-semibold text-gray-800 dark:text-gray-100">#{{ s.id }}</span>
+                  <span class="ml-2 text-gray-600 dark:text-gray-400">{{ s.shipmentNumber }}</span>
+                  <span v-if="s.projectNameSnapshot" class="ml-2 text-xs text-gray-500">{{ s.projectNameSnapshot }}</span>
+                </div>
+              </div>
+              <div v-if="resolveForm.linkedShipmentId" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Seçili Sevkiyat ID: <span class="font-medium text-gray-700 dark:text-gray-200">{{ resolveForm.linkedShipmentId }}</span>
+              </div>
             </div>
             <label class="flex items-center gap-2 cursor-pointer">
               <input type="radio" v-model.number="resolveForm.action" :value="2" :disabled="!resolveTarget.isLinkedToStock" />
@@ -221,7 +247,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import BaseModal from '../components/BaseModal.vue';
+import StockCombobox from '../components/StockCombobox.vue';
 import floatingReturnService, { type FloatingReturnDto, ResolveAction } from '../services/floatingReturnService';
+import shipmentService, { type Shipment } from '../services/shipmentService';
 import { useNotificationStore } from '../stores/notification';
 import { ApiErrorUtils } from '../utils/apiError';
 import StatusBadge from '../components/StatusBadge.vue';
@@ -293,6 +321,7 @@ const formatReturnReason = (r: string) => {
 
 // Create Modal
 const showCreateModal = ref(false);
+const useManualStock = ref(false);
 const createForm = ref({
   returnDate: new Date().toISOString().slice(0, 10),
   stockCodeFree: '',
@@ -301,6 +330,11 @@ const createForm = ref({
   returnReason: 99,
   note: '',
 });
+
+const onStockSelect = (item: any) => {
+  createForm.value.stockCodeFree = item.stockCode || item.StockCode || '';
+  createForm.value.stockNameFree = item.stockName || item.StockName || '';
+};
 
 const openCreateModal = () => {
   createForm.value = {
@@ -311,6 +345,7 @@ const openCreateModal = () => {
     returnReason: 99,
     note: '',
   };
+  useManualStock.value = false;
   showCreateModal.value = true;
 };
 
@@ -332,6 +367,34 @@ const submitCreate = async () => {
   }
 };
 
+// Shipment search for resolve modal
+const shipmentSearch = ref('');
+const shipmentResults = ref<Shipment[]>([]);
+let shipmentDebounce: any = null;
+
+const onShipmentSearchInput = () => {
+  if (shipmentDebounce) clearTimeout(shipmentDebounce);
+  resolveForm.value.linkedShipmentId = undefined;
+  if (!shipmentSearch.value || shipmentSearch.value.length < 2) {
+    shipmentResults.value = [];
+    return;
+  }
+  shipmentDebounce = setTimeout(async () => {
+    try {
+      const result = await shipmentService.getAll({ search: shipmentSearch.value, pageSize: 10 });
+      shipmentResults.value = result.items;
+    } catch {
+      shipmentResults.value = [];
+    }
+  }, 300);
+};
+
+const selectShipment = (s: Shipment) => {
+  resolveForm.value.linkedShipmentId = s.id;
+  shipmentSearch.value = `#${s.id} — ${s.shipmentNumber}`;
+  shipmentResults.value = [];
+};
+
 // Resolve Modal
 const showResolveModal = ref(false);
 const resolveTarget = ref<FloatingReturnDto | null>(null);
@@ -344,6 +407,8 @@ const resolveForm = ref<{ action: number; linkedShipmentId?: number; note: strin
 const openResolveModal = (r: FloatingReturnDto) => {
   resolveTarget.value = r;
   resolveForm.value = { action: 1, linkedShipmentId: undefined, note: '' };
+  shipmentSearch.value = '';
+  shipmentResults.value = [];
   showResolveModal.value = true;
 };
 

@@ -5,8 +5,7 @@
   <div v-else-if="!shipment" class="p-6 text-center py-10">
     <span class="text-gray-500 dark:text-gray-400">Sevkiyat bulunamadı.</span>
   </div>
-  <div v-else class="p-6">
-
+  <div v-else class="max-w-full overflow-x-hidden px-4 sm:px-6 py-4">
     <!-- Back button -->
     <button
       @click="router.back()"
@@ -16,59 +15,57 @@
       Sevkiyatlar
     </button>
 
-    <!-- Page Header -->
-    <div class="mb-5">
+    <div class="mb-5 break-all">
       <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Sevkiyat #{{ shipment.id }}</h1>
-      <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{{ shipment.projectName }}</p>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5 break-all">{{ shipment.projectName }}</p>
     </div>
 
     <!-- 2-col layout: left = content, right = sticky sidebar -->
-    <div class="flex flex-col lg:flex-row gap-6 items-start">
+    <div class="flex flex-col lg:flex-row gap-6 items-stretch lg:items-start w-full">
 
       <!-- ── LEFT: main content ── -->
-      <div class="flex-1 min-w-0">
-
-        <!-- Info card -->
-        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-4">
+      <div class="flex-1 min-w-0 w-full">
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-4 w-full">
           <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-3 text-sm">
-            <div>
-              <div class="text-xs text-gray-500 dark:text-gray-400 font-medium mb-0.5">Proje</div>
-              <div class="font-medium text-gray-800 dark:text-gray-200">{{ shipment.projectName }}</div>
+            <div class="min-w-0">
+              <div class="text-xs text-gray-500 dark:text-gray-400 font-medium mb-0.5 truncate">Proje</div>
+              <div class="font-medium text-gray-800 dark:text-gray-200 break-all">{{ shipment.projectName }}</div>
             </div>
-            <div>
+            <div class="min-w-0">
               <div class="text-xs text-gray-500 dark:text-gray-400 font-medium mb-0.5">Teslim Tarihi</div>
               <div class="font-medium text-gray-800 dark:text-gray-200">{{ new Date(shipment.deliveryDate).toLocaleDateString('tr-TR') }}</div>
             </div>
-            <div v-if="shipment.zoneName">
+            <div v-if="shipment.zoneName" class="min-w-0">
               <div class="text-xs text-gray-500 dark:text-gray-400 font-medium mb-0.5">Bölge</div>
-              <div class="font-medium text-gray-800 dark:text-gray-200">{{ shipment.zoneName }}</div>
+              <div class="font-medium text-gray-800 dark:text-gray-200 break-all">{{ shipment.zoneName }}</div>
             </div>
-            <div v-if="shipment.externalOrderNumber">
+            <div v-if="shipment.externalOrderNumber" class="min-w-0">
               <div class="text-xs text-gray-500 dark:text-gray-400 font-medium mb-0.5">Sipariş No</div>
-              <div class="font-mono text-blue-600">{{ shipment.externalOrderNumber }}</div>
+              <div class="font-mono text-blue-600 break-all">{{ shipment.externalOrderNumber }}</div>
             </div>
-            <div v-if="shipment.talepNo">
+            <div v-if="shipment.talepNo" class="min-w-0">
               <div class="text-xs text-gray-500 dark:text-gray-400 font-medium mb-0.5">Talep No</div>
-              <div class="font-medium text-gray-700 dark:text-gray-300">{{ shipment.talepNo }}</div>
+              <div class="font-medium text-gray-700 dark:text-gray-300 break-all">{{ shipment.talepNo }}</div>
             </div>
-            <div v-if="shipment.teslimAlacakKisiler">
+            <div v-if="shipment.teslimAlacakKisiler" class="min-w-0">
               <div class="text-xs text-gray-500 dark:text-gray-400 font-medium mb-0.5">Teslim Alacak</div>
-              <div class="text-gray-700 dark:text-gray-300">{{ shipment.teslimAlacakKisiler }}</div>
-              <div v-if="shipment.teslimAlacakTelefon" class="text-xs text-gray-500 dark:text-gray-400">{{ shipment.teslimAlacakTelefon }}</div>
+              <div class="text-gray-700 dark:text-gray-300 break-all">{{ shipment.teslimAlacakKisiler }}</div>
+              <div v-if="shipment.teslimAlacakTelefon" class="text-xs text-gray-500 dark:text-gray-400 break-all">{{ shipment.teslimAlacakTelefon }}</div>
             </div>
-            <div v-if="shipment.yoneticiMail" class="col-span-2 md:col-span-3">
+            <div v-if="shipment.yoneticiMail" class="col-span-1 sm:col-span-2 md:col-span-3 min-w-0">
               <div class="text-xs text-gray-500 dark:text-gray-400 font-medium mb-0.5">Yönetici Mail</div>
               <div class="text-xs text-gray-600 dark:text-gray-400 break-all">{{ shipment.yoneticiMail }}</div>
             </div>
           </div>
-          <div v-if="shipment.aciklama" class="mt-3 pt-3 border-t text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded p-2">
+          <div v-if="shipment.aciklama" class="mt-3 pt-3 border-t text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded p-2 break-all overflow-hidden">
             <span class="font-bold text-gray-700 dark:text-gray-300">Not: </span>{{ shipment.aciklama }}
           </div>
         </div>
 
-        <!-- Tab nav -->
-        <div class="border-b border-gray-200 dark:border-gray-700 mb-4">
-          <nav class="-mb-px flex space-x-6">
+
+        <!-- Tab nav wrapper with scroll -->
+        <div class="border-b border-gray-200 dark:border-gray-700 mb-4 overflow-x-auto scrollbar-hide px-2">
+          <nav class="-mb-px flex space-x-6 min-w-max pb-0.5">
             <button
               @click="activeDetailTab = 'lines'"
               :class="activeDetailTab === 'lines'
@@ -102,7 +99,7 @@
         </div>
 
         <!-- Tab: Ürünler -->
-        <div v-if="activeDetailTab === 'lines'" class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+        <div v-if="activeDetailTab === 'lines'" class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden max-w-full w-full">
           <div v-for="(group, groupIdx) in groupedLines" :key="groupIdx" class="border-b last:border-b-0">
             <div
               class="px-5 py-2 font-bold text-sm flex justify-between items-center"
@@ -110,14 +107,15 @@
                 ? 'bg-red-100 text-red-800'
                 : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'"
             >
-              <span>{{ group.zoneName }}</span>
-              <span class="text-xs font-normal bg-white dark:bg-gray-900 px-2 py-1 rounded border dark:border-gray-700">{{ group.lines.length }} Kalem</span>
+              <span class="break-words mr-2 text-left">{{ group.zoneName }}</span>
+              <span class="text-xs font-normal bg-white dark:bg-gray-900 px-2 py-1 rounded border dark:border-gray-700 whitespace-nowrap">{{ group.lines.length }} Kalem</span>
             </div>
-            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead v-if="groupIdx === 0" class="bg-gray-50 dark:bg-gray-800">
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead v-if="groupIdx === 0" class="bg-gray-50 dark:bg-gray-800">
                 <tr>
                   <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Stok Kodu</th>
-                  <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Stok Adı</th>
+                  <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-[200px]">Stok Adı</th>
                   <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Birim</th>
                   <th class="px-5 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sipariş</th>
                   <th class="px-5 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Teslim</th>
@@ -140,7 +138,8 @@
                   </td>
                 </tr>
               </tbody>
-            </table>
+              </table>
+            </div>
           </div>
           <div v-if="groupedLines.length === 0" class="px-5 py-10 text-center text-sm text-gray-400">
             Ürün kaydı bulunamadı.
@@ -255,13 +254,14 @@
           </ul>
         </div>
 
-      </div>
+      </div> <!-- End of LEFT content -->
+
 
       <!-- ── RIGHT: Sticky sidebar ── -->
-      <div class="w-full lg:w-72 shrink-0 lg:sticky lg:top-4 space-y-4">
+      <div class="w-full lg:w-72 shrink-0 lg:sticky lg:top-4 space-y-4 min-w-0 max-w-full">
 
         <!-- Status card -->
-        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 w-full">
           <div class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Durum</div>
           <StatusBadge :status="shipment.status" type="shipment" />
           <div v-if="!shipment.zoneId" class="mt-3 text-xs text-red-600 bg-red-50 border border-red-100 rounded px-2 py-1.5 flex items-center gap-1">
@@ -270,7 +270,7 @@
         </div>
 
         <!-- Actions card -->
-        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 w-full">
           <div class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">İşlemler</div>
           <div class="space-y-2">
 
@@ -287,36 +287,6 @@
               @click="openZoneModal"
               class="w-full bg-orange-500 text-white py-2 px-4 rounded-lg hover:bg-orange-600 transition text-sm font-medium"
             >⚠️ Bölge Ata (Gerekli)</button>
-
-            <button
-              v-if="shipment.status === 'Created'"
-              v-role="['Admin', 'Accounting']"
-              @click="assignToWarehouse"
-              :disabled="!shipment.zoneId"
-              class="w-full text-white py-2 px-4 rounded-lg transition text-sm font-medium"
-              :class="!shipment.zoneId ? 'bg-gray-300 cursor-not-allowed' : 'bg-yellow-500 hover:bg-yellow-600'"
-            >Depoya Ata</button>
-
-            <button
-              v-if="['AssignedToWarehouse', 'Picking'].includes(shipment.status)"
-              v-role="['Admin', 'Accounting']"
-              @click="openRevertModal"
-              class="w-full border border-red-400 text-red-600 py-2 px-4 rounded-lg hover:bg-red-50 transition text-sm font-medium"
-            >Taslağa Geri Çek</button>
-
-            <button
-              v-if="shipment.status === 'AssignedToWarehouse'"
-              v-role="['Admin', 'Warehouse']"
-              @click="startPicking"
-              class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition text-sm font-medium"
-            >Toplamaya Başla</button>
-
-            <button
-              v-if="shipment.status === 'Picking'"
-              v-role="['Admin', 'Warehouse']"
-              @click="markReady"
-              class="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition text-sm font-medium"
-            >Hazır Olarak İşaretle</button>
 
             <button
               v-if="['Picking', 'AssignedToWarehouse'].includes(shipment.status)"
@@ -439,7 +409,7 @@
         <label class="block text-sm font-bold text-blue-800 mb-1">Teslim Tarihi</label>
         <input v-model="editForm.deliveryDate" type="date" class="border dark:border-gray-700 p-2 rounded w-full md:w-64 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-gray-100" />
       </div>
-      <div class="bg-white dark:bg-gray-900 rounded border dark:border-gray-700 shadow-sm pb-48">
+      <div class="bg-white dark:bg-gray-900 rounded border dark:border-gray-700 shadow-sm pb-48 overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead class="bg-gray-50 dark:bg-gray-800">
             <tr>
@@ -499,8 +469,9 @@
 
     <!-- Quantities Modal -->
     <BaseModal :show="showQuantitiesModal" title="Hazırlanan Miktarları Gir" maxWidth="4xl" @close="showQuantitiesModal = false">
-      <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 mb-4">
-        <thead class="bg-gray-50 dark:bg-gray-800">
+      <div class="overflow-x-auto mb-4">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead class="bg-gray-50 dark:bg-gray-800">
           <tr>
             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Stok</th>
             <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sipariş</th>
@@ -544,7 +515,8 @@
             </td>
           </tr>
         </tbody>
-      </table>
+        </table>
+      </div>
       <template #footer>
         <button @click="showQuantitiesModal = false" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded font-medium transition">İptal</button>
         <button @click="saveQuantities" class="px-6 py-2 bg-blue-600 text-white rounded font-bold hover:bg-blue-700 shadow-lg shadow-blue-200 transition">Değişiklikleri Kaydet</button>

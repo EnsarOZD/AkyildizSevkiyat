@@ -33,15 +33,66 @@
       </div>
     </div>
 
-    <!-- Search -->
-    <div class="bg-white dark:bg-gray-900 p-4 rounded shadow">
+    <!-- Search + Filter Panel -->
+    <div class="bg-white dark:bg-gray-900 p-4 rounded shadow space-y-3">
+      <div class="flex items-center gap-2">
         <input
-            v-model="searchQuery"
-            @input="debouncedSearch"
-            type="text"
-            placeholder="Stok Kodu veya Adı Ara..."
-            class="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100"
+          v-model="searchQuery"
+          @input="debouncedSearch"
+          type="text"
+          placeholder="Stok Kodu veya Adı Ara..."
+          class="flex-1 border rounded px-3 py-2 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100"
         />
+        <button
+          @click="filterOpen = !filterOpen"
+          class="flex items-center gap-1 px-3 py-2 border rounded text-sm font-medium transition"
+          :class="activeFilterCount > 0 ? 'border-indigo-400 text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30' : 'border-gray-300 text-gray-600 dark:text-gray-400 dark:border-gray-700'"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/></svg>
+          Filtrele
+          <span v-if="activeFilterCount > 0" class="ml-1 bg-indigo-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">{{ activeFilterCount }}</span>
+        </button>
+        <button v-if="activeFilterCount > 0" @click="clearFilters" class="text-xs text-red-500 hover:text-red-700 px-2 py-1 border border-red-300 rounded">Temizle</button>
+      </div>
+      <div v-if="filterOpen" class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 border-t dark:border-gray-700">
+        <div>
+          <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Kategori</label>
+          <select v-model="filterCategory" @change="debouncedSearch" class="w-full border rounded px-2 py-1.5 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100">
+            <option :value="null">Tümü</option>
+            <option :value="0">Tanımsız</option>
+            <option :value="1">Gıda</option>
+            <option :value="2">Sarf</option>
+            <option :value="3">Kıyafet</option>
+            <option :value="4">Temizlik</option>
+            <option :value="5">Kırtasiye</option>
+            <option :value="99">Diğer</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Toplama Tipi</label>
+          <select v-model="filterPickingType" @change="debouncedSearch" class="w-full border rounded px-2 py-1.5 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100">
+            <option :value="null">Tümü</option>
+            <option :value="1">Micro</option>
+            <option :value="2">Macro</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Birim</label>
+          <select v-model="filterUnit" @change="debouncedSearch" class="w-full border rounded px-2 py-1.5 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100">
+            <option :value="null">Tümü</option>
+            <option :value="0">Adet</option>
+            <option :value="1">Kg</option>
+            <option :value="2">Paket</option>
+            <option :value="3">Koli</option>
+            <option :value="4">Litre</option>
+            <option :value="5">Metre</option>
+            <option :value="6">Metrekare</option>
+            <option :value="7">Set</option>
+            <option :value="8">Teneke</option>
+            <option :value="99">Diğer</option>
+          </select>
+        </div>
+      </div>
     </div>
 
     <!-- Table -->
@@ -50,10 +101,16 @@
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead class="bg-gray-50 dark:bg-gray-800">
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Kod</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ad</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer select-none hover:text-gray-700 dark:hover:text-gray-200" @click="toggleSort('stockCode')">
+                      Kod <span class="ml-1">{{ sortIndicator('stockCode') }}</span>
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer select-none hover:text-gray-700 dark:hover:text-gray-200" @click="toggleSort('stockName')">
+                      Ad <span class="ml-1">{{ sortIndicator('stockName') }}</span>
+                    </th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">Birim</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">Birim Fiyat</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell cursor-pointer select-none hover:text-gray-700 dark:hover:text-gray-200" @click="toggleSort('unitPrice')">
+                      Birim Fiyat <span class="ml-1">{{ sortIndicator('unitPrice') }}</span>
+                    </th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">KDV %</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">Toplama Tipi</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">Kategori</th>
@@ -293,7 +350,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { stockService } from '../services/stockService';
 import type { Stock, ImportStocksResult } from '../services/stockService';
 import Pagination from '../components/Pagination.vue';
@@ -307,6 +364,56 @@ const stocks = ref<Stock[]>([]);
 const loading = ref(false);
 const searchQuery = ref('');
 
+// Filter state
+const filterOpen = ref(false);
+const filterCategory = ref<number | null>(null);
+const filterPickingType = ref<number | null>(null);
+const filterUnit = ref<number | null>(null);
+
+const activeFilterCount = computed(() => {
+    let n = 0;
+    if (filterCategory.value !== null) n++;
+    if (filterPickingType.value !== null) n++;
+    if (filterUnit.value !== null) n++;
+    return n;
+});
+
+const clearFilters = () => {
+    filterCategory.value = null;
+    filterPickingType.value = null;
+    filterUnit.value = null;
+    fetchStocks(1);
+};
+
+// Sort state (client-side)
+const sortBy = ref<string>('stockCode');
+const sortDir = ref<'asc' | 'desc'>('asc');
+
+const toggleSort = (col: string) => {
+    if (sortBy.value === col) {
+        sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc';
+    } else {
+        sortBy.value = col;
+        sortDir.value = 'asc';
+    }
+    sortStocks();
+};
+
+const sortIndicator = (col: string) => {
+    if (sortBy.value !== col) return '↕';
+    return sortDir.value === 'asc' ? '↑' : '↓';
+};
+
+const sortStocks = () => {
+    const dir = sortDir.value === 'asc' ? 1 : -1;
+    stocks.value = [...stocks.value].sort((a: any, b: any) => {
+        const av = a[sortBy.value] ?? '';
+        const bv = b[sortBy.value] ?? '';
+        if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
+        return String(av).localeCompare(String(bv), 'tr') * dir;
+    });
+};
+
 // Pagination State
 const currentPage = ref(1);
 const totalPages = ref(1);
@@ -319,13 +426,17 @@ const fetchStocks = async (page = 1) => {
         const data = await stockService.getAll({
             search: searchQuery.value || null,
             page: page,
-            size: pageSize.value
+            size: pageSize.value,
+            categoryId: filterCategory.value,
+            pickingTypeId: filterPickingType.value,
+            unitId: filterUnit.value,
         });
 
         stocks.value = data.items;
         currentPage.value = data.pageIndex;
         totalPages.value = data.totalPages;
         totalCount.value = data.totalCount;
+        sortStocks();
 
     } catch (e) {
         console.error(e);
