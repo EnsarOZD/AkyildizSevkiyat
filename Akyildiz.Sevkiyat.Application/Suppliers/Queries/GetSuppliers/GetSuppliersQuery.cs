@@ -19,6 +19,7 @@ namespace Akyildiz.Sevkiyat.Application.Suppliers.Queries.GetSuppliers
         public Guid Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public string? SupplierCode { get; set; }
+        public string? Email { get; set; }
     }
 
     public class GetSuppliersQueryHandler : IRequestHandler<GetSuppliersQuery, List<SupplierDto>>
@@ -44,7 +45,7 @@ namespace Akyildiz.Sevkiyat.Application.Suppliers.Queries.GetSuppliers
 
             return await query
                 .OrderBy(x => x.Name)
-                .Select(x => new SupplierDto { Id = x.Id, Name = x.Name, SupplierCode = x.SupplierCode })
+                .Select(x => new SupplierDto { Id = x.Id, Name = x.Name, SupplierCode = x.SupplierCode, Email = x.Email })
                 .ToListAsync(cancellationToken);
         }
     }

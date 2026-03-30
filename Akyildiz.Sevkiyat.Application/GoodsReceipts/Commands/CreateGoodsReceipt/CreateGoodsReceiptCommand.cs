@@ -11,6 +11,7 @@ namespace Akyildiz.Sevkiyat.Application.GoodsReceipts.Commands.CreateGoodsReceip
         public bool IgnoreDuplicateWarning { get; set; }
 
         public Guid? PurchaseOrderId { get; set; }
+        public List<Guid>? PurchaseOrderIds { get; set; } // Multiple PO support
         public Guid? SupplierId { get; set; }
         public string SupplierNameSnapshot { get; set; } = string.Empty;
         public DateOnly ReceiptDate { get; set; }
@@ -46,41 +47,74 @@ namespace Akyildiz.Sevkiyat.Application.GoodsReceipts.Commands.CreateGoodsReceip
 
         public async Task<CreateGoodsReceiptResponse> Handle(CreateGoodsReceiptCommand request, CancellationToken cancellationToken)
         {
-            // 0. Default ReceiptDate if missing (Default value in struct is 0001-01-01)
+            // 0. Default ReceiptDate if missing
             if (request.ReceiptDate == default)
             {
                 request.ReceiptDate = DateOnly.FromDateTime(DateTime.UtcNow);
             }
 
-            // 1. Resolve Supplier from PO (PO is now mandatory)
-            if (!request.PurchaseOrderId.HasValue || request.PurchaseOrderId.Value == Guid.Empty)
+            // Normalize list
+            var poIds = request.PurchaseOrderIds ?? new List<Guid>();
+            if (request.PurchaseOrderId.HasValue && !poIds.Contains(request.PurchaseOrderId.Value))
             {
-                throw new DomainException("Purchase Order selection is required.");
+                poIds.Add(request.PurchaseOrderId.Value);
             }
 
-            var po = await _context.PurchaseOrders.FindAsync(new object[] { request.PurchaseOrderId.Value }, cancellationToken);
-            if (po == null) throw new NotFoundException("PurchaseOrder", request.PurchaseOrderId.Value);
-                
-            // Derived from PO
-            request.SupplierNameSnapshot = po.SupplierNameSnapshot;
-            request.SupplierId = po.SupplierId;
+            // 1. Resolve Supplier and PO Info
+            if (poIds.Any())
+            {
+                var pos = await _context.PurchaseOrders
+                    .Where(x => poIds.Contains(x.Id))
+                    .ToListAsync(cancellationToken);
+
+                if (pos.Count != poIds.Count)
+                    throw new NotFoundException("PurchaseOrder", string.Join(", ", poIds));
+
+                // Verify same supplier
+                var supplierIds = pos.Select(x => x.SupplierId).Distinct().ToList();
+                if (supplierIds.Count > 1)
+                    throw new DomainException("Selected Purchase Orders must belong to the same supplier.");
+
+                // Validate PO statuses — cannot receive on Closed or Cancelled orders
+                foreach (var po in pos)
+                {
+                    if (po.Status == PurchaseOrderStatus.Closed || po.Status == PurchaseOrderStatus.Cancelled)
+                        throw new DomainException($"Kapalı veya iptal edilmiş siparişe mal kabul oluşturulamaz. (Sipariş: {po.OrderNumber})");
+                }
+
+                var mainPo = pos.First();
+                request.SupplierId = mainPo.SupplierId;
+                request.SupplierNameSnapshot = mainPo.SupplierNameSnapshot;
+
+                // If only one PO, link it as the primary PO
+                if (poIds.Count == 1) request.PurchaseOrderId = mainPo.Id;
+                else request.PurchaseOrderId = null; // Don't link a single PO if it's multiple
+            }
+            else
+            {
+                // PO-less flow
+                if (!request.SupplierId.HasValue || request.SupplierId == Guid.Empty)
+                    throw new DomainException("Supplier is required for PO-less goods receipt.");
+
+                if (string.IsNullOrWhiteSpace(request.SupplierNameSnapshot))
+                {
+                    var supplier = await _context.Suppliers.FindAsync(new object[] { request.SupplierId.Value }, cancellationToken);
+                    if (supplier == null) throw new NotFoundException("Supplier", request.SupplierId.Value);
+                    request.SupplierNameSnapshot = supplier.Name;
+                }
+
+                if (string.IsNullOrWhiteSpace(request.Note))
+                    throw new DomainException("Açıklama alanı (not) siparişsiz mal kabullerinde zorunludur.");
+            }
 
             // 2. Check Duplicates (Normalized)
-            // Criteria: Supplier (Id or Normalized Name) + WaybillNo + WaybillDate
-            // Existing receipts that are NOT Cancelled.
-            
-            var normalizedSupplierName = request.SupplierNameSnapshot.Trim().ToUpperInvariant();
             var normalizedWaybillNo = request.WaybillNo.Trim().ToUpperInvariant();
 
             var query = _context.GoodsReceipts.AsQueryable()
-                .Where(x => x.WaybillNo == request.WaybillNo 
+                .Where(x => x.WaybillNo.ToLower() == request.WaybillNo.ToLower()
                             && x.WaybillDate == request.WaybillDate
-                            && x.Status != GoodsReceiptStatus.Cancelled);
-
-            // Fetch potential matches to memory for string comparison if needed, OR try to stick to SQL.
-            // Since we want robust check, let's filter by SupplierId if present, else Name.
-            
-            query = query.Where(x => x.SupplierId == request.SupplierId!.Value);
+                            && x.Status != GoodsReceiptStatus.Cancelled
+                            && x.SupplierId == request.SupplierId!.Value);
 
             var duplicates = await query
                 .Select(x => new DuplicateReceiptMatchDto 
@@ -102,18 +136,13 @@ namespace Akyildiz.Sevkiyat.Application.GoodsReceipts.Commands.CreateGoodsReceip
                 };
             }
 
-            if (!request.SupplierId.HasValue)
-            {
-                throw new DomainException("Supplier is required.");
-            }
-
             // 3. Create Receipt
             var entity = new GoodsReceipt
             {
                 Id = Guid.NewGuid(),
                 PurchaseOrderId = request.PurchaseOrderId,
-                SupplierId = request.SupplierId.Value,
-                SupplierNameSnapshot = request.SupplierNameSnapshot, // Already resolved
+                SupplierId = request.SupplierId!.Value,
+                SupplierNameSnapshot = request.SupplierNameSnapshot,
                 ReceiptDate = request.ReceiptDate,
                 WaybillNo = request.WaybillNo,
                 WaybillDate = request.WaybillDate,
@@ -122,12 +151,12 @@ namespace Akyildiz.Sevkiyat.Application.GoodsReceipts.Commands.CreateGoodsReceip
                 ExternalRef = request.ExternalRef
             };
 
-            // 4. Auto-populate Lines from PO if present
-            if (request.PurchaseOrderId.HasValue)
+            // 4. Auto-populate Lines from SELECTED POs
+            if (poIds.Any())
             {
                 var poLines = await _context.PurchaseOrderLines
                     .Include(x => x.StockMaster)
-                    .Where(x => x.PurchaseOrderId == request.PurchaseOrderId.Value)
+                    .Where(x => poIds.Contains(x.PurchaseOrderId))
                     .ToListAsync(cancellationToken);
 
                 foreach (var poLine in poLines)
@@ -141,7 +170,7 @@ namespace Akyildiz.Sevkiyat.Application.GoodsReceipts.Commands.CreateGoodsReceip
                         StockNameSnapshot = poLine.StockMaster.StockName,
                         UnitSnapshot = poLine.Unit,
                         OrderedQty = poLine.OrderedQty,
-                        ReceivedQty = 0, // User will fill this
+                        ReceivedQty = 0,
                         AcceptedQty = 0,
                         RejectedQty = 0,
                         Note = poLine.Note

@@ -1,5 +1,6 @@
 using Akyildiz.Sevkiyat.Application.Suppliers.Commands.CreateSupplier;
 using Akyildiz.Sevkiyat.Application.Suppliers.Commands.ImportSuppliers;
+using Akyildiz.Sevkiyat.Application.Suppliers.Commands.UpdateSupplier;
 using Akyildiz.Sevkiyat.Application.Suppliers.Queries.GetSuppliers;
 using Akyildiz.Sevkiyat.Application.Suppliers.Queries.GetSuppliersTemplate;
 using MediatR;
@@ -26,6 +27,14 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         {
             var result = await _mediator.Send(query);
             return Ok(result);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(Guid id, UpdateSupplierCommand command)
+        {
+            command.Id = id;
+            await _mediator.Send(command);
+            return NoContent();
         }
 
         [HttpPost]

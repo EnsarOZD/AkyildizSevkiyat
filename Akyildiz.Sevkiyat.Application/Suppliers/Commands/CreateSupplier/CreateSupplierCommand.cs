@@ -12,6 +12,7 @@ namespace Akyildiz.Sevkiyat.Application.Suppliers.Commands.CreateSupplier
     {
         public string Name { get; set; } = string.Empty;
         public string? SupplierCode { get; set; }
+        public string? Email { get; set; }
     }
 
     public class CreateSupplierCommandHandler : IRequestHandler<CreateSupplierCommand, Guid>
@@ -33,6 +34,7 @@ namespace Akyildiz.Sevkiyat.Application.Suppliers.Commands.CreateSupplier
                 Id = Guid.NewGuid(),
                 Name = request.Name,
                 SupplierCode = request.SupplierCode,
+                Email = request.Email,
                 IsActive = true
             };
 

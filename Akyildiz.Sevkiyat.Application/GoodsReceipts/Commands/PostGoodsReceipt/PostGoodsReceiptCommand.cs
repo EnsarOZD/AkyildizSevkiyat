@@ -38,7 +38,7 @@ namespace Akyildiz.Sevkiyat.Application.GoodsReceipts.Commands.PostGoodsReceipt
                 return Unit.Value;
 
             if (entity.Status != GoodsReceiptStatus.Draft)
-                throw new DomainException($"Cannot post Goods Receipt in status {entity.Status}. Only Draft can be posted.");
+                throw new DomainException("Bu irsaliye zaten işleme alınmış.");
 
             if (!entity.Lines.Any())
                 throw new DomainException("Cannot post an empty Goods Receipt.");
@@ -66,47 +66,78 @@ namespace Akyildiz.Sevkiyat.Application.GoodsReceipts.Commands.PostGoodsReceipt
                 throw new DomainException($"Kabul miktarı teslim alınan miktardan az olan satırlarda red nedeni girilmesi zorunludur: {lineRefs}");
             }
 
-            // 2. Check Linked Purchase Order
-            if (entity.PurchaseOrderId.HasValue)
-            {
-                var po = await _context.PurchaseOrders
-                    .Include(p => p.Lines)
-                    .FirstOrDefaultAsync(p => p.Id == entity.PurchaseOrderId.Value, cancellationToken);
+            // 2. Identify and Update All Linked Purchase Orders
+            var linkedPoLineIds = entity.Lines
+                .Where(l => l.PurchaseOrderLineId.HasValue)
+                .Select(l => l.PurchaseOrderLineId!.Value)
+                .Distinct()
+                .ToList();
 
-                if (po != null)
+            var poIds = await _context.PurchaseOrderLines
+                .Where(pol => linkedPoLineIds.Contains(pol.Id))
+                .Select(pol => pol.PurchaseOrderId)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+
+            // Also add the header-level PurchaseOrderId if it exists but wasn't in the lines (unlikely but safe)
+            if (entity.PurchaseOrderId.HasValue && !poIds.Contains(entity.PurchaseOrderId.Value))
+            {
+                poIds.Add(entity.PurchaseOrderId.Value);
+            }
+
+            if (poIds.Any())
+            {
+                var linkedPos = await _context.PurchaseOrders
+                    .Include(p => p.Lines)
+                    .Where(p => poIds.Contains(p.Id))
+                    .ToListAsync(cancellationToken);
+
+                foreach (var po in linkedPos)
                 {
                     if (po.Status == PurchaseOrderStatus.Cancelled || po.Status == PurchaseOrderStatus.Closed)
-                        throw new DomainException($"Cannot post Receipt because linked Purchase Order is {po.Status}.");
+                        continue; // Skip closed or cancelled POs
 
                     if (po.Status == PurchaseOrderStatus.Approved)
                         po.Status = PurchaseOrderStatus.PartiallyReceived;
 
-                    // PO tamamen teslim alındı mı? Tüm posted GR satırlarının toplamını kontrol et
-                    var poLineIds = po.Lines.Select(l => l.Id).ToList();
-                    var receivedTotals = await _context.GoodsReceiptLines
+                    // Calculate total fulfillment for this specific PO
+                    var poLines = po.Lines.ToList();
+                    var poLineIdsForThisPo = poLines.Select(l => l.Id).ToList();
+
+                    // 1. Get previously POSTED quantities
+                    var pastReceivedTotals = await _context.GoodsReceiptLines
                         .Where(l => l.PurchaseOrderLineId.HasValue
-                                 && poLineIds.Contains(l.PurchaseOrderLineId!.Value)
-                                 && l.GoodsReceipt.Status == GoodsReceiptStatus.Posted)
+                                 && poLineIdsForThisPo.Contains(l.PurchaseOrderLineId!.Value)
+                                 && l.GoodsReceipt.Status == GoodsReceiptStatus.Posted
+                                 && l.GoodsReceiptId != entity.Id) // Exclude current if somehow already posted
                         .GroupBy(l => l.PurchaseOrderLineId!.Value)
                         .Select(g => new { PoLineId = g.Key, TotalAccepted = g.Sum(l => l.AcceptedQty ?? l.ReceivedQty) })
                         .ToListAsync(cancellationToken);
 
-                    // Mevcut GR'ın kabul miktarlarını da ekle (henüz saved değil)
-                    foreach (var grLine in entity.Lines.Where(l => l.PurchaseOrderLineId.HasValue))
+                    // 2. Add quantities from the current Goods Receipt
+                    var currentGrLinesForThisPo = entity.Lines
+                        .Where(l => l.PurchaseOrderLineId.HasValue && poLineIdsForThisPo.Contains(l.PurchaseOrderLineId.Value))
+                        .ToList();
+
+                    bool allLinesFulfilled = true;
+                    foreach (var poLine in poLines)
                     {
-                        var incoming = grLine.AcceptedQty ?? grLine.ReceivedQty;
-                        var existing = receivedTotals.FirstOrDefault(r => r.PoLineId == grLine.PurchaseOrderLineId!.Value);
-                        if (existing != null)
-                            receivedTotals[receivedTotals.IndexOf(existing)] = new { existing.PoLineId, TotalAccepted = existing.TotalAccepted + incoming };
-                        else
-                            receivedTotals.Add(new { PoLineId = grLine.PurchaseOrderLineId!.Value, TotalAccepted = incoming });
+                        var pastQty = pastReceivedTotals.FirstOrDefault(r => r.PoLineId == poLine.Id)?.TotalAccepted ?? 0;
+                        var currentQty = currentGrLinesForThisPo
+                            .Where(l => l.PurchaseOrderLineId == poLine.Id)
+                            .Sum(l => l.AcceptedQty ?? l.ReceivedQty);
+
+                        if (pastQty + currentQty < poLine.OrderedQty)
+                        {
+                            allLinesFulfilled = false;
+                            break;
+                        }
                     }
 
-                    bool fullyReceived = po.Lines.All(poLine =>
-                        receivedTotals.FirstOrDefault(r => r.PoLineId == poLine.Id)?.TotalAccepted >= poLine.OrderedQty);
-
-                    if (fullyReceived)
+                    if (allLinesFulfilled && poLines.Any())
+                    {
                         po.Status = PurchaseOrderStatus.Closed;
+                    }
                 }
             }
 
