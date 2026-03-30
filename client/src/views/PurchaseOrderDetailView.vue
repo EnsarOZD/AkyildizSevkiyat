@@ -275,12 +275,85 @@
       </div>
     </template>
   </div>
+
+  <!-- Hidden PDF layout — captured by html2canvas -->
+  <div
+    v-if="order"
+    ref="pdfContent"
+    style="position:fixed;left:-9999px;top:0;width:794px;background:#fff;font-family:'Segoe UI',Arial,sans-serif;color:#1e293b;"
+  >
+    <!-- Header -->
+    <div style="background:#1e3a5f;padding:20px 28px;display:flex;justify-content:space-between;align-items:center;">
+      <img src="/logo.png" style="height:60px;width:auto;object-fit:contain;" crossorigin="anonymous" />
+      <div style="text-align:right;">
+        <div style="color:#fff;font-size:20px;font-weight:700;letter-spacing:1.5px;">SATIN ALMA SİPARİŞİ</div>
+      </div>
+    </div>
+
+    <!-- Company + PO Info -->
+    <div style="display:flex;justify-content:space-between;padding:18px 28px 14px;border-bottom:1px solid #cbd5e1;">
+      <div>
+        <div style="font-weight:700;font-size:14px;">AKYILDİZ LOJİSTİK</div>
+        <div style="font-size:11px;color:#64748b;margin-top:4px;">Tesisler Mah. Lojistik Cad.</div>
+        <div style="font-size:11px;color:#64748b;">İstanbul, Türkiye</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:11px;color:#64748b;">Sipariş No: <strong style="color:#1e293b;">{{ order.orderNumber }}</strong></div>
+        <div style="font-size:11px;color:#64748b;margin-top:3px;">Tarih: <strong style="color:#1e293b;">{{ formatDate(order.orderDate) }}</strong></div>
+        <div v-if="order.expectedDeliveryDate" style="font-size:11px;color:#64748b;margin-top:3px;">Termin: <strong style="color:#1e293b;">{{ formatDate(order.expectedDeliveryDate) }}</strong></div>
+      </div>
+    </div>
+
+    <!-- Supplier Box -->
+    <div style="margin:16px 28px;background:#f0f4f8;border-radius:4px;padding:12px 16px;">
+      <div style="font-size:9px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:1px;">TEDARİKÇİ</div>
+      <div style="font-size:14px;font-weight:700;color:#1e293b;margin-top:4px;">{{ order.supplierNameSnapshot }}</div>
+      <div v-if="order.supplierEmail" style="font-size:11px;color:#475569;margin-top:2px;">{{ order.supplierEmail }}</div>
+    </div>
+
+    <!-- Items Table -->
+    <div style="margin:0 28px;">
+      <table style="width:100%;border-collapse:collapse;font-size:11px;">
+        <thead>
+          <tr style="background:#1e3a5f;">
+            <th style="padding:8px 10px;text-align:left;color:#fff;font-weight:700;width:32px;">#</th>
+            <th style="padding:8px 10px;text-align:left;color:#fff;font-weight:700;width:110px;">Stok Kodu</th>
+            <th style="padding:8px 10px;text-align:left;color:#fff;font-weight:700;">Ürün Adı</th>
+            <th style="padding:8px 10px;text-align:right;color:#fff;font-weight:700;width:70px;">Miktar</th>
+            <th style="padding:8px 10px;text-align:left;color:#fff;font-weight:700;width:60px;">Birim</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(line, idx) in order.lines" :key="line.id" :style="{ background: idx % 2 === 0 ? '#f0f4f8' : '#ffffff' }">
+            <td style="padding:7px 10px;">{{ idx + 1 }}</td>
+            <td style="padding:7px 10px;">{{ line.stockCode || '-' }}</td>
+            <td style="padding:7px 10px;">{{ line.stockName }}</td>
+            <td style="padding:7px 10px;text-align:right;font-weight:600;">{{ line.orderedQty }}</td>
+            <td style="padding:7px 10px;">{{ line.unit }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Notes -->
+    <div style="margin:20px 28px 0;padding-top:14px;border-top:1px solid #cbd5e1;">
+      <div style="font-size:10px;color:#475569;margin-bottom:5px;">• Sipariş numarasının irsaliye veya faturada belirtilmesi gerekmektedir.</div>
+      <div style="font-size:10px;color:#475569;">• Siparişten fazla teslimatta fazla mal kabul edilmeyecektir.</div>
+    </div>
+
+    <!-- Signature line -->
+    <div style="margin:28px 28px 36px;display:flex;justify-content:space-between;">
+      <div style="font-size:11px;">Tarih: _______________</div>
+      <div style="font-size:11px;">Yetkili İmza: ___________________________</div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 import purchaseOrderService from '../services/purchaseOrderService';
 import { useNotificationStore } from '../stores/notification';
 import { useAuthStore } from '../stores/auth';
@@ -303,6 +376,7 @@ const editingLineId = ref<string | null>(null);
 
 const editForm = ref({ orderDate: '', expectedDeliveryDate: '', note: '' });
 const editLineForm = ref({ orderedQty: 0, note: '' });
+const pdfContent = ref<HTMLElement | null>(null);
 
 const totalOrdered = computed(() => order.value?.lines?.reduce((sum: number, l: any) => sum + (l.orderedQty || 0), 0) || 0);
 const totalReceived = computed(() => order.value?.lines?.reduce((sum: number, l: any) => sum + (l.receivedQty || 0), 0) || 0);
@@ -450,101 +524,25 @@ const goToMalKabul = () => {
   router.push({ name: 'MalKabulDashboard', query: { poId: order.value.id } });
 };
 
-const downloadPdf = () => {
-  const o = order.value;
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const pageW = 210;
-  const margin = 18;
-
-  // Header bar
-  doc.setFillColor(67, 56, 202); // indigo-700
-  doc.rect(0, 0, pageW, 24, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(14);
-  doc.setFont('helvetica', 'bold');
-  doc.text('SATIN ALMA SİPARİŞİ', margin, 15);
-
-  // Company info (left) + PO info (right)
-  doc.setTextColor(30, 30, 30);
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Akyıldız Lojistik', margin, 34);
-  doc.setFont('helvetica', 'normal');
-  doc.text('Tesisler Mah. Lojistik Cad.', margin, 39);
-  doc.text('İstanbul, Türkiye', margin, 44);
-
-  doc.setFont('helvetica', 'bold');
-  doc.text('Sipariş No:', 130, 34);
-  doc.text('Tarih:', 130, 39);
-  if (o.expectedDeliveryDate) doc.text('Termin:', 130, 44);
-  doc.setFont('helvetica', 'normal');
-  doc.text(o.orderNumber, 155, 34);
-  doc.text(formatDate(o.orderDate), 155, 39);
-  if (o.expectedDeliveryDate) doc.text(formatDate(o.expectedDeliveryDate), 155, 44);
-
-  // Supplier box
-  doc.setFillColor(248, 249, 250);
-  doc.roundedRect(margin, 52, pageW - margin * 2, 18, 2, 2, 'F');
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(100, 100, 100);
-  doc.text('TEDARİKÇİ', margin + 3, 59);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(30, 30, 30);
-  doc.text(o.supplierNameSnapshot, margin + 3, 66);
-
-  // Table header
-  const tableTop = 77;
-  doc.setFillColor(67, 56, 202);
-  doc.rect(margin, tableTop, pageW - margin * 2, 8, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'bold');
-  doc.text('#', margin + 2, tableTop + 5.5);
-  doc.text('Stok Kodu', margin + 10, tableTop + 5.5);
-  doc.text('Ürün Adı', margin + 38, tableTop + 5.5);
-  doc.text('Miktar', margin + 118, tableTop + 5.5);
-  doc.text('Birim', margin + 138, tableTop + 5.5);
-
-  // Table rows
-  let y = tableTop + 8;
-  doc.setTextColor(30, 30, 30);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.5);
-  (o.lines || []).forEach((line: any, idx: number) => {
-    if (idx % 2 === 0) {
-      doc.setFillColor(248, 249, 252);
-      doc.rect(margin, y, pageW - margin * 2, 7, 'F');
-    }
-    doc.text(String(idx + 1), margin + 2, y + 5);
-    doc.text((line.stockCode || '').substring(0, 14), margin + 10, y + 5);
-    doc.text((line.stockName || '').substring(0, 42), margin + 38, y + 5);
-    doc.text(String(line.orderedQty ?? ''), margin + 118, y + 5);
-    doc.text(line.unit || '', margin + 138, y + 5);
-    y += 7;
-  });
-
-  // Bottom line
-  doc.setDrawColor(200, 200, 200);
-  doc.line(margin, y + 4, pageW - margin, y + 4);
-
-  // Footer notes
-  y += 10;
-  doc.setFontSize(8);
-  doc.setTextColor(80, 80, 80);
-  doc.setFont('helvetica', 'italic');
-  doc.text('• Sipariş numarasının irsaliye veya faturada belirtilmesi gerekmektedir.', margin, y);
-  doc.text('• Siparişten fazla teslimatta fazla mal kabul edilmeyecektir.', margin, y + 5);
-
-  // Signature
-  y += 18;
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(30, 30, 30);
-  doc.text('Yetkili İmza: ___________________________', margin, y);
-
-  const fileName = `PO-${o.orderNumber}-${new Date().toISOString().split('T')[0]}.pdf`;
-  doc.save(fileName);
+const downloadPdf = async () => {
+  if (!pdfContent.value || !order.value) return;
+  try {
+    const canvas = await html2canvas(pdfContent.value, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      logging: false
+    });
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageW = 210;
+    const imgH = (canvas.height / canvas.width) * pageW;
+    pdf.addImage(imgData, 'PNG', 0, 0, pageW, Math.min(imgH, 297));
+    const fileName = `PO-${order.value.orderNumber}-${new Date().toISOString().split('T')[0]}.pdf`;
+    pdf.save(fileName);
+  } catch {
+    notificationStore.add('PDF oluşturulamadı.', 'error');
+  }
 };
 
 const openMail = () => {
