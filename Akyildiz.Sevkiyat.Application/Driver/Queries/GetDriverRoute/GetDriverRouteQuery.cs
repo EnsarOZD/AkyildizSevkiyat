@@ -42,6 +42,13 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Queries.GetDriverRoute
         public int TotalLineCount => Shipments.Sum(s => s.LineCount);
     }
 
+    public record ShipmentLineDto(
+        string StockCode,
+        string StockName,
+        decimal OrderedQty,
+        string Unit
+    );
+
     public class StopShipmentDto
     {
         public int Id { get; init; }
@@ -55,6 +62,7 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Queries.GetDriverRoute
         public string? DeliveryRecipient { get; init; }
         public string? DeliveryNote { get; init; }
         public string? DeliveryPhotoBase64 { get; set; }
+        public IReadOnlyList<ShipmentLineDto> Lines { get; init; } = [];
     }
 
     // ── Handler ───────────────────────────────────────────────────────────────
@@ -152,6 +160,12 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Queries.GetDriverRoute
                     DeliveryRecipient   = s.DeliveryRecipient,
                     DeliveryNote        = s.DeliveryNote,
                     DeliveryPhotoBase64 = s.DeliveryPhotoBase64,
+                    Lines               = s.Lines.Select(l => new ShipmentLineDto(
+                        l.StockCode,
+                        l.StockName,
+                        l.OrderedQty,
+                        l.Unit.ToString()
+                    )).ToList(),
                 }).ToList(),
             }).ToList();
 
