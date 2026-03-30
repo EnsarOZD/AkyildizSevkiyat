@@ -94,6 +94,21 @@
 
       <!-- Delivery form (only when Dispatched) -->
       <template v-else>
+        <!-- Teslim edilecek kalemler -->
+        <div v-if="shipment.lines?.length" class="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+          <div class="px-4 py-2 bg-gray-50 dark:bg-gray-800 text-sm font-medium text-gray-600 dark:text-gray-400">
+            Teslim Edilecek Kalemler
+          </div>
+          <div
+            v-for="line in shipment.lines"
+            :key="line.stockCode"
+            class="flex justify-between px-4 py-2.5 border-t border-gray-100 dark:border-gray-700"
+          >
+            <span class="text-gray-900 dark:text-gray-100 text-sm">{{ line.stockName }}</span>
+            <span class="text-gray-500 dark:text-gray-400 text-sm font-medium whitespace-nowrap ml-2">{{ line.orderedQty }} {{ line.unit }}</span>
+          </div>
+        </div>
+
         <div class="bg-white dark:bg-[#0f2744] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 p-4 space-y-4">
           <h3 class="font-medium text-gray-900 dark:text-white">Teslim Bilgisi</h3>
 
@@ -205,7 +220,7 @@ import {
   XMarkIcon,
   ArrowLeftIcon,
 } from '@heroicons/vue/24/outline';
-import driverService, { type StopShipmentDto, type DeliveryStopDto } from '../services/driverService';
+import driverService, { type StopShipmentDto, type DeliveryStopDto, type ShipmentLineDto } from '../services/driverService';
 import shipmentService from '../services/shipmentService';
 import { useNotificationStore } from '../stores/notification';
 
@@ -217,6 +232,7 @@ interface ShipmentView extends StopShipmentDto {
   projectName: string;
   projectAddress?: string;
   deliveryDate?: string;
+  lines: ShipmentLineDto[];
 }
 
 const shipmentId = Number(route.params.id);
@@ -253,6 +269,10 @@ async function load() {
       if (sh) {
         stop.value = s;
         shipment.value = { ...sh, projectName: s.projectName, projectAddress: s.projectAddress };
+        // Pre-fill teslim alan kişi (ilk kişi)
+        if (sh.teslimAlacakKisiler) {
+          form.value.deliveryRecipient = sh.teslimAlacakKisiler.split(',')[0].trim();
+        }
         break;
       }
     }
