@@ -42,6 +42,12 @@
       </a>
     </div>
 
+    <!-- Delivery date -->
+    <div v-if="stopDeliveryDate" class="flex items-center gap-2 ml-11">
+      <CalendarIcon class="w-4 h-4 text-gray-400 flex-shrink-0" aria-hidden="true" />
+      <span class="text-sm text-gray-500 dark:text-gray-400">{{ stopDeliveryDate }}</span>
+    </div>
+
     <!-- Contact info from first shipment -->
     <div v-if="firstShipment?.teslimAlacakKisiler" class="flex items-center gap-2 ml-11">
       <UserIcon class="w-4 h-4 text-gray-400 flex-shrink-0" aria-hidden="true" />
@@ -81,12 +87,18 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { MapPinIcon, UserIcon, PhoneIcon, CheckIcon, TruckIcon } from '@heroicons/vue/24/outline';
+import { MapPinIcon, UserIcon, PhoneIcon, CheckIcon, TruckIcon, CalendarIcon } from '@heroicons/vue/24/outline';
 import type { DeliveryStopDto } from '../../services/driverService';
 
 const props = defineProps<{ stop: DeliveryStopDto }>();
 
 const firstShipment = computed(() => props.stop.shipments[0]);
+
+const stopDeliveryDate = computed(() => {
+  const d = props.stop.shipments[0]?.deliveryDate;
+  if (!d) return null;
+  return new Date(d).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' });
+});
 
 const mapsUrl = computed(() => {
   const { projectLatitude: lat, projectLongitude: lng, projectAddress: addr } = props.stop;

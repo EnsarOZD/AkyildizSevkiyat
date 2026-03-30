@@ -29,6 +29,7 @@ export interface StopShipmentDto {
   irsaliyeNo?: string;
   status: string;
   lineCount: number;
+  deliveryDate: string;
   teslimAlacakKisiler?: string;
   teslimAlacakTelefon?: string;
   deliveredAt?: string;

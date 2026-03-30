@@ -56,6 +56,7 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Queries.GetDriverRoute
         public string? IrsaliyeNo { get; init; }
         public string Status { get; init; } = string.Empty;
         public int LineCount { get; init; }
+        public DateTime DeliveryDate { get; init; }
         public string? TeslimAlacakKisiler { get; init; }
         public string? TeslimAlacakTelefon { get; init; }
         public DateTime? DeliveredAt { get; init; }
@@ -154,6 +155,7 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Queries.GetDriverRoute
                     IrsaliyeNo          = s.IrsaliyeNo,
                     Status              = s.Status.ToString(),
                     LineCount           = s.Lines.Count,
+                    DeliveryDate        = s.DeliveryDate,
                     TeslimAlacakKisiler = s.IssOrder?.TeslimAlacakKisiler,
                     TeslimAlacakTelefon = s.IssOrder?.TeslimAlacakTelefonNumaralari,
                     DeliveredAt         = s.DeliveredAt,
