@@ -1,6 +1,8 @@
 using Akyildiz.Sevkiyat.Application.Interfaces;
+using Akyildiz.Sevkiyat.Domain.Enums;
 using Akyildiz.Sevkiyat.Domain.Exceptions;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Akyildiz.Sevkiyat.Application.Suppliers.Commands.UpdateSupplier
 {
@@ -32,6 +34,17 @@ namespace Akyildiz.Sevkiyat.Application.Suppliers.Commands.UpdateSupplier
             entity.Name = request.Name;
             entity.SupplierCode = request.SupplierCode;
             entity.Email = request.Email;
+
+            // Draft veya Approved PO snapshot'larını güncelle
+            // (Closed, Cancelled, PartiallyReceived — o anki isim korunur)
+            var activePOs = await _context.PurchaseOrders
+                .Where(po => po.SupplierId == request.Id
+                    && (po.Status == PurchaseOrderStatus.Draft
+                        || po.Status == PurchaseOrderStatus.Approved))
+                .ToListAsync(cancellationToken);
+
+            foreach (var po in activePOs)
+                po.SupplierNameSnapshot = request.Name;
 
             await _context.SaveChangesAsync(cancellationToken);
             return Unit.Value;
