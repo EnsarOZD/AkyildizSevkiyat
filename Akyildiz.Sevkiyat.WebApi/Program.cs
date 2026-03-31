@@ -142,6 +142,13 @@ builder.Services.AddHttpClient<GoogleMapsRouteOptimizationService>(client =>
     client.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower;
 });
 
+// Geocoding Service (adres → koordinat)
+builder.Services.AddScoped<Akyildiz.Sevkiyat.Application.Common.Interfaces.IGeocodingService, GoogleGeocodingService>();
+builder.Services.AddHttpClient<GoogleGeocodingService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(15);
+});
+
 // ISS-IP Import Orchestrator + Background Service
 builder.Services.AddScoped<Akyildiz.Sevkiyat.Application.Common.Interfaces.IIssOrderImportOrchestrator, IssOrderImportOrchestrator>();
 builder.Services.Configure<IssImportOptions>(builder.Configuration.GetSection("IssImport"));

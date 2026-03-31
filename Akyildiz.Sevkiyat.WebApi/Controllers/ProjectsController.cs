@@ -11,6 +11,7 @@ using Akyildiz.Sevkiyat.Application.Projects.Commands.UpdateProjectLocation;
 using Akyildiz.Sevkiyat.Application.Projects.Commands.UpdateProjectDeliveryOrder;
 using Akyildiz.Sevkiyat.Application.Projects.Commands.BulkUpdateDeliveryOrders;
 using Akyildiz.Sevkiyat.Application.Projects.Commands.UpdateProjectDeliveryWindow;
+using Akyildiz.Sevkiyat.Application.Projects.Queries.ValidateProjectCoordinates;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
@@ -104,7 +105,16 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             return NoContent();
         }
 
-        public record UpdateLocationBody(double Latitude, double Longitude);
+        public record UpdateLocationBody(double? Latitude, double? Longitude);
+
+        [HttpPost("validate-coordinates")]
+        public async Task<IActionResult> ValidateCoordinates([FromBody] ValidateCoordinatesBody body)
+        {
+            var result = await _mediator.Send(new ValidateProjectCoordinatesQuery(body.ProjectIds));
+            return Ok(result);
+        }
+
+        public record ValidateCoordinatesBody(List<int> ProjectIds);
 
         [HttpPatch("{id}/delivery-order")]
         public async Task<IActionResult> UpdateDeliveryOrder(int id, [FromBody] UpdateDeliveryOrderBody body)

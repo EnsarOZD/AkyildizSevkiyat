@@ -7,6 +7,19 @@ export interface Zone {
   description?: string;
 }
 
+export interface ProjectCoordinateValidationDto {
+  projectId: number;
+  projectCode: string;
+  projectName: string;
+  systemAddress?: string;
+  recordedLat?: number;
+  recordedLng?: number;
+  geocodedLat?: number;
+  geocodedLng?: number;
+  distanceKm?: number;
+  status: 'Compatible' | 'Suspicious' | 'Incompatible' | 'NoAddress' | 'NoCoordinate';
+}
+
 const projectService = {
   async getZones(): Promise<Zone[]> {
     const response = await apiClient.get('/zones');
@@ -81,7 +94,20 @@ const projectService = {
       }
     });
     return response.data;
-  }
+  },
+
+  async validateCoordinates(projectIds: number[]): Promise<ProjectCoordinateValidationDto[]> {
+    const response = await apiClient.post('/projects/validate-coordinates', { projectIds });
+    return response.data;
+  },
+
+  async updateLocation(id: number, lat: number | null, lng: number | null): Promise<void> {
+    await apiClient.patch(`/projects/${id}/location`, { latitude: lat, longitude: lng });
+  },
+
+  async resetLocation(id: number): Promise<void> {
+    await apiClient.patch(`/projects/${id}/location`, { latitude: null, longitude: null });
+  },
 };
 
 export default projectService;

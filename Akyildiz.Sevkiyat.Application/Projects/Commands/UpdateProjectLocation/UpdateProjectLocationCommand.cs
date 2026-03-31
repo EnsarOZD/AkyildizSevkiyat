@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Akyildiz.Sevkiyat.Application.Projects.Commands.UpdateProjectLocation
 {
-    public record UpdateProjectLocationCommand(int ProjectId, double Latitude, double Longitude) : IRequest;
+    public record UpdateProjectLocationCommand(int ProjectId, double? Latitude, double? Longitude) : IRequest;
 
     public class UpdateProjectLocationCommandHandler : IRequestHandler<UpdateProjectLocationCommand>
     {

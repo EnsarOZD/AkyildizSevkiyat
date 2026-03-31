@@ -13,7 +13,6 @@ import {
   InboxArrowDownIcon,
   BuildingOfficeIcon,
   ChartBarIcon,
-  TableCellsIcon,
   UsersIcon,
   SignalIcon,
   DevicePhoneMobileIcon,
@@ -55,7 +54,6 @@ export const NAV_ITEMS: NavGroup[] = [
         title: 'Operasyon',
         items: [
             { label: 'Depo Hazırlık',    to: '/warehouse',        icon: BuildingStorefrontIcon, roles: ['Admin', 'Warehouse', 'Manager', 'Dispatcher'] },
-            { label: 'Tanımlamalar',     to: '/settings',         icon: Cog6ToothIcon,          roles: ['Admin', 'Manager'] },
             { label: 'Şoför Paneli',     to: '/driver',           icon: DevicePhoneMobileIcon,  roles: ['Admin', 'Manager', 'Dispatcher'] },
             { label: 'Belirsiz İadeler', to: '/floating-returns', icon: ArrowPathIcon,          roles: ['Admin', 'Manager', 'Warehouse', 'Dispatcher'] },
             { label: 'Rota Optimizasyonu', to: '/route-optimization', icon: ArrowTrendingUpIcon, roles: ['Admin', 'Manager', 'Dispatcher'] },
@@ -73,15 +71,17 @@ export const NAV_ITEMS: NavGroup[] = [
         items: [
             { label: 'Depo Adresleri',  to: '/warehouse/locations',       icon: MapPinIcon,          roles: ['Admin', 'Manager', 'Warehouse', 'Accounting'], badge: 'Yeni' },
             { label: 'Stok Haritası',   to: '/warehouse/stock-locations', icon: ArrowsRightLeftIcon, roles: ['Admin', 'Manager', 'Warehouse', 'Accounting'], badge: 'Yeni' },
-            { label: 'Proje - Bölge',  to: '/projects/zone-mapping',  icon: PuzzlePieceIcon, roles: ['Admin', 'Manager'] },
-            { label: 'Teslimat Sırası', to: '/zones/project-order',    icon: ListBulletIcon,  roles: ['Admin', 'Manager'] },
+            { label: 'Proje - Bölge',      to: '/projects/zone-mapping',  icon: PuzzlePieceIcon, roles: ['Admin', 'Manager'] },
+            { label: 'Teslimat Sırası',    to: '/zones/project-order',    icon: ListBulletIcon,  roles: ['Admin', 'Manager'] },
+            { label: 'Koordinat Doğrulama', to: '/projects/coordinates',  icon: MapPinIcon,      roles: ['Admin', 'Manager'] },
         ],
     },
     {
         title: 'Satınalma',
         items: [
             { label: 'Satınalma Siparişleri',  to: '/purchase-orders', icon: ShoppingCartIcon,   roles: ['Admin', 'Accounting', 'Manager'] },
-            { label: 'Mal Kabul İrsaliyeleri', to: '/goods-receipts',  icon: InboxArrowDownIcon, roles: ['Admin', 'Warehouse', 'Manager'] },
+            { label: 'Mal Kabul Merkezi',      to: '/goods-receipts/intake', icon: InboxArrowDownIcon, roles: ['Admin', 'Warehouse', 'Manager'], badge: 'Yeni' },
+            { label: 'İrsaliye Geçmişi',       to: '/goods-receipts/list',        icon: ListBulletIcon,      roles: ['Admin', 'Warehouse', 'Manager'] },
             { label: 'Tedarikçiler',           to: '/suppliers',        icon: BuildingOfficeIcon, roles: ['Admin', 'Accounting', 'Manager'] },
         ],
     },
@@ -89,12 +89,12 @@ export const NAV_ITEMS: NavGroup[] = [
         title: 'Raporlar',
         items: [
             { label: 'Raporlar',             to: '/reports',               icon: ChartBarIcon,  roles: ['Admin', 'Accounting', 'Warehouse', 'Manager'] },
-            { label: 'Bölge Malzeme Raporu', to: '/reports/zone-material', icon: TableCellsIcon, roles: ['Admin', 'Warehouse', 'Dispatcher', 'Manager', 'Accounting'] },
         ],
     },
     {
         title: 'Sistem',
         items: [
+            { label: 'Tanımlamalar',     to: '/settings',         icon: Cog6ToothIcon,          roles: ['Admin', 'Manager'] },
             { label: 'Kullanıcı Yönetimi',   to: '/users',          icon: UsersIcon,             roles: ['Admin'] },
             { label: 'Mutabakat Kontrolleri', to: '/reconciliation', icon: ShieldExclamationIcon, roles: ['Admin', 'Manager'] },
         ],

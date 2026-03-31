@@ -58,6 +58,12 @@ const router = createRouter({
                     meta: { title: 'Teslimat Sırası', roles: ['Admin', 'Manager'] }
                 },
                 {
+                    path: 'projects/coordinates',
+                    name: 'CoordinateValidation',
+                    component: () => import('../views/CoordinateValidationView.vue'),
+                    meta: { title: 'Koordinat Doğrulama', roles: ['Admin', 'Manager'] }
+                },
+                {
                     path: 'orders/import',
                     name: 'OrderImport',
                     component: () => import('../views/OrderImportView.vue'),
