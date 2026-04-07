@@ -37,20 +37,23 @@ namespace Akyildiz.Sevkiyat.Infrastructure.ExternalServices.Netsis
                 if (_tokenCache.Token is not null)
                     return _tokenCache.Token;
 
-                // GET /api/v2/token?grant_type=password&branchcode=...&...
-                var qs = new StringBuilder();
-                qs.Append("grant_type=password");
-                qs.Append("&branchcode=").Append(HttpUtility.UrlEncode(_opt.SubeKodu));
-                qs.Append("&username=").Append(HttpUtility.UrlEncode(_opt.KullaniciAdi));
-                qs.Append("&password=").Append(HttpUtility.UrlEncode(_opt.Sifre));
-                qs.Append("&dbname=").Append(HttpUtility.UrlEncode(_opt.DbName));
-                qs.Append("&dbuser=").Append(HttpUtility.UrlEncode(_opt.DbUser));
-                qs.Append("&dbpassword=").Append(HttpUtility.UrlEncode(_opt.DbPassword));
+                // GET /api/v2/token — Postman collection'daki gibi raw body ile gönderilir
+                // (disableBodyPruning: true — query string değil, body içinde).
                 // Not: dbtype parametresi bu Netsis versiyonunda (9.0.67.0) server-side
                 // unhandled exception'a neden oluyor — gönderilmiyor.
+                var bodyStr = new StringBuilder();
+                bodyStr.Append("grant_type=password");
+                bodyStr.Append("&branchcode=").Append(HttpUtility.UrlEncode(_opt.SubeKodu));
+                bodyStr.Append("&username=").Append(HttpUtility.UrlEncode(_opt.KullaniciAdi));
+                bodyStr.Append("&password=").Append(HttpUtility.UrlEncode(_opt.Sifre));
+                bodyStr.Append("&dbname=").Append(HttpUtility.UrlEncode(_opt.DbName));
+                bodyStr.Append("&dbuser=").Append(HttpUtility.UrlEncode(_opt.DbUser));
+                bodyStr.Append("&dbpassword=").Append(HttpUtility.UrlEncode(_opt.DbPassword));
 
-                using var resp = await _http.GetAsync(
-                    $"{_opt.LoginPath}?{qs}", cancellationToken);
+                using var loginReq = new HttpRequestMessage(HttpMethod.Get, _opt.LoginPath);
+                loginReq.Content = new StringContent(bodyStr.ToString(), Encoding.UTF8, "application/x-www-form-urlencoded");
+
+                using var resp = await _http.SendAsync(loginReq, cancellationToken);
 
                 if (!resp.IsSuccessStatusCode)
                 {
