@@ -23,7 +23,8 @@ namespace Akyildiz.Sevkiyat.Infrastructure.ExternalServices.Netsis
         [Required]
         public string DbUser { get; init; } = default!;
 
-        public string DbType { get; init; } = "MsSql";
+        // DbPassword env variable ile gelir — appsettings'e yazılmaz
+        public string DbPassword { get; init; } = string.Empty;
 
         [Required]
         public string SubeKodu { get; init; } = default!;

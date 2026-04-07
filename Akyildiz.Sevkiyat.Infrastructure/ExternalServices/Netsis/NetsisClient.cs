@@ -45,8 +45,9 @@ namespace Akyildiz.Sevkiyat.Infrastructure.ExternalServices.Netsis
                 qs.Append("&password=").Append(HttpUtility.UrlEncode(_opt.Sifre));
                 qs.Append("&dbname=").Append(HttpUtility.UrlEncode(_opt.DbName));
                 qs.Append("&dbuser=").Append(HttpUtility.UrlEncode(_opt.DbUser));
-                qs.Append("&dbpassword=");
-                qs.Append("&dbtype=").Append(HttpUtility.UrlEncode(_opt.DbType));
+                qs.Append("&dbpassword=").Append(HttpUtility.UrlEncode(_opt.DbPassword));
+                // Not: dbtype parametresi bu Netsis versiyonunda (9.0.67.0) server-side
+                // unhandled exception'a neden oluyor — gönderilmiyor.
 
                 using var resp = await _http.GetAsync(
                     $"{_opt.LoginPath}?{qs}", cancellationToken);
