@@ -115,6 +115,16 @@ builder.Services.AddHttpClient<
     var opt = sp.GetRequiredService<IOptions<NetsisOptions>>().Value;
     http.BaseAddress = new Uri(opt.BaseUrl);
     http.Timeout = TimeSpan.FromSeconds(opt.TimeoutSeconds);
+})
+.ConfigurePrimaryHttpMessageHandler(() =>
+{
+    var handler = new HttpClientHandler();
+    // Netsis sunucusu self-signed sertifika kullanıyor (internal IP 10.24.10.122).
+    // Production'da gerçek sertifika ile bu satır kaldırılmalı.
+    if (builder.Environment.IsDevelopment())
+        handler.ServerCertificateCustomValidationCallback =
+            HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+    return handler;
 });
 
 // Configure Jwt Options

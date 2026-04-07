@@ -18,6 +18,14 @@ namespace Akyildiz.Sevkiyat.Infrastructure.ExternalServices.Netsis
         public string FirmaKodu { get; init; } = default!;
 
         [Required]
+        public string DbName { get; init; } = default!;
+
+        [Required]
+        public string DbUser { get; init; } = default!;
+
+        public string DbType { get; init; } = "MsSql";
+
+        [Required]
         public string SubeKodu { get; init; } = default!;
 
         // Opsiyonel
@@ -26,15 +34,13 @@ namespace Akyildiz.Sevkiyat.Infrastructure.ExternalServices.Netsis
         // Varsayılan depo kodu — sevkiyat payload'ında kullanılır
         public string? DepoKodu { get; init; }
 
-        // TODO: NETSIS_API — Aşağıdaki path'ler API dokümantasyonu gelince güncellenir.
-        // "PENDING_NETSIS_API_DOCS" değeri görülürse entegrasyon henüz yapılandırılmamış demektir.
-        public string LoginPath              { get; init; } = "PENDING_NETSIS_API_DOCS";
-        public string SiparisPath            { get; init; } = "PENDING_NETSIS_API_DOCS"; // Müşteri siparişi
-        public string SatinalmaSiparisPath   { get; init; } = "PENDING_NETSIS_API_DOCS"; // Satınalma siparişi
-        public string StokBakiyePath         { get; init; } = "PENDING_NETSIS_API_DOCS"; // Stok bakiye sync
-        public string IrsaliyePath           { get; init; } = "PENDING_NETSIS_API_DOCS"; // İrsaliye okuma
+        public string LoginPath            { get; init; } = "api/v2/token";
+        public string SiparisPath          { get; init; } = "api/v2/ItemSlips";
+        public string SatinalmaSiparisPath { get; init; } = "api/v2/ItemSlips";
+        public string StokBakiyePath       { get; init; } = "api/v2/Queries";
+        public string IrsaliyePath         { get; init; } = "api/v2/ItemSlips";
 
-        public int TimeoutSeconds      { get; init; } = 30;
-        public int TokenExpiryMinutes  { get; init; } = 55; // gerçek token süresinden ~5dk kısa tut
+        public int TimeoutSeconds     { get; init; } = 30;
+        public int TokenExpiryMinutes { get; init; } = 55;
     }
 }

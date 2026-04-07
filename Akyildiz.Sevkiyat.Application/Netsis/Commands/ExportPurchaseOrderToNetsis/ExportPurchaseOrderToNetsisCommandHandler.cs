@@ -81,12 +81,12 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportPurchaseOrderToNet
 
             return new NetsisPoRequest
             {
-                BelgeNo        = po.OrderNumber,
-                TedarikciKodu  = po.Supplier.SupplierCode!,
-                SiparisDate    = po.OrderDate,
-                TeslimTarihi   = po.ExpectedDeliveryDate,
-                Aciklama       = po.Note,
-                Satirlar       = lines,
+                BelgeNo       = po.OrderNumber,
+                TedarikciKodu = po.Supplier.SupplierCode!,
+                SiparisDate   = po.OrderDate,
+                TeslimTarihi  = po.ExpectedDeliveryDate,
+                Aciklama      = po.Note,
+                Satirlar      = lines,
             };
         }
     }

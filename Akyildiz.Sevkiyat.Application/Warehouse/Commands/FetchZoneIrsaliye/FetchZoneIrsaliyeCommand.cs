@@ -98,8 +98,8 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.FetchZoneIrsaliye
                             StokKodu    = l.IssOrderLine!.StockCode,
                             Miktar      = l.OrderedQty,
                             Birim       = l.IssOrderLine.Unit.ToString(),
-                            BirimFiyati = l.IssOrderLine.BirimFiyati,
-                            KdvOrani    = l.IssOrderLine.KDVOrani,
+                            BirimFiyati = l.IssOrderLine.BirimFiyati ?? 0,
+                            KdvOrani    = l.IssOrderLine.KDVOrani    ?? 0,
                         })
                         .ToList();
 

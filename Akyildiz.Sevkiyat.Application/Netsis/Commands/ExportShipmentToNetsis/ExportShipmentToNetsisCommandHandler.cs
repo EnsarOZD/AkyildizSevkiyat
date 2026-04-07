@@ -119,8 +119,8 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportShipmentToNetsis
                     StokKodu    = l.StockMaster!.NetsisStockCode!,
                     Miktar      = l.OrderedQty,
                     Birim       = l.Unit.ToString(),
-                    BirimFiyati = l.IssOrderLine?.BirimFiyati,
-                    KdvOrani    = l.IssOrderLine?.KDVOrani,
+                    BirimFiyati = l.IssOrderLine?.BirimFiyati ?? 0,
+                    KdvOrani    = l.IssOrderLine?.KDVOrani    ?? 0,
                 })
                 .ToList();
 
@@ -130,8 +130,16 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportShipmentToNetsis
                 CariKodu     = shipment.Project.NetsisCariKodu!,
                 ProjeKodu    = shipment.Project.Code,
                 TeslimTarihi = shipment.DeliveryDate,
-                // TODO: NETSIS_API — DepoKodu NetsisOptions'tan mı, Project'ten mi?
-                Satirlar     = lines,
+                // EKACK alanları
+                SiparisId                     = shipment.Id.ToString(),
+                KurumKodu                     = shipment.Project.InstitutionCode,
+                TalepNo                       = shipment.TalepNo ?? shipment.IssOrder.TalepNo,
+                TalepTuru                     = shipment.IssOrder.TalepTuru,
+                Donem                         = shipment.IssOrder.Donem,
+                TeslimAlacakKisiler           = shipment.IssOrder.TeslimAlacakKisiler,
+                TeslimAlacakTelefonNumaralari = shipment.IssOrder.TeslimAlacakTelefonNumaralari,
+                YoneticiMailAdresleri         = shipment.IssOrder.YoneticiMailAdresleri,
+                Satirlar                      = lines,
             };
         }
     }
