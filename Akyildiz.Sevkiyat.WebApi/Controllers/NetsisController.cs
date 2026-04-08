@@ -1,6 +1,7 @@
 using Akyildiz.Sevkiyat.Application.Netsis.Commands.BulkExportShipmentsToNetsis;
 using Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportClothingShipmentToNetsis;
 using Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportShipmentToNetsis;
+using Akyildiz.Sevkiyat.Application.Netsis.Commands.FetchShipmentIrsaliye;
 using Akyildiz.Sevkiyat.Application.Netsis.Commands.SyncNetsisStockBalance;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -67,6 +68,18 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         }
 
         public record BulkExportBody(List<int> ShipmentIds);
+
+        /// <summary>
+        /// Belirtilen sevkiyat için Netsis'ten irsaliye numarasını çeker.
+        /// Önkoşul: NetsisTransferredAt dolu olmalı.
+        /// </summary>
+        [HttpPost("shipments/{id:int}/fetch-irsaliye")]
+        [Authorize(Roles = "Admin,Manager,Accounting,Dispatcher")]
+        public async Task<IActionResult> FetchShipmentIrsaliye(int id, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new FetchShipmentIrsaliyeCommand(id), ct);
+            return Ok(new { irsaliyeNo = result.IrsaliyeNo, message = result.Message });
+        }
 
         /// <summary>
         /// Netsis'ten anlık stok bakiyelerini çeker ve StockMaster.OnHandQty'yi günceller.

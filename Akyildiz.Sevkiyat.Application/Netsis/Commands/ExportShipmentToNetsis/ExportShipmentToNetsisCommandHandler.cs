@@ -92,7 +92,28 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportShipmentToNetsis
 
             await _context.SaveChangesAsync(cancellationToken);
 
-            return new ExportShipmentToNetsisResult(shipment.IssOrder.NetsisOrderNumber!, exportWarnings);
+            // İrsaliye otomatik çekme (sessiz, non-blocking)
+            try
+            {
+                var netsisOrderNo = shipment.IssOrder?.NetsisOrderNumber;
+                var cariKod       = shipment.Project.NetsisCariKodu;
+                if (!string.IsNullOrWhiteSpace(netsisOrderNo) && !string.IsNullOrWhiteSpace(cariKod))
+                {
+                    var irsaliyeler = await _netsisClient.GetIrsaliyelerAsync(
+                        new External.Netsis.Dtos.NetsisIrsaliyeQuery { SiparisNo = netsisOrderNo, CariKod = cariKod },
+                        cancellationToken);
+
+                    if (irsaliyeler?.Any() == true)
+                    {
+                        var ilk = irsaliyeler.First();
+                        shipment.SetIrsaliyeInfo(ilk.IrsaliyeNo, ilk.IrsaliyeTarihi);
+                        await _context.SaveChangesAsync(cancellationToken);
+                    }
+                }
+            }
+            catch { /* irsaliye çekimi başarısız — sessizce devam */ }
+
+            return new ExportShipmentToNetsisResult(shipment.IssOrder!.NetsisOrderNumber!, exportWarnings);
         }
 
         private static string? PickBelgeNo(params string?[] candidates)
