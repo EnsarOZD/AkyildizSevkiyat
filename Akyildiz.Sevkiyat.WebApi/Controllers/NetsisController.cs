@@ -1,3 +1,4 @@
+using Akyildiz.Sevkiyat.Application.Netsis.Commands.BulkExportShipmentsToNetsis;
 using Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportShipmentToNetsis;
 using Akyildiz.Sevkiyat.Application.Netsis.Commands.SyncNetsisStockBalance;
 using MediatR;
@@ -25,9 +26,28 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         [HttpPost("shipments/{id:int}/export")]
         public async Task<IActionResult> ExportShipment(int id, CancellationToken ct)
         {
-            var netsisOrderNo = await _mediator.Send(new ExportShipmentToNetsisCommand(id), ct);
-            return Ok(new { netsisOrderNo, message = $"Sevkiyat #{id} Netsis'e aktarıldı. Belge No: {netsisOrderNo}" });
+            var result = await _mediator.Send(new ExportShipmentToNetsisCommand(id), ct);
+            return Ok(new
+            {
+                netsisOrderNo = result.NetsisOrderNo,
+                warnings = result.Warnings,
+                message = $"Sevkiyat #{id} Netsis'e aktarıldı. Belge No: {result.NetsisOrderNo}"
+            });
         }
+
+        /// <summary>
+        /// Birden fazla sevkiyatı toplu olarak Netsis'e "Müşteri Siparişi" olarak aktarır.
+        /// </summary>
+        [HttpPost("shipments/bulk-export")]
+        public async Task<IActionResult> BulkExportShipments([FromBody] BulkExportBody body, CancellationToken ct)
+        {
+            if (body.ShipmentIds == null || body.ShipmentIds.Count == 0)
+                return BadRequest("En az bir sevkiyat ID'si gereklidir.");
+            var result = await _mediator.Send(new BulkExportShipmentsToNetsisCommand(body.ShipmentIds), ct);
+            return Ok(result);
+        }
+
+        public record BulkExportBody(List<int> ShipmentIds);
 
         /// <summary>
         /// Netsis'ten anlık stok bakiyelerini çeker ve StockMaster.OnHandQty'yi günceller.

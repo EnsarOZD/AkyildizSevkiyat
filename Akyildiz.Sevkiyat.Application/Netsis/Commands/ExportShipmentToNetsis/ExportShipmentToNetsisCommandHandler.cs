@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportShipmentToNetsis
 {
-    public class ExportShipmentToNetsisCommandHandler : IRequestHandler<ExportShipmentToNetsisCommand, string>
+    public class ExportShipmentToNetsisCommandHandler : IRequestHandler<ExportShipmentToNetsisCommand, ExportShipmentToNetsisResult>
     {
         private readonly IApplicationDbContext _context;
         private readonly INetsisClient _netsisClient;
@@ -27,7 +27,7 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportShipmentToNetsis
             _guard = guard;
         }
 
-        public async Task<string> Handle(ExportShipmentToNetsisCommand request, CancellationToken cancellationToken)
+        public async Task<ExportShipmentToNetsisResult> Handle(ExportShipmentToNetsisCommand request, CancellationToken cancellationToken)
         {
             var shipment = await _context.Shipments
                 .Include(s => s.Project)
@@ -67,7 +67,7 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportShipmentToNetsis
                     $"Proje '{shipment.Project.Name}' için Netsis Cari Kodu tanımlanmamış. " +
                     "Lütfen proje kaydına NetsisCariKodu ekleyin.");
 
-            var siparisRequest = BuildSiparisRequest(shipment);
+            var (siparisRequest, exportWarnings) = BuildSiparisRequest(shipment);
 
             var result = await _netsisClient.CreateSiparisAsync(siparisRequest, cancellationToken);
 
@@ -92,15 +92,25 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportShipmentToNetsis
 
             await _context.SaveChangesAsync(cancellationToken);
 
-            return shipment.IssOrder.NetsisOrderNumber;
+            return new ExportShipmentToNetsisResult(shipment.IssOrder.NetsisOrderNumber!, exportWarnings);
         }
 
-        private static NetsisSiparisRequest BuildSiparisRequest(Domain.Entities.Shipment shipment)
+        private static string? PickBelgeNo(params string?[] candidates)
         {
-            // Belge No: ISS-IP talep numarası = Netsis Belge No (toplantı kararı)
-            var belgeNo = shipment.TalepNo
-                ?? shipment.IssOrder.TalepNo
-                ?? shipment.IssOrder.ExternalOrderNumber;
+            foreach (var c in candidates)
+                if (!string.IsNullOrWhiteSpace(c) && c != "0") return c;
+            return null;
+        }
+
+        private static (NetsisSiparisRequest Request, List<string> Warnings) BuildSiparisRequest(Domain.Entities.Shipment shipment)
+        {
+            var warnings = new List<string>();
+
+            // Belge No: "0" veya boş değerleri atla, ilk geçerli numarayı kullan
+            var belgeNo = PickBelgeNo(
+                shipment.TalepNo,
+                shipment.IssOrder?.TalepNo,
+                shipment.IssOrder?.ExternalOrderNumber);
 
             // NetsisStockCode doğrulaması — boş olanları listele
             var missingNetsisCode = shipment.Lines
@@ -112,35 +122,50 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportShipmentToNetsis
                 throw new DomainException(
                     $"Aşağıdaki ürünlerin Netsis Stok Kodu tanımlanmamış: {string.Join(", ", missingNetsisCode)}");
 
-            var lines = shipment.Lines
+            // DeliveredQty == 0 olan satırları atla, uyarı ekle
+            var zeroLines = shipment.Lines.Where(l => l.DeliveredQty == 0).ToList();
+            foreach (var z in zeroLines)
+                warnings.Add($"{z.StockName} ({z.StockCode}): Toplanan miktar 0 — Netsis'e gönderilmedi.");
+
+            var linesToExport = shipment.Lines
+                .Where(l => l.DeliveredQty > 0)
+                .ToList();
+
+            if (linesToExport.Count == 0)
+                throw new DomainException(
+                    "Tüm kalemlerin toplanan miktarı 0. Netsis'e gönderilecek kalem yok.");
+
+            var lines = linesToExport
                 .Select((l, idx) => new NetsisSiparisLine
                 {
                     SatirNo     = idx + 1,
                     StokKodu    = l.StockMaster!.NetsisStockCode!,
-                    Miktar      = l.OrderedQty,
+                    Miktar      = l.DeliveredQty,
                     Birim       = l.Unit.ToString(),
                     BirimFiyati = l.IssOrderLine?.BirimFiyati ?? 0,
                     KdvOrani    = l.IssOrderLine?.KDVOrani    ?? 0,
                 })
                 .ToList();
 
-            return new NetsisSiparisRequest
+            var request = new NetsisSiparisRequest
             {
                 BelgeNo      = belgeNo,
                 CariKodu     = shipment.Project.NetsisCariKodu!,
-                ProjeKodu    = shipment.Project.Code,
+                ProjeKodu    = shipment.Project.NetsisTeslimCariKodu ?? shipment.Project.Code,
                 TeslimTarihi = shipment.DeliveryDate,
                 // EKACK alanları
                 SiparisId                     = shipment.Id.ToString(),
                 KurumKodu                     = shipment.Project.InstitutionCode,
-                TalepNo                       = shipment.TalepNo ?? shipment.IssOrder.TalepNo,
-                TalepTuru                     = shipment.IssOrder.TalepTuru,
-                Donem                         = shipment.IssOrder.Donem,
-                TeslimAlacakKisiler           = shipment.IssOrder.TeslimAlacakKisiler,
-                TeslimAlacakTelefonNumaralari = shipment.IssOrder.TeslimAlacakTelefonNumaralari,
-                YoneticiMailAdresleri         = shipment.IssOrder.YoneticiMailAdresleri,
+                TalepNo                       = shipment.TalepNo ?? shipment.IssOrder?.TalepNo,
+                TalepTuru                     = shipment.IssOrder?.TalepTuru,
+                Donem                         = shipment.IssOrder?.Donem,
+                TeslimAlacakKisiler           = shipment.IssOrder?.TeslimAlacakKisiler,
+                TeslimAlacakTelefonNumaralari = shipment.IssOrder?.TeslimAlacakTelefonNumaralari,
+                YoneticiMailAdresleri         = shipment.IssOrder?.YoneticiMailAdresleri,
                 Satirlar                      = lines,
             };
+
+            return (request, warnings);
         }
     }
 }
