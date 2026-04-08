@@ -21,6 +21,9 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipments
         public string? ExternalOrderNumber { get; set; } // Added
         public string? WaybillNumber { get; set; } // Added (Irsaliye No)
         public string? Aciklama { get; set; }
+        public DateTime? NetsisTransferredAt { get; set; }
+        public string OperationType { get; set; } = "Catering";
+        public int OperationTypeValue { get; set; } = 0;
     }
 
     public class GetShipmentsQuery : IRequest<PaginatedList<ShipmentDto>>
@@ -127,7 +130,10 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipments
                     TalepNo = s.IssOrder != null ? s.IssOrder.TalepNo : null,
                     ExternalOrderNumber = s.IssOrder != null ? s.IssOrder.ExternalOrderNumber : null,
                     WaybillNumber = s.IssOrder != null ? s.IssOrder.NetsisOrderNumber : null,
-                    Aciklama = s.IssOrder != null ? s.IssOrder.Aciklama : null
+                    Aciklama = s.IssOrder != null ? s.IssOrder.Aciklama : null,
+                    NetsisTransferredAt  = s.NetsisTransferredAt,
+                    OperationType        = s.Project.OperationType == Domain.Enums.OperationType.Clothing ? "Kıyafet" : "Catering",
+                    OperationTypeValue   = (int)s.Project.OperationType,
                 }).ToListAsync(cancellationToken);
 
             return new PaginatedList<ShipmentDto>(items, totalCount, request.PageNumber, request.PageSize);

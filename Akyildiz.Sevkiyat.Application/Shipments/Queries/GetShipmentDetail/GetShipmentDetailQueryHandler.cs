@@ -118,6 +118,9 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipmentDetail
                 DeliveryRecipient = shipment.DeliveryRecipient,
                 DeliveryPhotoBase64 = shipment.DeliveryPhotoBase64,
 
+                OperationType      = shipment.Project.OperationType == Domain.Enums.OperationType.Clothing ? "Kıyafet" : "Catering",
+                OperationTypeValue = (int)shipment.Project.OperationType,
+
                 // Mapped Fields
                 ExternalOrderNumber = shipment.IssOrder?.ExternalOrderNumber,
                 TalepNo = shipment.TalepNo ?? shipment.IssOrder?.TalepNo,

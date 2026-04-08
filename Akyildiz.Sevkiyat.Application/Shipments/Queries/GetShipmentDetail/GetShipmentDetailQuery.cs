@@ -36,6 +36,8 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipmentDetail
         public string? TeslimAlacakTelefon { get; set; }
         public string? YoneticiMail { get; set; }
         public string? Aciklama { get; set; }
+        public string OperationType { get; set; } = "Catering";
+        public int OperationTypeValue { get; set; } = 0;
 
         public List<ShipmentLineDetailDto> Lines { get; set; } = new();
         public List<ShipmentHistoryDto> History { get; set; } = new();
