@@ -163,7 +163,9 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         [Authorize(Roles = "Admin,Warehouse,Manager")]
         public async Task<IActionResult> MarkReady(int id, [FromBody] ChangeStatusRequest? request)
         {
-            await _mediator.Send(new MarkReadyCommand(id, request?.Reason));
+            var result = await _mediator.Send(new MarkReadyCommand(id, request?.Reason));
+            if (result.Warnings.Count > 0)
+                return Ok(new { warnings = result.Warnings });
             return NoContent();
         }
 
