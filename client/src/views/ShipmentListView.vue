@@ -144,7 +144,13 @@
                 <td class="px-5 py-3 whitespace-nowrap text-sm font-mono text-gray-600 dark:text-gray-400">{{ shipment.externalOrderNumber || '-' }}</td>
                 <td class="px-5 py-3 whitespace-nowrap text-sm font-mono text-purple-600">{{ shipment.waybillNumber || '-' }}</td>
                 <td class="px-5 py-3 whitespace-nowrap text-sm">
-                  <div class="font-medium text-gray-900 dark:text-gray-100">{{ shipment.projectCode }}</div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-medium text-gray-900 dark:text-gray-100">{{ shipment.projectCode }}</span>
+                    <span
+                      v-if="shipment.operationTypeValue === 1"
+                      class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 border border-purple-200 dark:border-purple-700"
+                    >Kıyafet</span>
+                  </div>
                   <div class="text-xs text-gray-400">{{ shipment.projectName }}</div>
                 </td>
                 <td class="px-5 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ shipment.region }}</td>
@@ -180,6 +186,17 @@
                       @click="quickMarkReady(shipment.id)"
                       class="text-purple-700 hover:text-purple-900 bg-purple-50 hover:bg-purple-100 px-2 py-1 rounded text-xs font-medium transition-colors"
                     >Hazır İşaretle</button>
+                    <button
+                      v-if="shipment.status === 'ReadyForDispatch' && !shipment.netsisTransferredAt"
+                      v-role="['Admin', 'Manager']"
+                      @click="singleExportToNetsis(shipment.id)"
+                      class="text-orange-700 hover:text-orange-900 bg-orange-50 hover:bg-orange-100 px-2 py-1 rounded text-xs font-medium transition-colors"
+                    >Netsis'e Aktar</button>
+                    <span
+                      v-if="shipment.status === 'ReadyForDispatch' && shipment.netsisTransferredAt"
+                      class="px-2 py-1 text-xs font-medium text-green-700 bg-green-50 rounded"
+                      title="Netsis'e aktarıldı"
+                    >✓ Netsis</span>
                     <!-- Toggle active/passive -->
                     <button
                       v-if="shipment.status === 'Created'"
@@ -261,6 +278,16 @@
                 class="text-purple-700 text-xs font-medium bg-purple-50 px-2 py-1 rounded"
               >Hazır İşaretle</button>
               <button
+                v-if="shipment.status === 'ReadyForDispatch' && !shipment.netsisTransferredAt"
+                v-role="['Admin', 'Manager']"
+                @click="singleExportToNetsis(shipment.id)"
+                class="text-orange-700 text-xs font-medium bg-orange-50 px-2 py-1 rounded"
+              >Netsis'e Aktar</button>
+              <span
+                v-if="shipment.status === 'ReadyForDispatch' && shipment.netsisTransferredAt"
+                class="px-2 py-1 text-xs font-medium text-green-700 bg-green-50 rounded"
+              >✓ Netsis</span>
+              <button
                 v-if="shipment.status === 'Created'"
                 v-role="['Admin', 'Accounting']"
                 @click="confirmToggleStatus(shipment.id, true)"
@@ -319,6 +346,16 @@
       >
         <span class="text-sm font-medium">{{ selectedIds.size }} sevkiyat seçili</span>
         <div class="w-px h-5 bg-white/20 dark:bg-gray-900/20"></div>
+        <button
+          v-role="['Admin', 'Manager']"
+          @click="bulkExportToNetsis"
+          :disabled="isBulkExporting"
+          class="flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-400 text-white text-sm font-semibold px-3 py-1.5 rounded-lg transition-colors"
+        >
+          <span v-if="isBulkExporting" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+          <span v-else>📤</span>
+          {{ isBulkExporting ? 'Aktarılıyor...' : 'Netsis\'e Aktar' }}
+        </button>
         <button
           v-role="['Admin', 'Dispatcher', 'Manager']"
           @click="openBulkModal"
@@ -449,6 +486,9 @@ interface Shipment {
   talepNo?: string;
   externalOrderNumber?: string;
   waybillNumber?: string;
+  netsisTransferredAt?: string | null;
+  operationType?: string;
+  operationTypeValue?: number;
 }
 
 const shipments = ref<Shipment[]>([]);
@@ -541,6 +581,62 @@ async function submitBulkAssign() {
     bulkSubmitting.value = false;
   }
 }
+// ── Netsis export ─────────────────────────────────────────────────────────────
+const isBulkExporting = ref(false);
+
+async function singleExportToNetsis(id: number) {
+  const shipment = shipments.value.find(s => s.id === id);
+  if (shipment?.netsisTransferredAt) {
+    notificationStore.add(`Sevkiyat #${id} zaten Netsis'e aktarılmış (${new Date(shipment.netsisTransferredAt).toLocaleString('tr-TR')}).`, 'warning');
+    return;
+  }
+  try {
+    const result = await shipmentService.exportToNetsis(id);
+    notificationStore.add(result.message || `Sevkiyat #${id} Netsis'e aktarıldı.`, 'success');
+    await fetchShipments();
+  } catch (error) {
+    const msg = ApiErrorUtils.getErrorMessage(error) || 'Netsis aktarımı başarısız.';
+    // Stok kodu eksik hatası özel mesaj
+    if (msg.includes('Netsis stok kodu') || msg.includes('Netsis Stok Kodu')) {
+      notificationStore.add(`Sevkiyat #${id}: ${msg}`, 'error');
+    } else {
+      notificationStore.add(msg, 'error');
+    }
+  }
+}
+
+async function bulkExportToNetsis() {
+  if (selectedIds.size === 0) return;
+
+  // Zaten aktarılmış olanları önceden uyar
+  const alreadyDone = [...selectedIds]
+    .map(id => shipments.value.find(s => s.id === id))
+    .filter(s => s?.netsisTransferredAt);
+  if (alreadyDone.length === selectedIds.size) {
+    notificationStore.add('Seçili sevkiyatların tamamı zaten Netsis\'e aktarılmış.', 'warning');
+    return;
+  }
+  if (alreadyDone.length > 0) {
+    notificationStore.add(`${alreadyDone.length} sevkiyat zaten aktarılmış — bunlar atlanacak.`, 'warning');
+  }
+
+  isBulkExporting.value = true;
+  try {
+    const result = await shipmentService.bulkExportToNetsis([...selectedIds]);
+    if (result.exported > 0)
+      notificationStore.add(`${result.exported} sevkiyat Netsis'e aktarıldı.`, 'success');
+    if (result.skipped > 0 && result.exported === 0)
+      notificationStore.add(`${result.skipped} sevkiyat atlandı (zaten aktarılmış veya eksik bilgi).`, 'warning');
+    result.errors.forEach(e => notificationStore.add(e, 'error'));
+    selectedIds.clear();
+    await fetchShipments();
+  } catch (error) {
+    notificationStore.add(ApiErrorUtils.getErrorMessage(error) || 'Toplu Netsis aktarımı başarısız.', 'error');
+  } finally {
+    isBulkExporting.value = false;
+  }
+}
+
 const searchQuery = ref(typeof q.search === 'string' ? q.search : '');
 
 type SortKey = 'deliveryDate' | 'status' | 'id';
