@@ -164,16 +164,18 @@ const shipmentService = {
     await apiClient.post(`/shipments/${id}/toggle-status?setPassive=${setPassive}`, { reason });
   },
 
-  async assignToWarehouse(id: number): Promise<void> {
-    await apiClient.post(`/shipments/${id}/assign-to-warehouse`);
+  async assignToWarehouse(id: number): Promise<{ warnings?: string[] } | null> {
+    const response = await apiClient.post(`/shipments/${id}/assign-to-warehouse`);
+    return response.status === 200 ? response.data : null;
   },
 
   async startPicking(id: number): Promise<void> {
     await apiClient.post(`/shipments/${id}/start-picking`);
   },
 
-  async markReady(id: number): Promise<void> {
-    await apiClient.post(`/shipments/${id}/mark-ready`);
+  async markReady(id: number): Promise<{ warnings?: string[] } | null> {
+    const response = await apiClient.post(`/shipments/${id}/mark-ready`);
+    return response.status === 200 ? response.data : null;
   },
 
   async revertToDraft(id: number, request: RevertToDraftRequest): Promise<void> {
@@ -328,7 +330,27 @@ const shipmentService = {
   async autoMatchMappings(): Promise<{ matchedCount: number; unmatchedCount: number; ordersUnlocked: number }> {
     const response = await apiClient.post('/stockmappings/auto-match');
     return response.data;
-  }
+  },
+
+  async exportToNetsis(id: number): Promise<{ netsisOrderNo: string; message: string }> {
+    const response = await apiClient.post(`/netsis/shipments/${id}/export`);
+    return response.data;
+  },
+
+  async bulkExportToNetsis(shipmentIds: number[]): Promise<{ exported: number; skipped: number; errors: string[] }> {
+    const response = await apiClient.post('/netsis/shipments/bulk-export', { shipmentIds });
+    return response.data;
+  },
+
+  async exportClothingToNetsis(id: number): Promise<{ netsisOrderNo: string; irsaliyeNo?: string; warnings: string[]; message: string }> {
+    const response = await apiClient.post(`/netsis/shipments/${id}/export-clothing`);
+    return response.data;
+  },
+
+  async fetchShipmentIrsaliye(id: number): Promise<{ irsaliyeNo?: string; message: string }> {
+    const response = await apiClient.post(`/netsis/shipments/${id}/fetch-irsaliye`);
+    return response.data;
+  },
 };
 
 export default shipmentService;

@@ -16,8 +16,32 @@
     </button>
 
     <div class="mb-5 break-all">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Sevkiyat #{{ shipment.id }}</h1>
+      <div class="flex items-center gap-2 flex-wrap">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Sevkiyat #{{ shipment.id }}</h1>
+        <span
+          v-if="shipment.operationTypeValue === 1"
+          class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 border border-purple-200 dark:border-purple-700"
+        >Kıyafet</span>
+      </div>
       <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5 break-all">{{ shipment.projectName }}</p>
+    </div>
+
+    <!-- Uyarı Banneri -->
+    <div v-if="actionWarnings.length > 0" class="mb-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-4">
+      <div class="flex items-start gap-3">
+        <svg class="w-5 h-5 text-amber-500 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+        </svg>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold text-amber-800 dark:text-amber-300 mb-1">İşlem tamamlandı — uyarılar mevcut</p>
+          <ul class="text-xs text-amber-700 dark:text-amber-400 space-y-0.5">
+            <li v-for="(w, i) in actionWarnings" :key="i" class="flex items-start gap-1">
+              <span class="shrink-0">•</span><span>{{ w }}</span>
+            </li>
+          </ul>
+        </div>
+        <button @click="actionWarnings = []" class="text-amber-400 hover:text-amber-600 shrink-0 ml-2 text-lg font-bold leading-none">&times;</button>
+      </div>
     </div>
 
     <!-- 2-col layout: left = content, right = sticky sidebar -->
@@ -274,6 +298,39 @@
           <div class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">İşlemler</div>
           <div class="space-y-2">
 
+            <!-- Kıyafet: Netsis'e Gönder -->
+            <button
+              v-if="shipment.operationTypeValue === 1 && shipment.status === 'Created' && !shipment.netsisTransferredAt"
+              v-role="['Admin', 'Manager', 'Accounting', 'Dispatcher']"
+              @click="exportClothingToNetsis"
+              :disabled="clothingExportLoading"
+              class="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition text-sm font-bold disabled:opacity-50"
+            >
+              <span v-if="clothingExportLoading">Netsis'e aktarılıyor...</span>
+              <span v-else>Netsis'e Gönder (Kıyafet)</span>
+            </button>
+
+            <!-- Kıyafet teslim edildi badge -->
+            <div
+              v-if="shipment.operationTypeValue === 1 && shipment.netsisTransferredAt && shipment.irsaliyeNo"
+              class="w-full bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg px-3 py-2 text-xs text-green-700 dark:text-green-300 font-medium"
+            >
+              ✓ Netsis'e aktarıldı<br/>
+              <span class="font-mono">{{ shipment.irsaliyeNo }}</span>
+            </div>
+
+            <!-- İrsaliye Yenile: Netsis'e aktarılmış ama irsaliye numarası boş -->
+            <button
+              v-if="shipment.netsisTransferredAt && !shipment.irsaliyeNo"
+              v-role="['Admin', 'Manager', 'Accounting', 'Dispatcher']"
+              @click="fetchIrsaliye"
+              :disabled="irsaliyeFetchLoading"
+              class="w-full border border-indigo-400 text-indigo-600 py-2 px-4 rounded-lg hover:bg-indigo-50 transition text-sm font-medium disabled:opacity-50"
+            >
+              <span v-if="irsaliyeFetchLoading">İrsaliye çekiliyor...</span>
+              <span v-else>İrsaliye Yenile</span>
+            </button>
+
             <button
               v-if="shipment.status === 'Created'"
               v-role="['Admin', 'Accounting']"
@@ -288,8 +345,24 @@
               class="w-full bg-orange-500 text-white py-2 px-4 rounded-lg hover:bg-orange-600 transition text-sm font-medium"
             >⚠️ Bölge Ata (Gerekli)</button>
 
+            <!-- Depoya Ata — Clothing projeler için gizle -->
             <button
-              v-if="['Picking', 'AssignedToWarehouse'].includes(shipment.status)"
+              v-if="shipment.status === 'Created' && shipment.operationTypeValue !== 1"
+              v-role="['Admin', 'Accounting', 'Manager']"
+              @click="assignToWarehouse"
+              class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition text-sm font-medium"
+            >Depoya Ata</button>
+
+            <!-- Sevke Hazır — Clothing projeler için gizle -->
+            <button
+              v-if="['Picking', 'AssignedToWarehouse'].includes(shipment.status) && shipment.operationTypeValue !== 1"
+              v-role="['Admin', 'Warehouse', 'Manager']"
+              @click="openMarkReadyConfirm"
+              class="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition text-sm font-bold"
+            >Sevke Hazır İşaretle</button>
+
+            <button
+              v-if="['Picking', 'AssignedToWarehouse'].includes(shipment.status) && shipment.operationTypeValue !== 1"
               v-role="['Admin', 'Warehouse']"
               @click="openQuantitiesModal"
               class="w-full border border-blue-500 text-blue-600 py-2 px-4 rounded-lg hover:bg-blue-50 transition text-sm font-medium"
@@ -677,6 +750,24 @@
       </template>
     </BaseModal>
 
+    <!-- MarkReady Confirm Modal (miktar uyumsuzluğu varsa) -->
+    <BaseModal :show="showMarkReadyConfirm" title="Sevke Hazır — Uyarılar" maxWidth="sm" @close="showMarkReadyConfirm = false">
+      <div class="space-y-3">
+        <p class="text-sm text-gray-600 dark:text-gray-400 bg-amber-50 border border-amber-100 rounded p-3">
+          Miktar uyumsuzlukları tespit edildi. Yine de devam etmek istiyor musunuz?
+        </p>
+        <ul class="text-xs text-amber-700 dark:text-amber-400 space-y-1 max-h-48 overflow-y-auto">
+          <li v-for="(w, i) in pendingMarkReadyWarnings" :key="i" class="flex items-start gap-1">
+            <span class="shrink-0">•</span><span>{{ w }}</span>
+          </li>
+        </ul>
+      </div>
+      <template #footer>
+        <button @click="showMarkReadyConfirm = false" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">İptal</button>
+        <button @click="confirmMarkReady" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-bold">Devam Et</button>
+      </template>
+    </BaseModal>
+
     <!-- Revert to Draft Modal -->
     <BaseModal :show="showRevertModal" title="Taslağa Geri Çek" maxWidth="sm" @close="showRevertModal = false">
       <div class="space-y-3">
@@ -728,6 +819,8 @@ interface ShipmentDetail {
   irsaliyeNo?: string;
   irsaliyeDate?: string;
   netsisTransferredAt?: string;
+  operationType?: string;
+  operationTypeValue?: number;
   deliveredAt?: string;
   deliveryNote?: string;
   deliveryRecipient?: string;
@@ -765,6 +858,19 @@ const router = useRouter();
 const notificationStore = useNotificationStore();
 const shipment = ref<ShipmentDetail | null>(null);
 const loading = ref(false);
+
+// Action warnings banner
+const actionWarnings = ref<string[]>([]);
+
+// Clothing export
+const clothingExportLoading = ref(false);
+
+// Irsaliye fetch
+const irsaliyeFetchLoading = ref(false);
+
+// MarkReady confirm state
+const showMarkReadyConfirm = ref(false);
+const pendingMarkReadyWarnings = ref<string[]>([]);
 
 // Tab state
 const activeDetailTab = ref<'lines' | 'delivery' | 'history'>('lines');
@@ -836,8 +942,11 @@ const fetchShipmentDetail = async () => {
 const assignToWarehouse = async () => {
   if (!shipment.value) return;
   try {
-    await shipmentService.assignToWarehouse(shipment.value.id);
+    const result = await shipmentService.assignToWarehouse(shipment.value.id);
     await fetchShipmentDetail();
+    if (result?.warnings?.length) {
+      actionWarnings.value = result.warnings;
+    }
   } catch (error) {
     notificationStore.add(ApiErrorUtils.getErrorMessage(error) || 'İşlem başarısız.', 'error');
   }
@@ -853,11 +962,27 @@ const startPicking = async () => {
   }
 };
 
+const openMarkReadyConfirm = async () => {
+  if (!shipment.value) return;
+  // Pre-check warnings: fetch them by calling a dry-run is not possible,
+  // so just open confirm and run immediately (warnings come back in response)
+  pendingMarkReadyWarnings.value = [];
+  showMarkReadyConfirm.value = true;
+};
+
+const confirmMarkReady = async () => {
+  showMarkReadyConfirm.value = false;
+  await markReady();
+};
+
 const markReady = async () => {
   if (!shipment.value) return;
   try {
-    await shipmentService.markReady(shipment.value.id);
+    const result = await shipmentService.markReady(shipment.value.id);
     await fetchShipmentDetail();
+    if (result?.warnings?.length) {
+      actionWarnings.value = result.warnings;
+    }
   } catch (error) {
     notificationStore.add(ApiErrorUtils.getErrorMessage(error) || 'İşlem başarısız.', 'error');
   }
@@ -881,6 +1006,40 @@ const confirmRevert = async () => {
     notificationStore.add('Sevkiyat taslağa geri alındı.', 'info');
   } catch (error) {
     notificationStore.add(ApiErrorUtils.getErrorMessage(error) || 'İşlem başarısız.', 'error');
+  }
+};
+
+const exportClothingToNetsis = async () => {
+  if (!shipment.value) return;
+  clothingExportLoading.value = true;
+  try {
+    const result = await shipmentService.exportClothingToNetsis(shipment.value.id);
+    await fetchShipmentDetail();
+    notificationStore.add(
+      result.irsaliyeNo
+        ? `Netsis'e aktarıldı. İrsaliye: ${result.irsaliyeNo}`
+        : 'Netsis\'e aktarıldı. İrsaliye henüz kesilmemiş.',
+      'success'
+    );
+    if (result.warnings?.length) actionWarnings.value = result.warnings;
+  } catch (error) {
+    notificationStore.add(ApiErrorUtils.getErrorMessage(error) || 'Netsis aktarımı başarısız.', 'error');
+  } finally {
+    clothingExportLoading.value = false;
+  }
+};
+
+const fetchIrsaliye = async () => {
+  if (!shipment.value) return;
+  irsaliyeFetchLoading.value = true;
+  try {
+    const result = await shipmentService.fetchShipmentIrsaliye(shipment.value.id);
+    await fetchShipmentDetail();
+    notificationStore.add(result.message || 'İrsaliye güncellendi.', result.irsaliyeNo ? 'success' : 'warning');
+  } catch (error) {
+    notificationStore.add(ApiErrorUtils.getErrorMessage(error) || 'İrsaliye çekimi başarısız.', 'error');
+  } finally {
+    irsaliyeFetchLoading.value = false;
   }
 };
 
