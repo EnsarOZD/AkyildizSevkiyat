@@ -20,6 +20,7 @@ import {
   ShieldExclamationIcon,
   ArrowTrendingUpIcon,
   Cog6ToothIcon,
+  DocumentCheckIcon,
 } from '@heroicons/vue/24/outline';
 
 export type UserRole = 'Admin' | 'Warehouse' | 'Accounting' | 'Dispatcher' | 'Manager';
@@ -94,9 +95,10 @@ export const NAV_ITEMS: NavGroup[] = [
     {
         title: 'Sistem',
         items: [
-            { label: 'Tanımlamalar',     to: '/settings',         icon: Cog6ToothIcon,          roles: ['Admin', 'Manager'] },
-            { label: 'Kullanıcı Yönetimi',   to: '/users',          icon: UsersIcon,             roles: ['Admin'] },
-            { label: 'Mutabakat Kontrolleri', to: '/reconciliation', icon: ShieldExclamationIcon, roles: ['Admin', 'Manager'] },
+            { label: 'Tanımlamalar',          to: '/settings',               icon: Cog6ToothIcon,          roles: ['Admin', 'Manager'] },
+            { label: 'Kullanıcı Yönetimi',    to: '/users',                  icon: UsersIcon,              roles: ['Admin'] },
+            { label: 'Mutabakat Kontrolleri', to: '/reconciliation',         icon: ShieldExclamationIcon,  roles: ['Admin', 'Manager'] },
+            { label: 'Netsis Uzlaştırma',     to: '/netsis/reconciliation',  icon: DocumentCheckIcon,      roles: ['Admin', 'Manager', 'Accounting'] },
         ],
     },
 ];

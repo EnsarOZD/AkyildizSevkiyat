@@ -188,6 +188,12 @@ const router = createRouter({
                     meta: { title: 'Rota Optimizasyonu', roles: ['Admin', 'Manager', 'Dispatcher'] }
                 },
                 {
+                    path: 'netsis/reconciliation',
+                    name: 'NetsisReconciliation',
+                    component: () => import('../views/NetsisReconciliationView.vue'),
+                    meta: { title: 'Netsis Uzlaştırma', roles: ['Admin', 'Manager', 'Accounting'] }
+                },
+                {
                     path: 'settings/depot',
                     redirect: '/settings',
                 },
