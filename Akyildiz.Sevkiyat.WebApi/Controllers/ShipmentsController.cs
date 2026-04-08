@@ -139,7 +139,9 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         [Authorize(Roles = "Admin,Accounting,Manager")]
         public async Task<IActionResult> AssignToWarehouse(int id)
         {
-            await _mediator.Send(new AssignToWarehouseCommand(id));
+            var result = await _mediator.Send(new AssignToWarehouseCommand(id));
+            if (result.Warnings.Count > 0)
+                return Ok(new { warnings = result.Warnings });
             return NoContent();
         }
 

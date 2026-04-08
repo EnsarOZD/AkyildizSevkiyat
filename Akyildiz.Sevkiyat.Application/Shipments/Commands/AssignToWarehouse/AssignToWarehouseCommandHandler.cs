@@ -9,7 +9,7 @@ using System.Collections.Generic;
 
 namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.AssignToWarehouse
 {
-    public class AssignToWarehouseCommandHandler : IRequestHandler<AssignToWarehouseCommand, Unit>
+    public class AssignToWarehouseCommandHandler : IRequestHandler<AssignToWarehouseCommand, AssignToWarehouseResult>
     {
         private readonly IApplicationDbContext _context;
         private readonly ICurrentUserService _currentUserService;
@@ -22,8 +22,10 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.AssignToWarehouse
             _mediator = mediator;
         }
 
-        public async Task<Unit> Handle(AssignToWarehouseCommand request, CancellationToken cancellationToken)
+        public async Task<AssignToWarehouseResult> Handle(AssignToWarehouseCommand request, CancellationToken cancellationToken)
         {
+            var warnings = new List<string>();
+
             var shipment = await _context.Shipments
                 .Include(s => s.Project)
                 .Include(s => s.Lines)
@@ -89,7 +91,22 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.AssignToWarehouse
             // Sync Dashboard for the Shipment's DeliveryDate
             await _mediator.Send(new SyncWarehouseDashboardCommand(shipment.DeliveryDate), cancellationToken);
 
-            return Unit.Value;
+            // ── Uyarılar: revize edilmiş miktarlar ve eksik Netsis stok kodları ──
+            var revisedCount = shipment.Lines
+                .Count(l => l.IssOrderLine != null && l.IssOrderLine.OrderedQty != l.OrderedQty);
+            if (revisedCount > 0)
+                warnings.Add(
+                    $"{revisedCount} kalem ISS miktarından farklı (revize edilmiş). " +
+                    "Netsis aktarımında revize miktarlar kullanılacak.");
+
+            var missingNetsis = shipment.Lines
+                .Count(l => string.IsNullOrWhiteSpace(l.StockMaster?.NetsisStockCode));
+            if (missingNetsis > 0)
+                warnings.Add(
+                    $"{missingNetsis} kalemin Netsis Stok Kodu tanımlanmamış. " +
+                    "Bu kalemler Netsis'e aktarılamaz.");
+
+            return new AssignToWarehouseResult { Warnings = warnings };
         }
     }
 }
