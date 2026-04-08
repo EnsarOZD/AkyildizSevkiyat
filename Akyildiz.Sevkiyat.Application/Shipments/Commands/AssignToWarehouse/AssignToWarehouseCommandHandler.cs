@@ -5,6 +5,7 @@ using Akyildiz.Sevkiyat.Application.Warehouse.Commands.SyncWarehouseDashboard;
 using Akyildiz.Sevkiyat.Domain.Exceptions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 
 namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.AssignToWarehouse
 {
@@ -30,6 +31,12 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.AssignToWarehouse
 
             if (shipment == null)
                 throw new NotFoundException("Shipment", request.ShipmentId);
+
+            // Kıyafet operasyonu depo hazırlığa alınamaz
+            if (shipment.Project.OperationType == OperationType.Clothing)
+                throw new DomainException(
+                    "Kıyafet operasyonu depo hazırlığa alınamaz. " +
+                    "Sevkiyatı göndermek için 'Netsis'e Gönder' işlemini kullanın.");
 
             if (!shipment.Project.ZoneId.HasValue)
                 throw new DomainException("Shipment's project does not have an assigned zone. Please assign a zone first.");

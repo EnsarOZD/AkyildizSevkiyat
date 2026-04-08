@@ -1,4 +1,5 @@
 using Akyildiz.Sevkiyat.Application.Netsis.Commands.BulkExportShipmentsToNetsis;
+using Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportClothingShipmentToNetsis;
 using Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportShipmentToNetsis;
 using Akyildiz.Sevkiyat.Application.Netsis.Commands.SyncNetsisStockBalance;
 using MediatR;
@@ -32,6 +33,24 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
                 netsisOrderNo = result.NetsisOrderNo,
                 warnings = result.Warnings,
                 message = $"Sevkiyat #{id} Netsis'e aktarıldı. Belge No: {result.NetsisOrderNo}"
+            });
+        }
+
+        /// <summary>
+        /// Kıyafet operasyonu: Sevkiyatı Netsis'e aktarır ve doğrudan Delivered durumuna taşır.
+        /// Önkoşul: Clothing tipi, Created durumu, NetsisTransferredAt == null.
+        /// </summary>
+        [HttpPost("shipments/{id:int}/export-clothing")]
+        [Authorize(Roles = "Admin,Manager,Accounting,Dispatcher")]
+        public async Task<IActionResult> ExportClothingShipment(int id, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new ExportClothingShipmentToNetsisCommand(id), ct);
+            return Ok(new
+            {
+                netsisOrderNo = result.NetsisOrderNo,
+                irsaliyeNo    = result.IrsaliyeNo,
+                warnings      = result.Warnings,
+                message       = $"Kıyafet sevkiyatı #{id} Netsis'e aktarıldı ve teslim edildi olarak işaretlendi."
             });
         }
 
