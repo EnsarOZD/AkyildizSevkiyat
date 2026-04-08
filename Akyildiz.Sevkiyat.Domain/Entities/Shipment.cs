@@ -189,6 +189,31 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
             NetsisTransferredAt = transferredAt;
         }
 
+        /// <summary>
+        /// Kıyafet operasyonu: Netsis aktarımı sonrası sevkiyatı doğrudan Delivered'a taşır.
+        /// Sadece Created durumundaki sevkiyatlara uygulanabilir.
+        /// </summary>
+        public void SkipToDelivered()
+        {
+            if (Status != ShipmentStatus.Created)
+                throw new DomainException(
+                    "Kıyafet operasyonu aktarımı sadece 'Oluşturuldu' durumundaki sevkiyatlar için yapılabilir.");
+
+            var oldStatus = Status;
+            Status = ShipmentStatus.Delivered;
+
+            Histories.Add(new ShipmentHistory
+            {
+                ShipmentId = Id,
+                OldStatus = oldStatus,
+                NewStatus = ShipmentStatus.Delivered,
+                ChangedAt = DateTime.UtcNow,
+                Description = "Kıyafet operasyonu — Netsis aktarımı ile doğrudan teslim edildi."
+            });
+
+            AddDomainEvent(new ShipmentStatusChangedEvent(Id, oldStatus, ShipmentStatus.Delivered, null));
+        }
+
         public void RecordDelivery(DateTime deliveredAt, string recipient, string? note,
             string? photoBase64, int? deliveredByUserId, string? deliveredByRole, string? overrideNote)
         {
@@ -245,6 +270,8 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
                     break;
                 case ShipmentStatus.AssignedToVehicle:
                     isValid = newStatus == ShipmentStatus.Dispatched
+                           || newStatus == ShipmentStatus.Delivered
+                           || newStatus == ShipmentStatus.ReturnedToWarehouse
                            || newStatus == ShipmentStatus.Cancelled;
                     break;
                 case ShipmentStatus.Dispatched:
