@@ -3,6 +3,7 @@ using Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportClothingShipmentToNets
 using Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportShipmentToNetsis;
 using Akyildiz.Sevkiyat.Application.Netsis.Commands.FetchShipmentIrsaliye;
 using Akyildiz.Sevkiyat.Application.Netsis.Commands.SyncNetsisStockBalance;
+using Akyildiz.Sevkiyat.Application.Netsis.Queries.GetReconciliation;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -68,6 +69,24 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         }
 
         public record BulkExportBody(List<int> ShipmentIds);
+
+        /// <summary>
+        /// Netsis ile toplanan/teslim edilen miktar uzlaştırma raporu.
+        /// Sadece NetsisTransferredAt dolu sevkiyatlar dahil edilir.
+        /// </summary>
+        [HttpGet("reconciliation")]
+        [Authorize(Roles = "Admin,Manager,Accounting")]
+        public async Task<IActionResult> GetReconciliation(
+            [FromQuery] DateTime? fromDate,
+            [FromQuery] DateTime? toDate,
+            [FromQuery] bool onlyDiff = false,
+            [FromQuery] int? operationType = null,
+            CancellationToken ct = default)
+        {
+            var result = await _mediator.Send(
+                new GetReconciliationQuery(fromDate, toDate, onlyDiff, operationType), ct);
+            return Ok(result);
+        }
 
         /// <summary>
         /// Belirtilen sevkiyat için Netsis'ten irsaliye numarasını çeker.
