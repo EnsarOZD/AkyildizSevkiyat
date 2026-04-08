@@ -40,8 +40,25 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.MarkReady
 
             var shipment = await _context.Shipments
                 .Include(s => s.Project)
+                .Include(s => s.Lines)
                 .FirstOrDefaultAsync(x => x.Id == request.ShipmentId, cancellationToken)
                 ?? throw new NotFoundException("Shipment", request.ShipmentId);
+
+            // ── Miktar uyumsuzluğu uyarıları (non-blocking) ──────────────────────
+            foreach (var line in shipment.Lines)
+            {
+                if (line.DeliveredQty == 0)
+                    response.Warnings.Add(
+                        $"{line.StockName} ({line.StockCode}): Toplanan miktar 0.");
+                else if (line.DeliveredQty < line.OrderedQty)
+                    response.Warnings.Add(
+                        $"{line.StockName} ({line.StockCode}): Eksik toplama — " +
+                        $"sipariş {line.OrderedQty}, toplanan {line.DeliveredQty}.");
+                else if (line.DeliveredQty > line.OrderedQty)
+                    response.Warnings.Add(
+                        $"{line.StockName} ({line.StockCode}): Fazla toplama — " +
+                        $"sipariş {line.OrderedQty}, toplanan {line.DeliveredQty}.");
+            }
 
             shipment.ChangeStatus(ShipmentStatus.ReadyForDispatch, _currentUserService.UserId, request.Reason);
 
