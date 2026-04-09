@@ -116,6 +116,10 @@ const router = createRouter({
                     meta: { title: 'Sipariş Detayı', roles: ['Admin', 'Accounting', 'Manager'] }
                 },
                 {
+                    path: 'goods-receipts/list',
+                    redirect: '/goods-receipts',
+                },
+                {
                     path: 'goods-receipts/:id',
                     name: 'GoodsReceiptDetail',
                     component: () => import('../views/GoodsReceiptDetailView.vue'),
