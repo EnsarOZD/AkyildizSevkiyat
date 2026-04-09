@@ -132,8 +132,8 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipments
                     WaybillNumber = s.IssOrder != null ? s.IssOrder.NetsisOrderNumber : null,
                     Aciklama = s.IssOrder != null ? s.IssOrder.Aciklama : null,
                     NetsisTransferredAt  = s.NetsisTransferredAt,
-                    OperationType        = s.Project.OperationType == Domain.Enums.OperationType.Clothing ? "Kıyafet" : "Catering",
-                    OperationTypeValue   = (int)s.Project.OperationType,
+                    OperationType        = s.OperationType == Domain.Enums.OperationType.Clothing ? "Kıyafet" : "Catering",
+                    OperationTypeValue   = (int)s.OperationType,
                 }).ToListAsync(cancellationToken);
 
             return new PaginatedList<ShipmentDto>(items, totalCount, request.PageNumber, request.PageSize);

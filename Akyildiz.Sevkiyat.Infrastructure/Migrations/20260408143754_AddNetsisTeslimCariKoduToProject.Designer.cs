@@ -4,6 +4,7 @@ using Akyildiz.Sevkiyat.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
 {
     [DbContext(typeof(SevkiyatDbContext))]
-    partial class SevkiyatDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260408143754_AddNetsisTeslimCariKoduToProject")]
+    partial class AddNetsisTeslimCariKoduToProject
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -393,12 +396,12 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                         new
                         {
                             Id = 1,
-                            DeliveryDate = new DateTime(2026, 4, 10, 0, 0, 0, 0, DateTimeKind.Local),
+                            DeliveryDate = new DateTime(2026, 4, 9, 0, 0, 0, 0, DateTimeKind.Local),
                             ExternalOrderNumber = "SO-1001",
                             ImportStatus = 0,
                             IsActive = true,
                             IsTransferred = false,
-                            OrderDate = new DateTime(2026, 4, 9, 0, 0, 0, 0, DateTimeKind.Local),
+                            OrderDate = new DateTime(2026, 4, 8, 0, 0, 0, 0, DateTimeKind.Local),
                             ProjectId = 1,
                             Status = "Imported"
                         });
@@ -874,9 +877,6 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
 
                     b.Property<DateTime?>("NetsisTransferredAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<int>("OperationType")
-                        .HasColumnType("int");
 
                     b.Property<int>("ProjectId")
                         .HasColumnType("int");

@@ -65,7 +65,7 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.MarkReady
             await _context.SaveChangesAsync(cancellationToken);
 
             // ── Catering: otomatik Netsis aktarımı (non-blocking) ──
-            if (shipment.Project.OperationType == OperationType.Catering)
+            if (shipment.OperationType == OperationType.Catering)
             {
                 try
                 {

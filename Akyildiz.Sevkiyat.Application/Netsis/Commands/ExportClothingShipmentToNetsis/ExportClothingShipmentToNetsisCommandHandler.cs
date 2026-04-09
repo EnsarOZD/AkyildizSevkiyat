@@ -37,7 +37,7 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportClothingShipmentTo
                 .FirstOrDefaultAsync(s => s.Id == request.ShipmentId, cancellationToken)
                 ?? throw new NotFoundException("Shipment", request.ShipmentId);
 
-            if (shipment.Project.OperationType != OperationType.Clothing)
+            if (shipment.OperationType != OperationType.Clothing)
                 throw new DomainException(
                     "Bu endpoint yalnızca Kıyafet (Clothing) operasyonu sevkiyatları için kullanılabilir.");
 

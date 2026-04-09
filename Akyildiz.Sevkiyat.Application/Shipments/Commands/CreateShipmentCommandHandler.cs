@@ -66,6 +66,24 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands
                             && m.LocalStockId != null)
                 .ToDictionaryAsync(m => m.ExternalStockCode, m => m.LocalStockId, cancellationToken);
 
+            // Operasyon tipini stok kategorilerine göre belirle:
+            // Tüm satırların stok kategorisi Kiyafet ise → Clothing, aksi halde → Catering.
+            var mappedStockIds = mappingLookup.Values.Where(id => id.HasValue).Select(id => id!.Value).ToList();
+            var operationType = OperationType.Catering;
+            if (mappedStockIds.Count == order.Lines.Count && mappedStockIds.Count > 0)
+            {
+                var categories = await _context.StockMasters
+                    .Where(s => mappedStockIds.Contains(s.Id))
+                    .Select(s => s.Category)
+                    .ToListAsync(cancellationToken);
+
+                if (categories.Count == mappedStockIds.Count
+                    && categories.All(c => c == Domain.Enums.StockCategory.Kiyafet))
+                {
+                    operationType = OperationType.Clothing;
+                }
+            }
+
             // 2) Yeni Shipment oluştur
             var shipment = new Shipment
             {
@@ -73,7 +91,8 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands
                 DeliveryDate = order.DeliveryDate,
                 IssOrderId = order.Id,
                 CreatedAt = DateTime.UtcNow,
-                TalepNo = order.TalepNo // Transfer TalepNo if available
+                TalepNo = order.TalepNo, // Transfer TalepNo if available
+                OperationType = operationType
             };
 
             // 3) Her order line için bir shipment line ekle

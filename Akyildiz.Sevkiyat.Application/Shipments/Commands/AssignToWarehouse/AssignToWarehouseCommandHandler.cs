@@ -35,7 +35,7 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.AssignToWarehouse
                 throw new NotFoundException("Shipment", request.ShipmentId);
 
             // Kıyafet operasyonu depo hazırlığa alınamaz
-            if (shipment.Project.OperationType == OperationType.Clothing)
+            if (shipment.OperationType == OperationType.Clothing)
                 throw new DomainException(
                     "Kıyafet operasyonu depo hazırlığa alınamaz. " +
                     "Sevkiyatı göndermek için 'Netsis'e Gönder' işlemini kullanın.");

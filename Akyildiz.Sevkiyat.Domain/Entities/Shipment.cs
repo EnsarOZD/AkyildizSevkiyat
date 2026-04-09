@@ -62,6 +62,9 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
         public DateTime? DispatchedAt { get; private set; }
         public string? DispatchConfirmedByName { get; private set; }
 
+        // Operasyon tipi — sevkiyat oluşturulurken stok kategorilerine göre otomatik belirlenir
+        public OperationType OperationType { get; set; } = OperationType.Catering;
+
         // Optimistic concurrency
         public byte[] RowVersion { get; set; } = null!;
 

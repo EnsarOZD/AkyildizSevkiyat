@@ -81,7 +81,7 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Queries.GetReconciliation
             if (request.OperationTypeFilter.HasValue)
             {
                 var opType = (OperationType)request.OperationTypeFilter.Value;
-                query = query.Where(s => s.Project.OperationType == opType);
+                query = query.Where(s => s.OperationType == opType);
             }
 
             var shipments = await query
@@ -92,7 +92,7 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Queries.GetReconciliation
 
             foreach (var shipment in shipments)
             {
-                var isClothing = shipment.Project.OperationType == OperationType.Clothing;
+                var isClothing = shipment.OperationType == OperationType.Clothing;
 
                 var lineDtos = shipment.Lines.Select(l =>
                 {

@@ -46,7 +46,7 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.StartZonePreparation
             // TODO: CLOTHING_PICKING — Kıyafet picking akışı tasarlandığında bu guard kaldırılacak.
             var hasClothingShipments = await _context.Shipments
                 .AnyAsync(s => s.ZonePreparationId == zp.Id
-                            && s.Project.OperationType == OperationType.Clothing,
+                            && s.OperationType == OperationType.Clothing,
                           cancellationToken);
 
             if (hasClothingShipments)

@@ -4,6 +4,7 @@ using Akyildiz.Sevkiyat.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
 {
     [DbContext(typeof(SevkiyatDbContext))]
-    partial class SevkiyatDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260409193631_AddShipmentOperationType")]
+    partial class AddShipmentOperationType
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
