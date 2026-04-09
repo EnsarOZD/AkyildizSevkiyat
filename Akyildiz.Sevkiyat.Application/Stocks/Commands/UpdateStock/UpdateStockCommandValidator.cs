@@ -1,4 +1,5 @@
 using FluentValidation;
+using Akyildiz.Sevkiyat.Domain.Enums;
 
 namespace Akyildiz.Sevkiyat.Application.Stocks.Commands.UpdateStock
 {
@@ -16,6 +17,10 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Commands.UpdateStock
                 .WithMessage("Stok adı boş olamaz.")
                 .MaximumLength(200)
                 .WithMessage("Stok adı en fazla 200 karakter olabilir.");
+
+            RuleFor(x => x.Category)
+                .NotEqual(StockCategory.Tanimsiz)
+                .WithMessage("Stok kategorisi seçilmek zorundadır (Tanımsız bırakılamaz).");
 
             RuleFor(x => x.MinStockQty)
                 .GreaterThanOrEqualTo(0)

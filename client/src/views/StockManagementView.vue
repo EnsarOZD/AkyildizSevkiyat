@@ -185,9 +185,9 @@
                  </div>
                   <!-- Category Selection -->
                   <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Kategori</label>
-                    <select v-model.number="form.category" class="w-full border p-2 rounded dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100">
-                        <option :value="0">Tanımsız</option>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Kategori <span class="text-red-500">*</span></label>
+                    <select v-model.number="form.category" class="w-full border p-2 rounded dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100" :class="form.category === 0 ? 'border-red-400' : ''">
+                        <option :value="0" disabled>Seçiniz...</option>
                         <option :value="1">Gıda</option>
                         <option :value="2">Sarf</option>
                         <option :value="3">Kıyafet</option>
@@ -195,6 +195,7 @@
                         <option :value="5">Kırtasiye</option>
                         <option :value="99">Diğer</option>
                     </select>
+                    <p v-if="form.category === 0" class="text-xs text-red-500 mt-1">Kategori seçilmek zorundadır.</p>
                   </div>
 
                   <!-- Picking Type Selection -->
@@ -491,7 +492,7 @@ const isEditing = ref(false);
 
 // N tuşu → yeni stok ekle
 useKeyboardShortcut('n', () => { if (!showModal.value) { isEditing.value = false; showModal.value = true; } });
-const form = ref<any>({ id: 0, stockCode: '', stockName: '', unit: 0, unitPrice: null, taxRate: 20, pickingType: 0, category: 0, brand: '', minStockQty: null, reorderPoint: null, warehouseLocation: '', netsisStockCode: '' });
+const form = ref<any>({ id: 0, stockCode: '', stockName: '', unit: 0, unitPrice: null, taxRate: 20, pickingType: 0, category: null, brand: '', minStockQty: null, reorderPoint: null, warehouseLocation: '', netsisStockCode: '' });
 
 const openModal = (stock?: Stock) => {
     if (stock) {
@@ -505,13 +506,18 @@ const openModal = (stock?: Stock) => {
         };
     } else {
         isEditing.value = false;
-        form.value = { id: 0, stockCode: '', stockName: '', unit: 0, unitPrice: null, taxRate: 20, pickingType: 0, category: 0, brand: '', minStockQty: null, reorderPoint: null, warehouseLocation: '', netsisStockCode: '' };
+        form.value = { id: 0, stockCode: '', stockName: '', unit: 0, unitPrice: null, taxRate: 20, pickingType: 0, category: null, brand: '', minStockQty: null, reorderPoint: null, warehouseLocation: '', netsisStockCode: '' };
     }
     showModal.value = true;
 };
 
 const saveStock = async () => {
     try {
+        if (!form.value.category || form.value.category === 0) {
+            notify.warning('Lütfen Kategori seçiniz.');
+            return;
+        }
+
         if (!form.value.pickingType || form.value.pickingType === 0) {
              notify.warning('Lütfen Toplama Tipi (Micro/Macro) seçiniz.');
              return;

@@ -53,6 +53,18 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Commands.ImportStocks
                 }
 
                 var table = dataSet.Tables[0];
+
+                // Excel'deki tüm stok kodlarını önceden topla, DB'den bulk çek
+                var allCodes = table.Rows.Cast<DataRow>()
+                    .Select(r => r[0]?.ToString()?.Trim())
+                    .Where(c => !string.IsNullOrWhiteSpace(c))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                var existingStocks = await _context.StockMasters
+                    .Where(s => allCodes.Contains(s.StockCode))
+                    .ToDictionaryAsync(s => s.StockCode, StringComparer.OrdinalIgnoreCase, cancellationToken);
+
                 int rowIndex = 0;
 
                 foreach (DataRow row in table.Rows)
@@ -81,6 +93,7 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Commands.ImportStocks
                         var pickingStr   = GetVal(row, 5);
                         var statusStr    = GetVal(row, 6);
                         var categoryStr  = GetVal(row, 7);
+                        var netsisCode   = GetVal(row, 8); // I sütunu — Netsis Stok Kodu (opsiyonel)
 
                         // Parse Price
                         decimal unitPrice = 0;
@@ -119,7 +132,7 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Commands.ImportStocks
                         if (!string.IsNullOrWhiteSpace(statusStr))
                             isActive = !statusStr.Contains("Pasif", StringComparison.OrdinalIgnoreCase) && statusStr != "0";
 
-                        // Parse Category
+                        // Parse Category — zorunlu alan, Tanimsiz bırakılamaz
                         var category = Akyildiz.Sevkiyat.Domain.Enums.StockCategory.Tanimsiz;
                         if (!string.IsNullOrWhiteSpace(categoryStr))
                         {
@@ -134,6 +147,13 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Commands.ImportStocks
                                     _                                    => Akyildiz.Sevkiyat.Domain.Enums.StockCategory.Diger
                                 };
                             }
+                        }
+
+                        if (category == Akyildiz.Sevkiyat.Domain.Enums.StockCategory.Tanimsiz)
+                        {
+                            result.Errors.Add($"Satır {rowIndex}: '{code}' — Kategori boş veya tanımsız. Gida, Sarf, Kiyafet, Kirtasiye veya Diger belirtilmeli. Satır atlandı.");
+                            result.Skipped++;
+                            continue;
                         }
 
                         // Parse Unit
@@ -160,22 +180,25 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Commands.ImportStocks
                             }
                         }
 
-                        var existing = await _context.StockMasters
-                            .FirstOrDefaultAsync(s => s.StockCode == code, cancellationToken);
+                        existingStocks.TryGetValue(code, out var existing);
 
                         if (existing == null)
                         {
-                            _context.StockMasters.Add(new StockMaster
+                            var newStock = new StockMaster
                             {
-                                StockCode   = code,
-                                StockName   = name,
-                                Unit        = unit,
-                                UnitPrice   = unitPrice,
-                                TaxRate     = taxRate,
-                                PickingType = pickingType,
-                                Category    = category,
-                                IsActive    = isActive
-                            });
+                                StockCode       = code,
+                                StockName       = name,
+                                Unit            = unit,
+                                UnitPrice       = unitPrice,
+                                TaxRate         = taxRate,
+                                PickingType     = pickingType,
+                                Category        = category,
+                                IsActive        = isActive,
+                                NetsisStockCode = string.IsNullOrWhiteSpace(netsisCode) ? null : netsisCode,
+                            };
+                            _context.StockMasters.Add(newStock);
+                            // Dict'e ekle — aynı kod Excel'de tekrar gelirse güncelleme yapılır
+                            existingStocks[code] = newStock;
                             result.Added++;
                         }
                         else
@@ -188,6 +211,9 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Commands.ImportStocks
                                 existing.PickingType = pickingType;
                             existing.IsActive  = isActive;
                             existing.Category  = category;
+                            // NetsisStockCode: dolu geliyorsa güncelle, boş geliyorsa mevcut değere dokunma
+                            if (!string.IsNullOrWhiteSpace(netsisCode))
+                                existing.NetsisStockCode = netsisCode;
                             result.Updated++;
                         }
                     }
