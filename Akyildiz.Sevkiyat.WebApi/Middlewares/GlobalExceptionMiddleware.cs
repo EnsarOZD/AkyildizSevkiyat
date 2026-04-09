@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http;
 using System.Text.Json;
 using Akyildiz.Sevkiyat.Domain.Exceptions;
 using FluentValidation;
@@ -90,6 +91,13 @@ namespace Akyildiz.Sevkiyat.WebApi.Middlewares
                     type = "forbidden";
                     message = forbiddenException.Message;
                     _logger.LogWarning(exception, "Forbidden action attempt");
+                    break;
+
+                case HttpRequestException httpEx:
+                    code = StatusCodes.Status502BadGateway;
+                    type = "external_service_error";
+                    message = $"Harici servis hatası: {httpEx.Message}";
+                    _logger.LogError(exception, "External HTTP service error");
                     break;
 
                 default:

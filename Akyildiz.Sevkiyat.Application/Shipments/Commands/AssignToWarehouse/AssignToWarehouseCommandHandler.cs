@@ -41,7 +41,9 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.AssignToWarehouse
                     "Sevkiyatı göndermek için 'Netsis'e Gönder' işlemini kullanın.");
 
             if (!shipment.Project.ZoneId.HasValue)
-                throw new DomainException("Shipment's project does not have an assigned zone. Please assign a zone first.");
+                throw new DomainException(
+                    $"'{shipment.Project.Name}' projesine bölge (zone) atanmamış. " +
+                    "Lütfen önce Proje-Bölge Eşleşmesi ekranından bölge atayın.");
 
             shipment.MarkStockReserved();  // double-reserve koruması — zaten rezerveyse exception
             shipment.ChangeStatus(ShipmentStatus.AssignedToWarehouse, _currentUserService.UserId);
