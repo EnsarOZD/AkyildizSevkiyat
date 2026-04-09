@@ -69,15 +69,30 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportShipmentToNetsis
 
             var (siparisRequest, exportWarnings) = BuildSiparisRequest(shipment);
 
-            var result = await _netsisClient.CreateSiparisAsync(siparisRequest, cancellationToken);
+            // NetsisOrderNumber dolu ama NetsisTransferredAt boşsa → önceki denemede Netsis'e
+            // gönderilmiş ama DB kaydı başarısız olmuş olabilir. Duplike önlemek için
+            // yeniden sipariş oluşturma — sadece aktarılmış olarak işaretle.
+            string netsisOrderNo;
+            if (!string.IsNullOrWhiteSpace(shipment.IssOrder?.NetsisOrderNumber))
+            {
+                netsisOrderNo = shipment.IssOrder.NetsisOrderNumber;
+                exportWarnings.Add(
+                    $"Sipariş Netsis'te zaten mevcut ({netsisOrderNo}). Yeniden gönderilmedi, durum güncellendi.");
+            }
+            else
+            {
+                var result = await _netsisClient.CreateSiparisAsync(siparisRequest, cancellationToken);
 
-            if (!result.Basarili)
-                throw new DomainException(
-                    $"Netsis sipariş aktarımı başarısız: {result.Mesaj ?? "Bilinmeyen hata"}");
+                if (!result.Basarili)
+                    throw new DomainException(
+                        $"Netsis sipariş aktarımı başarısız: {result.Mesaj ?? "Bilinmeyen hata"}");
+
+                netsisOrderNo = result.NetsisOrderNo ?? siparisRequest.BelgeNo ?? string.Empty;
+                shipment.IssOrder!.NetsisOrderNumber = netsisOrderNo;
+            }
 
             // Aktarım bilgilerini kaydet
             shipment.MarkNetsisTransferred(DateTime.UtcNow);
-            shipment.IssOrder.NetsisOrderNumber = result.NetsisOrderNo ?? siparisRequest.BelgeNo;
 
             // Audit kaydı — sevkiyat zaman çizelgesinde görünür
             _context.ShipmentHistories.Add(new Domain.Entities.ShipmentHistory
@@ -95,12 +110,12 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportShipmentToNetsis
             // İrsaliye otomatik çekme (sessiz, non-blocking)
             try
             {
-                var netsisOrderNo = shipment.IssOrder?.NetsisOrderNumber;
-                var cariKod       = shipment.Project.NetsisCariKodu;
-                if (!string.IsNullOrWhiteSpace(netsisOrderNo) && !string.IsNullOrWhiteSpace(cariKod))
+                var orderNo = shipment.IssOrder?.NetsisOrderNumber;
+                var cariKod = shipment.Project.NetsisCariKodu;
+                if (!string.IsNullOrWhiteSpace(orderNo) && !string.IsNullOrWhiteSpace(cariKod))
                 {
                     var irsaliyeler = await _netsisClient.GetIrsaliyelerAsync(
-                        new External.Netsis.Dtos.NetsisIrsaliyeQuery { SiparisNo = netsisOrderNo, CariKod = cariKod },
+                        new External.Netsis.Dtos.NetsisIrsaliyeQuery { SiparisNo = orderNo, CariKod = cariKod },
                         cancellationToken);
 
                     if (irsaliyeler?.Any() == true)

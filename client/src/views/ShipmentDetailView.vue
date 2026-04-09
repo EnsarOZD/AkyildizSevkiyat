@@ -331,6 +331,19 @@
               <span v-else>İrsaliye Yenile</span>
             </button>
 
+            <!-- Admin: İrsaliye varsa bile yeniden sorgula (hatalı numara düzeltme) -->
+            <button
+              v-if="shipment.netsisTransferredAt && shipment.irsaliyeNo"
+              v-role="['Admin']"
+              @click="fetchIrsaliye"
+              :disabled="irsaliyeFetchLoading"
+              class="w-full border border-gray-300 text-gray-500 py-1.5 px-4 rounded-lg hover:bg-gray-50 transition text-xs font-medium disabled:opacity-50"
+              :title="`Mevcut: ${shipment.irsaliyeNo} — Netsis\'ten yeniden sorgula`"
+            >
+              <span v-if="irsaliyeFetchLoading">Sorgulanıyor...</span>
+              <span v-else>↺ İrsaliye No Yenile</span>
+            </button>
+
             <button
               v-if="shipment.status === 'Created'"
               v-role="['Admin', 'Accounting']"
