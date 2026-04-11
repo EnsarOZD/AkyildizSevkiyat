@@ -1,3 +1,4 @@
+using Akyildiz.Sevkiyat.Application.Common.Interfaces;
 using Akyildiz.Sevkiyat.Application.Interfaces;
 using Akyildiz.Sevkiyat.Application.Common.Models;
 using Akyildiz.Sevkiyat.Domain.Enums;
@@ -34,8 +35,11 @@ namespace Akyildiz.Sevkiyat.Application.Orders.Queries.GetImportedOrders
         bool IsActive
     );
 
-    public class GetImportedOrdersQuery : IRequest<PaginatedList<ImportedOrderDto>>
+    public class GetImportedOrdersQuery : IRequest<PaginatedList<ImportedOrderDto>>, IRequireRoles
     {
+        public IReadOnlyList<string> AllowedRoles =>
+            new[] { "Admin", "Manager", "Dispatcher", "Accounting" };
+
         public string Tab { get; set; } = "Ready";
         public string? Search { get; set; }
         public string? Zone { get; set; }

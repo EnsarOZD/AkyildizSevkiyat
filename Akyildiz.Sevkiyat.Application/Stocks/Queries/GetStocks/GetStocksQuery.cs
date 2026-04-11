@@ -1,3 +1,4 @@
+using Akyildiz.Sevkiyat.Application.Common.Interfaces;
 using Akyildiz.Sevkiyat.Application.Common.Models;
 using Akyildiz.Sevkiyat.Application.Interfaces;
 using MediatR;
@@ -29,7 +30,12 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Queries.GetStocks
         string? NetsisStockCode
     );
 
-    public record GetStocksQuery(string? SearchTerm, int PageNumber = 1, int PageSize = 15, int? CategoryId = null, int? PickingTypeId = null, int? UnitId = null) : IRequest<PaginatedList<StockDto>>;
+    public record GetStocksQuery(string? SearchTerm, int PageNumber = 1, int PageSize = 15, int? CategoryId = null, int? PickingTypeId = null, int? UnitId = null)
+        : IRequest<PaginatedList<StockDto>>, IRequireRoles
+    {
+        public IReadOnlyList<string> AllowedRoles =>
+            new[] { "Admin", "Manager", "Warehouse" };
+    }
 
     public class GetStocksQueryHandler : IRequestHandler<GetStocksQuery, PaginatedList<StockDto>>
     {

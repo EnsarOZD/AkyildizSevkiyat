@@ -1,4 +1,5 @@
 using MediatR;
+using Akyildiz.Sevkiyat.Application.Common.Interfaces;
 using Akyildiz.Sevkiyat.Application.Common.Models;
 using Akyildiz.Sevkiyat.Application.Interfaces;
 using Akyildiz.Sevkiyat.Domain.Enums;
@@ -26,8 +27,11 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipments
         public int OperationTypeValue { get; set; } = 0;
     }
 
-    public class GetShipmentsQuery : IRequest<PaginatedList<ShipmentDto>>
+    public class GetShipmentsQuery : IRequest<PaginatedList<ShipmentDto>>, IRequireRoles
     {
+        public IReadOnlyList<string> AllowedRoles =>
+            new[] { "Admin", "Manager", "Warehouse", "Dispatcher", "Accounting" };
+
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public ShipmentStatus? Status { get; set; }

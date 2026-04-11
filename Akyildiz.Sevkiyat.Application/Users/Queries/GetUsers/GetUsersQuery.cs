@@ -1,3 +1,4 @@
+using Akyildiz.Sevkiyat.Application.Common.Interfaces;
 using Akyildiz.Sevkiyat.Application.Interfaces;
 using Akyildiz.Sevkiyat.Domain.Enums;
 using MediatR;
@@ -5,7 +6,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Akyildiz.Sevkiyat.Application.Users.Queries.GetUsers
 {
-    public record GetUsersQuery : IRequest<List<UserListDto>>;
+    public record GetUsersQuery : IRequest<List<UserListDto>>, IRequireRoles
+    {
+        public IReadOnlyList<string> AllowedRoles => new[] { "Admin", "Manager" };
+    }
 
     public class UserListDto
     {

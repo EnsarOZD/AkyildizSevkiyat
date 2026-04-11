@@ -1,10 +1,15 @@
 using MediatR;
+using Akyildiz.Sevkiyat.Application.Common.Interfaces;
 using System.Collections.Generic;
 using System;
 
 namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipmentDetail
 {
-    public sealed record GetShipmentDetailQuery(int Id) : IRequest<ShipmentDetailDto>;
+    public sealed record GetShipmentDetailQuery(int Id) : IRequest<ShipmentDetailDto>, IRequireRoles
+    {
+        public IReadOnlyList<string> AllowedRoles =>
+            new[] { "Admin", "Manager", "Warehouse", "Dispatcher", "Accounting" };
+    }
 
     public class ShipmentDetailDto
     {

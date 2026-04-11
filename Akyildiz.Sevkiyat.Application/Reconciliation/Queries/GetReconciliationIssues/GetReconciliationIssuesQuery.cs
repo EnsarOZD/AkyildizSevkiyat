@@ -1,3 +1,4 @@
+using Akyildiz.Sevkiyat.Application.Common.Interfaces;
 using Akyildiz.Sevkiyat.Application.Interfaces;
 using Akyildiz.Sevkiyat.Domain.Enums;
 using MediatR;
@@ -45,7 +46,11 @@ namespace Akyildiz.Sevkiyat.Application.Reconciliation.Queries.GetReconciliation
         DateTime?                ToDate    = null,
         int Page                           = 1,
         int PageSize                       = 50
-    ) : IRequest<ReconciliationIssuePageDto>;
+    ) : IRequest<ReconciliationIssuePageDto>, IRequireRoles
+    {
+        public IReadOnlyList<string> AllowedRoles =>
+            new[] { "Admin", "Manager", "Accounting" };
+    }
 
     public class GetReconciliationIssuesQueryHandler
         : IRequestHandler<GetReconciliationIssuesQuery, ReconciliationIssuePageDto>
