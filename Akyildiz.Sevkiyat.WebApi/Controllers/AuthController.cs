@@ -20,6 +20,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         }
 
         [HttpPost("login")]
+        [AllowAnonymous]
         [EnableRateLimiting("login")]
         public async Task<IActionResult> Login([FromBody] LoginCommand command)
         {
@@ -28,6 +29,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         }
 
         [HttpPost("refresh")]
+        [AllowAnonymous]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
         {
             var result = await _mediator.Send(new RefreshTokenCommand(request.RefreshToken), cancellationToken);

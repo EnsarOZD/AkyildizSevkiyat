@@ -221,7 +221,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    // Tüm endpoint'ler için varsayılan: kimlik doğrulama zorunlu.
+    // [AllowAnonymous] ile istisnalar açıkça işaretlenmeli.
+    options.FallbackPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+});
 
 // Rate Limiting — Login endpoint'ini brute-force'a karşı koru
 builder.Services.AddRateLimiter(rateLimiter =>
