@@ -14,11 +14,13 @@ Workflow seçenekleri:
   plan-feature    → Planlama (kod üretmez)  [varsayılan]
   build-feature   → Uygulama (kod üretir)
   review-feature  → İnceleme / Review
+  debate-feature  → Çapraz eleştiri (agent'lar birbirini eleştirir)
 
 Örnekler:
   node src/index.js "Kullanıcı girişi sayfası eklenecek"
   node src/index.js "Sipariş listesi endpoint'i oluştur" build-feature
   node src/index.js "Auth modülü gözden geçirilsin" review-feature
+  node src/index.js "Ödeme modülü tasarlanacak" debate-feature
 `);
   process.exit(0);
 }
@@ -26,7 +28,7 @@ Workflow seçenekleri:
 const task = args[0];
 const workflow = args[1] || "plan-feature";
 
-const validWorkflows = ["plan-feature", "build-feature", "review-feature"];
+const validWorkflows = ["plan-feature", "build-feature", "review-feature", "debate-feature"];
 if (!validWorkflows.includes(workflow)) {
   console.error(`Geçersiz workflow: "${workflow}"`);
   console.error(`Geçerli seçenekler: ${validWorkflows.join(", ")}`);
