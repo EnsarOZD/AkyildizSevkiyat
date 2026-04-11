@@ -49,8 +49,8 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         [HttpPost("bulk")]
         public async Task<IActionResult> CreateBulk([FromBody] CreateBulkShipmentsCommand command)
         {
-            var count = await _mediator.Send(command);
-            return Ok(new { CreatedCount = count });
+            var result = await _mediator.Send(command);
+            return Ok(result);
         }
 
         [HttpGet]
