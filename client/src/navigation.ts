@@ -21,6 +21,7 @@ import {
   ArrowTrendingUpIcon,
   Cog6ToothIcon,
   DocumentCheckIcon,
+  ClockIcon,
 } from '@heroicons/vue/24/outline';
 
 export type UserRole = 'Admin' | 'Warehouse' | 'Accounting' | 'Dispatcher' | 'Manager';
@@ -89,7 +90,8 @@ export const NAV_ITEMS: NavGroup[] = [
     {
         title: 'Raporlar',
         items: [
-            { label: 'Raporlar',             to: '/reports',               icon: ChartBarIcon,  roles: ['Admin', 'Accounting', 'Warehouse', 'Manager'] },
+            { label: 'Raporlar',         to: '/reports',                icon: ChartBarIcon, roles: ['Admin', 'Accounting', 'Warehouse', 'Manager'] },
+            { label: 'Şoför Puantajı',   to: '/admin/driver-sessions',  icon: ClockIcon,    roles: ['Admin', 'Manager', 'Accounting'] },
         ],
     },
     {

@@ -156,6 +156,12 @@ const router = createRouter({
                     meta: { title: 'Raporlar', roles: ['Admin', 'Accounting', 'Warehouse', 'Manager'] }
                 },
                 {
+                    path: 'admin/driver-sessions',
+                    name: 'DriverSessionsAdmin',
+                    component: () => import('../views/DriverSessionsView.vue'),
+                    meta: { title: 'Şoför Puantajı', roles: ['Admin', 'Manager', 'Accounting'] }
+                },
+                {
                     path: 'floating-returns',
                     name: 'FloatingReturns',
                     component: () => import('../views/FloatingReturnsView.vue'),
