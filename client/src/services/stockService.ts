@@ -103,6 +103,13 @@ export const stockService = {
     },
 
     /**
+     * Update only the Netsis stock code (partial patch)
+     */
+    async updateNetsisCode(id: number, netsisStockCode: string | null): Promise<void> {
+        await apiClient.patch(`/stocks/${id}/netsis-code`, { netsisStockCode });
+    },
+
+    /**
      * Delete a stock
      */
     async delete(id: number): Promise<void> {

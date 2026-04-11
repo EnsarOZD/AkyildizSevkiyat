@@ -3,6 +3,7 @@ using Akyildiz.Sevkiyat.Application.Stocks.Commands.CreateStock;
 using Akyildiz.Sevkiyat.Application.Stocks.Commands.DeleteStock;
 using Akyildiz.Sevkiyat.Application.Stocks.Commands.ImportStocks;
 using Akyildiz.Sevkiyat.Application.Stocks.Commands.UpdateStock;
+using Akyildiz.Sevkiyat.Application.Stocks.Commands.UpdateStockNetsisCode;
 using Akyildiz.Sevkiyat.Application.Stocks.Commands.UpdateStockThresholds;
 using Akyildiz.Sevkiyat.Application.Stocks.Queries.GetStocks;
 using Akyildiz.Sevkiyat.Application.Stocks.Queries.GetStocksTemplate;
@@ -14,6 +15,8 @@ using System.Threading.Tasks;
 
 namespace Akyildiz.Sevkiyat.WebApi.Controllers
 {
+    public record UpdateStockNetsisCodeBody(string? NetsisStockCode);
+
     [Authorize]
     [Route("api/[controller]")]
     [ApiController]
@@ -79,6 +82,14 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         public async Task<ActionResult> Delete(int id)
         {
             await _mediator.Send(new DeleteStockCommand(id));
+            return NoContent();
+        }
+
+        [HttpPatch("{id}/netsis-code")]
+        [Authorize(Roles = "Admin,Accounting,Manager")]
+        public async Task<ActionResult> UpdateNetsisCode(int id, [FromBody] UpdateStockNetsisCodeBody body)
+        {
+            await _mediator.Send(new UpdateStockNetsisCodeCommand(id, body.NetsisStockCode));
             return NoContent();
         }
 

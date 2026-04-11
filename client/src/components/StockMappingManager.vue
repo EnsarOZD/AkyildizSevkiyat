@@ -266,10 +266,7 @@ const mapStock = async (stock: UnmappedStock, ignore: boolean) => {
     try {
         // Netsis stok kodunu stok kartına kaydet (boş olmayan durumlarda)
         if (!ignore && stock.selectedLocalId && stock.netsisStockCode !== undefined) {
-            await stockService.update(stock.selectedLocalId, {
-                id: stock.selectedLocalId,
-                netsisStockCode: stock.netsisStockCode || null
-            });
+            await stockService.updateNetsisCode(stock.selectedLocalId, stock.netsisStockCode || null);
         }
 
         await shipmentService.createMapping({
