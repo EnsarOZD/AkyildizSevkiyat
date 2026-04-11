@@ -5,6 +5,7 @@ using Akyildiz.Sevkiyat.Domain.Enums;
 using Akyildiz.Sevkiyat.Domain.Exceptions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportShipmentToNetsis
 {
@@ -14,17 +15,20 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportShipmentToNetsis
         private readonly INetsisClient _netsisClient;
         private readonly ICurrentUserService _currentUserService;
         private readonly ReconciliationGuard _guard;
+        private readonly ILogger<ExportShipmentToNetsisCommandHandler> _logger;
 
         public ExportShipmentToNetsisCommandHandler(
             IApplicationDbContext context,
             INetsisClient netsisClient,
             ICurrentUserService currentUserService,
-            ReconciliationGuard guard)
+            ReconciliationGuard guard,
+            ILogger<ExportShipmentToNetsisCommandHandler> logger)
         {
             _context = context;
             _netsisClient = netsisClient;
             _currentUserService = currentUserService;
             _guard = guard;
+            _logger = logger;
         }
 
         public async Task<ExportShipmentToNetsisResult> Handle(ExportShipmentToNetsisCommand request, CancellationToken cancellationToken)
@@ -60,12 +64,15 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportShipmentToNetsis
                     $"Sevkiyat #{shipment.Id} zaten Netsis'e aktarılmış " +
                     $"({shipment.NetsisTransferredAt:dd.MM.yyyy HH:mm}).");
 
-            // Project'te NetsisCariKodu yoksa blokla
-            // TODO: NETSIS_API — CariKod mapping net olunca bu kontrolü kesinleştir
+            // Project'te NetsisCariKodu yoksa export'u engelle
             if (string.IsNullOrWhiteSpace(shipment.Project.NetsisCariKodu))
                 throw new DomainException(
                     $"Proje '{shipment.Project.Name}' için Netsis Cari Kodu tanımlanmamış. " +
                     "Lütfen proje kaydına NetsisCariKodu ekleyin.");
+
+            _logger.LogInformation(
+                "Sevkiyat #{ShipmentId} Netsis'e aktarılıyor. Proje: {ProjectName}, CariKod: {CariKod}",
+                shipment.Id, shipment.Project.Name, shipment.Project.NetsisCariKodu);
 
             var (siparisRequest, exportWarnings) = BuildSiparisRequest(shipment);
 
@@ -107,26 +114,9 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportShipmentToNetsis
 
             await _context.SaveChangesAsync(cancellationToken);
 
-            // İrsaliye otomatik çekme (sessiz, non-blocking)
-            try
-            {
-                var orderNo = shipment.IssOrder?.NetsisOrderNumber;
-                var cariKod = shipment.Project.NetsisCariKodu;
-                if (!string.IsNullOrWhiteSpace(orderNo) && !string.IsNullOrWhiteSpace(cariKod))
-                {
-                    var irsaliyeler = await _netsisClient.GetIrsaliyelerAsync(
-                        new External.Netsis.Dtos.NetsisIrsaliyeQuery { SiparisNo = orderNo, CariKod = cariKod },
-                        cancellationToken);
-
-                    if (irsaliyeler?.Any() == true)
-                    {
-                        var ilk = irsaliyeler.First();
-                        shipment.SetIrsaliyeInfo(ilk.IrsaliyeNo, ilk.IrsaliyeTarihi);
-                        await _context.SaveChangesAsync(cancellationToken);
-                    }
-                }
-            }
-            catch { /* irsaliye çekimi başarısız — sessizce devam */ }
+            // İrsaliye otomatik çekme kaldırıldı: Netsis siparişi kabul ettikten hemen sonra
+            // irsaliye oluşturulmadığından, sorgu yanlış veri (sipariş no) döndürebilir.
+            // İrsaliye çekimi depo hazırlık sayfasındaki "İrsaliye Getir" butonu ile manuel yapılmalıdır.
 
             return new ExportShipmentToNetsisResult(shipment.IssOrder!.NetsisOrderNumber!, exportWarnings);
         }
