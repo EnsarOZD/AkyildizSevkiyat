@@ -229,6 +229,12 @@ const router = createRouter({
                 // DriverReturn route kaldırıldı — iade işlemleri DriverStopView içindeki modal üzerinden yapılıyor
             ]
         },
+        {
+            path: '/driver/qr-scan',
+            name: 'DriverQrScan',
+            component: () => import('../views/DriverQrScanView.vue'),
+            meta: { requiresAuth: true, roles: ['Driver'], title: 'QR Sefer' }
+        },
     ],
 });
 
