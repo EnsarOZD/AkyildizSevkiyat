@@ -52,7 +52,7 @@ const projectService = {
     await apiClient.patch(`/projects/${projectId}/netsis-cari-kodu`, { netsisCariKodu, netsisTeslimCariKodu });
   },
 
-  async syncProjects(params: { forceAll: boolean } = { forceAll: true }): Promise<{ count: number }> {
+  async syncProjects(params: { forceAll: boolean } = { forceAll: false }): Promise<{ count: number }> {
     const response = await apiClient.post('/projects/sync', params);
     return response.data;
   },

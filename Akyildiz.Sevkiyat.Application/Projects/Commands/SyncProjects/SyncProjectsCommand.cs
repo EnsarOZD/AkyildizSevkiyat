@@ -27,11 +27,6 @@ namespace Akyildiz.Sevkiyat.Application.Projects.Commands.SyncProjects
 
         public async Task<int> Handle(SyncProjectsCommand request, CancellationToken cancellationToken)
         {
-            // Fetch projects that need sync:
-            // 1. Never synced (LastSyncedAt == null)
-            // 2. Synced > 24 hours ago (if not forced)
-            // 3. Or All if ForceAll is true
-            
             var query = _context.Projects.AsQueryable();
 
             if (!request.ForceAll)
@@ -41,69 +36,73 @@ namespace Akyildiz.Sevkiyat.Application.Projects.Commands.SyncProjects
             }
 
             var projectsToSync = await query.ToListAsync(cancellationToken);
-            _logger.LogInformation("Starting Sync. Found {ProjectCount} projects to sync. ForceAll={ForceAll}", projectsToSync.Count, request.ForceAll);
+            _logger.LogInformation("SyncProjects started: {Count} projects, ForceAll={ForceAll}", projectsToSync.Count, request.ForceAll);
 
-            int syncedCount = 0;
+            if (projectsToSync.Count == 0)
+                return 0;
 
             var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 
-            foreach (var project in projectsToSync)
+            // Paralel HTTP çağrıları — max 5 eş zamanlı (ISS-IP rate limit gözetilerek)
+            var semaphore = new SemaphoreSlim(5, 5);
+            var results = new System.Collections.Concurrent.ConcurrentDictionary<string, IssProjeDto?>();
+
+            var fetchTasks = projectsToSync.Select(async project =>
             {
+                await semaphore.WaitAsync(cancellationToken);
                 try
                 {
-                    // Use Code as ProjeKodu
                     var envelope = await _issClient.GetProjeAsync(project.Code, cancellationToken);
-                    var root = GetRefinedRoot(envelope.Root); 
-                    
-                    // DEBUG LOG Response
-                    string rawJson = root.ValueKind == JsonValueKind.Undefined ? "Undefined" : root.GetRawText();
-                    _logger.LogInformation("Project {ProjectCode} API Response: {RawJsonResponse}", project.Code, rawJson);
+                    var root = GetRefinedRoot(envelope.Root);
 
                     IssProjeDto? dto = null;
 
                     if (root.ValueKind == JsonValueKind.Object)
                     {
                         if (TryGetProperty(root, out var tableProj, "Table", "Proje", "Data", "Result"))
+                            dto = JsonSerializer.Deserialize<List<IssProjeDto>>(tableProj.GetRawText(), opts)?.FirstOrDefault();
+                        else
                         {
-                            var list = JsonSerializer.Deserialize<List<IssProjeDto>>(tableProj.GetRawText(), opts);
-                            dto = list?.FirstOrDefault();
+                            try { dto = JsonSerializer.Deserialize<IssProjeDto>(root.GetRawText(), opts); } catch { }
                         }
-                        else 
-                        {
-                             // Try direct deserialize if it matches schema
-                             try {
-                                dto = JsonSerializer.Deserialize<IssProjeDto>(root.GetRawText(), opts);
-                             } catch {}
-                        }
-                    } 
+                    }
                     else if (root.ValueKind == JsonValueKind.Array)
                     {
-                         var list = JsonSerializer.Deserialize<List<IssProjeDto>>(root.GetRawText(), opts);
-                         dto = list?.FirstOrDefault();
+                        dto = JsonSerializer.Deserialize<List<IssProjeDto>>(root.GetRawText(), opts)?.FirstOrDefault();
                     }
 
-                    if (dto != null)
-                    {
-                        project.Name = dto.ProjeAdi ?? project.Name;
-                        project.InstitutionCode = dto.KurumKodu ?? project.InstitutionCode;
-                        project.Address = dto.MalzemeTeslimAdresi ?? project.Address;
-                        project.LastSyncedAt = DateTime.UtcNow;
-                        syncedCount++;
-                    }
-                    else 
-                    {
-                        _logger.LogInformation("Project {ProjectCode} DTO IS NULL after parsing.", project.Code);
-                        project.LastSyncedAt = DateTime.UtcNow; 
-                    }
+                    results[project.Code ?? ""] = dto;
                 }
                 catch (Exception ex)
                 {
-                    // Log error but continue
-                    _logger.LogError(ex, "SYNC PROJECT ERROR ({ProjectCode})", project.Code);
+                    _logger.LogError(ex, "SyncProjects HTTP error for project {ProjectCode}", project.Code);
+                    results[project.Code ?? ""] = null;
                 }
+                finally
+                {
+                    semaphore.Release();
+                }
+            });
+
+            await Task.WhenAll(fetchTasks);
+
+            // EF Core context'i tek thread'de güncelle
+            int syncedCount = 0;
+            foreach (var project in projectsToSync)
+            {
+                var dto = results.GetValueOrDefault(project.Code ?? "");
+                if (dto != null)
+                {
+                    project.Name = dto.ProjeAdi ?? project.Name;
+                    project.InstitutionCode = dto.KurumKodu ?? project.InstitutionCode;
+                    project.Address = dto.MalzemeTeslimAdresi ?? project.Address;
+                    syncedCount++;
+                }
+                project.LastSyncedAt = DateTime.UtcNow;
             }
 
             await _context.SaveChangesAsync(cancellationToken);
+            _logger.LogInformation("SyncProjects completed: {SyncedCount}/{TotalCount} projects updated", syncedCount, projectsToSync.Count);
             return syncedCount;
         }
 
