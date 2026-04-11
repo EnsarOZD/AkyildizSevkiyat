@@ -31,7 +31,7 @@
 
     <!-- Filters -->
     <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-5">
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div>
           <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Tarih</label>
           <input type="date" v-model="filters.date" class="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm dark:bg-gray-800 dark:text-gray-100" />
@@ -55,7 +55,7 @@
             <option v-for="z in zones" :key="z.id" :value="z.id">{{ z.name }}</option>
           </select>
         </div>
-        <div class="col-span-2 sm:col-span-3 lg:col-span-1">
+        <div class="col-span-2 sm:col-span-4 xl:col-span-1">
           <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Arama</label>
           <div class="flex gap-2">
             <input
@@ -90,7 +90,7 @@
 
       <template v-else>
         <!-- Desktop table -->
-        <div class="hidden lg:block bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl overflow-x-auto">
+        <div class="hidden xl:block bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead class="bg-gray-50 dark:bg-gray-800">
               <tr>
@@ -226,7 +226,7 @@
         </div>
 
         <!-- Mobile / tablet cards -->
-        <div class="lg:hidden space-y-3">
+        <div class="xl:hidden space-y-3">
           <div
             v-for="shipment in sortedShipments"
             :key="'m-' + shipment.id"
