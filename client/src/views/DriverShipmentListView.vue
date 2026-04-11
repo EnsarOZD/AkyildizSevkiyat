@@ -1,6 +1,36 @@
 <template>
   <div class="space-y-4 pb-6">
 
+    <!-- Banner: Sefer başlatılmadı -->
+    <div
+      v-if="!loading && !activeSession"
+      class="rounded-xl bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700 p-4 flex items-center justify-between gap-3"
+    >
+      <div>
+        <p class="text-sm font-semibold text-yellow-800 dark:text-yellow-200">Seferinizi başlatmayı unutmayın!</p>
+        <p class="text-xs text-yellow-700 dark:text-yellow-300 mt-0.5">QR kod okutarak seferi başlatın.</p>
+      </div>
+      <router-link
+        to="/driver/qr-scan"
+        class="shrink-0 px-3 py-1.5 bg-yellow-500 hover:bg-yellow-600 text-white text-xs font-semibold rounded-lg"
+      >QR Okut</router-link>
+    </div>
+
+    <!-- Banner: Tüm teslimatlar tamamlandı, seferi kapat -->
+    <div
+      v-if="!loading && allDelivered && activeSession"
+      class="rounded-xl bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-400 dark:border-orange-600 p-4 flex items-center justify-between gap-3"
+    >
+      <div>
+        <p class="text-sm font-semibold text-orange-800 dark:text-orange-200">Tüm teslimatlar tamamlandı!</p>
+        <p class="text-xs text-orange-700 dark:text-orange-300 mt-0.5">Seferi kapatmak için aracınızın yanına giderek QR kodunu okutunuz.</p>
+      </div>
+      <router-link
+        to="/driver/qr-scan?mode=end"
+        class="shrink-0 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold rounded-lg"
+      >QR Okut</router-link>
+    </div>
+
     <!-- Loading -->
     <div v-if="loading" class="flex justify-center py-16">
       <div class="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
@@ -88,12 +118,14 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { TruckIcon, MapIcon } from '@heroicons/vue/24/outline';
 import driverService, { type DriverRouteDto, type DeliveryStopDto } from '../services/driverService';
+import driverSessionService, { type ActiveSessionDto } from '../services/driverSessionService';
 import StopCard from '../components/driver/StopCard.vue';
 
 const router    = useRouter();
 const routeData = ref<DriverRouteDto | null>(null);
 const loading   = ref(false);
 const error     = ref('');
+const activeSession = ref<ActiveSessionDto | null>(null);
 
 const activeStops    = computed(() => routeData.value?.stops.filter(s => !s.isFullyDelivered) ?? []);
 const completedStops = computed(() => routeData.value?.stops.filter(s => s.isFullyDelivered) ?? []);
@@ -101,12 +133,20 @@ const progressPct    = computed(() => {
   if (!routeData.value || routeData.value.totalStops === 0) return 0;
   return Math.round((routeData.value.completedStops / routeData.value.totalStops) * 100);
 });
+const allDelivered = computed(() =>
+  routeData.value !== null &&
+  routeData.value.totalStops > 0 &&
+  routeData.value.completedStops === routeData.value.totalStops
+);
 
 async function load() {
   loading.value = true;
   error.value   = '';
   try {
-    routeData.value = await driverService.getRoute();
+    [routeData.value, activeSession.value] = await Promise.all([
+      driverService.getRoute(),
+      driverSessionService.getActiveSession(),
+    ]);
   } catch {
     error.value = 'Rota yüklenemedi. Lütfen tekrar deneyin.';
   } finally {
