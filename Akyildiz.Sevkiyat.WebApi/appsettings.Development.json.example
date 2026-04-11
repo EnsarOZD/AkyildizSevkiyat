@@ -3,30 +3,30 @@
     "SevkiyatConnection": "Server=(localdb)\\mssqllocaldb;Database=AkyildizSevkiyat;Trusted_Connection=True;MultipleActiveResultSets=true"
   },
   "Jwt": {
-    "Key": "AkyildizSevkiyat_Local_Dev_Key_MustBeLongerThan32Chars!",
+    "Key": "YOUR_JWT_SECRET_KEY_MUST_BE_AT_LEAST_32_CHARS",
     "Issuer": "AkyildizSevkiyatInfo",
     "Audience": "AkyildizSevkiyatApp"
   },
   "ISSIp": {
-    "BaseUrl": "http://isstr-dmz1.tr.issworld.com:88/",
+    "BaseUrl": "http://YOUR_ISS_HOST:88/",
     "EndpointPath": "api/MethodExecuter/ExecuteMethod",
-    "KullaniciAdi": "akyildiz",
-    "Sifre": "1",
-    "BasicAuthUsername": "",
-    "BasicAuthPassword": "",
+    "KullaniciAdi": "YOUR_ISS_USERNAME",
+    "Sifre": "YOUR_ISS_PASSWORD",
+    "BasicAuthUsername": "YOUR_BASIC_AUTH_USERNAME",
+    "BasicAuthPassword": "YOUR_BASIC_AUTH_PASSWORD",
     "TimeoutSeconds": 60
   },
   "GoogleMaps": {
-    "ApiKey": ""
+    "ApiKey": "YOUR_GOOGLE_MAPS_API_KEY"
   },
   "Netsis": {
-    "BaseUrl": "http://192.168.1.200:7071",
-    "KullaniciAdi": "akyildiz",
-    "Sifre": "",
+    "BaseUrl": "http://YOUR_NETSIS_HOST:PORT",
+    "KullaniciAdi": "YOUR_NETSIS_USERNAME",
+    "Sifre": "YOUR_NETSIS_PASSWORD",
     "FirmaKodu": "0",
-    "DbName": "AKYILDIZ",
-    "DbUser": "TEMELSET",
-    "DbPassword": "",
+    "DbName": "YOUR_DB_NAME",
+    "DbUser": "YOUR_DB_USER",
+    "DbPassword": "YOUR_DB_PASSWORD",
     "DbType": "MsSql",
     "SubeKodu": "0",
     "IsletmeKodu": null,
@@ -40,7 +40,7 @@
     "TokenExpiryMinutes": 55
   },
   "SeedData": {
-    "AdminPassword": ""
+    "AdminPassword": "YOUR_ADMIN_PASSWORD_MIN_8_CHARS"
   },
   "Smtp": {
     "Host": "localhost",
@@ -48,7 +48,7 @@
     "EnableSsl": false,
     "UserName": "dev",
     "Password": "dev",
-    "FromAddress": "sevkiyat@akyildiz.local",
+    "FromAddress": "sevkiyat@yourdomain.local",
     "FromDisplayName": "Akyıldız Sevkiyat (DEV)"
   },
   "Cors": {
