@@ -37,8 +37,9 @@ namespace Akyildiz.Sevkiyat.Application.Projects.Queries.ExportProjectMappings
             worksheet.Cell(1, 1).Value = "Proje Kodu";
             worksheet.Cell(1, 2).Value = "Proje Adı";
             worksheet.Cell(1, 3).Value = "Bölge Adı";
-            worksheet.Cell(1, 4).Value = "Netsis Cari Kodu";
-            worksheet.Cell(1, 5).Value = "Teslimat Sırası";
+            worksheet.Cell(1, 4).Value = "Netsis Fatura Cari Kodu";
+            worksheet.Cell(1, 5).Value = "Netsis Teslim Cari Kodu";
+            worksheet.Cell(1, 6).Value = "Teslimat Sırası";
 
             // Data
             for (int i = 0; i < projects.Count; i++)
@@ -50,11 +51,12 @@ namespace Akyildiz.Sevkiyat.Application.Projects.Queries.ExportProjectMappings
                 worksheet.Cell(row, 2).Value = project.Name;
                 worksheet.Cell(row, 3).Value = project.Zone?.Name ?? "";
                 worksheet.Cell(row, 4).Value = project.NetsisCariKodu ?? "";
-                worksheet.Cell(row, 5).Value = project.DeliveryOrder;
+                worksheet.Cell(row, 5).Value = project.NetsisTeslimCariKodu ?? "";
+                worksheet.Cell(row, 6).Value = project.DeliveryOrder;
             }
 
             // Styling
-            var headerRange = worksheet.Range(1, 1, 1, 5);
+            var headerRange = worksheet.Range(1, 1, 1, 6);
             headerRange.Style.Font.Bold = true;
             headerRange.Style.Fill.BackgroundColor = XLColor.LightGray;
             worksheet.Columns().AdjustToContents();

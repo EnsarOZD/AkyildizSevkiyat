@@ -36,9 +36,9 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         }
 
         [HttpGet("dashboard-all")]
-        public async Task<ActionResult<List<Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetWarehouseDashboard.DashboardZoneDto>>> GetDashboardAll([FromQuery] DateTime date)
+        public async Task<ActionResult<List<Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetWarehouseDashboard.DashboardZoneDto>>> GetDashboardAll()
         {
-            return await _mediator.Send(new Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetWarehouseDashboard.GetWarehouseDashboardQuery(date));
+            return await _mediator.Send(new Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetWarehouseDashboard.GetWarehouseDashboardQuery());
         }
 
         [HttpPost("dashboard/sync")]

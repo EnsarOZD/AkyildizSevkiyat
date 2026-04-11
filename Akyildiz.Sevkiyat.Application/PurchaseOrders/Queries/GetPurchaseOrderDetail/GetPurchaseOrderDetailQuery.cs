@@ -12,6 +12,7 @@ namespace Akyildiz.Sevkiyat.Application.PurchaseOrders.Queries.GetPurchaseOrderD
         public Guid Id { get; set; }
         public Guid SupplierId { get; set; }
         public string SupplierNameSnapshot { get; set; } = string.Empty;
+        public string? SupplierEmail { get; set; }
         public string OrderNumber { get; set; } = string.Empty;
         public DateOnly OrderDate { get; set; }
         public DateOnly? ExpectedDeliveryDate { get; set; }
@@ -19,7 +20,10 @@ namespace Akyildiz.Sevkiyat.Application.PurchaseOrders.Queries.GetPurchaseOrderD
         public int StatusValue { get; set; }
         public string? Note { get; set; }
         public string? ExternalRef { get; set; }
+        public DateTime? NetsisTransferredAt { get; set; }
         public bool IsEditable { get; set; }
+        public string? DepotName { get; set; }
+        public string? DepotAddress { get; set; }
         public List<PurchaseOrderLineDetailDto> Lines { get; set; } = new();
     }
 
@@ -31,12 +35,14 @@ namespace Akyildiz.Sevkiyat.Application.PurchaseOrders.Queries.GetPurchaseOrderD
         public string StockName { get; set; } = string.Empty;
         public decimal OrderedQty { get; set; }
         public string Unit { get; set; } = string.Empty;
-        
+        public decimal? UnitPrice { get; set; }
+        public decimal? TotalPrice => UnitPrice.HasValue ? UnitPrice.Value * OrderedQty : null;
+
         // Computed
         public decimal ReceivedQty { get; set; }
         public decimal RemainingQty { get; set; }
         public decimal RejectedQty { get; set; }
-        
+
         public string? Note { get; set; }
     }
 
@@ -54,6 +60,7 @@ namespace Akyildiz.Sevkiyat.Application.PurchaseOrders.Queries.GetPurchaseOrderD
             var po = await _context.PurchaseOrders
                 .Include(p => p.Lines)
                 .ThenInclude(l => l.StockMaster)
+                .Include(p => p.Supplier)
                 .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
             
             if (po == null) throw new NotFoundException("PurchaseOrder", request.Id);
@@ -71,11 +78,14 @@ namespace Akyildiz.Sevkiyat.Application.PurchaseOrders.Queries.GetPurchaseOrderD
                 .Select(grl => new { grl.PurchaseOrderLineId, grl.ReceivedQty, grl.RejectedQty })
                 .ToListAsync(cancellationToken);
 
+            var depot = await _context.SystemSettings.FindAsync(new object[] { 1 }, cancellationToken);
+
             var dto = new PurchaseOrderDetailDto
             {
                 Id = po.Id,
                 SupplierId = po.SupplierId,
                 SupplierNameSnapshot = po.SupplierNameSnapshot,
+                SupplierEmail = po.Supplier?.Email,
                 OrderNumber = po.OrderNumber,
                 OrderDate = po.OrderDate,
                 ExpectedDeliveryDate = po.ExpectedDeliveryDate,
@@ -83,13 +93,16 @@ namespace Akyildiz.Sevkiyat.Application.PurchaseOrders.Queries.GetPurchaseOrderD
                 StatusValue = (int)po.Status,
                 Note = po.Note,
                 ExternalRef = po.ExternalRef,
+                NetsisTransferredAt = po.NetsisTransferredAt,
                 IsEditable = po.IsEditable,
-                Lines = po.Lines.Select(l => 
+                DepotName = depot?.DepotName,
+                DepotAddress = depot?.DepotAddress,
+                Lines = po.Lines.Select(l =>
                 {
                     var received = receiptLines
                         .Where(r => r.PurchaseOrderLineId == l.Id)
-                        .Sum(r => r.ReceivedQty); 
-                    
+                        .Sum(r => r.ReceivedQty);
+
                     var rejected = receiptLines
                          .Where(r => r.PurchaseOrderLineId == l.Id)
                          .Sum(r => r.RejectedQty ?? 0);
@@ -98,10 +111,11 @@ namespace Akyildiz.Sevkiyat.Application.PurchaseOrders.Queries.GetPurchaseOrderD
                     {
                         Id = l.Id,
                         StockMasterId = l.StockMasterId,
-                        StockCode = l.StockMaster.StockCode,
-                        StockName = l.StockMaster.StockName,
+                        StockCode = l.StockMaster?.StockCode ?? "N/A",
+                        StockName = l.StockMaster?.StockName ?? "Silinmiş Ürün",
                         OrderedQty = l.OrderedQty,
                         Unit = l.Unit.ToString(),
+                        UnitPrice = l.UnitPrice,
                         Note = l.Note,
                         ReceivedQty = received,
                         RejectedQty = rejected,

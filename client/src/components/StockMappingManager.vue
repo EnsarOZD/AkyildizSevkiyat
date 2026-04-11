@@ -55,46 +55,58 @@
           <div class="text-sm text-gray-600 dark:text-gray-400">{{ stock.externalName }}</div>
         </div>
 
-        <div class="flex gap-2 items-center">
-            <!-- Simple Local Stock Selector (Mocked list for now or search input) -->
-             <div class="relative w-48">
-                <StockCombobox
-                    placeholder="Search Code/Name"
-                    v-model="stock.selectedLocalId"
-                    @search="(val) => stock.currentSearch = val"
-                />
-             </div>
+        <div class="flex flex-wrap gap-2 items-center">
+            <!-- Local Stock Selector -->
+            <div class="relative w-48">
+              <StockCombobox
+                placeholder="Stok Ara (Kod/Ad)"
+                v-model="stock.selectedLocalId"
+                @search="(val) => stock.currentSearch = val"
+                @select="(item) => onStockSelected(stock, item)"
+              />
+            </div>
 
-             <!-- Add Button (Visible if no mapping and search term exists) -->
-             <button
-                v-if="!stock.selectedLocalId && stock.currentSearch && stock.currentSearch.length > 1"
-                @click="createAndSelectStock(stock)"
-                class="px-2 py-1 bg-teal-500 text-white rounded hover:bg-teal-600 text-xs flex items-center gap-1"
-                title="Yeni Stok Kartı Aç"
-             >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
-                Ekle
-             </button>
+            <!-- Add Button -->
+            <button
+              v-if="!stock.selectedLocalId && stock.currentSearch && stock.currentSearch.length > 1"
+              @click="createAndSelectStock(stock)"
+              class="px-2 py-1 bg-teal-500 text-white rounded hover:bg-teal-600 text-xs flex items-center gap-1"
+              title="Yeni Stok Kartı Aç"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
+              Ekle
+            </button>
 
-             <!-- DEBUG: Show selected ID -->
-             <span class="text-xs text-gray-400 dark:text-gray-600 font-mono w-6">{{ stock.selectedLocalId || '-' }}</span>
+            <!-- Netsis Stok Kodu — sadece yerel stok seçilince göster -->
+            <div v-if="stock.selectedLocalId" class="flex items-center gap-1">
+              <label class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Netsis Kodu:</label>
+              <input
+                v-model="stock.netsisStockCode"
+                type="text"
+                placeholder="Netsis stok kodu"
+                class="w-32 border rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100"
+                :class="!stock.netsisStockCode ? 'border-orange-400 dark:border-orange-500' : 'border-gray-300'"
+                title="Bu stok kartının Netsis'teki stok kodu. Netsis aktarımı için zorunludur."
+              />
+              <span v-if="!stock.netsisStockCode" class="text-xs text-orange-500" title="Netsis aktarımı için zorunlu">⚠</span>
+            </div>
 
-             <button
-                @click="mapStock(stock, false)"
-                class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                :disabled="!stock.selectedLocalId"
-             >
-                Eşleştir
-             </button>
+            <button
+              @click="mapStock(stock, false)"
+              class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="!stock.selectedLocalId"
+            >
+              Eşleştir
+            </button>
 
-             <button
-                @click="mapStock(stock, true)"
-                class="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600 text-sm"
-             >
-                Yoksay
-             </button>
+            <button
+              @click="mapStock(stock, true)"
+              class="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600 text-sm"
+            >
+              Yoksay
+            </button>
         </div>
       </div>
     </div>
@@ -117,6 +129,7 @@ interface UnmappedStock {
     externalName: string;
     selectedLocalId?: number;
     currentSearch?: string;
+    netsisStockCode?: string;  // StockMaster.NetsisStockCode — Netsis aktarımı için zorunlu
 }
 
 const unmappedStocks = ref<UnmappedStock[]>([]);
@@ -225,6 +238,10 @@ const uploadStockMappings = async (event: any) => {
     }
 };
 
+const onStockSelected = (stock: UnmappedStock, item: any) => {
+    stock.netsisStockCode = item.netsisStockCode ?? item.NetsisStockCode ?? '';
+};
+
 const createAndSelectStock = async (stock: UnmappedStock) => {
     if (!stock.currentSearch) return;
 
@@ -247,17 +264,24 @@ const createAndSelectStock = async (stock: UnmappedStock) => {
 
 const mapStock = async (stock: UnmappedStock, ignore: boolean) => {
     try {
+        // Netsis stok kodunu stok kartına kaydet (boş olmayan durumlarda)
+        if (!ignore && stock.selectedLocalId && stock.netsisStockCode !== undefined) {
+            await stockService.update(stock.selectedLocalId, {
+                id: stock.selectedLocalId,
+                netsisStockCode: stock.netsisStockCode || null
+            });
+        }
+
         await shipmentService.createMapping({
             mappingId: stock.mappingId,
             localStockId: ignore ? null : stock.selectedLocalId,
             ignore: ignore
         });
 
-        // Remove from list
         unmappedStocks.value = unmappedStocks.value.filter(s => s.mappingId !== stock.mappingId);
-        emit('mapped'); // Tell parent to refresh orders
+        emit('mapped');
     } catch (e) {
-        notificationStore.add("Mapping failed: " + (ApiErrorUtils.getErrorMessage(e) || 'Bilinmeyen hata'), 'error');
+        notificationStore.add("Eşleştirme başarısız: " + (ApiErrorUtils.getErrorMessage(e) || 'Bilinmeyen hata'), 'error');
         console.error(e);
     }
 };

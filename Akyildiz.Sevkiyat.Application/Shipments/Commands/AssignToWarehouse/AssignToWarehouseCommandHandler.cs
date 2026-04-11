@@ -66,6 +66,16 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.AssignToWarehouse
                     var stock = stocks.FirstOrDefault(s => s.Id == line.StockMasterId!.Value);
                     if (stock == null) continue;
 
+                    if (stock.AvailableQty < line.OrderedQty)
+                    {
+                        // Stok yetersiz — uyar, engelleme
+                        warnings.Add(
+                            $"{stock.StockCode} ({line.StockName}): " +
+                            $"Stok yetersiz. Mevcut: {stock.AvailableQty}, Talep: {line.OrderedQty}. " +
+                            "Rezervasyon yapılmadı.");
+                        continue;
+                    }
+
                     stock.Reserve(line.OrderedQty);
 
                     _context.StockTransactions.Add(new StockTransaction

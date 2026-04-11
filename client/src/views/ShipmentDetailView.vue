@@ -404,6 +404,14 @@
               class="w-full bg-orange-500 text-white py-2 px-4 rounded-lg hover:bg-orange-600 transition text-sm font-medium"
             >Araç İadesi Kaydet</button>
 
+            <!-- İptal / Taslağa Geri Çek — Araca yüklenmeden iptal -->
+            <button
+              v-if="['AssignedToWarehouse', 'Picking', 'ReadyForDispatch'].includes(shipment.status)"
+              v-role="['Admin', 'Manager', 'Warehouse']"
+              @click="openRevertModal"
+              class="w-full border border-red-400 text-red-600 dark:text-red-400 py-2 px-4 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition text-sm font-medium"
+            >Taslağa Geri Al / İptal</button>
+
             <p v-if="['ReturnedToWarehouse', 'Cancelled'].includes(shipment.status)" class="text-xs text-gray-400 text-center py-2">
               Bu sevkiyat için açık aksiyon yok.
             </p>

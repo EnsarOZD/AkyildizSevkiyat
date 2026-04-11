@@ -5,9 +5,30 @@
         <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 font-display">Mal Kabul için Sipariş Seç</h1>
         <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">İrsaliye oluşturmak istediğiniz siparişi ürün veya tedarikçi bazlı arayın.</p>
       </div>
-      <router-link to="/goods-receipts" class="text-sm text-blue-600 hover:text-blue-800 font-medium">
-        &larr; İrsaliye Listesine Dön
-      </router-link>
+      <div class="flex items-center gap-3">
+        <button
+          @click="openNoPOModal"
+          class="flex items-center gap-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 px-3 sm:px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-gray-50 dark:hover:bg-gray-750 transition-all"
+        >
+          <span>➕ <span class="hidden xs:inline">Siparişsiz Mal Kabul</span><span class="xs:hidden">Mal Kabul</span></span>
+        </button>
+        <router-link to="/goods-receipts" class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+          &larr; İrsaliye Listesine Dön
+        </router-link>
+      </div>
+    </div>
+
+    <!-- Multi-selection summary (Floating) -->
+    <div v-if="selectedPoIds.length > 0" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-bounce-subtle">
+       <button
+         @click="startMultiPO"
+         class="bg-blue-600 text-white px-8 py-3 rounded-full font-bold shadow-2xl hover:bg-blue-700 transition-all flex items-center gap-3 border-4 border-white dark:border-gray-900"
+       >
+         <span>📦 Seçili {{ selectedPoIds.length }} Siparişle Başlat</span>
+         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+           <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+         </svg>
+       </button>
     </div>
 
     <!-- Filters Section -->
@@ -96,7 +117,14 @@
          <div class="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div class="flex-1">
                <div class="flex items-center gap-3">
-                  <span class="text-blue-600 font-extrabold text-lg">{{ po.orderNumber }}</span>
+                  <input
+                    type="checkbox"
+                    :id="'po-' + po.purchaseOrderId"
+                    v-model="selectedPoIds"
+                    :value="po.purchaseOrderId"
+                    class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                  />
+                  <label :for="'po-' + po.purchaseOrderId" class="text-blue-600 font-extrabold text-lg cursor-pointer">{{ po.orderNumber }}</label>
                   <span v-if="po.receivedPercent >= 100" class="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Tamamlandı</span>
                   <span v-else-if="po.receivedPercent > 0" class="bg-yellow-100 text-yellow-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Kısmi</span>
                   <span v-else class="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Bekliyor</span>
@@ -158,8 +186,8 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                <div v-for="line in po.matchingLinesPreview" :key="line.purchaseOrderLineId" class="bg-white dark:bg-gray-900 p-3 rounded-lg border border-gray-100 dark:border-gray-700 shadow-xs">
                   <div class="flex justify-between items-start gap-2 mb-2">
-                     <div class="text-xs font-bold text-gray-900 dark:text-gray-100 leading-tight">{{ line.productName }}</div>
-                     <div class="text-[10px] font-mono bg-gray-100 dark:bg-gray-700 px-1 rounded text-gray-500 dark:text-gray-400">{{ line.stockCode }}</div>
+                     <div class="text-xs font-bold text-gray-900 dark:text-gray-100 leading-tight break-all">{{ line.productName }}</div>
+                     <div class="text-[10px] font-mono bg-gray-100 dark:bg-gray-700 px-1 rounded text-gray-500 dark:text-gray-400 flex-shrink-0">{{ line.stockCode }}</div>
                   </div>
                   <div class="flex justify-between items-end">
                      <div>
@@ -187,6 +215,8 @@
     v-if="showCreateGRModal"
     :isOpen="showCreateGRModal"
     :purchaseOrder="selectedPoDetail"
+    :purchaseOrderIds="multiPoIds"
+    :initialSupplierId="filters.supplierId"
     @close="showCreateGRModal = false"
     @saved="onGRSaved"
   />
@@ -207,6 +237,8 @@ const poList = ref<any[]>([]);
 const showCreateGRModal = ref(false);
 const selectedPoId = ref<string>('');
 const selectedPoDetail = ref<any>(null);
+const selectedPoIds = ref<string[]>([]);
+const multiPoIds = ref<string[]>([]);
 
 const filters = ref({
     supplierId: '',
@@ -253,11 +285,26 @@ const formatDate = (date: string) => {
 
 const selectPO = async (id: string) => {
     selectedPoId.value = id;
+    multiPoIds.value = [id];
     try {
         selectedPoDetail.value = await purchaseOrderService.getById(id);
     } catch {
         selectedPoDetail.value = null;
     }
+    showCreateGRModal.value = true;
+};
+
+const startMultiPO = () => {
+    if (selectedPoIds.value.length === 0) return;
+    multiPoIds.value = [...selectedPoIds.value];
+    selectedPoDetail.value = null; // We use IDs instead
+    showCreateGRModal.value = true;
+};
+
+const openNoPOModal = () => {
+    selectedPoId.value = '';
+    multiPoIds.value = [];
+    selectedPoDetail.value = null;
     showCreateGRModal.value = true;
 };
 
@@ -273,8 +320,8 @@ watch(() => filters.value.searchTerm, () => {
     }, 400);
 });
 
-// If supplier changes, fetch immediately
 watch(() => filters.value.supplierId, () => {
+    selectedPoIds.value = []; // Clear selection if supplier changes
     fetchPOs();
 });
 
@@ -286,5 +333,13 @@ onMounted(() => {
 <style scoped>
 .font-display {
   font-family: 'Outfit', 'Inter', sans-serif;
+}
+
+@keyframes bounce-subtle {
+  0%, 100% { transform: translate(-50%, 0); }
+  50% { transform: translate(-50%, -5px); }
+}
+.animate-bounce-subtle {
+  animation: bounce-subtle 2s infinite ease-in-out;
 }
 </style>

@@ -18,7 +18,7 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
         private readonly ILogger<GoogleMapsRouteOptimizationService> _logger;
         private readonly RouteOrderingService _ordering = new();
 
-        private const int MaxWaypoints = 25; // origin + non-via intermediates + destination
+        private const int MaxWaypoints = 50; // origin + non-via intermediates + destination (Google Routes API v2 limit: 25 intermediates)
 
         // Bridge waypoint coordinates.
         // YSS: köprü ortası — çalışıyor.
@@ -185,11 +185,8 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
                 bridgeNotice = ordered.BridgeNotice;
                 hasBridge = ordered.HasBridgeCrossing;
 
-                // Waypoint limit check — via waypoints (bridge) do NOT count against the limit
-                int totalWps = 1 + orderedStops.Count(s => s.Code != "__BRIDGE__") + 1;
-                if (request.ReturnToStart) totalWps += 1;
-                if (totalWps > MaxWaypoints)
-                    throw new DomainException($"Maksimum {MaxWaypoints} durak desteklenmektedir. Köprü geçişi 1 durak sayılır. Mevcut: {totalWps}");
+                // Note: Google Routes API v2 supports up to 25 intermediate waypoints.
+                // Via waypoints (bridge) do NOT count against the limit.
             }
             else
             {

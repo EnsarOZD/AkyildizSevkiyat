@@ -172,9 +172,9 @@
           <span>{{ isSaving ? 'KAYDEDİLİYOR...' : `KAYDET (${dirtyCount} kalem)` }}</span>
         </button>
 
-        <!-- TAMAMLA: nothing dirty, items exist -->
+        <!-- TAMAMLA: nothing dirty (items may be empty — no macro lines is valid) -->
         <button
-          v-else-if="!hasDirtyItems && items.length > 0"
+          v-else-if="!hasDirtyItems"
           @click="markCompleted"
           :disabled="isCompleting"
           class="flex-[2] py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold text-sm shadow transition-all flex items-center justify-center gap-2 disabled:opacity-50"

@@ -57,10 +57,11 @@ namespace Akyildiz.Sevkiyat.Application.Projects.Commands.ImportProjectMappings
 
                 foreach (DataRow row in table.Rows)
                 {
-                    var projectCode = row[0]?.ToString()?.Trim();
-                    var zoneName    = row[2]?.ToString()?.Trim();
-                    var cariKodu   = row[3]?.ToString()?.Trim();
-                    var rawOrder    = row[4]?.ToString()?.Trim();
+                    var projectCode      = row[0]?.ToString()?.Trim();
+                    var zoneName        = row[2]?.ToString()?.Trim();
+                    var cariKodu        = row[3]?.ToString()?.Trim();
+                    var teslimCariKodu  = table.Columns.Count > 4 ? row[4]?.ToString()?.Trim() : null;
+                    var rawOrder        = table.Columns.Count > 5 ? row[5]?.ToString()?.Trim() : null;
 
                     if (string.IsNullOrEmpty(projectCode))
                     {
@@ -97,6 +98,10 @@ namespace Akyildiz.Sevkiyat.Application.Projects.Commands.ImportProjectMappings
 
                     // Update Netsis Cari Kodu
                     project.NetsisCariKodu = string.IsNullOrEmpty(cariKodu) ? null : cariKodu;
+
+                    // Update Netsis Teslim Cari Kodu (column E — optional)
+                    if (teslimCariKodu is not null)
+                        project.NetsisTeslimCariKodu = string.IsNullOrEmpty(teslimCariKodu) ? null : teslimCariKodu;
 
                     // Update Delivery Order
                     if (!string.IsNullOrEmpty(rawOrder) && int.TryParse(rawOrder, out int deliveryOrder))

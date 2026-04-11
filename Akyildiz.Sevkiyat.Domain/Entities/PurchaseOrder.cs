@@ -41,8 +41,10 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
         public StockMaster StockMaster { get; set; } = null!;
 
         public decimal OrderedQty { get; set; }
-        public StockUnit Unit { get; set; } = StockUnit.Adet; 
-        
+        public StockUnit Unit { get; set; } = StockUnit.Adet;
+        [Column(TypeName = "decimal(18,4)")]
+        public decimal? UnitPrice { get; set; }
+
         public string? Note { get; set; }
     }
 }

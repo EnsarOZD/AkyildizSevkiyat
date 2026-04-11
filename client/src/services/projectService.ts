@@ -48,8 +48,8 @@ const projectService = {
     await apiClient.delete(`/zones/${id}`);
   },
 
-  async updateNetsisCariKodu(projectId: number, netsisCariKodu: string | null): Promise<void> {
-    await apiClient.patch(`/projects/${projectId}/netsis-cari-kodu`, { netsisCariKodu });
+  async updateNetsisCariKodu(projectId: number, netsisCariKodu: string | null, netsisTeslimCariKodu?: string | null): Promise<void> {
+    await apiClient.patch(`/projects/${projectId}/netsis-cari-kodu`, { netsisCariKodu, netsisTeslimCariKodu });
   },
 
   async syncProjects(params: { forceAll: boolean } = { forceAll: true }): Promise<{ count: number }> {

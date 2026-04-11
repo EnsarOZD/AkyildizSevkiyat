@@ -1,108 +1,134 @@
 <template>
-  <div v-if="isOpen" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-      <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" @click="close"></div>
-      <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-      <!-- Wide Modal -->
-      <div class="inline-block align-bottom bg-white dark:bg-gray-900 rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all w-full mx-4 sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full sm:p-6">
-        <div>
-          <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100 border-b dark:border-gray-700 pb-2">Yeni Satınalma Siparişi</h3>
-
-          <!-- Header Form -->
-          <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Tedarikçi <span class="text-red-500">*</span></label>
-                <div class="mt-1">
-                    <SupplierSelect v-model="form.supplierId" />
-                </div>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Sipariş Tarihi <span class="text-red-500">*</span></label>
-                <input v-model="form.orderDate" type="date" class="mt-1 bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Termin Tarihi</label>
-              <input v-model="form.expectedDeliveryDate" type="date" class="mt-1 bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-            </div>
+  <BaseModal :show="isOpen" title="Yeni Satınalma Siparişi" maxWidth="4xl" @close="close">
+    <div class="space-y-6">
+      <!-- Section: Header Info -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border border-gray-100 dark:border-gray-800">
+        <div class="space-y-4">
+          <div>
+            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Tedarikçi Seçimi</label>
+            <SupplierSelect v-model="form.supplierId" />
           </div>
-          <div class="mt-4">
-             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Not / Açıklama</label>
-             <input v-model="form.note" type="text" class="mt-1 bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Sipariş notları...">
-          </div>
-
-          <!-- Lines Grid -->
-          <div class="mt-6">
-            <div class="flex justify-between items-center mb-2">
-                <h4 class="text-md font-medium text-gray-800 dark:text-gray-200">Sipariş Kalemleri</h4>
-                <button @click="addLine" type="button" class="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
-                    + Kalem Ekle
-                </button>
-            </div>
-
-            <!-- Changed overflow-hidden to overflow-visible to prevent clipping dropdowns -->
-            <div class="border dark:border-gray-700 rounded-md overflow-visible bg-gray-50 dark:bg-gray-800" style="min-height: 400px;">
-                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                    <thead class="bg-gray-100 dark:bg-gray-800">
-                        <tr>
-                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-[120px]">Stok Kodu / Arama <span class="text-red-500">*</span></th>
-                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">Stok Adı</th>
-                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Miktar <span class="text-red-500">*</span></th>
-                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden sm:table-cell">Birim</th>
-                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">Not</th>
-                            <th scope="col" class="relative px-4 py-3">
-                                <span class="sr-only">Sil</span>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-                        <tr v-for="(line, index) in form.lines" :key="line.tempId || index">
-                            <td class="px-4 py-2">
-                                <StockCombobox v-model="line.stockMasterId" @select="onStockSelect(line, $event)" />
-                            </td>
-                            <td class="px-4 py-2 hidden lg:table-cell">
-                                <span class="text-sm text-gray-900 dark:text-gray-100">{{ line.stockName || '-' }}</span>
-                            </td>
-                            <td class="px-4 py-2">
-                                <input v-model.number="line.orderedQty" type="number" step="0.01" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 rounded-md" placeholder="0.00">
-                            </td>
-                            <td class="px-4 py-2 hidden sm:table-cell">
-                                <input v-model="line.unit" disabled type="text" class="bg-gray-100 dark:bg-gray-700 dark:border-gray-700 dark:text-gray-100 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
-                            </td>
-                            <td class="px-4 py-2 hidden lg:table-cell">
-                                <input v-model="line.note" type="text" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 rounded-md">
-                            </td>
-                            <td class="px-4 py-2 text-right">
-                                <button @click="removeLine(index)" class="text-red-600 hover:text-red-900">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 000-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                                    </svg>
-                                </button>
-                            </td>
-                        </tr>
-                        <tr v-if="form.lines.length === 0">
-                            <td colspan="5" class="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
-                                Henüz kalem eklenmedi. Lütfen en az bir kalem ekleyin.
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
+          <div>
+            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Sipariş Notu</label>
+            <input 
+              v-model="form.note" 
+              type="text" 
+              placeholder="Örn: Acil teslimat ricası..."
+              class="w-full border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none" 
+            />
           </div>
         </div>
 
-        <div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
-          <button @click="save" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:col-start-2 sm:text-sm">
-            Kaydet
-          </button>
-          <button @click="close" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-700 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:col-start-1 sm:text-sm">
-            İptal
-          </button>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Sipariş Tarihi</label>
+            <input 
+              v-model="form.orderDate" 
+              type="date" 
+              class="w-full border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none font-bold" 
+            />
+          </div>
+          <div>
+            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Termin Tarihi</label>
+            <input 
+              v-model="form.expectedDeliveryDate" 
+              type="date" 
+              class="w-full border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-indigo-600 dark:text-indigo-400" 
+            />
+          </div>
+          <div class="col-span-2 flex items-center justify-center p-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl text-gray-400">
+             <div class="text-center">
+                <p class="text-[10px] font-black uppercase tracking-widest">Sipariş Durumu</p>
+                <p class="text-sm font-bold text-gray-500">TASLAK</p>
+             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Lines -->
+      <div class="space-y-4">
+        <div class="flex items-center justify-between px-2">
+           <h4 class="text-sm font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+              Sipariş Kalemleri
+              <span class="bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full text-[10px] font-black">{{ form.lines.length }}</span>
+           </h4>
+           <button 
+             @click="addLine" 
+             type="button" 
+             class="px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-100 transition-all flex items-center gap-2"
+           >
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+              Yeni Satır
+           </button>
+        </div>
+
+        <div class="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 overflow-hidden shadow-sm">
+          <table class="min-w-full divide-y divide-gray-100 dark:divide-gray-800">
+             <thead class="bg-gray-50/50 dark:bg-gray-800/50">
+                <tr>
+                   <th class="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Ürün Ara</th>
+                   <th class="px-4 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest">Miktar</th>
+                   <th class="px-4 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Birim</th>
+                   <th class="px-6 py-4"></th>
+                </tr>
+             </thead>
+             <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                <tr v-for="(line, index) in form.lines" :key="line.tempId" class="group transition-colors hover:bg-gray-50/50 dark:hover:bg-gray-800/30">
+                   <td class="px-6 py-4 min-w-[280px]">
+                      <StockCombobox v-model="line.stockMasterId" @select="onStockSelect(line, $event)" />
+                   </td>
+                   <td class="px-4 py-4">
+                      <input 
+                        v-model.number="line.orderedQty" 
+                        type="number" 
+                        step="0.01" 
+                        class="w-full text-center border-gray-100 dark:border-gray-800 rounded-xl px-2 py-2 text-sm dark:bg-gray-800 font-black focus:ring-2 focus:ring-indigo-500 outline-none" 
+                        placeholder="0.00"
+                      />
+                   </td>
+                   <td class="px-4 py-4">
+                      <span class="text-xs font-black text-gray-400 uppercase tracking-widest bg-gray-50 dark:bg-gray-800 px-3 py-1.5 rounded-lg">{{ line.unit || '-' }}</span>
+                   </td>
+                   <td class="px-6 py-4 text-right">
+                      <button 
+                        @click="removeLine(index)" 
+                        class="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"
+                      >
+                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      </button>
+                   </td>
+                </tr>
+                <tr v-if="form.lines.length === 0">
+                   <td colspan="4" class="px-6 py-12 text-center text-sm font-bold text-gray-400 italic">Henüz kalem eklemediniz.</td>
+                </tr>
+             </tbody>
+          </table>
         </div>
       </div>
     </div>
-  </div>
+
+    <template #footer>
+      <div class="flex items-center justify-between w-full">
+         <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest hidden sm:block">
+            * Yıldızlı alanlar zorunludur
+         </p>
+         <div class="flex gap-3 w-full sm:w-auto">
+            <button 
+              @click="close" 
+              class="flex-1 sm:flex-none px-6 py-3 text-xs font-black text-gray-500 uppercase tracking-widest hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all"
+            >
+              Vazgeç
+            </button>
+            <button 
+              @click="save" 
+              class="flex-1 sm:flex-none px-10 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-lg shadow-indigo-100 dark:shadow-none transition-all hover:scale-[1.02] active:scale-95"
+            >
+              Siparişi Kaydet
+            </button>
+         </div>
+      </div>
+    </template>
+  </BaseModal>
 </template>
 
 <script setup lang="ts">
@@ -110,6 +136,7 @@ import { reactive } from 'vue';
 import purchaseOrderService from '../services/purchaseOrderService';
 import SupplierSelect from './SupplierSelect.vue';
 import StockCombobox from './StockCombobox.vue';
+import BaseModal from './BaseModal.vue';
 import { useNotificationStore } from '../stores/notification';
 import { ApiErrorUtils } from '../utils/apiError';
 
@@ -124,7 +151,7 @@ const notificationStore = useNotificationStore();
 
 const today = new Date().toISOString().split('T')[0];
 
-const generateId = () => Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+const generateId = () => Math.random().toString(36).substring(2, 15);
 
 interface LineItem {
     tempId: string;
@@ -145,7 +172,6 @@ const form = reactive({
     ]
 });
 
-// Setup default form state
 const resetForm = () => {
     form.supplierId = '';
     form.orderDate = new Date().toISOString().split('T')[0];
@@ -179,32 +205,22 @@ const onStockSelect = (line: LineItem, stock: any) => {
 };
 
 const save = async () => {
-    // Validation
     if (!form.supplierId) {
         notificationStore.add('Lütfen bir tedarikçi seçin.', 'warning');
         return;
     }
-    if (!form.orderDate) {
-        notificationStore.add('Sipariş tarihi zorunludur.', 'warning');
-        return;
-    }
-    if (form.lines.length === 0) {
-        notificationStore.add('En az bir kalem eklemelisiniz.', 'warning');
-        return;
-    }
-
-    // Filter out invalid lines
+    
     const validLines = form.lines.filter(l => l.stockMasterId > 0 && l.orderedQty > 0);
 
     if (validLines.length === 0) {
-        notificationStore.add('Lütfen kalemlere stok ve miktar giriniz.', 'warning');
+        notificationStore.add('Lütfen geçerli kalemler (stok ve miktar) giriniz.', 'warning');
         return;
     }
 
     try {
         const payload = {
             supplierId: form.supplierId,
-            orderDate: form.orderDate,
+            orderDate: form.orderDate as string,
             expectedDeliveryDate: form.expectedDeliveryDate || undefined,
             note: form.note,
             lines: validLines.map(l => ({
@@ -215,13 +231,10 @@ const save = async () => {
         };
 
         await purchaseOrderService.create(payload);
-
         notificationStore.add('Sipariş başarıyla oluşturuldu.', 'success');
         emit('saved');
         close();
-
     } catch (error) {
-        console.error(error);
         notificationStore.add(ApiErrorUtils.getErrorMessage(error) || 'Sipariş oluşturulurken hata oluştu.', 'error');
     }
 };

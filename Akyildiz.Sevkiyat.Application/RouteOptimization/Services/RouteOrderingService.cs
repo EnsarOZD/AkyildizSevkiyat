@@ -11,6 +11,7 @@ namespace Akyildiz.Sevkiyat.Application.RouteOptimization.Services
     public class RouteOrderingService
     {
         private const double BosphorusLongitude = 29.05;
+        private const double MaxWaitMinutes      = 60.0;   // erken varış toleransı
         private const double AvgSpeedKmh        = 50.0;   // şehir içi ortalama
         private const double DwellMinutes        = 15.0;   // durak bekleme süresi
         private const double BridgeCrossingMin   = 10.0;   // köprü geçiş tahmini
@@ -108,7 +109,7 @@ namespace Akyildiz.Sevkiyat.Application.RouteOptimization.Services
             // 5. İlk taraf: sırala + pencere düzelt
             var sortedFirst = SortSide(firstSideStops, startLatitude, startLongitude, null);
             var (fixedFirst, warningsFirst) = ApplyWindowFixes(
-                sortedFirst, startLat, startLon, effectiveDeparture);
+                sortedFirst, startLat, startLon, effectiveDeparture, returnToStart);
 
             // 6. İkinci taraf için başlangıç zamanını tahmin et
             double firstEndMin = ComputeCumulativeMinutes(
@@ -131,7 +132,7 @@ namespace Akyildiz.Sevkiyat.Application.RouteOptimization.Services
             double secStartLat = secondRefLat ?? GetSideCenter(firstSideStops)?.Lat ?? startLat;
             double secStartLon = secondRefLon ?? GetSideCenter(firstSideStops)?.Lon ?? startLon;
             var (fixedSecond, warningsSecond) = ApplyWindowFixes(
-                sortedSecond, secStartLat, secStartLon, secondDeparture);
+                sortedSecond, secStartLat, secStartLon, secondDeparture, returnToStart);
 
             // 8. Sonuç: birinci taraf → [köprü] → ikinci taraf → [geri dönüş köprüsü]
             var result = new List<StopInfo>(fixedFirst.Count + fixedSecond.Count + 2);
@@ -158,18 +159,19 @@ namespace Akyildiz.Sevkiyat.Application.RouteOptimization.Services
         private static (List<StopInfo> Fixed, List<PreliminaryWarning> Warnings) ApplyWindowFixes(
             List<StopInfo> stops,
             double startLat, double startLon,
-            TimeOnly departureTime)
+            TimeOnly departureTime,
+            bool returnToStart)
         {
             if (stops.Count == 0)
                 return (stops, []);
 
-            // Adım 1: İlk sıralamaya göre tahmini varışları hesapla
-            var arrivals = EstimateArrivals(stops, startLat, startLon, departureTime);
+            // Adım 1: İlk sıralamaya göre tahmini varışları hesapla (beklemesiz ham varış)
+            var rawArrivals = EstimateArrivals(stops, startLat, startLon, departureTime, includeWait: false);
 
             // Adım 2: İhlalleri sınıflandır
-            var earlyStops  = new List<StopInfo>();   // erken → sona
-            var lateStops   = new List<StopInfo>();   // geç   → öne
-            var normalStops = new List<StopInfo>();
+            var excessiveEarlyStops = new List<StopInfo>();   // çok erken → sona
+            var lateStops           = new List<StopInfo>();   // geç → öne
+            var normalStops         = new List<StopInfo>();
 
             for (int i = 0; i < stops.Count; i++)
             {
@@ -179,22 +181,39 @@ namespace Akyildiz.Sevkiyat.Application.RouteOptimization.Services
                     normalStops.Add(stop);
                     continue;
                 }
-                if (arrivals[i] < stop.DeliveryWindowStart.Value)
-                    earlyStops.Add(stop);
-                else if (arrivals[i] > stop.DeliveryWindowEnd.Value)
+
+                var arrival = rawArrivals[i];
+                if (arrival < stop.DeliveryWindowStart.Value)
+                {
+                    // Erken varış: Tolerans içindeyse (beklenebilirse) normal kabul et, değilse sona at
+                    var waitTime = (stop.DeliveryWindowStart.Value - arrival).TotalMinutes;
+                    
+                    // returnToStart senaryosunda PİVOT durak (ilk durak) daha fazla toleransa sahip (farthest-first stratejisini korumak için)
+                    double tolerance = (returnToStart && i == 0) ? MaxWaitMinutes * 2 : MaxWaitMinutes;
+
+                    if (waitTime <= tolerance)
+                        normalStops.Add(stop);
+                    else
+                        excessiveEarlyStops.Add(stop);
+                }
+                else if (arrival > stop.DeliveryWindowEnd.Value)
+                {
                     lateStops.Add(stop);
+                }
                 else
+                {
                     normalStops.Add(stop);
+                }
             }
 
-            // Adım 3: Yeni sıra: geç öne + normal + erken sona
+            // Adım 3: Yeni sıra: geç öne + normal (bekleyenler dahil) + çok erken sona
             var reordered = new List<StopInfo>(stops.Count);
             reordered.AddRange(lateStops);
             reordered.AddRange(normalStops);
-            reordered.AddRange(earlyStops);
+            reordered.AddRange(excessiveEarlyStops);
 
-            // Adım 4: Yeni sıralamaya göre varışları yeniden hesapla
-            var finalArrivals = EstimateArrivals(reordered, startLat, startLon, departureTime);
+            // Adım 4: Yeni sıralamaya göre varışları yeniden hesapla (beklemeli gerçek varış)
+            var finalArrivals = EstimateArrivals(reordered, startLat, startLon, departureTime, includeWait: true);
 
             // Adım 5: Ön uyarıları üret
             var warnings = new List<PreliminaryWarning>();
@@ -222,7 +241,7 @@ namespace Akyildiz.Sevkiyat.Application.RouteOptimization.Services
 
         /// <summary>Haversine + 50 km/h + 15 dk bekleme ile tahmini varış listesi.</summary>
         private static List<TimeOnly> EstimateArrivals(
-            List<StopInfo> stops, double startLat, double startLon, TimeOnly departure)
+            List<StopInfo> stops, double startLat, double startLon, TimeOnly departure, bool includeWait = true)
         {
             var arrivals = new List<TimeOnly>(stops.Count);
             double curLat = startLat, curLon = startLon;
@@ -233,7 +252,16 @@ namespace Akyildiz.Sevkiyat.Application.RouteOptimization.Services
                 double lat = stop.Latitude  ?? curLat;
                 double lon = stop.Longitude ?? curLon;
                 minutes += (Haversine(curLat, curLon, lat, lon) / AvgSpeedKmh) * 60.0;
-                arrivals.Add(TimeOnly.FromTimeSpan(TimeSpan.FromMinutes(minutes % (24 * 60))));
+                
+                var arrival = TimeOnly.FromTimeSpan(TimeSpan.FromMinutes(minutes % (24 * 60)));
+                arrivals.Add(arrival);
+
+                // Eğer bekleme dahilse ve erkense, zamanı pencere başına çek
+                if (includeWait && stop.DeliveryWindowStart.HasValue && arrival < stop.DeliveryWindowStart.Value)
+                {
+                    minutes = stop.DeliveryWindowStart.Value.Hour * 60.0 + stop.DeliveryWindowStart.Value.Minute;
+                }
+
                 minutes += DwellMinutes;
                 curLat = lat; curLon = lon;
             }
@@ -251,8 +279,16 @@ namespace Akyildiz.Sevkiyat.Application.RouteOptimization.Services
             {
                 double lat = stop.Latitude  ?? curLat;
                 double lon = stop.Longitude ?? curLon;
-                minutes += (Haversine(curLat, curLon, lat, lon) / AvgSpeedKmh) * 60.0
-                           + DwellMinutes;
+                minutes += (Haversine(curLat, curLon, lat, lon) / AvgSpeedKmh) * 60.0;
+
+                // Beklemeyi hesaba kat
+                if (stop.DeliveryWindowStart.HasValue)
+                {
+                    double windowStartMin = stop.DeliveryWindowStart.Value.Hour * 60.0 + stop.DeliveryWindowStart.Value.Minute;
+                    if (minutes < windowStartMin) minutes = windowStartMin;
+                }
+
+                minutes += DwellMinutes;
                 curLat = lat; curLon = lon;
             }
             return minutes;

@@ -48,7 +48,7 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetWarehouseDashboard
         bool IsAddedLater
     );
 
-    public record GetWarehouseDashboardQuery(DateTime Date) : IRequest<List<DashboardZoneDto>>;
+    public record GetWarehouseDashboardQuery : IRequest<List<DashboardZoneDto>>;
 
     public class GetWarehouseDashboardQueryHandler : IRequestHandler<GetWarehouseDashboardQuery, List<DashboardZoneDto>>
     {
@@ -61,14 +61,12 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetWarehouseDashboard
 
         public async Task<List<DashboardZoneDto>> Handle(GetWarehouseDashboardQuery request, CancellationToken cancellationToken)
         {
-            var date = request.Date.Date;
-
-            // 1. Fetch ALL Existing ZonePreparations for this Date
+            // Tüm aktif (Dispatched olmayan) zone hazırlıklarını getir — tarih filtresiz
             var existingPreps = await _context.ZonePreparations
                 .Include(z => z.Zone)
                 .Include(z => z.Projects)
                     .ThenInclude(p => p.Project)
-                .Where(z => z.DeliveryDate == date)
+                .Where(z => z.Status != ZonePreparationStatus.Dispatched)
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
 

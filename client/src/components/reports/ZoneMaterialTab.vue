@@ -1,9 +1,9 @@
 <template>
-  <div class="p-6 space-y-6">
+  <div class="space-y-6">
     <!-- Header -->
     <div class="flex justify-between items-center bg-white dark:bg-gray-900 p-6 rounded-lg shadow-sm border dark:border-gray-700">
       <div>
-        <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Bölge Malzeme Raporu</h1>
+        <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200">Bölge Malzeme Raporu</h3>
         <p class="text-gray-500 dark:text-gray-400 text-sm">Araca atanan sevkiyatların bölge bazlı malzeme özetleri.</p>
       </div>
       <div class="flex gap-2">
@@ -62,7 +62,7 @@
       </div>
     </div>
 
-    <!-- Stats summary (Optional) -->
+    <!-- Stats summary -->
     <div v-if="reportData.length > 0" class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="bg-blue-50 border border-blue-100 p-4 rounded-lg">
             <p class="text-blue-600 text-xs font-bold uppercase">Toplam Kalem</p>
@@ -146,10 +146,10 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import projectService from '../services/projectService';
-import reportService from '../services/reportService';
-import { ApiErrorUtils } from '../utils/apiError';
-import { useNotificationStore } from '../stores/notification';
+import projectService from '../../services/projectService';
+import reportService from '../../services/reportService';
+import { ApiErrorUtils } from '../../utils/apiError';
+import { useNotificationStore } from '../../stores/notification';
 
 const notificationStore = useNotificationStore();
 

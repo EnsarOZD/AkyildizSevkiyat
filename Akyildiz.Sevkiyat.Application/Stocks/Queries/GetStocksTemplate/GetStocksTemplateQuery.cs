@@ -26,13 +26,17 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Queries.GetStocksTemplate
             ws.Cell(1, 6).Value = "Tip";
             ws.Cell(1, 7).Value = "Durum";
             ws.Cell(1, 8).Value = "Kategori";
+            ws.Cell(1, 9).Value = "Netsis Stok Kodu";
 
             // Header style
-            var header = ws.Range(1, 1, 1, 8);
+            var header = ws.Range(1, 1, 1, 9);
             header.Style.Font.Bold = true;
             header.Style.Fill.BackgroundColor = XLColor.FromHtml("#1E3A5F");
             header.Style.Font.FontColor = XLColor.White;
             header.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            // Netsis sütunu turuncu — Netsis aktarımı için gerekli
+            ws.Cell(1, 9).Style.Fill.BackgroundColor = XLColor.Orange;
+            ws.Cell(1, 9).Style.Font.FontColor = XLColor.Black;
 
             // Example rows
             ws.Cell(2, 1).Value = "STK-001";
@@ -43,6 +47,7 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Queries.GetStocksTemplate
             ws.Cell(2, 6).Value = "Micro";
             ws.Cell(2, 7).Value = "Aktif";
             ws.Cell(2, 8).Value = "Sarf";
+            ws.Cell(2, 9).Value = "1000106";
 
             ws.Cell(3, 1).Value = "STK-002";
             ws.Cell(3, 2).Value = "İkinci Stok Örneği";
@@ -52,9 +57,10 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Queries.GetStocksTemplate
             ws.Cell(3, 6).Value = "Macro";
             ws.Cell(3, 7).Value = "Aktif";
             ws.Cell(3, 8).Value = "Gida";
+            ws.Cell(3, 9).Value = "";
 
             // Example row style (light)
-            ws.Range(2, 1, 3, 8).Style.Fill.BackgroundColor = XLColor.FromHtml("#EFF6FF");
+            ws.Range(2, 1, 3, 9).Style.Fill.BackgroundColor = XLColor.FromHtml("#EFF6FF");
 
             // Notes sheet
             var notes = workbook.Worksheets.Add("Açıklamalar");
@@ -67,14 +73,15 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Queries.GetStocksTemplate
 
             var noteData = new[]
             {
-                ("Kod",      "Evet", "Herhangi bir metin (boş olamaz)"),
-                ("Ad",       "Evet", "Herhangi bir metin (boş olamaz)"),
-                ("Birim",    "Hayır","Adet, Kg, Paket, Koli, Litre, Metre, Metrekare, Set, Teneke, Diger"),
-                ("Fiyat",    "Hayır","Ondalık sayı (örn: 10.50 veya 10,50)"),
-                ("KDV",      "Hayır","0, 1, 10, 20"),
-                ("Tip",      "Hayır","Micro, Macro (boş bırakılırsa Unassigned)"),
-                ("Durum",    "Hayır","Aktif, Pasif (boş = Aktif)"),
-                ("Kategori", "Hayır","Gida, Sarf, Kiyafet, Kirtasiye, Diger (boş = Tanımsız)"),
+                ("Kod",              "Evet",  "Herhangi bir metin (boş olamaz)"),
+                ("Ad",               "Evet",  "Herhangi bir metin (boş olamaz)"),
+                ("Birim",            "Hayır", "Adet, Kg, Paket, Koli, Litre, Metre, Metrekare, Set, Teneke, Diger"),
+                ("Fiyat",            "Hayır", "Ondalık sayı (örn: 10.50 veya 10,50)"),
+                ("KDV",              "Hayır", "0, 1, 10, 20"),
+                ("Tip",              "Hayır", "Micro, Macro (boş bırakılırsa Unassigned)"),
+                ("Durum",            "Hayır", "Aktif, Pasif (boş = Aktif)"),
+                ("Kategori",         "Hayır", "Gida, Sarf, Kiyafet, Kirtasiye, Diger (boş = Tanımsız)"),
+                ("Netsis Stok Kodu", "Hayır", "Netsis'teki stok kodu. Netsis aktarımı için gereklidir. Boş bırakılırsa mevcut değer korunur."),
             };
 
             for (int i = 0; i < noteData.Length; i++)

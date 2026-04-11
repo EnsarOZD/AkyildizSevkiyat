@@ -16,11 +16,9 @@ namespace Akyildiz.Sevkiyat.Infrastructure.ExternalServices.IssIp
         [Required]
         public string Sifre { get; init; } = default!;
         
-        [Required]
-        public string BasicAuthUsername { get; init; } = default!;
+        public string? BasicAuthUsername { get; init; }
 
-        [Required]
-        public string BasicAuthPassword { get; init; } = default!;
+        public string? BasicAuthPassword { get; init; }
         public int TimeoutSeconds { get; init; } = 30;
     }
 }

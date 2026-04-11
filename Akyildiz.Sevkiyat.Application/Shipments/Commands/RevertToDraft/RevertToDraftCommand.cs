@@ -37,9 +37,18 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.RevertToDraft
 
             if (shipment == null) throw new NotFoundException("Shipment", request.ShipmentId);
 
-            // Allow revert only from AssignedToWarehouse or Picking
-            if (shipment.Status != ShipmentStatus.AssignedToWarehouse && shipment.Status != ShipmentStatus.Picking)
-                throw new DomainException("Only shipments in 'AssignedToWarehouse' or 'Picking' status can be reverted to Draft.");
+            // Araca yüklenmeden (AssignedToVehicle öncesi) iptal izin verilir
+            var cancellableStatuses = new[]
+            {
+                ShipmentStatus.AssignedToWarehouse,
+                ShipmentStatus.Picking,
+                ShipmentStatus.ReadyForDispatch,
+            };
+
+            if (!cancellableStatuses.Contains(shipment.Status))
+                throw new DomainException(
+                    $"Bu sevkiyat iptal edilemez. Mevcut durum: {shipment.Status}. " +
+                    "İptal yalnızca Depoya Atandı, Hazırlanıyor veya Hazır durumlarında yapılabilir.");
 
             var previousStatus = shipment.Status;
 

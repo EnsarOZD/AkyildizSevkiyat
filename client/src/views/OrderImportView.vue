@@ -1,203 +1,246 @@
 <template>
-  <div class="p-6 space-y-6">
-    <div class="flex justify-between items-center">
+  <div class="p-4 sm:p-6 space-y-4 sm:space-y-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
       <div>
-        <h1 class="text-2xl font-bold mb-2 dark:text-gray-100">Sipariş Aktarımı (ISS-IP)</h1>
-        <p class="text-gray-600 dark:text-gray-400">Siparişleri içeri aktarın ve stok eşleşmelerini yönetin.</p>
+        <h1 class="text-xl sm:text-2xl font-bold dark:text-gray-100">Sipariş Aktarımı (ISS-IP)</h1>
+        <p class="text-sm text-gray-600 dark:text-gray-400">Siparişleri içeri aktarın ve stok eşleşmelerini yönetin.</p>
       </div>
     </div>
 
     <!-- Giysi/Tekstil Operasyonları Uyarısı -->
-    <div class="rounded-lg bg-amber-50 border border-amber-200 p-4 mb-4 flex items-start gap-3">
+    <div class="rounded-lg bg-amber-50 border border-amber-200 p-3 sm:p-4 mb-2 sm:mb-4 flex items-start gap-3">
       <svg class="w-5 h-5 text-amber-600 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.538-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
       </svg>
       <div>
-        <p class="text-amber-800 font-medium text-sm">Giysi/Tekstil Operasyonları</p>
-        <p class="text-amber-700 text-sm mt-0.5">
+        <p class="text-amber-800 font-semibold text-xs sm:text-sm uppercase tracking-wide">Giysi / Tekstil Uyarısı</p>
+        <p class="text-amber-700 text-xs sm:text-sm mt-0.5 leading-relaxed">
           Giysi kategorisindeki siparişler şu an depo hazırlık sürecinde desteklenmemektedir.
-          Bu siparişleri sisteme aktarmadan önce sistem yöneticinize danışınız.
+          Sistem yöneticinize danışınız.
         </p>
       </div>
     </div>
 
     <!-- Import Controls -->
-    <div class="bg-white dark:bg-gray-900 p-4 rounded shadow flex flex-wrap gap-4 items-end">
-      <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Başlangıç</label>
-        <input type="date" v-model="startDate" class="border dark:border-gray-700 rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100" />
+    <div class="bg-white dark:bg-gray-900 p-4 rounded shadow">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+        <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Başlangıç</label>
+          <input type="date" v-model="startDate" class="w-full border dark:border-gray-700 rounded px-3 py-2 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Bitiş</label>
+          <input type="date" v-model="endDate" class="w-full border dark:border-gray-700 rounded px-3 py-2 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500" />
+        </div>
+
+        <button
+          @click="importOrders"
+          class="w-full bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 flex items-center justify-center gap-2 font-medium transition-colors"
+          :disabled="importing"
+        >
+          <svg v-if="importing" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+          </svg>
+          <span v-if="importing">Aktarılıyor...</span>
+          <span v-else>Aktarımı Başlat</span>
+        </button>
+
+        <div class="flex gap-2 w-full">
+            <button
+                @click="syncProjects"
+                class="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center gap-2 text-sm font-medium transition-colors"
+                title="Projeleri Senkronize Et"
+                :disabled="syncing"
+            >
+                <span v-if="syncing">...</span>
+                <span v-else>Projeler</span>
+            </button>
+
+            <button
+                @click="checkMappings"
+                class="flex-1 bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-400 px-3 py-2 rounded hover:bg-teal-100 dark:hover:bg-teal-900/40 border border-teal-200 dark:border-teal-800 flex items-center justify-center gap-2 text-sm font-medium transition-colors"
+                title="Eşleşmeleri Kontrol Et"
+                :disabled="checking"
+            >
+                <span v-if="checking">...</span>
+                <span v-else>Kontrol</span>
+            </button>
+        </div>
       </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bitiş</label>
-        <input type="date" v-model="endDate" class="border dark:border-gray-700 rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100" />
-      </div>
 
-      <button
-        @click="importOrders"
-        class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 flex items-center gap-2"
-        :disabled="importing"
-      >
-        <svg v-if="importing" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-        </svg>
-        <span v-if="importing">Aktarılıyor<span v-if="importBatchId"> (Batch #{{ importBatchId }})</span>...</span>
-        <span v-else>Aktarımı Başlat</span>
-      </button>
-
-      <button
-        @click="syncProjects"
-        class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 flex items-center gap-2"
-        :disabled="syncing"
-      >
-        <span v-if="syncing">Projeler Güncelleniyor...</span>
-        <span v-else>Projeleri Senkronize Et</span>
-      </button>
-
-      <button
-        @click="checkMappings"
-        class="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700 flex items-center gap-2"
-        :disabled="checking"
-      >
-        <span v-if="checking">Kontrol Ediliyor...</span>
-        <span v-else>Eşleşmeleri Kontrol Et</span>
-      </button>
-
-      <div v-if="importResult" class="mt-3 w-full">
-        <div class="rounded-lg border p-3 text-sm" :class="importResult.failedCount > 0 ? 'border-yellow-300 bg-yellow-50 dark:bg-yellow-900/20' : 'border-green-300 bg-green-50 dark:bg-green-900/20'">
-          <div class="flex flex-wrap gap-4 font-medium">
-            <span class="text-gray-600 dark:text-gray-400">ISS'ten gelen: <strong>{{ importResult.totalFromIss }}</strong></span>
-            <span class="text-green-600">Yeni eklendi: <strong>{{ importResult.newCount }}</strong></span>
-            <span class="text-gray-500">Atlandı: <strong>{{ importResult.skippedCount }}</strong></span>
-            <span v-if="importResult.needsMappingCount > 0" class="text-yellow-600">Eşleştirme bekliyor: <strong>{{ importResult.needsMappingCount }}</strong></span>
-            <span v-if="importResult.failedCount > 0" class="text-red-600">Hatalı: <strong>{{ importResult.failedCount }}</strong></span>
+      <div v-if="importResult" class="mt-4">
+        <div class="rounded-lg border p-3" :class="importResult.failedCount > 0 ? 'border-yellow-300 bg-yellow-50 dark:bg-yellow-900/20' : 'border-green-300 bg-green-50 dark:bg-green-900/20'">
+          <div class="flex flex-wrap gap-x-4 gap-y-2 text-xs sm:text-sm font-medium">
+            <span class="text-gray-600 dark:text-gray-400">Gelen: <strong>{{ importResult.totalFromIss }}</strong></span>
+            <span class="text-green-600">Yeni: <strong>{{ importResult.newCount }}</strong></span>
+            <span class="text-gray-500">Atlanan: <strong>{{ importResult.skippedCount }}</strong></span>
+            <span v-if="importResult.needsMappingCount > 0" class="text-yellow-600">Eşleştirme: <strong>{{ importResult.needsMappingCount }}</strong></span>
+            <span v-if="importResult.failedCount > 0" class="text-red-600">Hata: <strong>{{ importResult.failedCount }}</strong></span>
           </div>
           <div v-if="importResult.errors.length > 0" class="mt-2 space-y-1">
-            <div v-for="err in importResult.errors.slice(0, 3)" :key="err" class="text-red-600 text-xs">{{ err }}</div>
-            <div v-if="importResult.errors.length > 3" class="text-gray-500 text-xs">... ve {{ importResult.errors.length - 3 }} hata daha (Geçmiş sekmesinde görüntüleyin)</div>
+            <div v-for="err in importResult.errors.slice(0, 2)" :key="err" class="text-red-600 text-[10px] sm:text-xs italic">{{ err }}</div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Tabs & Content -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Mapping Manager (Always visible if needed, or conditional) -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+        <!-- Mapping Manager -->
         <div class="lg:col-span-3" v-if="showMapping && activeTab === 'NeedsMapping'">
             <StockMappingManager @mapped="loadOrders" />
         </div>
 
-        <div class="lg:col-span-3 bg-white dark:bg-gray-900 rounded shadow">
-                     <div class="border-b dark:border-gray-700 px-4 py-3 flex flex-wrap gap-4 items-center justify-between">
-                         <div class="flex gap-4">
-                            <button
-                                @click="activeTab = 'Ready'; page = 1; clearSelection()"
-                                class="py-3 px-2 border-b-2 font-medium transition-colors"
-                                :class="activeTab === 'Ready' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'"
-                            >
-                                Aktif / Hazır ({{ readyCount }})
-                            </button>
-                            <button
-                                @click="activeTab = 'NeedsMapping'; page = 1; clearSelection()"
-                                class="py-3 px-2 border-b-2 font-medium transition-colors"
-                                :class="activeTab === 'NeedsMapping' ? 'border-red-500 text-red-600' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'"
-                            >
-                                Eşleştirme Bekliyor ({{ needsMappingCount }})
-                            </button>
-                            <button
-                                @click="activeTab = 'Passive'; page = 1; clearSelection()"
-                                class="py-3 px-2 border-b-2 font-medium transition-colors"
-                                :class="activeTab === 'Passive' ? 'border-gray-500 text-gray-600' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'"
-                            >
-                                Pasif Siparişler ({{ passiveCount }})
-                            </button>
-                            <button
-                                @click="activeTab = 'History'; loadHistory()"
-                                class="py-3 px-2 border-b-2 font-medium transition-colors"
-                                :class="activeTab === 'History' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'"
-                            >
-                                Import Geçmişi
-                            </button>
-                         </div>
+        <div class="lg:col-span-3 bg-white dark:bg-gray-900 rounded-lg shadow-sm border dark:border-gray-800">
+            <!-- Tabs Bar -->
+            <div class="border-b dark:border-gray-800 flex items-center justify-between">
+                <div class="flex overflow-x-auto whitespace-nowrap scrollbar-hide">
+                    <button
+                        v-for="tab in [{id:'Ready', label:'Hazır', count:readyCount, color:'green'}, {id:'NeedsMapping', label:'Eşleştirme', count:needsMappingCount, color:'red'}, {id:'Passive', label:'Pasif', count:passiveCount, color:'gray'}, {id:'History', label:'Geçmiş', count:null, color:'indigo'}]"
+                        :key="tab.id"
+                        @click="tab.id === 'History' ? loadHistory() : (activeTab = tab.id as any, page = 1, clearSelection())"
+                        class="py-4 px-4 sm:px-6 border-b-2 font-semibold text-xs sm:text-sm transition-all relative"
+                        :class="activeTab === tab.id 
+                            ? `border-${tab.color}-500 text-${tab.color}-600 bg-${tab.color}-50/30` 
+                            : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
+                    >
+                        {{ tab.label }}
+                        <span v-if="tab.count !== null" class="ml-1 text-[10px] opacity-70">({{ tab.count }})</span>
+                    </button>
+                </div>
+            </div>
 
-                         <div class="flex gap-2 items-center">
-                              <!-- Bulk Action Button -->
-                             <button
-                                v-if="activeTab === 'Ready' && selectedIds.size > 0"
-                                @click="createBulkShipments"
-                                class="bg-blue-600 text-white px-3 py-1 rounded shadow hover:bg-blue-700 font-bold text-sm flex items-center gap-2"
-                             >
-                                <span class="bg-white text-blue-600 rounded-full px-2 text-xs py-0.5">{{ selectedIds.size }}</span>
-                                <span>SEÇİLENLERİ OLUŞTUR</span>
-                             </button>
+            <!-- Filter & Action Bar -->
+            <div class="p-3 sm:p-4 bg-gray-50/50 dark:bg-gray-800/30 border-b dark:border-gray-800 flex flex-col sm:flex-row gap-3 sm:items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <!-- Bulk Action Button -->
+                    <button
+                        v-if="activeTab === 'Ready' && selectedIds.size > 0"
+                        @click="createBulkShipments"
+                        class="bg-blue-600 text-white px-3 py-2 rounded-lg shadow-sm hover:bg-blue-700 font-bold text-xs flex items-center gap-2 transition-transform active:scale-95"
+                    >
+                        <span class="bg-white text-blue-600 rounded-full w-5 h-5 flex items-center justify-center text-[10px]">{{ selectedIds.size }}</span>
+                        <span>SEÇİLENLERİ OLUŞTUR</span>
+                    </button>
+                    <div v-else class="text-gray-400 text-xs italic sm:block hidden">Sipariş listesini aşağıdan yönetebilirsiniz.</div>
+                </div>
 
-                             <input
-                                type="text"
-                                v-model="zoneSearch"
-                                @input="handleSearch"
-                                placeholder="Bölge Filtrele..."
-                                class="border dark:border-gray-700 rounded px-3 py-1 text-sm w-32 dark:bg-gray-800 dark:text-gray-100"
-                             />
-                             <select v-model="talepNoFilter" @change="loadOrders" class="border dark:border-gray-700 rounded px-3 py-1 text-sm bg-white dark:bg-gray-800 dark:text-gray-100">
-                                <option value="">Tümü</option>
-                                <option value="Zero">Catering</option>
-                                <option value="NonZero">Diğer</option>
-                             </select>
-                             <input
-                                type="text"
-                                v-model="searchQuery"
-                                @input="handleSearch"
-                                placeholder="Sipariş / Proje / Talep Ara..."
-                                class="border dark:border-gray-700 rounded px-3 py-1 text-sm w-48 dark:bg-gray-800 dark:text-gray-100"
-                             />
-                         </div>
-                     </div>
+                <div class="flex flex-wrap gap-2">
+                    <div class="relative flex-1 min-w-[120px]">
+                        <input
+                            type="text"
+                            v-model="zoneSearch"
+                            @input="handleSearch"
+                            placeholder="Bölge..."
+                            class="w-full border dark:border-gray-700 rounded-lg pr-3 pl-8 py-2 text-xs dark:bg-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-indigo-500"
+                        />
+                        <svg class="w-3 h-3 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
+                    </div>
+                    
+                    <select v-model="talepNoFilter" @change="loadOrders" class="border dark:border-gray-700 rounded-lg px-2 py-2 text-xs bg-white dark:bg-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-indigo-500">
+                        <option value="">İş Türü</option>
+                        <option value="Zero">Catering</option>
+                        <option value="NonZero">Diğer</option>
+                    </select>
+
+                    <div class="relative flex-[2] min-w-[160px]">
+                        <input
+                            type="text"
+                            v-model="searchQuery"
+                            @input="handleSearch"
+                            placeholder="Sipariş / Proje / Talep..."
+                            class="w-full border dark:border-gray-700 rounded-lg pr-3 pl-8 py-2 text-xs dark:bg-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-indigo-500"
+                        />
+                        <svg class="w-3 h-3 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
+                    </div>
+                </div>
+            </div>
 
                      <!-- History Tab -->
                      <div v-if="activeTab === 'History'" class="p-4">
-                         <div v-if="historyLoading" class="text-center py-8 dark:text-gray-400">Yükleniyor...</div>
-                         <div v-else-if="batches.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">Henüz import geçmişi yok.</div>
-                         <div v-else class="overflow-x-auto">
-                             <table class="w-full text-sm text-left border-collapse">
-                                 <thead>
-                                     <tr class="bg-gray-50 dark:bg-gray-800 text-xs font-semibold uppercase text-gray-500">
-                                         <th class="p-3">Tarih</th>
-                                         <th class="p-3">Aralık</th>
-                                         <th class="p-3 text-center">Gelen</th>
-                                         <th class="p-3 text-center">Yeni</th>
-                                         <th class="p-3 text-center">Atlandı</th>
-                                         <th class="p-3 text-center">Eşl. Bekl.</th>
-                                         <th class="p-3 text-center">Hatalı</th>
-                                         <th class="p-3 text-center">Süre</th>
-                                         <th class="p-3">Durum</th>
-                                     </tr>
-                                 </thead>
-                                 <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-                                     <tr v-for="b in batches" :key="b.id" class="hover:bg-gray-50 dark:hover:bg-gray-800">
-                                         <td class="p-3 dark:text-gray-300 text-xs">{{ formatDate(b.startedAt) }} {{ new Date(b.startedAt).toLocaleTimeString('tr-TR', {hour:'2-digit',minute:'2-digit'}) }}</td>
-                                         <td class="p-3 text-xs text-gray-500">{{ formatDate(b.requestedStartDate) }} – {{ formatDate(b.requestedEndDate) }}</td>
-                                         <td class="p-3 text-center dark:text-gray-300">{{ b.totalFromSource }}</td>
-                                         <td class="p-3 text-center text-green-600 font-medium">{{ b.newCount }}</td>
-                                         <td class="p-3 text-center text-gray-400">{{ b.skippedCount }}</td>
-                                         <td class="p-3 text-center" :class="b.needsMappingCount > 0 ? 'text-yellow-600 font-medium' : 'text-gray-400'">{{ b.needsMappingCount }}</td>
-                                         <td class="p-3 text-center" :class="b.failedCount > 0 ? 'text-red-600 font-medium' : 'text-gray-400'">{{ b.failedCount }}</td>
-                                         <td class="p-3 text-center text-xs text-gray-500">{{ (b.durationMs / 1000).toFixed(1) }}s</td>
-                                         <td class="p-3">
-                                             <span class="px-2 py-0.5 rounded text-xs font-medium"
-                                                 :class="{
-                                                     'bg-green-100 text-green-700': b.status === 'Completed',
-                                                     'bg-yellow-100 text-yellow-700': b.status === 'PartialSuccess',
-                                                     'bg-red-100 text-red-700': b.status === 'Failed',
-                                                     'bg-blue-100 text-blue-700': b.status === 'Running'
-                                                 }">
-                                                 {{ b.status === 'Completed' ? 'Tamamlandı' : b.status === 'PartialSuccess' ? 'Kısmi' : b.status === 'Failed' ? 'Hatalı' : 'Çalışıyor' }}
-                                             </span>
-                                             <div v-if="b.errorSummary" class="text-xs text-red-500 mt-1 max-w-xs truncate" :title="b.errorSummary">{{ b.errorSummary }}</div>
-                                         </td>
-                                     </tr>
-                                 </tbody>
-                             </table>
+                         <div v-if="historyLoading" class="text-center py-8 dark:text-gray-400 font-medium">Veriler Yükleniyor...</div>
+                         <div v-else-if="batches.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">Henüz import geçmişi bulunamadı.</div>
+                         <div v-else>
+                             <!-- Desktop Table -->
+                             <div class="hidden md:block overflow-x-auto">
+                                 <table class="w-full text-xs text-left border-collapse">
+                                     <thead>
+                                         <tr class="bg-gray-50 dark:bg-gray-800/50 text-[10px] font-bold uppercase text-gray-400 tracking-wider border-b dark:border-gray-700">
+                                             <th class="p-3">Başlatılma Zamanı</th>
+                                             <th class="p-3">Talep Aralığı</th>
+                                             <th class="p-3 text-center">Toplam</th>
+                                             <th class="p-3 text-center text-green-600">Yeni</th>
+                                             <th class="p-3 text-center text-yellow-600">Eşl. Bekl.</th>
+                                             <th class="p-3 text-center text-red-600">Hata</th>
+                                             <th class="p-3 text-center">Süre</th>
+                                             <th class="p-3 text-right">Durum</th>
+                                         </tr>
+                                     </thead>
+                                     <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                                         <tr v-for="b in batches" :key="b.id" class="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                                             <td class="p-3 dark:text-gray-300">{{ formatDate(b.startedAt) }} {{ new Date(b.startedAt).toLocaleTimeString('tr-TR', {hour:'2-digit',minute:'2-digit'}) }}</td>
+                                             <td class="p-3 text-gray-500 dark:text-gray-400 italic">{{ formatDate(b.requestedStartDate) }} – {{ formatDate(b.requestedEndDate) }}</td>
+                                             <td class="p-3 text-center font-bold dark:text-gray-300">{{ b.totalFromSource }}</td>
+                                             <td class="p-3 text-center text-green-600 font-bold">{{ b.newCount }}</td>
+                                             <td class="p-3 text-center font-bold" :class="b.needsMappingCount > 0 ? 'text-yellow-600' : 'text-gray-400'">{{ b.needsMappingCount }}</td>
+                                             <td class="p-3 text-center font-bold" :class="b.failedCount > 0 ? 'text-red-600' : 'text-gray-400'">{{ b.failedCount }}</td>
+                                             <td class="p-3 text-center text-[10px] text-gray-400">{{ (b.durationMs / 1000).toFixed(1) }}s</td>
+                                             <td class="p-3 text-right">
+                                                 <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-tight"
+                                                     :class="{
+                                                         'bg-green-100 text-green-700 border border-green-200': b.status === 'Completed',
+                                                         'bg-yellow-100 text-yellow-700 border border-yellow-200': b.status === 'PartialSuccess',
+                                                         'bg-red-100 text-red-700 border border-red-200': b.status === 'Failed',
+                                                         'bg-blue-100 text-blue-700 border border-blue-200': b.status === 'Running'
+                                                     }">
+                                                     {{ b.status === 'Completed' ? 'TAMAM' : b.status === 'PartialSuccess' ? 'KISMİ' : b.status === 'Failed' ? 'HATA' : 'AKTARILIYOR' }}
+                                                 </span>
+                                             </td>
+                                         </tr>
+                                     </tbody>
+                                 </table>
+                             </div>
+
+                             <!-- Mobile List -->
+                             <div class="md:hidden space-y-3">
+                                 <div v-for="b in batches" :key="b.id" class="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border dark:border-gray-700">
+                                     <div class="flex justify-between items-start mb-3">
+                                         <div>
+                                             <div class="text-[11px] font-bold text-gray-900 dark:text-gray-100">{{ formatDate(b.startedAt) }} — {{ new Date(b.startedAt).toLocaleTimeString('tr-TR', {hour:'2-digit',minute:'2-digit'}) }}</div>
+                                             <div class="text-[10px] text-gray-500 dark:text-gray-400">{{ formatDate(b.requestedStartDate) }} - {{ formatDate(b.requestedEndDate) }}</div>
+                                         </div>
+                                         <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase"
+                                             :class="{
+                                                 'bg-green-100 text-green-700': b.status === 'Completed',
+                                                 'bg-yellow-100 text-yellow-700': b.status === 'PartialSuccess',
+                                                 'bg-red-100 text-red-700': b.status === 'Failed',
+                                                 'bg-blue-100 text-blue-700': b.status === 'Running'
+                                             }">
+                                             {{ b.status === 'Completed' ? 'Tamam' : b.status === 'PartialSuccess' ? 'Kısmi' : b.status === 'Failed' ? 'Hata' : '...' }}
+                                         </span>
+                                     </div>
+                                     <div class="grid grid-cols-4 gap-2 text-center">
+                                         <div class="bg-white dark:bg-gray-900 p-1.5 rounded border dark:border-gray-700">
+                                             <div class="text-[9px] text-gray-400 uppercase font-bold">Gelen</div>
+                                             <div class="text-xs font-bold dark:text-gray-200">{{ b.totalFromSource }}</div>
+                                         </div>
+                                         <div class="bg-white dark:bg-gray-900 p-1.5 rounded border dark:border-gray-700">
+                                             <div class="text-[9px] text-green-400 uppercase font-bold">Yeni</div>
+                                             <div class="text-xs font-bold text-green-600">{{ b.newCount }}</div>
+                                         </div>
+                                         <div class="bg-white dark:bg-gray-900 p-1.5 rounded border dark:border-gray-700">
+                                             <div class="text-[9px] text-yellow-400 uppercase font-bold">Eşl.</div>
+                                             <div class="text-xs font-bold text-yellow-600">{{ b.needsMappingCount }}</div>
+                                         </div>
+                                         <div class="bg-white dark:bg-gray-900 p-1.5 rounded border dark:border-gray-700">
+                                             <div class="text-[9px] text-red-400 uppercase font-bold">Hata</div>
+                                             <div class="text-xs font-bold text-red-600">{{ b.failedCount }}</div>
+                                         </div>
+                                     </div>
+                                 </div>
+                             </div>
                          </div>
                      </div>
 
@@ -207,160 +250,227 @@
                              Listenizde sipariş bulunamadı.
                          </div>
 
-                         <div v-else>
-                             <div class="overflow-x-auto">
+                        <div v-else>
+                            <!-- Desktop Table View -->
+                            <div class="hidden sm:block overflow-x-auto">
                                 <table class="w-full text-left border-collapse">
                                     <thead>
-                                        <tr class="bg-gray-50 dark:bg-gray-800 text-xs font-semibold uppercase text-gray-600 dark:text-gray-400">
-                                            <th class="p-3 w-10 text-center">
+                                        <tr class="bg-gray-50 dark:bg-gray-800 text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                                            <th class="p-4 w-10 text-center">
                                                 <input
                                                     type="checkbox"
                                                     :checked="isAllSelected"
                                                     @change="toggleSelectAll"
-                                                    class="h-4 w-4 rounded border-gray-300 dark:border-gray-700 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                                    class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                                                 />
                                             </th>
-                                            <th class="p-3">Sipariş No</th>
-                                            <th class="p-3">Talep No</th>
-                                            <th class="p-3">Kurum/Proje Kodu</th>
-                                            <th class="p-3">Proje Adı</th>
-                                            <th class="p-3">Bölge</th>
-                                            <th class="p-3">Tarih</th>
-                                            <th class="p-3">Kalem</th>
-                                            <th class="p-3">İşlem</th>
+                                            <th class="p-4">Sipariş / Talep</th>
+                                            <th class="p-4">Proje Bilgisi</th>
+                                            <th class="p-4">Bölge</th>
+                                            <th class="p-4">Tarih</th>
+                                            <th class="p-4">Kalem</th>
+                                            <th class="p-4 text-right">İşlem</th>
                                         </tr>
                                     </thead>
-                                    <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-                                        <tr v-for="order in orders" :key="order.id || order.Id" class="hover:bg-gray-50 dark:hover:bg-gray-800" :class="{'bg-blue-50': selectedIds.has(order.id || order.Id)}">
-                                            <td class="p-3 text-center">
+                                    <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                                        <tr v-for="order in orders" :key="order.id || order.Id" 
+                                            class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group" 
+                                            :class="{'bg-blue-50/50 dark:bg-blue-900/10': selectedIds.has(order.id || order.Id)}"
+                                        >
+                                            <td class="p-4 text-center">
                                                 <input
                                                     type="checkbox"
                                                     :checked="selectedIds.has(order.id || order.Id)"
                                                     @change="toggleSelection(order.id || order.Id)"
-                                                    class="h-4 w-4 rounded border-gray-300 dark:border-gray-700 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                                    class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                                                 />
                                             </td>
-                                            <td class="p-3 font-medium dark:text-gray-100">{{ order.externalOrderNumber || order.ExternalOrderNumber }}</td>
-                                            <td class="p-3 text-sm dark:text-gray-300">{{ (order.talepNo || order.TalepNo) || '-' }}</td>
-                                            <td class="p-3 text-sm text-gray-900 dark:text-gray-100 font-medium">
-                                                <div class="text-xs text-gray-500 dark:text-gray-400">{{ order.institutionCode || order.InstitutionCode }}</div>
-                                                <div>{{ order.projectCode || order.ProjectCode }}</div>
+                                            <td class="p-4">
+                                                <div class="font-bold text-gray-900 dark:text-gray-100">{{ order.externalOrderNumber || order.ExternalOrderNumber }}</div>
+                                                <div class="text-xs text-gray-500 dark:text-gray-400">T: {{ (order.talepNo || order.TalepNo) || '-' }}</div>
                                             </td>
-                                            <td class="p-3 text-sm text-gray-500 dark:text-gray-400">{{ order.projectName || order.ProjectName }}</td>
-                                            <td class="p-3 text-sm text-gray-500 dark:text-gray-400">{{ order.region || order.Region }}</td>
-                                            <td class="p-3 text-sm dark:text-gray-300">{{ formatDate(order.orderDate || order.OrderDate) }}</td>
-                                            <td class="p-3 dark:text-gray-300">{{ order.lineCount || order.LineCount }}</td>
-                                            <td class="p-3 flex gap-2">
-                                                <button
-                                                    @click="openDetail(order)"
-                                                    class="text-xs bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700"
-                                                >
-                                                    Detay
-                                                </button>
-                                                <template v-if="activeTab === 'Ready'">
-                                                    <button
-                                                        @click="createShipment(order.id || order.Id)"
-                                                        class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 border border-blue-200"
-                                                    >
-                                                        Sevkiyat
-                                                    </button>
-                                                    <button
-                                                        @click="toggleActive(order.id || order.Id, false)"
-                                                        class="text-xs bg-amber-50 text-amber-600 px-2 py-1 rounded hover:bg-amber-100 border border-amber-200"
-                                                    >
-                                                        Pasife Al
-                                                    </button>
-                                                </template>
-                                                <template v-else-if="activeTab === 'Passive'">
-                                                     <button
-                                                        @click="toggleActive(order.id || order.Id, true)"
-                                                        class="text-xs bg-green-50 text-green-600 px-2 py-1 rounded hover:bg-green-100 border border-green-200"
-                                                    >
-                                                        Aktife Al
-                                                    </button>
-                                                </template>
+                                            <td class="p-4">
+                                                <div class="text-[10px] text-gray-400 uppercase font-bold">{{ order.institutionCode || order.InstitutionCode }}</div>
+                                                <div class="text-xs font-semibold dark:text-gray-200">{{ order.projectCode || order.ProjectCode }}</div>
+                                                <div class="text-xs text-gray-500 truncate max-w-[150px]">{{ order.projectName || order.ProjectName }}</div>
+                                            </td>
+                                            <td class="p-4 text-xs font-medium dark:text-gray-300">{{ order.region || order.Region }}</td>
+                                            <td class="p-4 text-xs dark:text-gray-400">{{ formatDate(order.orderDate || order.OrderDate) }}</td>
+                                            <td class="p-4">
+                                                <span class="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-full text-[10px] font-bold text-gray-600 dark:text-gray-400">
+                                                    {{ order.lineCount || order.LineCount }} Kalem
+                                                </span>
+                                            </td>
+                                            <td class="p-4 text-right">
+                                                <div class="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button @click="openDetail(order)" class="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded" title="Detay"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg></button>
+                                                    <template v-if="activeTab === 'Ready'">
+                                                        <button @click="createShipment(order.id || order.Id)" class="p-1.5 text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded" title="Sevkiyat Oluştur"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg></button>
+                                                        <button @click="toggleActive(order.id || order.Id, false)" class="p-1.5 text-amber-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded" title="Pasife Al"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg></button>
+                                                    </template>
+                                                    <template v-else-if="activeTab === 'Passive'">
+                                                        <button @click="toggleActive(order.id || order.Id, true)" class="p-1.5 text-green-500 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded" title="Aktife Al"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg></button>
+                                                    </template>
+                                                </div>
+                                                <!-- Mobile actions (shown when not hovered to ensure accessibility) -->
+                                                <div class="sm:hidden flex justify-end gap-2">
+                                                     <button @click="openDetail(order)" class="text-xs text-indigo-600 font-bold uppercase">Detay</button>
+                                                </div>
                                             </td>
                                         </tr>
                                     </tbody>
                                 </table>
-                             </div>
+                            </div>
+
+                            <!-- Mobile Card View -->
+                            <div class="sm:hidden space-y-3">
+                                <div v-for="order in orders" :key="order.id || order.Id" 
+                                    class="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-xl p-4 shadow-sm active:bg-gray-50 transition-colors relative overflow-hidden"
+                                    :class="{'ring-2 ring-blue-500 bg-blue-50/30': selectedIds.has(order.id || order.Id)}"
+                                >
+                                    <div class="flex justify-between items-start mb-3">
+                                        <div class="flex items-start gap-3">
+                                            <input
+                                                type="checkbox"
+                                                :checked="selectedIds.has(order.id || order.Id)"
+                                                @change="toggleSelection(order.id || order.Id)"
+                                                class="mt-1 h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                            />
+                                            <div>
+                                                <div class="font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                                                    {{ order.externalOrderNumber || order.ExternalOrderNumber }}
+                                                    <span class="text-[10px] bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-gray-500">T: {{ order.talepNo || order.TalepNo || '-' }}</span>
+                                                </div>
+                                                <div class="text-[11px] text-gray-500 dark:text-gray-400 mt-1 font-medium">
+                                                    {{ order.projectCode || order.ProjectCode }} — {{ order.projectName || order.ProjectName }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-2 gap-3 mb-4">
+                                        <div class="bg-gray-50 dark:bg-gray-900/50 p-2 rounded-lg">
+                                            <div class="text-[9px] text-gray-400 uppercase font-bold mb-0.5">Bölge</div>
+                                            <div class="text-[11px] font-semibold dark:text-gray-300 truncate">{{ order.region || order.Region }}</div>
+                                        </div>
+                                        <div class="bg-gray-50 dark:bg-gray-900/50 p-2 rounded-lg">
+                                            <div class="text-[9px] text-gray-400 uppercase font-bold mb-0.5">Tarih</div>
+                                            <div class="text-[11px] font-semibold dark:text-gray-300">{{ formatDate(order.orderDate || order.OrderDate) }}</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-center justify-between pt-3 border-t dark:border-gray-700">
+                                        <span class="text-[10px] font-bold text-gray-400 uppercase">{{ order.lineCount || order.LineCount }} Kalem Ürün</span>
+                                        <div class="flex gap-2">
+                                            <button @click="openDetail(order)" class="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg text-xs font-bold transition-colors active:bg-gray-200">DETAY</button>
+                                            <template v-if="activeTab === 'Ready'">
+                                                <button @click="createShipment(order.id || order.Id)" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold shadow-sm shadow-blue-500/20 active:bg-blue-700">SEVKİYAT</button>
+                                            </template>
+                                            <template v-else-if="activeTab === 'Passive'">
+                                                <button @click="toggleActive(order.id || order.Id, true)" class="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-bold shadow-sm shadow-green-500/20 active:bg-green-700">AKTİVE ET</button>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
                      <!-- Pagination -->
-                     <div class="mt-4 flex justify-between items-center border-t dark:border-gray-700 pt-4">
-                        <div class="text-sm text-gray-500 dark:text-gray-400">
-                            Toplam {{ totalCount }} kayıt, Sayfa {{ page }} / {{ totalPages }}
+                     <div class="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4 border-t dark:border-gray-800 pt-4">
+                        <div class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium order-2 sm:order-1">
+                            Toplam <span class="text-gray-900 dark:text-gray-100 font-bold">{{ totalCount }}</span> kayıt, Sayfa {{ page }} / {{ totalPages }}
                         </div>
-                        <div class="flex gap-2">
+                        <div class="flex gap-2 order-1 sm:order-2 w-full sm:w-auto">
                             <button
                                 @click="page--"
                                 :disabled="page <= 1"
-                                class="px-3 py-1 border dark:border-gray-700 rounded hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
+                                class="flex-1 sm:flex-none px-4 py-2 text-xs font-bold border dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-30 transition-colors shadow-sm"
                             >
-                                Önceki
+                                ÖNCEKİ
                             </button>
                             <button
                                 @click="page++"
                                 :disabled="page >= totalPages"
-                                class="px-3 py-1 border dark:border-gray-700 rounded hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
+                                class="flex-1 sm:flex-none px-4 py-2 text-xs font-bold border dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-30 transition-colors shadow-sm"
                             >
-                                Sonraki
+                                SONRAKİ
                             </button>
                         </div>
-                     </div>
-                 </div>
-             </div>
-        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-    <!-- Detail Modal -->
-    <div v-if="selectedOrder" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-        <div class="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div class="px-6 py-4 border-b dark:border-gray-700 flex justify-between items-center sticky top-0 bg-white dark:bg-gray-900">
-                <h3 class="text-lg font-bold dark:text-gray-100">Sipariş Detayı (#{{ selectedOrder.externalOrderNumber }})</h3>
-                <button @click="selectedOrder = null" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 font-bold text-xl">&times;</button>
-            </div>
-            <div class="p-6 space-y-4">
-                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                     <div>
-                         <span class="block text-gray-500 dark:text-gray-400 text-xs">Talep No</span>
-                         <span class="font-medium dark:text-gray-100">{{ selectedOrder.talepNo || '-' }}</span>
-                     </div>
-                      <div>
-                         <span class="block text-gray-500 dark:text-gray-400 text-xs">Talep Türü</span>
-                         <span class="font-medium dark:text-gray-100">{{ selectedOrder.talepTuru || '-' }}</span>
-                     </div>
-                     <div class="col-span-2">
-                         <span class="block text-gray-500 dark:text-gray-400 text-xs">Proje</span>
-                         <span class="font-medium dark:text-gray-100">{{ selectedOrder.projectCode }} - {{ selectedOrder.projectName }}</span>
-                     </div>
-                      <div class="col-span-2">
-                         <span class="block text-gray-500 dark:text-gray-400 text-xs">Açıklama</span>
-                         <div class="bg-gray-50 dark:bg-gray-800 p-2 rounded max-h-32 overflow-y-auto dark:text-gray-300">{{ selectedOrder.aciklama || '-' }}</div>
-                     </div>
+        <!-- Detail Modal -->
+        <div v-if="selectedOrder" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 z-50">
+            <div class="bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-2xl max-h-[95vh] flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom duration-300">
+                <div class="px-5 py-4 border-b dark:border-gray-800 flex justify-between items-center bg-white dark:bg-gray-900">
+                    <div>
+                        <h3 class="text-lg font-bold dark:text-gray-100 leading-none">Sipariş Detayı</h3>
+                        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">#{{ selectedOrder.externalOrderNumber }}</span>
+                    </div>
+                    <button @click="selectedOrder = null" class="p-2 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
+                    </button>
+                </div>
+                
+                <div class="p-5 sm:p-6 space-y-5 overflow-y-auto custom-scrollbar">
+                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 text-sm">
+                         <div class="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl border dark:border-gray-700">
+                             <span class="block text-gray-400 text-[10px] font-bold uppercase mb-1">Talep No / Türü</span>
+                             <span class="font-bold dark:text-gray-100 block">{{ selectedOrder.talepNo || '-' }}</span>
+                             <span class="text-xs text-gray-500">{{ selectedOrder.talepTuru || '-' }}</span>
+                         </div>
+                         <div class="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl border dark:border-gray-700">
+                             <span class="block text-gray-400 text-[10px] font-bold uppercase mb-1">Proje</span>
+                             <span class="font-bold dark:text-gray-100 block truncate">{{ selectedOrder.projectName }}</span>
+                             <span class="text-xs text-gray-500">{{ selectedOrder.projectCode }}</span>
+                         </div>
+                         <div class="col-span-full">
+                             <span class="block text-gray-400 text-[10px] font-bold uppercase mb-1">Açıklama</span>
+                             <div class="bg-indigo-50/30 dark:bg-indigo-900/10 p-3 rounded-xl dark:text-gray-300 text-xs leading-relaxed italic border border-indigo-100/50 dark:border-indigo-800/50 min-h-[60px]">
+                                 {{ selectedOrder.aciklama || 'Açıklama bulunmuyor.' }}
+                             </div>
+                         </div>
 
-                     <div class="col-span-2 border-t dark:border-gray-700 pt-2 mt-2">
-                         <h4 class="font-semibold mb-2 dark:text-gray-100">İletişim Bilgileri</h4>
+                         <div class="col-span-full border-t dark:border-gray-800 pt-4 mt-2">
+                             <h4 class="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-3">İletişim & Teslimat</h4>
+                             <div class="space-y-4">
+                                <div class="flex items-start gap-4">
+                                    <div class="p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-500 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg></div>
+                                    <div>
+                                        <span class="block text-[10px] text-gray-400 font-bold">ALACAK KİŞİLER</span>
+                                        <span class="text-sm dark:text-gray-200">{{ selectedOrder.teslimAlacakKisiler || '-' }}</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-4">
+                                    <div class="p-2 bg-green-50 dark:bg-green-900/20 text-green-500 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg></div>
+                                    <div>
+                                        <span class="block text-[10px] text-gray-400 font-bold">TELEFONLAR</span>
+                                        <span class="text-sm dark:text-gray-200">{{ selectedOrder.teslimAlacakTelefonNumaralari || '-' }}</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-4">
+                                    <div class="p-2 bg-amber-50 dark:bg-amber-900/20 text-amber-500 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg></div>
+                                    <div>
+                                        <span class="block text-[10px] text-gray-400 font-bold">YÖNETİCİ MAİLLERİ</span>
+                                        <span class="text-xs dark:text-gray-300 break-all leading-relaxed">{{ selectedOrder.yoneticiMailAdresleri || '-' }}</span>
+                                    </div>
+                                </div>
+                             </div>
+                         </div>
                      </div>
-                      <div>
-                         <span class="block text-gray-500 dark:text-gray-400 text-xs">Teslim Alacak</span>
-                         <span class="font-medium dark:text-gray-100">{{ selectedOrder.teslimAlacakKisiler || '-' }}</span>
-                     </div>
-                      <div>
-                         <span class="block text-gray-500 dark:text-gray-400 text-xs">Telefonlar</span>
-                         <span class="font-medium dark:text-gray-100">{{ selectedOrder.teslimAlacakTelefonNumaralari || '-' }}</span>
-                     </div>
-                       <div class="col-span-2">
-                         <span class="block text-gray-500 dark:text-gray-400 text-xs">Yönetici Mailleri</span>
-                         <span class="font-medium dark:text-gray-100 break-words">{{ selectedOrder.yoneticiMailAdresleri || '-' }}</span>
-                     </div>
-                 </div>
-            </div>
-            <div class="px-6 py-4 bg-gray-50 dark:bg-gray-800 border-t dark:border-gray-700 text-right">
-                <button @click="selectedOrder = null" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">Kapat</button>
+                </div>
+                
+                <div class="p-4 bg-gray-50 dark:bg-gray-800/80 border-t dark:border-gray-800 flex gap-3">
+                    <button @click="selectedOrder = null" class="flex-1 py-3 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl font-bold text-sm shadow-sm border dark:border-gray-600 transition-all active:scale-95">KAPAT</button>
+                    <template v-if="activeTab === 'Ready'">
+                         <button @click="createShipment(selectedOrder.id || selectedOrder.Id)" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-500/20 transition-all active:scale-95">SEVKİYAT OLUŞTUR</button>
+                    </template>
+                </div>
             </div>
         </div>
     </div>
-  </div>
 </template>
 
 <script setup lang="ts">

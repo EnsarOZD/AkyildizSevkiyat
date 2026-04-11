@@ -104,6 +104,11 @@ const purchaseOrderService = {
 
   async removeLine(id: string, lineId: string): Promise<void> {
     await apiClient.delete(`/purchase-orders/${id}/lines/${lineId}`);
+  },
+
+  async exportToNetsis(id: string): Promise<{ netsisPONo: string; message: string }> {
+    const response = await apiClient.post(`/netsis/purchase-orders/${id}/export`);
+    return response.data;
   }
 };
 

@@ -157,8 +157,8 @@ export interface SetZoneDriverInfoResult {
 }
 
 const warehouseService = {
-  async getDashboardAll(params: { date: string }): Promise<DashboardZoneDto[]> {
-    const response = await apiClient.get('/warehouse/dashboard-all', { params });
+  async getDashboardAll(): Promise<DashboardZoneDto[]> {
+    const response = await apiClient.get('/warehouse/dashboard-all');
     return response.data;
   },
 
@@ -212,7 +212,7 @@ const warehouseService = {
     return response.data;
   },
 
-  async fetchIrsaliye(zonePreparationId: number): Promise<{ exported: number; skipped: number; errors: string[] }> {
+  async fetchIrsaliye(zonePreparationId: number): Promise<{ fetched: number; skipped: number; errors: string[]; warnings: string[] }> {
     const response = await apiClient.post('/warehouse/fetch-irsaliye', { zonePreparationId });
     return response.data;
   },

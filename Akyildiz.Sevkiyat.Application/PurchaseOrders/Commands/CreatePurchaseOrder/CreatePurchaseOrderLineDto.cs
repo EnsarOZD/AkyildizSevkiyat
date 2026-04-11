@@ -4,6 +4,7 @@ namespace Akyildiz.Sevkiyat.Application.PurchaseOrders.Commands.CreatePurchaseOr
     {
         public int StockMasterId { get; set; }
         public decimal OrderedQty { get; set; }
+        public decimal? UnitPrice { get; set; }
         public string? Note { get; set; }
     }
 }

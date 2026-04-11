@@ -7,6 +7,7 @@ namespace Akyildiz.Sevkiyat.Application.PurchaseOrders.Commands.UpdatePurchaseOr
         public Guid PurchaseOrderId { get; set; }
         public Guid LineId { get; set; }
         public decimal OrderedQty { get; set; }
+        public decimal? UnitPrice { get; set; }
         public string? Note { get; set; }
     }
 
@@ -34,6 +35,7 @@ namespace Akyildiz.Sevkiyat.Application.PurchaseOrders.Commands.UpdatePurchaseOr
             if (line == null) throw new NotFoundException("PurchaseOrderLine", request.LineId);
 
             line.OrderedQty = request.OrderedQty;
+            line.UnitPrice = request.UnitPrice;
             line.Note = request.Note;
 
             await _context.SaveChangesAsync(cancellationToken);

@@ -39,7 +39,8 @@
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Proje Kodu</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Proje Adı</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Bölge</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Netsis Cari Kodu</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Netsis Fatura Cari</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Netsis Teslim Cari</th>
             <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider" title="Bölge içindeki teslimat sırası (küçük = önce)">Sıra</th>
             <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider" title="Teslimat penceresi başlangıç saati">Pencere Başlangıç</th>
             <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider" title="Teslimat penceresi bitiş saati">Pencere Bitiş</th>
@@ -66,14 +67,26 @@
                 </select>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm">
-              <label :for="`cari-${project.id}`" class="sr-only">Netsis Cari Kodu</label>
+              <label :for="`cari-${project.id}`" class="sr-only">Netsis Fatura Cari Kodu</label>
               <input
                 :id="`cari-${project.id}`"
                 :value="project.netsisCariKodu || ''"
                 type="text"
-                placeholder="Cari Kodu..."
-                class="border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-1 w-36 dark:bg-gray-800 dark:text-gray-100"
+                placeholder="120.01.001"
+                class="border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-1 w-32 dark:bg-gray-800 dark:text-gray-100"
                 @blur="updateNetsisCariKodu(project, $event)"
+                @keydown.enter="($event.target as HTMLInputElement).blur()"
+              />
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm">
+              <label :for="`teslim-cari-${project.id}`" class="sr-only">Netsis Teslim Cari Kodu</label>
+              <input
+                :id="`teslim-cari-${project.id}`"
+                :value="project.netsisTeslimCariKodu || ''"
+                type="text"
+                placeholder="10029"
+                class="border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-1 w-28 dark:bg-gray-800 dark:text-gray-100"
+                @blur="updateNetsisTeslimCariKodu(project, $event)"
                 @keydown.enter="($event.target as HTMLInputElement).blur()"
               />
             </td>
@@ -144,6 +157,7 @@ interface Project {
   zoneId: number | null;
   zoneName: string | null;
   netsisCariKodu?: string | null;
+  netsisTeslimCariKodu?: string | null;
   deliveryOrder?: number | null;
   deliveryWindowStart?: string | null;
   deliveryWindowEnd?: string | null;
@@ -193,6 +207,24 @@ const updateNetsisCariKodu = async (project: Project, event: Event) => {
         await projectService.updateNetsisCariKodu(project.id, newValue);
     } catch (err) {
         project.netsisCariKodu = old;
+        input.value = old ?? '';
+        notificationStore.add(ApiErrorUtils.getErrorMessage(err) || 'Güncelleme başarısız.', 'error');
+    }
+};
+
+const updateNetsisTeslimCariKodu = async (project: Project, event: Event) => {
+    const input = event.target as HTMLInputElement;
+    const newValue = input.value.trim() || null;
+
+    if (newValue === (project.netsisTeslimCariKodu ?? null)) return; // no change
+
+    const old = project.netsisTeslimCariKodu;
+    project.netsisTeslimCariKodu = newValue;
+
+    try {
+        await projectService.updateNetsisCariKodu(project.id, project.netsisCariKodu ?? null, newValue);
+    } catch (err) {
+        project.netsisTeslimCariKodu = old;
         input.value = old ?? '';
         notificationStore.add(ApiErrorUtils.getErrorMessage(err) || 'Güncelleme başarısız.', 'error');
     }

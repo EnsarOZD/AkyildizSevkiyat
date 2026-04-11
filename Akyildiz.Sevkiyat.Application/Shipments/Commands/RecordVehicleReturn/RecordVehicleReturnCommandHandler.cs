@@ -60,9 +60,20 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.RecordVehicleReturn
                 isOverride = true;
                 if (string.IsNullOrWhiteSpace(request.OverrideNote))
                 {
-                    throw new DomainException("Yönetici/Operasyon işlemi için Override Notu (Açıklama) girmek zorunludur.");
+                    // Fallback: If return note is provided, use it as override note for non-drivers
+                    if (!string.IsNullOrWhiteSpace(request.ReturnNote))
+                    {
+                        overrideNoteToSave = request.ReturnNote;
+                    }
+                    else
+                    {
+                        throw new DomainException("Yönetici/Operasyon işlemi için bir açıklama (Not) girmek zorunludur.");
+                    }
                 }
-                overrideNoteToSave = request.OverrideNote;
+                else
+                {
+                    overrideNoteToSave = request.OverrideNote;
+                }
             }
 
             // Collect stock masters for mapped lines

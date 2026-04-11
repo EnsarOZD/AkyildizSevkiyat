@@ -98,7 +98,7 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Queries.GetDriverRoute
                 .Include(s => s.IssOrder)
                 .Include(s => s.Lines)
                 .Where(s =>
-                    s.Status == ShipmentStatus.AssignedToVehicle ||
+                    // Yalnızca yükleme onayı verilmiş (Dispatched) veya bugün teslim edilmiş sevkiyatlar
                     s.Status == ShipmentStatus.Dispatched ||
                     (s.Status == ShipmentStatus.Delivered &&
                      s.DeliveredAt.HasValue &&

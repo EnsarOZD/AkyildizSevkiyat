@@ -73,6 +73,7 @@ namespace Akyildiz.Sevkiyat.Application.PurchaseOrders.Commands.CreatePurchaseOr
                     StockMasterId = lineDto.StockMasterId,
                     OrderedQty = lineDto.OrderedQty,
                     Unit = stock.Unit,
+                    UnitPrice = lineDto.UnitPrice,
                     Note = lineDto.Note
                 });
             }

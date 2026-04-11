@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Akyildiz.Sevkiyat.Application.Projects.Commands.UpdateProjectNetsisCariKodu
 {
-    public record UpdateProjectNetsisCariKoduCommand(int Id, string? NetsisCariKodu) : IRequest;
+    public record UpdateProjectNetsisCariKoduCommand(int Id, string? NetsisCariKodu, string? NetsisTeslimCariKodu = null) : IRequest;
 
     public class UpdateProjectNetsisCariKoduCommandHandler : IRequestHandler<UpdateProjectNetsisCariKoduCommand>
     {
@@ -27,6 +27,11 @@ namespace Akyildiz.Sevkiyat.Application.Projects.Commands.UpdateProjectNetsisCar
             project.NetsisCariKodu = string.IsNullOrWhiteSpace(request.NetsisCariKodu)
                 ? null
                 : request.NetsisCariKodu.Trim();
+
+            if (request.NetsisTeslimCariKodu is not null)
+                project.NetsisTeslimCariKodu = string.IsNullOrWhiteSpace(request.NetsisTeslimCariKodu)
+                    ? null
+                    : request.NetsisTeslimCariKodu.Trim();
 
             await _context.SaveChangesAsync(cancellationToken);
         }

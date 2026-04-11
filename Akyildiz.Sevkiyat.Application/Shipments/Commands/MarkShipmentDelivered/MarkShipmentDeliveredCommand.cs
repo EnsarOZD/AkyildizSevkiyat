@@ -54,15 +54,15 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.MarkShipmentDelivered
             }
 
             // 2. FIX — Explicit Status Guard
-            if (shipment.Status != ShipmentStatus.Dispatched)
+            if (shipment.Status != ShipmentStatus.Dispatched && shipment.Status != ShipmentStatus.AssignedToVehicle)
             {
-                throw new DomainException("Only dispatched shipments can be delivered.");
+                throw new DomainException("Yalnızca 'Yolda' veya 'Araçta' durumundaki sevkiyatlar teslim edilebilir.");
             }
 
             // 5. FIX — Delivery Proof (MINIMUM)
             if (string.IsNullOrWhiteSpace(request.DeliveryRecipient))
             {
-                throw new DomainException("Delivery recipient is required.");
+                throw new DomainException("Teslim alan bilgisi zorunludur.");
             }
 
             // 6. FIX - Driver Ownership & Override
@@ -76,7 +76,7 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.MarkShipmentDelivered
 
                 if (shipment.AssignedDriverId != driver.Id)
                 {
-                    throw new ForbiddenException("You are not assigned to this shipment.");
+                    throw new ForbiddenException("Bu sevkiyat size atanmamış.");
                 }
             }
             else
@@ -85,10 +85,22 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.MarkShipmentDelivered
                 isOverride = true;
                 if (string.IsNullOrWhiteSpace(request.OverrideNote))
                 {
-                    throw new DomainException("Yönetici/Operasyon işlemi için Override Notu (Açıklama) girmek zorunludur.");
+                    // Fallback to delivery note if override note is missing
+                    if (!string.IsNullOrWhiteSpace(request.DeliveryNote))
+                    {
+                        overrideNoteToSave = request.DeliveryNote;
+                    }
+                    else
+                    {
+                        throw new DomainException("Yönetici/Operasyon işlemi için bir açıklama (Not) girmek zorunludur.");
+                    }
                 }
-                overrideNoteToSave = request.OverrideNote;
+                else
+                {
+                    overrideNoteToSave = request.OverrideNote;
+                }
             }
+        
 
             shipment.RecordDelivery(
                 DateTime.UtcNow,

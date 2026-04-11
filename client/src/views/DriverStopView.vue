@@ -1,4 +1,5 @@
 <template>
+  <div>
   <div class="space-y-4 pb-8">
 
     <!-- Loading -->
@@ -449,10 +450,9 @@
             </div>
           </div>
 
-          <!-- Global note -->
           <div class="pt-1">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Genel Not <span class="text-gray-400 font-normal">(isteğe bağlı)</span>
+              Genelleme / Sebep Notu <span :class="isDriver ? 'text-gray-400 font-normal' : 'text-red-500 font-bold'">({{ isDriver ? 'isteğe bağlı' : 'Zorunlu' }})</span>
             </label>
             <textarea
               v-model="returnNote"
@@ -484,6 +484,7 @@
       </div>
     </div>
   </Teleport>
+  </div>
 
 </template>
 
@@ -501,10 +502,12 @@ import {
   CameraIcon,
   XMarkIcon,
   ArrowUturnLeftIcon,
+  ClipboardDocumentListIcon,
 } from '@heroicons/vue/24/outline';
 import driverService, { type DeliveryStopDto, type StopShipmentDto } from '../services/driverService';
 import shipmentService from '../services/shipmentService';
 import { useNotificationStore } from '../stores/notification';
+import { useAuthStore } from '../stores/auth';
 
 interface ShipmentForm {
   deliveryRecipient: string;
@@ -517,6 +520,8 @@ interface ShipmentForm {
 const route  = useRoute();
 const router = useRouter();
 const notify = useNotificationStore();
+const authStore = useAuthStore();
+const isDriver = computed(() => authStore.userRole === 'Driver');
 
 const projectId = Number(route.params.projectId);
 const stop      = ref<DeliveryStopDto | null>(null);

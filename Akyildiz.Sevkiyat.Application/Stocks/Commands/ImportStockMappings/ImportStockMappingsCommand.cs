@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -69,10 +70,15 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Commands.ImportStockMappings
                     return result;
                 }
 
+                // D sütunu (index 3) opsiyonel — Netsis Stok Kodu
+                bool hasNetsisCol = table.Columns.Count >= 4;
+
+                var rowsToProcess = new List<(string ExtCode, string LocCode, string? NetsisCode)>();
                 foreach (DataRow row in table.Rows)
                 {
                     var externalCode = row[0]?.ToString()?.Trim();
                     var localCode    = row[2]?.ToString()?.Trim();
+                    var netsisCode   = hasNetsisCol ? row[3]?.ToString()?.Trim() : null;
 
                     if (string.IsNullOrEmpty(externalCode) && string.IsNullOrEmpty(localCode))
                     {
@@ -92,73 +98,81 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Commands.ImportStockMappings
                         continue;
                     }
 
-                    _logger.LogInformation("Processing: {ExternalCode} -> {LocalCode}", externalCode, localCode);
-
-                    // Find the mapping entry
-                    var mapping = await _context.StockMappings
-                        .FirstOrDefaultAsync(m => m.ExternalStockCode == externalCode, cancellationToken);
-
-                    if (mapping == null)
-                    {
-                        _logger.LogWarning("Mapping not found for external code: {ExternalCode}", externalCode);
-                        result.NotFoundMappings.Add(externalCode);
-                        continue;
-                    }
-
-                    // Find the local stock
-                    var localStockId = await _context.StockMasters
-                        .Where(s => s.StockCode == localCode)
-                        .Select(s => (int?)s.Id)
-                        .FirstOrDefaultAsync(cancellationToken);
-
-                    if (localStockId == null)
-                    {
-                        _logger.LogWarning("Local stock not found for code: {LocalStockCode}", localCode);
-                        result.NotFoundStocks.Add($"'{localCode}' (ISS: {externalCode} için)");
-                        continue;
-                    }
-
-                    mapping.LocalStockId = localStockId;
-                    mapping.MatchStatus  = MatchStatus.Mapped;
-                    result.MappedCount++;
+                    rowsToProcess.Add((externalCode, localCode, string.IsNullOrWhiteSpace(netsisCode) ? null : netsisCode));
                 }
 
-                if (result.MappedCount > 0)
+                if (rowsToProcess.Any())
                 {
-                    _logger.LogInformation("Saving {Count} mappings...", result.MappedCount);
-                    await _context.SaveChangesAsync(cancellationToken);
+                    _logger.LogInformation("Processing {Count} rows from Excel.", rowsToProcess.Count);
 
-                    // Re-evaluate NeedsMapping orders
-                    var pendingOrderIds = await _context.IssOrders
-                        .Where(o => o.ImportStatus == ImportStatus.NeedsMapping && o.IsActive)
-                        .Select(o => o.Id)
+                    var extCodes = rowsToProcess.Select(r => r.ExtCode).Distinct().ToList();
+                    var locCodes = rowsToProcess.Select(r => r.LocCode).Distinct().ToList();
+
+                    var existingMappings = await _context.StockMappings
+                        .Where(m => extCodes.Contains(m.ExternalStockCode))
                         .ToListAsync(cancellationToken);
 
-                    _logger.LogInformation("Checking {Count} pending orders...", pendingOrderIds.Count);
+                    var mappingsDict = existingMappings
+                        .GroupBy(m => m.ExternalStockCode.Trim(), StringComparer.OrdinalIgnoreCase)
+                        .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
 
-                    foreach (var orderId in pendingOrderIds)
+                    // StockMasters — NetsisStockCode güncellemesi için tracked olarak yükle
+                    var existingLocalStocks = await _context.StockMasters
+                        .Where(s => locCodes.Contains(s.StockCode))
+                        .ToListAsync(cancellationToken);
+
+                    var localStockDict = existingLocalStocks
+                        .GroupBy(s => s.StockCode.Trim(), StringComparer.OrdinalIgnoreCase)
+                        .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+
+                    foreach (var (externalCode, localCode, netsisCode) in rowsToProcess)
                     {
-                        var stockCodes = await _context.IssOrderLines
-                            .Where(l => l.IssOrderId == orderId)
-                            .Select(l => l.StockCode)
-                            .ToListAsync(cancellationToken);
-
-                        bool allMapped = true;
-                        foreach (var stockCode in stockCodes)
+                        if (!mappingsDict.TryGetValue(externalCode, out var mapping))
                         {
-                            var isMapped = await _context.StockMappings
-                                .AnyAsync(m => m.ExternalStockCode == stockCode &&
-                                               (m.MatchStatus == MatchStatus.Mapped || m.MatchStatus == MatchStatus.Ignored),
-                                          cancellationToken);
-                            if (!isMapped) { allMapped = false; break; }
+                            result.NotFoundMappings.Add(externalCode);
+                            continue;
                         }
 
-                        if (allMapped)
+                        if (!localStockDict.TryGetValue(localCode, out var localStock))
                         {
-                            await _context.IssOrders
-                                .Where(o => o.Id == orderId)
-                                .ExecuteUpdateAsync(s => s.SetProperty(o => o.ImportStatus, ImportStatus.Ready), cancellationToken);
+                            result.NotFoundStocks.Add($"'{localCode}' (ISS: {externalCode} için)");
+                            continue;
                         }
+
+                        bool changed = false;
+
+                        if (mapping.LocalStockId != localStock.Id || mapping.MatchStatus != MatchStatus.Mapped)
+                        {
+                            mapping.LocalStockId  = localStock.Id;
+                            mapping.MatchStatus   = MatchStatus.Mapped;
+                            changed = true;
+                        }
+
+                        // D sütunu doldurulmuşsa NetsisStockCode güncelle
+                        if (netsisCode != null && localStock.NetsisStockCode != netsisCode)
+                        {
+                            localStock.NetsisStockCode = netsisCode;
+                            changed = true;
+                        }
+
+                        if (changed) result.MappedCount++;
+                    }
+
+                    if (result.MappedCount > 0)
+                    {
+                        _logger.LogInformation("Saving {Count} mappings to DB...", result.MappedCount);
+                        await _context.SaveChangesAsync(cancellationToken);
+
+                        _logger.LogInformation("Bulk re-evaluating pending orders...");
+
+                        int updatedCount = await _context.IssOrders
+                            .Where(o => o.ImportStatus == ImportStatus.NeedsMapping && o.IsActive)
+                            .Where(o => !o.Lines.Any(l => _context.StockMappings.Any(m => 
+                                m.ExternalStockCode == l.StockCode && 
+                                (m.MatchStatus != MatchStatus.Mapped && m.MatchStatus != MatchStatus.Ignored))))
+                            .ExecuteUpdateAsync(s => s.SetProperty(o => o.ImportStatus, ImportStatus.Ready), cancellationToken);
+
+                        _logger.LogInformation("{Count} orders changed from NeedsMapping to Ready.", updatedCount);
                     }
                 }
 

@@ -1,7 +1,45 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Akyildiz.Sevkiyat.Application.External.Netsis.Dtos
 {
+    // ── Genel API Yanıt Wrapper'ları ──────────────────────────────────────────
+
+    /// <summary>
+    /// Netsis NetOpenX tüm endpoint'leri HTTP 200 döndürür.
+    /// Başarı/hata bilgisi IsSuccessful alanındadır.
+    /// ItemSlips POST için kullanılır.
+    /// </summary>
+    public sealed class NetsisApiResponse
+    {
+        [JsonPropertyName("IsSuccessful")]
+        public bool    IsSuccessful { get; set; }
+
+        [JsonPropertyName("ErrorCode")]
+        public string? ErrorCode { get; set; }
+
+        [JsonPropertyName("ErrorDesc")]
+        public string? ErrorDesc { get; set; }
+    }
+
+    /// <summary>
+    /// GET /api/v2/Queries yanıtı — Data dizisi DataTable formatında (kolon adı → değer).
+    /// </summary>
+    public sealed class NetsisQueryResponse
+    {
+        [JsonPropertyName("IsSuccessful")]
+        public bool    IsSuccessful { get; set; }
+
+        [JsonPropertyName("ErrorCode")]
+        public string? ErrorCode { get; set; }
+
+        [JsonPropertyName("ErrorDesc")]
+        public string? ErrorDesc { get; set; }
+
+        [JsonPropertyName("Data")]
+        public List<Dictionary<string, JsonElement>> Data { get; set; } = new();
+    }
+
     // ── Login ──────────────────────────────────────────────────────────────────
 
     /// <summary>

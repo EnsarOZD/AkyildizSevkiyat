@@ -7,7 +7,7 @@
         <h1 class="text-xl font-bold text-gray-900 dark:text-gray-100">Depo Hazırlık</h1>
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
           <span v-if="!loading">
-            <span v-if="activeCount > 0" class="text-orange-600 dark:text-orange-400 font-medium">{{ activeCount }} bekleyen hazırlık</span>
+            <span v-if="activePickingCount > 0" class="text-orange-600 dark:text-orange-400 font-medium">{{ activePickingCount }} bekleyen hazırlık</span>
             <span v-else class="text-green-600 dark:text-green-400 font-medium">Bekleyen hazırlık yok</span>
             <span v-if="overdueCount > 0" class="ml-2 text-red-600 dark:text-red-400 font-medium">• {{ overdueCount }} gecikmiş</span>
           </span>
@@ -30,6 +30,14 @@
               v-if="tab.key === 'irsaliye' && irsaliyePendingCount > 0"
               class="ml-1 bg-red-500 text-white rounded-full px-1.5 py-0.5 text-[10px] font-bold"
             >{{ irsaliyePendingCount }}</span>
+            <span
+              v-if="tab.key === 'vehicle' && vehiclePendingCount > 0"
+              class="ml-1 bg-purple-500 text-white rounded-full px-1.5 py-0.5 text-[10px] font-bold"
+            >{{ vehiclePendingCount }}</span>
+            <span
+              v-if="tab.key === 'loading' && loadingPendingCount > 0"
+              class="ml-1 bg-emerald-500 text-white rounded-full px-1.5 py-0.5 text-[10px] font-bold"
+            >{{ loadingPendingCount }}</span>
           </button>
         </div>
         <!-- Refresh -->
@@ -317,11 +325,13 @@ const error = ref('');
 const isStarting = ref(false);
 const fetchingIrsaliyeId = ref<number | null>(null);
 const confirmingLoadingId = ref<number | null>(null);
-type TabKey = 'active' | 'irsaliye' | 'all';
+type TabKey = 'active' | 'irsaliye' | 'vehicle' | 'loading' | 'all';
 const activeTab = ref<TabKey>('active');
 const tabOptions: { key: TabKey; label: string }[] = [
-  { key: 'active',    label: 'Aktifler' },
-  { key: 'irsaliye',  label: 'İrsaliye Bekleyenler' },
+  { key: 'active',    label: 'Aktif Hazırlık' },
+  { key: 'irsaliye',  label: 'İrsaliye Bekleyen' },
+  { key: 'vehicle',   label: 'Araç Atama Bekleyen' },
+  { key: 'loading',   label: 'Yükleme Bekleyen' },
   { key: 'all',       label: 'Tümü' },
 ];
 const expandedIds = ref<Set<number>>(new Set());
@@ -343,59 +353,23 @@ const selectedZonePrep = ref<DashboardZoneDto | null>(null);
 const criticalStocks = ref<CriticalStockItem[]>([]);
 const criticalStocksLoading = ref(false);
 
-// ── Date helpers ──
-function dateStr(offset: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + offset);
-  return d.toISOString().split('T')[0] as string;
-}
-
-function todayStr(): string {
-  return dateStr(0);
-}
-
-// ── Fetch last 14 days + today + 2 days ahead ──
+// ── Tüm aktif zone hazırlıklarını tek çağrıyla getir (tarih filtresi yok) ──
 const fetchAll = async () => {
   loading.value = true;
   error.value = '';
   try {
-    // Build date range: -13 days to +2 days (16 dates total)
-    const offsets = Array.from({ length: 16 }, (_, i) => i - 13);
-    const dates = offsets.map(o => dateStr(o));
+    const zones = await warehouseService.getDashboardAll();
+    const withDate = zones.map(z => ({
+      ...z,
+      deliveryDateStr: new Date(z.deliveryDate).toISOString().split('T')[0] as string,
+    }));
+    // Tarihe göre sırala
+    withDate.sort((a, b) => a.deliveryDateStr.localeCompare(b.deliveryDateStr));
+    allZones.value = withDate;
 
-    // Sync Today and Tomorrow to ensure most active data is fresh
-    await Promise.allSettled([
-        warehouseService.syncDashboard(todayStr()),
-        warehouseService.syncDashboard(dateStr(1))
-    ]);
-
-    const results = await Promise.allSettled(
-      dates.map(d => warehouseService.getDashboardAll({ date: d }).then(zones =>
-        zones.map(z => ({ ...z, deliveryDateStr: d }))
-      ))
-    );
-
-    const merged: (DashboardZoneDto & { deliveryDateStr: string })[] = [];
-    const seenIds = new Set<number>();
-
-    for (const result of results) {
-      if (result.status === 'fulfilled') {
-        for (const zone of result.value) {
-          if (!seenIds.has(zone.id)) {
-            seenIds.add(zone.id);
-            merged.push(zone);
-          }
-        }
-      }
-    }
-
-    // Sort: past first (oldest → newest → future)
-    merged.sort((a, b) => a.deliveryDateStr.localeCompare(b.deliveryDateStr));
-    allZones.value = merged;
-
-    // Auto-expand incomplete zones
+    // Tamamlanmamış zone'ları otomatik aç
     expandedIds.value = new Set(
-      merged.filter(z => z.statusId < 5).map(z => z.id)
+      withDate.filter(z => z.statusId < 5).map(z => z.id)
     );
   } catch (e) {
     error.value = 'Veriler yüklenirken bir hata oluştu.';
@@ -409,8 +383,12 @@ const fetchAll = async () => {
 const visibleZones = computed(() => {
   if (activeTab.value === 'irsaliye')
     return allZones.value.filter(z => z.statusId === 4 && !z.irsaliyeFetched);
+  if (activeTab.value === 'vehicle')
+    return allZones.value.filter(z => z.statusId === 4 && z.irsaliyeFetched);
+  if (activeTab.value === 'loading')
+    return allZones.value.filter(z => z.statusId === 5);
   if (activeTab.value === 'active')
-    return allZones.value.filter(z => z.statusId < 5);
+    return allZones.value.filter(z => z.statusId < 4);
   return allZones.value; // 'all'
 });
 
@@ -418,9 +396,17 @@ const irsaliyePendingCount = computed(
   () => allZones.value.filter(z => z.statusId === 4 && !z.irsaliyeFetched).length
 );
 
-const activeCount = computed(() => allZones.value.filter(z => z.statusId < 6).length);
+const vehiclePendingCount = computed(
+  () => allZones.value.filter(z => z.statusId === 4 && z.irsaliyeFetched).length
+);
+
+const loadingPendingCount = computed(
+  () => allZones.value.filter(z => z.statusId === 5).length
+);
+
+const activePickingCount = computed(() => allZones.value.filter(z => z.statusId < 4).length);
 const overdueCount = computed(() =>
-  allZones.value.filter(z => z.statusId < 5 && z.deliveryDateStr < todayStr()).length
+  allZones.value.filter(z => z.statusId < 4 && z.deliveryDateStr < todayStr()).length
 );
 
 interface DateGroup {
@@ -513,10 +499,17 @@ const fetchIrsaliye = async (zonePrep: DashboardZoneDto) => {
   fetchingIrsaliyeId.value = zonePrep.id;
   try {
     const result = await warehouseService.fetchIrsaliye(zonePrep.id);
+    if (result.fetched > 0) {
+      notificationStore.add(`${result.fetched} sevkiyatın irsaliye numarası çekildi.`, 'success');
+    }
+    if (result.warnings.length > 0) {
+      result.warnings.forEach(w => notificationStore.add(w, 'warning'));
+    }
     if (result.errors.length > 0) {
-      notificationStore.add(`İrsaliye çekildi (${result.exported} aktarıldı, ${result.skipped} atlandı). Hatalar: ${result.errors.join('; ')}`, 'warning');
-    } else {
-      notificationStore.add(`İrsaliye numaraları başarıyla çekildi (${result.exported} sevkiyat aktarıldı).`, 'success');
+      result.errors.forEach(e => notificationStore.add(e, 'error'));
+    }
+    if (result.fetched === 0 && result.warnings.length === 0 && result.errors.length === 0) {
+      notificationStore.add('Tüm irsaliyeler zaten çekilmiş.', 'info');
     }
     await fetchAll();
   } catch (e: any) {

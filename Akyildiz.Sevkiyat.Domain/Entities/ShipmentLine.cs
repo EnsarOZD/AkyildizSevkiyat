@@ -110,13 +110,15 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
         /// <summary>
         /// Stok bilgilerini günceller (stok kartı değişikliği).
         /// </summary>
-        public void UpdateStockInfo(string stockCode, string stockName, StockUnit unit, int? stockMasterId = null)
+        public void UpdateStockInfo(string stockCode, string stockName, StockUnit unit, int? stockMasterId = null, bool updateStockMasterId = false)
         {
             StockCode = stockCode;
             StockName = stockName;
             Unit = unit;
             if (stockMasterId.HasValue)
                 StockMasterId = stockMasterId.Value;
+            else if (updateStockMasterId)
+                StockMasterId = null;
         }
 
         /// <summary>

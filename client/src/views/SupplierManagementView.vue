@@ -87,8 +87,8 @@
                 <input v-model="editForm.name" type="text" class="mt-1 bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Tedarikçi Kodu (Opsiyonel)</label>
-                <input v-model="editForm.supplierCode" type="text" class="mt-1 bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Netsis Cari Kodu <span class="text-xs text-gray-400 font-normal">(Netsis'e aktarım için zorunlu)</span></label>
+                <input v-model="editForm.supplierCode" type="text" class="mt-1 bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="örn: 120.001.001">
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">E-posta (Opsiyonel)</label>

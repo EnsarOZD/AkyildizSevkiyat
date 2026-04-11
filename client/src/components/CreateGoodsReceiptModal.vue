@@ -20,6 +20,21 @@
       <p class="text-sm font-semibold text-blue-900 dark:text-blue-100">{{ purchaseOrder.orderNumber }} — {{ purchaseOrder.supplierNameSnapshot }}</p>
       <p class="text-xs text-blue-600 dark:text-blue-400 mt-0.5">{{ formatDate(purchaseOrder.orderDate) }}</p>
     </div>
+    <div v-else-if="purchaseOrderIds && purchaseOrderIds.length > 0" class="mb-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl p-3 border border-indigo-200 dark:border-indigo-800">
+      <p class="text-xs font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wider mb-1">Bağlı Siparişler</p>
+      <p class="text-sm font-semibold text-indigo-900 dark:text-indigo-100">{{ purchaseOrderIds.length }} adet sipariş seçildi</p>
+    </div>
+    <div v-else class="mb-4 p-3 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-xl">
+       <p class="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider mb-2">Siparişsiz Mal Kabul</p>
+       <label class="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase mb-1">Tedarikçi Seçimi</label>
+       <select
+         v-model="form.supplierId"
+         class="w-full border border-gray-200 dark:border-gray-700 rounded-lg p-2 text-sm dark:bg-gray-800 dark:text-gray-100 outline-none focus:ring-2 focus:ring-amber-500"
+       >
+         <option value="">Tedarikçi Seçiniz...</option>
+         <option v-for="s in suppliers" :key="s.id" :value="s.id">{{ s.name }}</option>
+       </select>
+    </div>
 
     <!-- OCR Scan Button -->
     <div class="mb-4">
@@ -77,13 +92,17 @@
       </div>
 
       <div>
-        <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Not</label>
+        <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
+            Not <span v-if="!purchaseOrder && (!purchaseOrderIds || purchaseOrderIds.length === 0)" class="text-red-500">*</span>
+        </label>
         <textarea
           v-model="form.note"
           rows="2"
           class="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none"
-          placeholder="İsteğe bağlı..."
+          :placeholder="(!purchaseOrder && (!purchaseOrderIds || purchaseOrderIds.length === 0)) ? 'Siparişsiz kabul için açıklama zorunludur...' : 'İsteğe bağlı...'"
+          :class="errors.note ? 'border-red-400' : ''"
         ></textarea>
+        <p v-if="errors.note" class="mt-1 text-xs text-red-500">{{ errors.note }}</p>
       </div>
     </div>
 
@@ -115,10 +134,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import BaseModal from './BaseModal.vue';
 import InvoiceScanModal from './InvoiceScanModal.vue';
 import goodsReceiptService from '../services/goodsReceiptService';
+import { supplierService } from '../services/supplierService';
 import { useNotificationStore } from '../stores/notification';
 import { ApiErrorUtils } from '../utils/apiError';
 import type { OcrInvoiceLineResult } from '../services/ocrService';
@@ -126,6 +146,8 @@ import type { OcrInvoiceLineResult } from '../services/ocrService';
 const props = defineProps<{
   isOpen: boolean;
   purchaseOrder?: any;
+  purchaseOrderIds?: string[];
+  initialSupplierId?: string;
 }>();
 
 const emit = defineEmits<{
@@ -139,23 +161,37 @@ const today = new Date().toISOString().split('T')[0];
 const saving = ref(false);
 const duplicateWarning = ref(false);
 const showScanModal = ref(false);
+const suppliers = ref<any[]>([]);
 
 const form = ref({
+  supplierId: '',
   waybillNo: '',
   waybillDate: today,
   receiptDate: today,
   note: ''
 });
 
-const errors = ref<{ waybillNo?: string; waybillDate?: string }>({});
+const errors = ref<{ waybillNo?: string; waybillDate?: string; note?: string; supplierId?: string }>({});
 
 const formatDate = (date: string) => {
   if (!date) return '-';
   return new Date(date).toLocaleDateString('tr-TR');
 };
 
+const fetchSuppliers = async () => {
+    try {
+        suppliers.value = await supplierService.getAll();
+    } catch (e) { console.error('Tedarikçiler yüklenemedi'); }
+};
+
 const resetForm = () => {
-  form.value = { waybillNo: '', waybillDate: today, receiptDate: today, note: '' };
+  form.value = { 
+    supplierId: props.initialSupplierId || '',
+    waybillNo: '', 
+    waybillDate: today, 
+    receiptDate: today, 
+    note: '' 
+  };
   errors.value = {};
   duplicateWarning.value = false;
   showScanModal.value = false;
@@ -170,9 +206,10 @@ const handleScanResult = (data: { waybillNo: string; waybillDate: string; lines:
   );
 };
 
-watch(() => props.isOpen, (newVal, oldVal) => {
-  if (newVal && !oldVal) {
+watch(() => props.isOpen, (newVal) => {
+  if (newVal) {
     resetForm();
+    if (suppliers.value.length === 0) fetchSuppliers();
   }
 });
 
@@ -180,6 +217,13 @@ const validate = () => {
   errors.value = {};
   if (!form.value.waybillNo.trim()) errors.value.waybillNo = 'İrsaliye numarası zorunludur.';
   if (!form.value.waybillDate) errors.value.waybillDate = 'İrsaliye tarihi zorunludur.';
+  
+  const hasPO = props.purchaseOrder || (props.purchaseOrderIds && props.purchaseOrderIds.length > 0);
+  if (!hasPO) {
+      if (!form.value.supplierId) errors.value.supplierId = 'Tedarikçi seçimi zorunludur.';
+      if (!form.value.note.trim()) errors.value.note = 'Siparişsiz mal kabul için açıklama zorunludur.';
+  }
+  
   return Object.keys(errors.value).length === 0;
 };
 
@@ -205,6 +249,12 @@ const submitForm = async (ignoreDuplicate: boolean) => {
 
     if (props.purchaseOrder?.id) {
       payload.purchaseOrderId = props.purchaseOrder.id;
+      payload.supplierId = props.purchaseOrder.supplierId;
+    } else if (props.purchaseOrderIds && props.purchaseOrderIds.length > 0) {
+      payload.purchaseOrderIds = props.purchaseOrderIds;
+      // SupplierId will be resolved at backend from the POs
+    } else {
+      payload.supplierId = form.value.supplierId;
     }
 
     const res = await goodsReceiptService.create(payload);
@@ -224,4 +274,8 @@ const submitForm = async (ignoreDuplicate: boolean) => {
     saving.value = false;
   }
 };
+
+onMounted(() => {
+    if (props.isOpen) fetchSuppliers();
+});
 </script>

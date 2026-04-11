@@ -41,6 +41,7 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Queries.ExportStocks
             worksheet.Cell(1, 6).Value = "Toplama Tipi";
             worksheet.Cell(1, 7).Value = "Durum";
             worksheet.Cell(1, 8).Value = "Kategori";
+            worksheet.Cell(1, 9).Value = "Netsis Stok Kodu";
 
             // Data
             for (int i = 0; i < stocks.Count; i++)
@@ -58,6 +59,7 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Queries.ExportStocks
                     worksheet.Cell(row, 6).Value = stock.PickingType.ToString();
                     worksheet.Cell(row, 7).Value = stock.IsActive ? "Aktif" : "Pasif";
                     worksheet.Cell(row, 8).Value = stock.Category.ToString();
+                    worksheet.Cell(row, 9).Value = stock.NetsisStockCode ?? "";
                 }
                 catch (System.Exception ex)
                 {
@@ -66,9 +68,11 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Queries.ExportStocks
             }
 
             // Styling
-            var headerRange = worksheet.Range(1, 1, 1, 8);
+            var headerRange = worksheet.Range(1, 1, 1, 9);
             headerRange.Style.Font.Bold = true;
             headerRange.Style.Fill.BackgroundColor = XLColor.LightGray;
+            // Netsis sütunu turuncu — önemli alan
+            worksheet.Cell(1, 9).Style.Fill.BackgroundColor = XLColor.Orange;
             worksheet.Columns().AdjustToContents();
 
             using var stream = new MemoryStream();

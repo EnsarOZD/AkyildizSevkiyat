@@ -25,10 +25,17 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Queries.ExportUnmappedStocks
 
         public async Task<ExportUnmappedData> Handle(ExportUnmappedStocksQuery request, CancellationToken cancellationToken)
         {
-            // Fetch unmapped items (MatchStatus.Pending)
+            // Unmapped + mevcut NetsisStockCode için LocalStock join
             var unmapped = await _context.StockMappings
                 .Where(m => m.MatchStatus == MatchStatus.Unmapped)
                 .OrderBy(m => m.ExternalStockCode)
+                .Select(m => new
+                {
+                    m.ExternalStockCode,
+                    m.ExternalStockName,
+                    LocalStockCode      = m.LocalStock != null ? m.LocalStock.StockCode    : null,
+                    NetsisStockCode     = m.LocalStock != null ? m.LocalStock.NetsisStockCode : null,
+                })
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
 
@@ -36,12 +43,10 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Queries.ExportUnmappedStocks
             var worksheet = workbook.Worksheets.Add("Eslesmeyen Stoklar");
 
             // Headers
-            worksheet.Cell(1, 1).Value = "External Code (ISS-IP)";
-            worksheet.Cell(1, 2).Value = "External Name";
-            worksheet.Cell(1, 3).Value = "Local Stock Code (Eslestirilecek)";
-            
-            // Helpful note column (optional, not read back)
-            worksheet.Cell(1, 4).Value = "Not";
+            worksheet.Cell(1, 1).Value = "ISS Kodu (A - degistirme)";
+            worksheet.Cell(1, 2).Value = "ISS Adi (B - degistirme)";
+            worksheet.Cell(1, 3).Value = "Yerel Stok Kodu (C - doldur)";
+            worksheet.Cell(1, 4).Value = "Netsis Stok Kodu (D - doldur)";
 
             // Data
             for (int i = 0; i < unmapped.Count; i++)
@@ -51,15 +56,22 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Queries.ExportUnmappedStocks
 
                 worksheet.Cell(row, 1).Value = item.ExternalStockCode;
                 worksheet.Cell(row, 2).Value = item.ExternalStockName;
-                // Column 3 is empty for user to fill
-                worksheet.Cell(row, 3).Value = ""; 
-                worksheet.Cell(row, 4).Value = "Lutfen C sutununa yerel stok kodunu giriniz.";
+                worksheet.Cell(row, 3).Value = item.LocalStockCode    ?? "";
+                worksheet.Cell(row, 4).Value = item.NetsisStockCode   ?? "";
             }
 
-            // Styling
+            // Styling — başlık satırı
             var headerRange = worksheet.Range(1, 1, 1, 4);
             headerRange.Style.Font.Bold = true;
-            headerRange.Style.Fill.BackgroundColor = XLColor.Yellow; // Attention color
+            headerRange.Style.Fill.BackgroundColor = XLColor.Yellow;
+
+            // A ve B sütunları salt-okunur görünümü (gri arka plan)
+            var readonlyRange = worksheet.Range(2, 1, unmapped.Count + 1, 2);
+            readonlyRange.Style.Fill.BackgroundColor = XLColor.LightGray;
+
+            // D sütununu turuncu — zorunlu alan
+            worksheet.Cell(1, 4).Style.Fill.BackgroundColor = XLColor.Orange;
+
             worksheet.Columns().AdjustToContents();
 
             // Protect columns A and B to prevent modification? Maybe too restrictive, but good practice.

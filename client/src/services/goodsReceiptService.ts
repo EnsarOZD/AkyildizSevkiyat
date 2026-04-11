@@ -52,7 +52,8 @@ const goodsReceiptService = {
   },
 
   async create(data: {
-    purchaseOrderId: string;
+    purchaseOrderId?: string;
+    purchaseOrderIds?: string[];
     supplierId: string;
     waybillNo: string;
     waybillDate: string;

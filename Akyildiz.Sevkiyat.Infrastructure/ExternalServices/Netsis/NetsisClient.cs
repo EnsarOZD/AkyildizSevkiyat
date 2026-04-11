@@ -157,17 +157,28 @@ namespace Akyildiz.Sevkiyat.Infrastructure.ExternalServices.Netsis
 
             using var resp = await _http.PostAsJsonAsync(_opt.SiparisPath, wireRequest, cancellationToken);
 
+            var rawResp = await resp.Content.ReadAsStringAsync(cancellationToken);
+
             if (!resp.IsSuccessStatusCode)
             {
                 _tokenCache.Invalidate();
-                var err = await resp.Content.ReadAsStringAsync(cancellationToken);
                 throw new HttpRequestException(
-                    $"Netsis CreateSiparis hatası ({resp.StatusCode}): {err}");
+                    $"Netsis CreateSiparis hatası ({resp.StatusCode}): {rawResp}");
+            }
+
+            // Netsis her zaman HTTP 200 döndürür; başarı IsSuccessful alanındadır
+            NetsisApiResponse? apiResp = null;
+            try { apiResp = System.Text.Json.JsonSerializer.Deserialize<NetsisApiResponse>(rawResp); } catch { }
+
+            if (apiResp is { IsSuccessful: false })
+            {
+                throw new HttpRequestException(
+                    $"Netsis CreateSiparis hatası: [{apiResp.ErrorCode}] {apiResp.ErrorDesc}");
             }
 
             return new NetsisSiparisResult
             {
-                Basarili     = true,
+                Basarili      = true,
                 NetsisOrderNo = fatIrsNo,
             };
         }
@@ -221,17 +232,27 @@ namespace Akyildiz.Sevkiyat.Infrastructure.ExternalServices.Netsis
 
             using var resp = await _http.PostAsJsonAsync(_opt.SatinalmaSiparisPath, wireRequest, cancellationToken);
 
+            var rawResp = await resp.Content.ReadAsStringAsync(cancellationToken);
+
             if (!resp.IsSuccessStatusCode)
             {
                 _tokenCache.Invalidate();
-                var err = await resp.Content.ReadAsStringAsync(cancellationToken);
                 throw new HttpRequestException(
-                    $"Netsis CreateSatinalmaSiparis hatası ({resp.StatusCode}): {err}");
+                    $"Netsis CreateSatinalmaSiparis hatası ({resp.StatusCode}): {rawResp}");
+            }
+
+            NetsisApiResponse? apiResp = null;
+            try { apiResp = System.Text.Json.JsonSerializer.Deserialize<NetsisApiResponse>(rawResp); } catch { }
+
+            if (apiResp is { IsSuccessful: false })
+            {
+                throw new HttpRequestException(
+                    $"Netsis CreateSatinalmaSiparis hatası: [{apiResp.ErrorCode}] {apiResp.ErrorDesc}");
             }
 
             return new NetsisPoResult
             {
-                Basarili  = true,
+                Basarili   = true,
                 NetsisPONo = fatIrsNo,
             };
         }
@@ -257,12 +278,24 @@ namespace Akyildiz.Sevkiyat.Infrastructure.ExternalServices.Netsis
                     $"Netsis GetIrsaliyeler hatası ({resp.StatusCode}): {err}");
             }
 
-            // Netsis tek bir irsaliye nesnesi döndürebilir ya da liste
+            // Netsis tek bir irsaliye nesnesi döndürebilir ya da liste veya {"IsSuccessful":false,...} hatası
             var raw = await resp.Content.ReadAsStringAsync(cancellationToken);
             if (string.IsNullOrWhiteSpace(raw) || raw == "null")
                 return Array.Empty<NetsisIrsaliyeDto>();
 
-            if (raw.TrimStart().StartsWith('['))
+            var trimmed = raw.TrimStart();
+
+            // {"IsSuccessful":false,...} → hata
+            if (trimmed.StartsWith('{') && trimmed.Contains("\"IsSuccessful\""))
+            {
+                var apiResp = System.Text.Json.JsonSerializer.Deserialize<NetsisApiResponse>(raw);
+                if (apiResp is { IsSuccessful: false })
+                    throw new HttpRequestException(
+                        $"Netsis GetIrsaliyeler hatası: [{apiResp.ErrorCode}] {apiResp.ErrorDesc}");
+                return Array.Empty<NetsisIrsaliyeDto>();
+            }
+
+            if (trimmed.StartsWith('['))
             {
                 return System.Text.Json.JsonSerializer.Deserialize<List<NetsisIrsaliyeDto>>(raw)
                     as IReadOnlyList<NetsisIrsaliyeDto>
@@ -305,32 +338,32 @@ namespace Akyildiz.Sevkiyat.Infrastructure.ExternalServices.Netsis
             if (string.IsNullOrWhiteSpace(raw) || raw == "null")
                 return Array.Empty<NetsisStockBalanceDto>();
 
-            // Response: [[123.45]] (DataTable) veya [{"Column1": 123.45}]
+            // Response: {"IsSuccessful":true,"Data":[{"Column1":123.45},...]}
             decimal mevcutStok = 0;
             try
             {
-                using var doc = System.Text.Json.JsonDocument.Parse(raw);
-                var root = doc.RootElement;
-
-                if (root.ValueKind == System.Text.Json.JsonValueKind.Array && root.GetArrayLength() > 0)
+                var queryResp = System.Text.Json.JsonSerializer.Deserialize<NetsisQueryResponse>(raw);
+                if (queryResp is not null)
                 {
-                    var first = root[0];
-                    if (first.ValueKind == System.Text.Json.JsonValueKind.Array && first.GetArrayLength() > 0)
-                        mevcutStok = first[0].GetDecimal();
-                    else if (first.ValueKind == System.Text.Json.JsonValueKind.Object)
+                    if (!queryResp.IsSuccessful)
+                        throw new HttpRequestException(
+                            $"Netsis GetStockBalance hatası: [{queryResp.ErrorCode}] {queryResp.ErrorDesc}");
+
+                    if (queryResp.Data.Count > 0)
                     {
-                        foreach (var prop in first.EnumerateObject())
+                        var firstRow = queryResp.Data[0];
+                        foreach (var kv in firstRow)
                         {
-                            mevcutStok = prop.Value.GetDecimal();
-                            break;
+                            if (kv.Value.ValueKind == System.Text.Json.JsonValueKind.Number)
+                            {
+                                mevcutStok = kv.Value.GetDecimal();
+                                break;
+                            }
                         }
                     }
-                    else if (first.ValueKind == System.Text.Json.JsonValueKind.Number)
-                        mevcutStok = first.GetDecimal();
                 }
-                else if (root.ValueKind == System.Text.Json.JsonValueKind.Number)
-                    mevcutStok = root.GetDecimal();
             }
+            catch (HttpRequestException) { throw; }
             catch
             {
                 if (decimal.TryParse(raw.Trim('[', ']', '"', ' '), out var parsed))

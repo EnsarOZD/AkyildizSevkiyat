@@ -14,6 +14,7 @@ namespace Akyildiz.Sevkiyat.Application.Common.Dtos
         double? Longitude,
         string? Address,
         TimeOnly? DeliveryWindowStart = null,
-        TimeOnly? DeliveryWindowEnd = null
+        TimeOnly? DeliveryWindowEnd = null,
+        string? NetsisTeslimCariKodu = null
     );
 }

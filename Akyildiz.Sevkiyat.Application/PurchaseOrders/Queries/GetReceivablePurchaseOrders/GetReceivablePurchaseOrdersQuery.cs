@@ -49,17 +49,18 @@ namespace Akyildiz.Sevkiyat.Application.PurchaseOrders.Queries.GetReceivablePurc
 
         public async Task<List<ReceivablePurchaseOrderDto>> Handle(GetReceivablePurchaseOrdersQuery request, CancellationToken cancellationToken)
         {
-            if (request.SupplierId == Guid.Empty)
-                return new List<ReceivablePurchaseOrderDto>();
-
-            var fromDate = request.FromDate ?? DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-30));
+            var fromDate = request.FromDate ?? DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-120));
             var toDate = request.ToDate ?? DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1));
 
             // Base query for POs
             var poQuery = _context.PurchaseOrders
-                .Where(x => x.SupplierId == request.SupplierId)
                 .Where(x => x.Status == PurchaseOrderStatus.Approved || x.Status == PurchaseOrderStatus.PartiallyReceived)
                 .Where(x => x.OrderDate >= fromDate && x.OrderDate <= toDate);
+
+            if (request.SupplierId != Guid.Empty)
+            {
+                poQuery = poQuery.Where(x => x.SupplierId == request.SupplierId);
+            }
 
             // Fetch POs with their lines and related POSTED goods receipt lines for calculation
             // We'll use a projection to keep it efficient

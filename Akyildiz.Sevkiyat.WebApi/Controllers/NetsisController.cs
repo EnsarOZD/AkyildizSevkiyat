@@ -1,5 +1,6 @@
 using Akyildiz.Sevkiyat.Application.Netsis.Commands.BulkExportShipmentsToNetsis;
 using Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportClothingShipmentToNetsis;
+using Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportPurchaseOrderToNetsis;
 using Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportShipmentToNetsis;
 using Akyildiz.Sevkiyat.Application.Netsis.Commands.FetchShipmentIrsaliye;
 using Akyildiz.Sevkiyat.Application.Netsis.Commands.SyncNetsisStockBalance;
@@ -98,6 +99,22 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         {
             var result = await _mediator.Send(new FetchShipmentIrsaliyeCommand(id), ct);
             return Ok(new { irsaliyeNo = result.IrsaliyeNo, message = result.Message });
+        }
+
+        /// <summary>
+        /// Onaylı satınalma siparişini Netsis'e "Satınalma Siparişi" (FaturaTip=6) olarak aktarır.
+        /// Önkoşul: Status == Approved, NetsisTransferredAt == null, Supplier.SupplierCode dolu.
+        /// </summary>
+        [HttpPost("purchase-orders/{id:guid}/export")]
+        [Authorize(Roles = "Admin,Manager,Accounting")]
+        public async Task<IActionResult> ExportPurchaseOrder(Guid id, CancellationToken ct)
+        {
+            var netsisPONo = await _mediator.Send(new ExportPurchaseOrderToNetsisCommand(id), ct);
+            return Ok(new
+            {
+                netsisPONo,
+                message = $"Satınalma siparişi Netsis'e aktarıldı. Belge No: {netsisPONo}"
+            });
         }
 
         /// <summary>

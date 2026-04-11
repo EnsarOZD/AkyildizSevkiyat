@@ -60,16 +60,29 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.UpdateShipmentDetails
                 // shipment.Lines.Remove(lineToDelete); // EF Core tracking handles this but good to be explicit if needed
             }
 
+            // Bulk-load StockMasters for all stock codes in request
+            var requestedCodes = request.Lines
+                .Select(l => l.StockCode?.Trim())
+                .Where(c => !string.IsNullOrEmpty(c))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            var stockMasterMap = await _context.StockMasters
+                .Where(s => requestedCodes.Contains(s.StockCode))
+                .ToDictionaryAsync(s => s.StockCode, StringComparer.OrdinalIgnoreCase, cancellationToken);
+
             // Detect Updates & Inserts
             foreach (var lineDto in request.Lines)
             {
+                stockMasterMap.TryGetValue(lineDto.StockCode ?? "", out var stockMaster);
+
                 if (lineDto.LineId.HasValue && lineDto.LineId.Value > 0)
                 {
                     // Update
                     var dbLine = shipment.Lines.FirstOrDefault(l => l.Id == lineDto.LineId.Value);
                     if (dbLine != null)
                     {
-                        dbLine.UpdateStockInfo(lineDto.StockCode, lineDto.StockName, lineDto.Unit);
+                        dbLine.UpdateStockInfo(lineDto.StockCode, lineDto.StockName, lineDto.Unit, stockMaster?.Id, updateStockMasterId: true);
                         dbLine.UpdateOrderedQty(lineDto.OrderedQty);
                     }
                 }
@@ -77,6 +90,8 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.UpdateShipmentDetails
                 {
                     // Insert
                     var newLine = ShipmentLine.Create(null, null, lineDto.StockCode, lineDto.StockName, lineDto.Unit, lineDto.OrderedQty);
+                    if (stockMaster != null)
+                        newLine.UpdateStockInfo(lineDto.StockCode, lineDto.StockName, lineDto.Unit, stockMaster.Id);
                     _context.ShipmentLines.Add(newLine);
                 }
             }

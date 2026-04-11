@@ -29,8 +29,17 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
 
         public DateTime? LastSyncedAt { get; set; }
 
-        // Netsis cari kodu — API bilgileri gelince doldurulur
+        /// <summary>
+        /// Netsis fatura cari kodu — faturanın kesileceği cari (örn. 120.01.001).
+        /// ItemSlips.FatUst.CariKod alanına gönderilir.
+        /// </summary>
         public string? NetsisCariKodu { get; set; }
+
+        /// <summary>
+        /// Netsis teslim cari kodu — projenin Netsis'teki teslim cari kodu (örn. 10029).
+        /// ItemSlips.FatUst.CARI_KOD2 alanına gönderilir.
+        /// </summary>
+        public string? NetsisTeslimCariKodu { get; set; }
 
         /// <summary>
         /// Şoför rota sırası — bölge içindeki ziyaret önceliği.

@@ -116,7 +116,7 @@ public class IssOrderImportOrchestrator : IIssOrderImportOrchestrator
 
             batch.TotalFromSource = orderList.Count;
 
-            // 2. Load caches
+            // 2. Load caches — tek seferde, döngü öncesi
             var knownMappings = await _context.StockMappings
                .Where(m => m.ExternalSystem == "ISS-IP")
                .ToDictionaryAsync(m => m.ExternalStockCode, m => m, cancellationToken);
@@ -130,7 +130,23 @@ public class IssOrderImportOrchestrator : IIssOrderImportOrchestrator
                 .Where(g => g.Count() == 1)
                 .ToDictionary(g => g.Key, g => g.First().Id);
 
+            // Mevcut sipariş numaralarını tek sorguda çek — döngü içi N+1 önleme
+            var incomingOrderNumbers = orderList
+                .Where(h => !string.IsNullOrEmpty(h.SiparisNo))
+                .Select(h => h.SiparisNo!)
+                .ToList();
+
+            var existingOrderNumberMap = await _context.IssOrders
+                .Where(o => incomingOrderNumbers.Contains(o.ExternalOrderNumber))
+                .Select(o => new { o.ExternalOrderNumber, o.Id })
+                .ToDictionaryAsync(o => o.ExternalOrderNumber, o => o.Id, cancellationToken);
+
+            // Mevcut projeleri tek sorguda çek
+            var allProjects = await _context.Projects
+                .ToDictionaryAsync(p => p.Code, p => p, StringComparer.OrdinalIgnoreCase, cancellationToken);
+
             var batchProjectCache = new Dictionary<string, Domain.Entities.Project>(StringComparer.OrdinalIgnoreCase);
+            foreach (var kv in allProjects) batchProjectCache[kv.Key] = kv.Value;
 
             // 3. Process each order with per-order isolation
             foreach (var header in orderList)
@@ -146,13 +162,10 @@ public class IssOrderImportOrchestrator : IIssOrderImportOrchestrator
                 try
                 {
                     // Check existence — ISS orders are immutable, skip if already imported
-                    var existingOrder = await _context.IssOrders
-                        .FirstOrDefaultAsync(o => o.ExternalOrderNumber == header.SiparisNo, cancellationToken);
-
-                    if (existingOrder != null)
+                    if (existingOrderNumberMap.TryGetValue(header.SiparisNo, out var existingId))
                     {
                         batchOrder.Action = "Skipped";
-                        batchOrder.IssOrderId = existingOrder.Id;
+                        batchOrder.IssOrderId = existingId;
                         skipped++;
                         _context.ImportBatchOrders.Add(batchOrder);
                         continue;

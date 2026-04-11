@@ -459,7 +459,13 @@ const fetchReceipts = async () => {
   loading.value = true;
   error.value = '';
   try {
-    receipts.value = await goodsReceiptService.getAll(filters.value as any) || [];
+    const params: any = { ...filters.value };
+    // Clear empty strings to avoid 400 errors from backend enum parsing
+    Object.keys(params).forEach(key => {
+      if (params[key] === '') delete params[key];
+    });
+    
+    receipts.value = await goodsReceiptService.getAll(params) || [];
   } catch (e) {
     error.value = 'Veriler yüklenirken bir hata oluştu.';
     notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Mal kabul listesi alınamadı.', 'error');

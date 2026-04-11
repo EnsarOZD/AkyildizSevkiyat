@@ -26,7 +26,7 @@
             leave-to-class="opacity-0 scale-95 translate-y-4"
           >
             <div
-              class="relative bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full overflow-hidden flex flex-col"
+              class="relative bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full flex flex-col"
               :class="maxWidthClass"
               role="dialog"
               aria-modal="true"
