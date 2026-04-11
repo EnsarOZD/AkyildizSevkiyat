@@ -10,5 +10,13 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
         public VehicleType VehicleType { get; set; } = VehicleType.Kamyon;
         public string? Description { get; set; }
         public bool IsActive { get; set; } = true;
+        public string? QrCode { get; private set; }
+        public DateTime? QrCodeGeneratedAt { get; private set; }
+
+        public void GenerateQrCode()
+        {
+            QrCode = $"AKYILDIZ_VEHICLE_{Id}_{PlateNumber.Replace(" ", "")}";
+            QrCodeGeneratedAt = DateTime.UtcNow;
+        }
     }
 }

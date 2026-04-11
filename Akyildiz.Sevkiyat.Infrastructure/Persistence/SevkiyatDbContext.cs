@@ -39,6 +39,7 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Persistence
         public DbSet<Driver> Drivers { get; set; } = null!;
         public DbSet<Vehicle> Vehicles { get; set; } = null!;
         public DbSet<ZonePreparationDriver> ZonePreparationDrivers { get; set; } = null!;
+        public DbSet<DriverSession> DriverSessions { get; set; } = null!;
         public DbSet<StockTransaction> StockTransactions { get; set; } = null!;
 
         // NEW MODULE: Purchase Order & Goods Receipt
@@ -438,6 +439,37 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Persistence
                     .HasConversion<int>()
                     .HasDefaultValueSql("0");
                 entity.Property(e => e.Description).HasMaxLength(500);
+                entity.Property(e => e.QrCode).HasMaxLength(200);
+                entity.HasIndex(e => e.QrCode).IsUnique().HasFilter("[QrCode] IS NOT NULL");
+            });
+
+            // DriverSession
+            modelBuilder.Entity<DriverSession>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.DeviceFingerprint).HasMaxLength(200);
+                entity.Property(e => e.Notes).HasMaxLength(500);
+                entity.Property(e => e.ClosedByUserId).HasMaxLength(100);
+
+                entity.HasOne(e => e.Driver)
+                    .WithMany()
+                    .HasForeignKey(e => e.DriverId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Vehicle)
+                    .WithMany()
+                    .HasForeignKey(e => e.VehicleId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.ZonePreparation)
+                    .WithMany()
+                    .HasForeignKey(e => e.ZonePreparationId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasIndex(e => new { e.DriverId, e.Status });
+                entity.HasIndex(e => new { e.VehicleId, e.Status });
+                entity.HasIndex(e => e.StartTime);
             });
 
             // ZonePreparationDriver
