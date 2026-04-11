@@ -343,8 +343,17 @@ async function markDelivered() {
     notify.add('Sevkiyat teslim edildi olarak işaretlendi.', 'success');
     // Return to the previous screen (DriverStopView)
     router.back();
-  } catch {
-    notify.add('Bir hata oluştu. Lütfen tekrar deneyin.', 'error');
+  } catch (err: unknown) {
+    const status = (err as { response?: { status?: number } })?.response?.status;
+    if (!navigator.onLine || (err instanceof TypeError && (err as TypeError).message.includes('fetch'))) {
+      notify.add('İnternet bağlantınızı kontrol edin.', 'error');
+    } else if (status === 409) {
+      notify.add('Bu teslimat zaten onaylanmış.', 'warning');
+    } else if (status === 403) {
+      notify.add('Bu işlem için yetkiniz bulunmuyor.', 'error');
+    } else {
+      notify.add('Bir hata oluştu, lütfen tekrar deneyin.', 'error');
+    }
   } finally {
     submitting.value = false;
   }
