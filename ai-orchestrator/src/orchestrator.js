@@ -41,6 +41,23 @@ async function callAgent({ agentName, systemPrompt, userMessage, context = "" })
   return output;
 }
 
+// ─── Multi-turn agent call ────────────────────────────────────────────────────
+
+async function callAgentMultiTurn({ agentName, systemPrompt, messages }) {
+  console.log(`\n  ▸ ${agentName} çalışıyor (multi-turn)...`);
+
+  const response = await client.messages.create({
+    model: MODEL,
+    max_tokens: 4096,
+    system: systemPrompt,
+    messages,
+  });
+
+  const output = response.content[0].text;
+  console.log(`  ✓ ${agentName} tamamlandı (${output.length} karakter)`);
+  return output;
+}
+
 // ─── Manager — görev analizi ──────────────────────────────────────────────────
 
 async function runManager(task, workflowPrompt) {
@@ -152,6 +169,60 @@ async function runSelectedAgents(managerOutput, task) {
   return results;
 }
 
+// ─── Debate: çapraz eleştiri turu ────────────────────────────────────────────
+
+async function runDebateRound(results, task) {
+  if (results.backend && results.frontend) {
+    // Backend, Frontend'i eleştirir
+    const backendPrompt = await loadPrompt(AGENTS_DIR, "backend");
+    results.backendCritiqueFrontend = await callAgent({
+      agentName: "Backend (Frontend eleştirisi)",
+      systemPrompt: backendPrompt,
+      userMessage: task,
+      context: `## Frontend Agent Çıktısı\n${results.frontend}\n\nBu Frontend planını backend perspektifinden eleştir.\nHangi kısımlar backend ile uyumsuz?\nHangi API contract'ları eksik veya yanlış?\nHangi edge case'ler atlanmış?\nSadece gerçek sorunları listele, gereksiz övgü yapma.`,
+    });
+
+    // Frontend, Backend'i eleştirir
+    const frontendPrompt = await loadPrompt(AGENTS_DIR, "frontend");
+    results.frontendCritiqueBackend = await callAgent({
+      agentName: "Frontend (Backend eleştirisi)",
+      systemPrompt: frontendPrompt,
+      userMessage: task,
+      context: `## Backend Agent Çıktısı\n${results.backend}\n\nBu Backend planını frontend perspektifinden eleştir.\nHangi response formatları frontend için uygunsuz?\nHangi endpoint'ler eksik veya kullanışsız?\nHangi UX gereksinimleri karşılanmamış?\nSadece gerçek sorunları listele, gereksiz övgü yapma.`,
+    });
+  }
+
+  return results;
+}
+
+// ─── Debate: Manager final karar ─────────────────────────────────────────────
+
+async function runManagerFinal(results, task) {
+  const managerPrompt = await loadPrompt(AGENTS_DIR, "manager");
+
+  const context = [
+    `## Backend Planı\n${results.backend || ""}`,
+    `## Frontend Planı\n${results.frontend || ""}`,
+    `## Backend'in Frontend Eleştirisi\n${results.backendCritiqueFrontend || ""}`,
+    `## Frontend'in Backend Eleştirisi\n${results.frontendCritiqueBackend || ""}`,
+    `## Architect Kararları\n${results.architect || ""}`,
+    `## QA Bulguları\n${results.qa || ""}`,
+  ]
+    .filter((s) => !s.endsWith('""') && !s.endsWith(""))
+    .join("\n\n");
+
+  results.managerFinal = await callAgent({
+    agentName: "Manager (Final Karar)",
+    systemPrompt: managerPrompt,
+    userMessage: task,
+    context:
+      context +
+      "\n\nYukarıdaki tüm analizleri, eleştirileri ve bulguları değerlendirerek FINAL implementation planını çıkar. Çelişkileri çöz, riskleri önceliklendir, Claude Code'a verilebilecek net adımlar listesi oluştur.",
+  });
+
+  return results;
+}
+
 // ─── Sonuç birleştirme ────────────────────────────────────────────────────────
 
 function mergeResults(results) {
@@ -183,6 +254,21 @@ function mergeResults(results) {
   if (results.qa) {
     sections.push("---\n## ✅ QA Reviewer\n");
     sections.push(results.qa);
+  }
+
+  if (results.backendCritiqueFrontend) {
+    sections.push("---\n## ⚙️↔️🖥️ Backend → Frontend Eleştirisi\n");
+    sections.push(results.backendCritiqueFrontend);
+  }
+
+  if (results.frontendCritiqueBackend) {
+    sections.push("---\n## 🖥️↔️⚙️ Frontend → Backend Eleştirisi\n");
+    sections.push(results.frontendCritiqueBackend);
+  }
+
+  if (results.managerFinal) {
+    sections.push("---\n## 📋 Manager Final Karar\n");
+    sections.push(results.managerFinal);
   }
 
   return sections.join("\n\n");
@@ -222,7 +308,16 @@ export async function run(task, workflowName = "plan-feature") {
 
   // 2. Seçilen agent'lar çalışır
   console.log("\n── Aşama 2: Agent Çalıştırma ──");
-  const results = await runSelectedAgents(managerOutput, task);
+  let results = await runSelectedAgents(managerOutput, task);
+
+  // Debate workflow: ek aşamalar
+  if (workflowName === "debate-feature") {
+    console.log("\n── Aşama 3: Çapraz Eleştiri Turu ──");
+    results = await runDebateRound(results, task);
+
+    console.log("\n── Aşama 6: Manager Final Karar ──");
+    results = await runManagerFinal(results, task);
+  }
 
   // 3. Sonuçları birleştir
   const merged = mergeResults(results);
