@@ -3,6 +3,7 @@ using Akyildiz.Sevkiyat.Domain.Entities;
 using Akyildiz.Sevkiyat.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.SyncNetsisStockBalance
 {
@@ -11,11 +12,16 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.SyncNetsisStockBalance
     {
         private readonly IApplicationDbContext _context;
         private readonly INetsisClient _netsisClient;
+        private readonly ILogger<SyncNetsisStockBalanceCommandHandler> _logger;
 
-        public SyncNetsisStockBalanceCommandHandler(IApplicationDbContext context, INetsisClient netsisClient)
+        public SyncNetsisStockBalanceCommandHandler(
+            IApplicationDbContext context,
+            INetsisClient netsisClient,
+            ILogger<SyncNetsisStockBalanceCommandHandler> logger)
         {
             _context = context;
             _netsisClient = netsisClient;
+            _logger = logger;
         }
 
         public async Task<SyncNetsisStockBalanceResult> Handle(
@@ -28,11 +34,14 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.SyncNetsisStockBalance
                 cancellationToken: cancellationToken);
 
             if (balances.Count == 0)
+            {
+                _logger.LogWarning("Netsis stok bakiye sorgusu boş döndü. StokKodu filtresi: {StokKodu}", request.StokKodu ?? "(tümü)");
                 return new SyncNetsisStockBalanceResult { TotalReceived = 0 };
+            }
 
             // Eşleşme: StockMaster.NetsisStockCode → Netsis StokKodu
-            // TODO: NETSIS_API — NetsisStockCode alanı doldurulduktan sonra bu sorgu doğru çalışır.
-            //                    Şu an NetsisStockCode null olan stoklar eşleşmez.
+            // NetsisStockCode null olan yerel stoklar eşleşmez; bu beklenen davranıştır.
+            // Eşleşmeyen kodlar sonuç nesnesinde UnmatchedCodes listesinde raporlanır.
             var netsisCodesInResponse = balances.Select(b => b.StokKodu).ToHashSet();
 
             var localStocks = await _context.StockMasters
@@ -77,6 +86,16 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.SyncNetsisStockBalance
             }
 
             await _context.SaveChangesAsync(cancellationToken);
+
+            if (unmatchedCodes.Count > 0)
+                _logger.LogWarning(
+                    "Netsis stok senkronizasyonu: {Unmatched} kod yerel stok tablosunda eşleşmedi. Kodlar: {Codes}",
+                    unmatchedCodes.Count,
+                    string.Join(", ", unmatchedCodes));
+
+            _logger.LogInformation(
+                "Netsis stok senkronizasyonu tamamlandı. Alınan: {Total}, Eşleşen: {Matched}, Eşleşmeyen: {Unmatched}",
+                balances.Count, matched, unmatchedCodes.Count);
 
             return new SyncNetsisStockBalanceResult
             {
