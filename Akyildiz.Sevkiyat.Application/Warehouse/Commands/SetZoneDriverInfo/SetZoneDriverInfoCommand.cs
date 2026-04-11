@@ -96,6 +96,16 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.SetZoneDriverInfo
             await _preDispatchGuard.ThrowIfShipmentsNotReadyAsync(request.ZonePreparationId, cancellationToken);
             await _preDispatchGuard.ThrowIfZoneHasOpenErrorsAsync(request.ZonePreparationId, cancellationToken);
 
+            // Sefer başlamışsa atama değişimi engelle
+            var hasOpenSession = await _context.DriverSessions
+                .AnyAsync(ds =>
+                    ds.ZonePreparationId == zp.Id &&
+                    ds.Status == DriverSessionStatus.Open, cancellationToken);
+
+            if (hasOpenSession)
+                throw new DomainException(
+                    "Sefer başlamış, atama değiştirilemez. Değişiklik için yöneticinizle iletişime geçin.");
+
             // ── Validate drivers exist ────────────────────────────────────────
 
             var drivers = await _context.Drivers
