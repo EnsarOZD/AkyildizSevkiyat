@@ -293,6 +293,9 @@
                                                 <div class="text-[10px] text-gray-400 uppercase font-bold">{{ order.institutionCode || order.InstitutionCode }}</div>
                                                 <div class="text-xs font-semibold dark:text-gray-200">{{ order.projectCode || order.ProjectCode }}</div>
                                                 <div class="text-xs text-gray-500 truncate max-w-[150px]">{{ order.projectName || order.ProjectName }}</div>
+                                                <div v-if="order.aciklama || order.Aciklama" class="text-[10px] text-indigo-600 dark:text-indigo-400 truncate max-w-[150px] mt-0.5" :title="order.aciklama || order.Aciklama">
+                                                    {{ order.aciklama || order.Aciklama }}
+                                                </div>
                                             </td>
                                             <td class="p-4 text-xs font-medium dark:text-gray-300">{{ order.region || order.Region }}</td>
                                             <td class="p-4 text-xs dark:text-gray-400">{{ formatDate(order.orderDate || order.OrderDate) }}</td>
@@ -343,6 +346,9 @@
                                                 </div>
                                                 <div class="text-[11px] text-gray-500 dark:text-gray-400 mt-1 font-medium">
                                                     {{ order.projectCode || order.ProjectCode }} — {{ order.projectName || order.ProjectName }}
+                                                </div>
+                                                <div v-if="order.aciklama || order.Aciklama" class="text-[10px] text-indigo-500 dark:text-indigo-400 mt-0.5 line-clamp-1">
+                                                    {{ order.aciklama || order.Aciklama }}
                                                 </div>
                                             </div>
                                         </div>
