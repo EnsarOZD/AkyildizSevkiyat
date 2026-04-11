@@ -1,6 +1,6 @@
 <template>
   <div>
-  <div class="p-6">
+  <div class="p-3 sm:p-6">
     <div class="mb-6 flex justify-between items-center">
       <h1 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Sevkiyatlar</h1>
     </div>
@@ -30,43 +30,47 @@
     </div>
 
     <!-- Filters -->
-    <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-5 flex gap-3 flex-wrap items-end">
-      <div class="w-44">
-        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Tarih</label>
-        <input type="date" v-model="filters.date" class="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm dark:bg-gray-800 dark:text-gray-100" />
+    <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-5">
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        <div>
+          <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Tarih</label>
+          <input type="date" v-model="filters.date" class="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm dark:bg-gray-800 dark:text-gray-100" />
+        </div>
+        <div v-if="activeTab === 'active'">
+          <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Durum</label>
+          <select v-model="filters.status" class="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 dark:text-gray-100">
+            <option value="">Tümü</option>
+            <option value="0">Taslak</option>
+            <option value="1">Depoda</option>
+            <option value="2">Toplanıyor</option>
+            <option value="3">Sevke Hazır</option>
+            <option value="4">Yolda</option>
+            <option value="5">Teslim Edildi</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Bölge</label>
+          <select v-model="filters.zoneId" class="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 dark:text-gray-100">
+            <option value="">Tüm Bölgeler</option>
+            <option v-for="z in zones" :key="z.id" :value="z.id">{{ z.name }}</option>
+          </select>
+        </div>
+        <div class="col-span-2 sm:col-span-3 lg:col-span-1">
+          <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Arama</label>
+          <div class="flex gap-2">
+            <input
+              type="text"
+              v-model="searchQuery"
+              @input="handleSearch"
+              placeholder="Sevkiyat No, Talep No, Proje..."
+              class="flex-1 min-w-0 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm dark:bg-gray-800 dark:text-gray-100"
+            />
+            <button @click="fetchShipments" class="shrink-0 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+              Filtrele
+            </button>
+          </div>
+        </div>
       </div>
-      <div class="w-44" v-if="activeTab === 'active'">
-        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Durum</label>
-        <select v-model="filters.status" class="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 dark:text-gray-100">
-          <option value="">Tümü</option>
-          <option value="0">Taslak</option>
-          <option value="1">Depoda</option>
-          <option value="2">Toplanıyor</option>
-          <option value="3">Sevke Hazır</option>
-          <option value="4">Yolda</option>
-          <option value="5">Teslim Edildi</option>
-        </select>
-      </div>
-      <div class="w-44">
-        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Bölge</label>
-        <select v-model="filters.zoneId" class="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 dark:text-gray-100">
-          <option value="">Tüm Bölgeler</option>
-          <option v-for="z in zones" :key="z.id" :value="z.id">{{ z.name }}</option>
-        </select>
-      </div>
-      <div class="flex-1 min-w-[180px]">
-        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Arama</label>
-        <input
-          type="text"
-          v-model="searchQuery"
-          @input="handleSearch"
-          placeholder="Sevkiyat No, Talep No, Proje..."
-          class="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm dark:bg-gray-800 dark:text-gray-100"
-        />
-      </div>
-      <button @click="fetchShipments" class="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-        Filtrele
-      </button>
     </div>
 
     <!-- Skeleton while loading -->
@@ -86,7 +90,7 @@
 
       <template v-else>
         <!-- Desktop table -->
-        <div class="hidden md:block bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+        <div class="hidden lg:block bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead class="bg-gray-50 dark:bg-gray-800">
               <tr>
@@ -221,8 +225,8 @@
           </table>
         </div>
 
-        <!-- Mobile cards -->
-        <div class="md:hidden space-y-3">
+        <!-- Mobile / tablet cards -->
+        <div class="lg:hidden space-y-3">
           <div
             v-for="shipment in sortedShipments"
             :key="'m-' + shipment.id"
@@ -310,20 +314,20 @@
     </template>
 
     <!-- Pagination -->
-    <div v-if="!loading && shipments.length > 0" class="mt-4 flex justify-between items-center bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
-      <p class="text-sm text-gray-500 dark:text-gray-400">
+    <div v-if="!loading && shipments.length > 0" class="mt-4 flex flex-col sm:flex-row justify-between items-center gap-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+      <p class="text-sm text-gray-500 dark:text-gray-400 order-2 sm:order-1">
         Toplam <span class="font-medium text-gray-700 dark:text-gray-300">{{ totalCount }}</span> kayıt · Sayfa {{ page }} / {{ totalPages }}
       </p>
-      <div class="flex gap-2">
+      <div class="flex gap-2 order-1 sm:order-2 w-full sm:w-auto">
         <button
           @click="page--; fetchShipments()"
           :disabled="page <= 1"
-          class="px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          class="flex-1 sm:flex-none px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >← Önceki</button>
         <button
           @click="page++; fetchShipments()"
           :disabled="page >= totalPages"
-          class="px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          class="flex-1 sm:flex-none px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >Sonraki →</button>
       </div>
     </div>
