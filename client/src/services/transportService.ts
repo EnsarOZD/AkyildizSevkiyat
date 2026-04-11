@@ -12,9 +12,11 @@ export interface Vehicle {
   plateNumber: string;
   capacity: string | null;
   vehicleType: number;
-  vehicleTypeName: string;
+  vehicleTypeName?: string;
   description: string | null;
   isActive: boolean;
+  qrCode?: string | null;
+  qrCodeGeneratedAt?: string | null;
 }
 
 const transportService = {

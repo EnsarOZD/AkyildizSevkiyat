@@ -404,6 +404,8 @@ const loadingPendingCount = computed(
   () => allZones.value.filter(z => z.statusId === 5).length
 );
 
+const todayStr = (): string => new Date().toISOString().slice(0, 10);
+
 const activePickingCount = computed(() => allZones.value.filter(z => z.statusId < 4).length);
 const overdueCount = computed(() =>
   allZones.value.filter(z => z.statusId < 4 && z.deliveryDateStr < todayStr()).length

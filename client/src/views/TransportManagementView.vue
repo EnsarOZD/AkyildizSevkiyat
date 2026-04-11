@@ -92,6 +92,7 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Plaka</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden sm:table-cell">Araç Tipi</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">Kapasite / Notlar</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">QR</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Durum</th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">İşlemler</th>
                     </tr>
@@ -108,13 +109,19 @@
                             }">{{ (vehicle.vehicleTypeName || ['Kamyon','Kamyonet','Minibüs'][vehicle.vehicleType]) ?? 'Kamyon' }}</span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden lg:table-cell">{{ vehicle.description || vehicle.capacity || '—' }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                          <span v-if="vehicle.qrCode" class="text-green-600 dark:text-green-400 font-medium">✅</span>
+                          <span v-else class="text-gray-400">—</span>
+                        </td>
                          <td class="px-6 py-4 whitespace-nowrap">
                             <span v-if="vehicle.isActive" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Aktif</span>
                             <span v-else class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Pasif</span>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button @click="openVehicleModal(vehicle)" class="text-indigo-600 hover:text-indigo-900 mr-4">Düzenle</button>
-                             <button @click="deleteVehicle(vehicle.id)" class="text-red-600 hover:text-red-900">Sil</button>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
+                            <button v-if="vehicle.qrCode" @click="openQrModal(vehicle)" class="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300">QR Görüntüle</button>
+                            <button v-else @click="generateQr(vehicle)" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">QR Oluştur</button>
+                            <button @click="openVehicleModal(vehicle)" class="text-indigo-600 hover:text-indigo-900">Düzenle</button>
+                            <button @click="deleteVehicle(vehicle.id)" class="text-red-600 hover:text-red-900">Sil</button>
                         </td>
                     </tr>
                 </tbody>
@@ -178,12 +185,36 @@
         </div>
     </div>
 
+    <!-- QR Modal -->
+    <div v-if="showQrModal && qrVehicle" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50 print:hidden" @click.self="showQrModal = false">
+      <div class="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-xs w-full text-center">
+        <h3 class="text-lg font-medium mb-1 text-gray-900 dark:text-gray-100">QR Kod</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ qrVehicle.plateNumber }}</p>
+        <div id="qr-print-area" class="flex flex-col items-center">
+          <img v-if="qrImageBase64" :src="qrImageBase64" alt="QR Kod" class="w-48 h-48 mx-auto" />
+          <p class="mt-3 text-xl font-bold tracking-widest text-gray-900">{{ qrVehicle.plateNumber }}</p>
+        </div>
+        <div class="mt-5 flex justify-center gap-3">
+          <button @click="printQr" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Yazdır</button>
+          <button @click="showQrModal = false" class="px-4 py-2 border dark:border-gray-700 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">Kapat</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
+
+<style>
+@media print {
+  body > * { display: none !important; }
+  #qr-print-area { display: flex !important; flex-direction: column; align-items: center; padding: 2rem; }
+}
+</style>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import transportService from '../services/transportService';
+import apiClient from '../services/apiClient';
 import { ApiErrorUtils } from '../utils/apiError';
 import { useNotificationStore } from '../stores/notification';
 
@@ -203,6 +234,11 @@ const driverForm = ref({ fullName: '', phone: '' });
 const showVehicleModal = ref(false);
 const editingVehicle = ref<any>(null);
 const vehicleForm = ref({ plateNumber: '', capacity: '', vehicleType: 0, description: '' });
+
+// QR State
+const showQrModal = ref(false);
+const qrVehicle = ref<any>(null);
+const qrImageBase64 = ref<string | null>(null);
 
 onMounted(() => {
     fetchDrivers();
@@ -310,6 +346,40 @@ const deleteVehicle = async (id: number) => {
         fetchVehicles();
         notificationStore.add('Araç silindi.', 'success');
     } catch(e) { notificationStore.add(ApiErrorUtils.getErrorMessage(e) || "Silme başarısız.", "error"); }
+};
+
+// QR Actions
+const generateQr = async (vehicle: any) => {
+    try {
+        const res = await apiClient.post<{ qrCode: string; qrImageBase64: string }>(
+            `/vehicles/${vehicle.id}/generate-qr`
+        );
+        vehicle.qrCode = res.data.qrCode;
+        qrVehicle.value = vehicle;
+        qrImageBase64.value = res.data.qrImageBase64;
+        showQrModal.value = true;
+        notificationStore.add('QR kod oluşturuldu.', 'success');
+    } catch(e) {
+        notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'QR oluşturulamadı.', 'error');
+    }
+};
+
+const openQrModal = async (vehicle: any) => {
+    qrVehicle.value = vehicle;
+    qrImageBase64.value = null;
+    showQrModal.value = true;
+    try {
+        const res = await apiClient.post<{ qrCode: string; qrImageBase64: string }>(
+            `/vehicles/${vehicle.id}/generate-qr`
+        );
+        qrImageBase64.value = res.data.qrImageBase64;
+    } catch(e) {
+        notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'QR yüklenemedi.', 'error');
+    }
+};
+
+const printQr = () => {
+    window.print();
 };
 
 </script>
