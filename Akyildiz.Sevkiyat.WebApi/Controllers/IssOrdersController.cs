@@ -7,6 +7,7 @@ using Akyildiz.Sevkiyat.Application.Orders.Queries.GetImportBatches;
 using Akyildiz.Sevkiyat.Application.Orders.Queries.GetImportBatchStatus;
 using Akyildiz.Sevkiyat.Application.Orders.Queries.GetImportedOrders;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -14,6 +15,7 @@ using System.Threading.Tasks;
 
 namespace Akyildiz.Sevkiyat.WebApi.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class IssOrdersController : ControllerBase

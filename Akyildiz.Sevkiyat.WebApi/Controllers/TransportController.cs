@@ -7,12 +7,14 @@ using Akyildiz.Sevkiyat.Application.Transport.Vehicles.Commands.DeleteVehicle;
 using Akyildiz.Sevkiyat.Application.Transport.Vehicles.Commands.UpdateVehicle;
 using Akyildiz.Sevkiyat.Application.Transport.Vehicles.Queries.GetVehicles;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Akyildiz.Sevkiyat.WebApi.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class TransportController : ControllerBase

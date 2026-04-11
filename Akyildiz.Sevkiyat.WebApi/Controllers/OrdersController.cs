@@ -3,10 +3,12 @@ using System.Threading.Tasks;
 using Akyildiz.Sevkiyat.Application.Orders.Queries;
 using Akyildiz.Sevkiyat.Application.Orders.Queries.GetOrdersByDeliveryDate;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Akyildiz.Sevkiyat.WebApi.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class OrdersController : ControllerBase

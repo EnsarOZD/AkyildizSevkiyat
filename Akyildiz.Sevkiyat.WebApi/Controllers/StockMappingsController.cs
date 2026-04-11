@@ -4,11 +4,13 @@ using Akyildiz.Sevkiyat.Application.Stocks.Commands.MapStock;
 using Akyildiz.Sevkiyat.Application.Stocks.Queries.GetUnmappedStocks;
 using Akyildiz.Sevkiyat.Application.Stocks.Queries.ExportUnmappedStocks;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 
 namespace Akyildiz.Sevkiyat.WebApi.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class StockMappingsController : ControllerBase

@@ -13,11 +13,13 @@ using Akyildiz.Sevkiyat.Application.Projects.Commands.BulkUpdateDeliveryOrders;
 using Akyildiz.Sevkiyat.Application.Projects.Commands.UpdateProjectDeliveryWindow;
 using Akyildiz.Sevkiyat.Application.Projects.Queries.ValidateProjectCoordinates;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 
 namespace Akyildiz.Sevkiyat.WebApi.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class ProjectsController : ControllerBase
@@ -85,11 +87,11 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         [HttpPatch("{id}/netsis-cari-kodu")]
         public async Task<IActionResult> UpdateNetsisCariKodu(int id, [FromBody] UpdateNetsisCariKoduBody body)
         {
-            await _mediator.Send(new UpdateProjectNetsisCariKoduCommand(id, body.NetsisCariKodu));
+            await _mediator.Send(new UpdateProjectNetsisCariKoduCommand(id, body.NetsisCariKodu, body.NetsisTeslimCariKodu));
             return NoContent();
         }
 
-        public record UpdateNetsisCariKoduBody(string? NetsisCariKodu);
+        public record UpdateNetsisCariKoduBody(string? NetsisCariKodu, string? NetsisTeslimCariKodu = null);
 
         [HttpPost("sync")]
         public async Task<IActionResult> Sync([FromBody] SyncProjectsCommand command)
