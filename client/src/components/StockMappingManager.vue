@@ -49,64 +49,139 @@
     </div>
 
     <div v-else class="space-y-4">
-      <div v-for="stock in unmappedStocks" :key="stock.mappingId" class="border dark:border-gray-700 rounded p-3 flex flex-col md:flex-row gap-4 items-center">
-        <div class="flex-1">
-          <div class="font-medium text-red-600">{{ stock.externalCode }}</div>
-          <div class="text-sm text-gray-600 dark:text-gray-400">{{ stock.externalName }}</div>
+      <div v-for="stock in unmappedStocks" :key="stock.mappingId" class="border dark:border-gray-700 rounded p-3">
+        <!-- Ana satır -->
+        <div class="flex flex-col md:flex-row gap-4 items-center">
+          <div class="flex-1">
+            <div class="font-medium text-red-600">{{ stock.externalCode }}</div>
+            <div class="text-sm text-gray-600 dark:text-gray-400">{{ stock.externalName }}</div>
+          </div>
+
+          <div class="flex flex-wrap gap-2 items-center">
+              <!-- Local Stock Selector -->
+              <div class="relative w-48">
+                <StockCombobox
+                  placeholder="Stok Ara (Kod/Ad)"
+                  v-model="stock.selectedLocalId"
+                  @search="(val) => stock.currentSearch = val"
+                  @select="(item) => onStockSelected(stock, item)"
+                />
+              </div>
+
+              <!-- Add Button — toggles inline create form -->
+              <button
+                v-if="!stock.selectedLocalId && stock.currentSearch && stock.currentSearch.length > 1"
+                @click="stock.showCreateForm = !stock.showCreateForm"
+                class="px-2 py-1 text-xs flex items-center gap-1 rounded"
+                :class="stock.showCreateForm
+                  ? 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                  : 'bg-teal-500 hover:bg-teal-600 text-white'"
+                title="Yeni Stok Kartı Aç"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    :d="stock.showCreateForm ? 'M6 18L18 6M6 6l12 12' : 'M12 4v16m8-8H4'" />
+                </svg>
+                {{ stock.showCreateForm ? 'İptal' : 'Yeni Kart' }}
+              </button>
+
+              <!-- Netsis Stok Kodu — sadece yerel stok seçilince göster -->
+              <div v-if="stock.selectedLocalId" class="flex items-center gap-1">
+                <label class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Netsis Kodu:</label>
+                <input
+                  v-model="stock.netsisStockCode"
+                  type="text"
+                  placeholder="Netsis stok kodu"
+                  class="w-32 border rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100"
+                  :class="!stock.netsisStockCode ? 'border-orange-400 dark:border-orange-500' : 'border-gray-300'"
+                  title="Bu stok kartının Netsis'teki stok kodu. Netsis aktarımı için zorunludur."
+                />
+                <span v-if="!stock.netsisStockCode" class="text-xs text-orange-500" title="Netsis aktarımı için zorunlu">⚠</span>
+              </div>
+
+              <button
+                @click="mapStock(stock, false)"
+                class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="!stock.selectedLocalId"
+              >
+                Eşleştir
+              </button>
+
+              <button
+                @click="mapStock(stock, true)"
+                class="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600 text-sm"
+              >
+                Yoksay
+              </button>
+          </div>
         </div>
 
-        <div class="flex flex-wrap gap-2 items-center">
-            <!-- Local Stock Selector -->
-            <div class="relative w-48">
-              <StockCombobox
-                placeholder="Stok Ara (Kod/Ad)"
-                v-model="stock.selectedLocalId"
-                @search="(val) => stock.currentSearch = val"
-                @select="(item) => onStockSelected(stock, item)"
-              />
+        <!-- Inline yeni stok kartı formu -->
+        <div v-if="stock.showCreateForm" class="mt-3 pt-3 border-t dark:border-gray-700 bg-teal-50 dark:bg-teal-900/10 rounded-b p-3">
+          <p class="text-xs font-semibold text-teal-700 dark:text-teal-400 mb-2">
+            Yeni stok kartı: <span class="font-bold">{{ stock.currentSearch }}</span>
+          </p>
+          <div class="flex flex-wrap gap-3 items-end">
+            <!-- Kategori (zorunlu) -->
+            <div>
+              <label class="block text-xs text-gray-600 dark:text-gray-400 mb-0.5">
+                Kategori <span class="text-red-500">*</span>
+              </label>
+              <select
+                v-model="stock.newCategory"
+                class="border rounded px-2 py-1 text-xs bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-teal-500"
+                :class="!stock.newCategory ? 'border-red-400' : 'border-gray-300'"
+              >
+                <option :value="undefined" disabled>Seçin...</option>
+                <option :value="1">Gıda</option>
+                <option :value="2">Sarf</option>
+                <option :value="3">Kıyafet</option>
+                <option :value="4">Temizlik</option>
+                <option :value="5">Kırtasiye</option>
+                <option :value="99">Diğer</option>
+              </select>
             </div>
 
-            <!-- Add Button -->
+            <!-- Birim -->
+            <div>
+              <label class="block text-xs text-gray-600 dark:text-gray-400 mb-0.5">Birim</label>
+              <select
+                v-model="stock.newUnit"
+                class="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-xs bg-white dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-teal-500"
+              >
+                <option :value="0">Adet</option>
+                <option :value="1">Kg</option>
+                <option :value="2">Paket</option>
+                <option :value="3">Koli</option>
+                <option :value="4">Litre</option>
+                <option :value="5">Metre</option>
+                <option :value="6">Metrekare</option>
+                <option :value="7">Set</option>
+                <option :value="8">Teneke</option>
+                <option :value="99">Diğer</option>
+              </select>
+            </div>
+
+            <!-- Picking Tipi -->
+            <div>
+              <label class="block text-xs text-gray-600 dark:text-gray-400 mb-0.5">Picking</label>
+              <select
+                v-model="stock.newPickingType"
+                class="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-xs bg-white dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-teal-500"
+              >
+                <option :value="1">Micro</option>
+                <option :value="2">Macro</option>
+              </select>
+            </div>
+
             <button
-              v-if="!stock.selectedLocalId && stock.currentSearch && stock.currentSearch.length > 1"
               @click="createAndSelectStock(stock)"
-              class="px-2 py-1 bg-teal-500 text-white rounded hover:bg-teal-600 text-xs flex items-center gap-1"
-              title="Yeni Stok Kartı Aç"
+              :disabled="!stock.newCategory"
+              class="px-3 py-1 bg-teal-600 hover:bg-teal-700 text-white rounded text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-              </svg>
-              Ekle
+              Oluştur
             </button>
-
-            <!-- Netsis Stok Kodu — sadece yerel stok seçilince göster -->
-            <div v-if="stock.selectedLocalId" class="flex items-center gap-1">
-              <label class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Netsis Kodu:</label>
-              <input
-                v-model="stock.netsisStockCode"
-                type="text"
-                placeholder="Netsis stok kodu"
-                class="w-32 border rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100"
-                :class="!stock.netsisStockCode ? 'border-orange-400 dark:border-orange-500' : 'border-gray-300'"
-                title="Bu stok kartının Netsis'teki stok kodu. Netsis aktarımı için zorunludur."
-              />
-              <span v-if="!stock.netsisStockCode" class="text-xs text-orange-500" title="Netsis aktarımı için zorunlu">⚠</span>
-            </div>
-
-            <button
-              @click="mapStock(stock, false)"
-              class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              :disabled="!stock.selectedLocalId"
-            >
-              Eşleştir
-            </button>
-
-            <button
-              @click="mapStock(stock, true)"
-              class="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600 text-sm"
-            >
-              Yoksay
-            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -130,6 +205,11 @@ interface UnmappedStock {
     selectedLocalId?: number;
     currentSearch?: string;
     netsisStockCode?: string;  // StockMaster.NetsisStockCode — Netsis aktarımı için zorunlu
+    // Yeni kart formu
+    showCreateForm?: boolean;
+    newCategory?: number;       // StockCategory enum değeri (1-99, 0=Tanimsiz yasak)
+    newUnit?: number;           // StockUnit enum değeri, varsayılan 0=Adet
+    newPickingType?: number;    // PickingType enum değeri, varsayılan 1=Micro
 }
 
 const unmappedStocks = ref<UnmappedStock[]>([]);
@@ -243,19 +323,20 @@ const onStockSelected = (stock: UnmappedStock, item: any) => {
 };
 
 const createAndSelectStock = async (stock: UnmappedStock) => {
-    if (!stock.currentSearch) return;
+    if (!stock.currentSearch || !stock.newCategory) return;
 
     try {
-        // Create new stock
         const newStock = await stockService.create({
             stockCode: stock.currentSearch,
             stockName: stock.externalName,
-            pickingType: 1 // Default to something if required
+            category: stock.newCategory,
+            unit: stock.newUnit ?? 0,
+            pickingType: stock.newPickingType ?? 1,
         });
 
-        // Select it
         stock.selectedLocalId = newStock.id;
-
+        stock.showCreateForm = false;
+        notificationStore.add(`"${stock.currentSearch}" stok kartı oluşturuldu.`, 'success');
     } catch (e) {
         console.error(e);
         notificationStore.add("Stok oluşturulamadı: " + (ApiErrorUtils.getErrorMessage(e) || 'Bilinmeyen hata'), 'error');
