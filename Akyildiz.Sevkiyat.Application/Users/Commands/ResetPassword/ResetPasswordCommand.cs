@@ -1,3 +1,4 @@
+using Akyildiz.Sevkiyat.Application.Common.Validators;
 using Akyildiz.Sevkiyat.Application.Interfaces;
 using Akyildiz.Sevkiyat.Domain.Exceptions;
 using FluentValidation;
@@ -12,7 +13,7 @@ namespace Akyildiz.Sevkiyat.Application.Users.Commands.ResetPassword
     {
         public ResetPasswordCommandValidator()
         {
-            RuleFor(x => x.NewPassword).NotEmpty().MinimumLength(6);
+            RuleFor(x => x.NewPassword).MustBeValidPassword();
         }
     }
 

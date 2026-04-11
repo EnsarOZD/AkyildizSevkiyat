@@ -1,4 +1,5 @@
 using Akyildiz.Sevkiyat.Application.Common.Interfaces;
+using Akyildiz.Sevkiyat.Application.Common.Validators;
 using Akyildiz.Sevkiyat.Application.Interfaces;
 using Akyildiz.Sevkiyat.Domain.Entities;
 using Akyildiz.Sevkiyat.Domain.Enums;
@@ -28,7 +29,7 @@ namespace Akyildiz.Sevkiyat.Application.Users.Commands.CreateUser
             RuleFor(x => x.Email).NotEmpty().EmailAddress().MaximumLength(200);
             RuleFor(x => x.FirstName).NotEmpty().MaximumLength(100);
             RuleFor(x => x.LastName).NotEmpty().MaximumLength(100);
-            RuleFor(x => x.Password).NotEmpty().MinimumLength(6);
+            RuleFor(x => x.Password).MustBeValidPassword();
         }
     }
 
