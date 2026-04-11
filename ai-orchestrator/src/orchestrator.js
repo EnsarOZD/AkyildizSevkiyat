@@ -88,8 +88,30 @@ async function runSelectedAgents(managerOutput, task) {
     /qa.reviewer agent/i.test(managerOutput) ||
     /qa.*seçildi/i.test(managerOutput) ||
     /quality/i.test(managerOutput);
+  const needsBA =
+    /business analyst/i.test(managerOutput) ||
+    /ba agent/i.test(managerOutput) ||
+    /iş analizi/i.test(managerOutput);
 
-  const context = `## Manager Analizi\n${managerOutput}\n\n## Orijinal Görev\n${task}`;
+  // BA — Manager'dan sonra, Backend/Frontend'den önce çalışır
+  if (needsBA) {
+    const baPrompt = await loadPrompt(AGENTS_DIR, "business-analyst");
+    results.ba = await callAgent({
+      agentName: "Business Analyst",
+      systemPrompt: baPrompt,
+      userMessage: task,
+      context: `## Manager Analizi\n${managerOutput}\n\n## Orijinal Görev\n${task}`,
+    });
+  }
+
+  // Backend ve Frontend context'i BA çıktısını da içerir
+  const context = [
+    `## Manager Analizi\n${managerOutput}`,
+    results.ba ? `## Business Analyst Analizi\n${results.ba}` : "",
+    `## Orijinal Görev\n${task}`,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 
   // Backend ve Frontend paralel çalışabilir
   const parallelTasks = [];
@@ -192,6 +214,23 @@ async function runDebateRound(results, task) {
     });
   }
 
+  // BA — teknik planları iş perspektifinden eleştirir
+  if (results.ba && (results.backend || results.frontend)) {
+    const baPrompt = await loadPrompt(AGENTS_DIR, "business-analyst");
+    results.baCritiqueImpl = await callAgent({
+      agentName: "Business Analyst (İmplementasyon Eleştirisi)",
+      systemPrompt: baPrompt,
+      userMessage: task,
+      context: [
+        results.backend ? `## Backend Planı\n${results.backend}` : "",
+        results.frontend ? `## Frontend Planı\n${results.frontend}` : "",
+        `Bu teknik implementasyon planlarını iş perspektifinden eleştir.\nİş gereksinimlerini karşılıyor mu?\nKullanıcı gerçekten bu şekilde kullanabilir mi?\nEksik iş kuralı var mı?\nSahada çalışmayacak bir şey var mı?`,
+      ]
+        .filter(Boolean)
+        .join("\n\n"),
+    });
+  }
+
   return results;
 }
 
@@ -203,8 +242,10 @@ async function runManagerFinal(results, task) {
   const context = [
     `## Backend Planı\n${results.backend || ""}`,
     `## Frontend Planı\n${results.frontend || ""}`,
+    results.ba ? `## Business Analyst Analizi\n${results.ba}` : "",
     `## Backend'in Frontend Eleştirisi\n${results.backendCritiqueFrontend || ""}`,
     `## Frontend'in Backend Eleştirisi\n${results.frontendCritiqueBackend || ""}`,
+    results.baCritiqueImpl ? `## Business Analyst İmplementasyon Eleştirisi\n${results.baCritiqueImpl}` : "",
     `## Architect Kararları\n${results.architect || ""}`,
     `## QA Bulguları\n${results.qa || ""}`,
   ]
@@ -236,6 +277,11 @@ function mergeResults(results) {
     sections.push(results.manager);
   }
 
+  if (results.ba) {
+    sections.push("---\n## 💼 Business Analyst\n");
+    sections.push(results.ba);
+  }
+
   if (results.backend) {
     sections.push("---\n## ⚙️ Backend Agent\n");
     sections.push(results.backend);
@@ -264,6 +310,11 @@ function mergeResults(results) {
   if (results.frontendCritiqueBackend) {
     sections.push("---\n## 🖥️↔️⚙️ Frontend → Backend Eleştirisi\n");
     sections.push(results.frontendCritiqueBackend);
+  }
+
+  if (results.baCritiqueImpl) {
+    sections.push("---\n## 💼↔️⚙️ Business Analyst → İmplementasyon Eleştirisi\n");
+    sections.push(results.baCritiqueImpl);
   }
 
   if (results.managerFinal) {
