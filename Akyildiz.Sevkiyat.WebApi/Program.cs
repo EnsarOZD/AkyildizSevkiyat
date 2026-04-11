@@ -119,8 +119,9 @@ builder.Services.AddHttpClient<
 .ConfigurePrimaryHttpMessageHandler(() =>
 {
     var handler = new HttpClientHandler();
-    // Netsis sunucusu self-signed sertifika kullanıyor (internal IP 10.24.10.122).
-    // Production'da gerçek sertifika ile bu satır kaldırılmalı.
+    // Netsis sunucusu self-signed sertifika kullanıyor (internal IP).
+    // Development dışında sertifika doğrulaması atlanmaz; production için
+    // geçerli bir TLS sertifikası yapılandırılmalıdır.
     if (builder.Environment.IsDevelopment())
         handler.ServerCertificateCustomValidationCallback =
             HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
