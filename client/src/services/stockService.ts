@@ -19,6 +19,7 @@ export interface Stock {
     onHandQty?: number;
     reservedQty?: number;
     netsisStockCode?: string | null;
+    isActive?: boolean;
 }
 
 export interface PaginatedResponse<T> {
@@ -37,6 +38,7 @@ export interface StockQueryParams {
     categoryId?: number | null;
     pickingTypeId?: number | null;
     unitId?: number | null;
+    isActive?: boolean | null;
 }
 
 export interface StockCreateRequest {

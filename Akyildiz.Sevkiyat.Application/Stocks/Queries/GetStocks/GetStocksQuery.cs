@@ -27,10 +27,11 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Queries.GetStocks
         string? WarehouseLocation,
         decimal OnHandQty,
         decimal ReservedQty,
-        string? NetsisStockCode
+        string? NetsisStockCode,
+        bool IsActive
     );
 
-    public record GetStocksQuery(string? SearchTerm, int PageNumber = 1, int PageSize = 15, int? CategoryId = null, int? PickingTypeId = null, int? UnitId = null)
+    public record GetStocksQuery(string? SearchTerm, int PageNumber = 1, int PageSize = 15, int? CategoryId = null, int? PickingTypeId = null, int? UnitId = null, bool? IsActive = null)
         : IRequest<PaginatedList<StockDto>>, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles =>
@@ -67,6 +68,9 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Queries.GetStocks
             if (request.UnitId.HasValue)
                 query = query.Where(s => (int)s.Unit == request.UnitId.Value);
 
+            if (request.IsActive.HasValue)
+                query = query.Where(s => s.IsActive == request.IsActive.Value);
+
             return await PaginatedList<StockDto>.CreateAsync(
                 query
                     .OrderBy(s => s.StockCode)
@@ -87,9 +91,10 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Queries.GetStocks
                         s.WarehouseLocation,
                         s.OnHandQty,
                         s.ReservedQty,
-                        s.NetsisStockCode
-                    )), 
-                request.PageNumber, 
+                        s.NetsisStockCode,
+                        s.IsActive
+                    )),
+                request.PageNumber,
                 request.PageSize
             );
         }

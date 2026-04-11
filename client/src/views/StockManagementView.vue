@@ -54,7 +54,7 @@
         </button>
         <button v-if="activeFilterCount > 0" @click="clearFilters" class="text-xs text-red-500 hover:text-red-700 px-2 py-1 border border-red-300 rounded">Temizle</button>
       </div>
-      <div v-if="filterOpen" class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 border-t dark:border-gray-700">
+      <div v-if="filterOpen" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1 border-t dark:border-gray-700">
         <div>
           <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Kategori</label>
           <select v-model="filterCategory" @change="debouncedSearch" class="w-full border rounded px-2 py-1.5 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100">
@@ -92,6 +92,26 @@
             <option :value="99">Diğer</option>
           </select>
         </div>
+        <div>
+          <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Durum</label>
+          <div class="flex rounded border dark:border-gray-700 overflow-hidden text-sm">
+            <button
+              @click="filterIsActive = null; debouncedSearch()"
+              class="flex-1 px-2 py-1.5 transition"
+              :class="filterIsActive === null ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'"
+            >Tümü</button>
+            <button
+              @click="filterIsActive = true; debouncedSearch()"
+              class="flex-1 px-2 py-1.5 border-l dark:border-gray-700 transition"
+              :class="filterIsActive === true ? 'bg-green-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'"
+            >Aktif</button>
+            <button
+              @click="filterIsActive = false; debouncedSearch()"
+              class="flex-1 px-2 py-1.5 border-l dark:border-gray-700 transition"
+              :class="filterIsActive === false ? 'bg-red-500 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'"
+            >Pasif</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -107,7 +127,9 @@
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer select-none hover:text-gray-700 dark:hover:text-gray-200" @click="toggleSort('stockName')">
                       Ad <span class="ml-1">{{ sortIndicator('stockName') }}</span>
                     </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">Birim</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell cursor-pointer select-none hover:text-gray-700 dark:hover:text-gray-200" @click="toggleSort('unitId')">
+                      Birim <span class="ml-1">{{ sortIndicator('unitId') }}</span>
+                    </th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell cursor-pointer select-none hover:text-gray-700 dark:hover:text-gray-200" @click="toggleSort('unitPrice')">
                       Birim Fiyat <span class="ml-1">{{ sortIndicator('unitPrice') }}</span>
                     </th>
@@ -370,12 +392,14 @@ const filterOpen = ref(false);
 const filterCategory = ref<number | null>(null);
 const filterPickingType = ref<number | null>(null);
 const filterUnit = ref<number | null>(null);
+const filterIsActive = ref<boolean | null>(null);
 
 const activeFilterCount = computed(() => {
     let n = 0;
     if (filterCategory.value !== null) n++;
     if (filterPickingType.value !== null) n++;
     if (filterUnit.value !== null) n++;
+    if (filterIsActive.value !== null) n++;
     return n;
 });
 
@@ -383,6 +407,7 @@ const clearFilters = () => {
     filterCategory.value = null;
     filterPickingType.value = null;
     filterUnit.value = null;
+    filterIsActive.value = null;
     fetchStocks(1);
 };
 
@@ -431,6 +456,7 @@ const fetchStocks = async (page = 1) => {
             categoryId: filterCategory.value,
             pickingTypeId: filterPickingType.value,
             unitId: filterUnit.value,
+            isActive: filterIsActive.value,
         });
 
         stocks.value = data.items;

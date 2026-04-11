@@ -27,9 +27,9 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<PaginatedList<StockDto>>> GetStocks([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int size = 15, [FromQuery] int? categoryId = null, [FromQuery] int? pickingTypeId = null, [FromQuery] int? unitId = null)
+        public async Task<ActionResult<PaginatedList<StockDto>>> GetStocks([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int size = 15, [FromQuery] int? categoryId = null, [FromQuery] int? pickingTypeId = null, [FromQuery] int? unitId = null, [FromQuery] bool? isActive = null)
         {
-            return await _mediator.Send(new GetStocksQuery(search, page, size, categoryId, pickingTypeId, unitId));
+            return await _mediator.Send(new GetStocksQuery(search, page, size, categoryId, pickingTypeId, unitId, isActive));
         }
 
         [HttpPost("import")]
