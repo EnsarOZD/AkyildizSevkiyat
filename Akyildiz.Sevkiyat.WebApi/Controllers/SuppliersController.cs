@@ -1,4 +1,5 @@
 using Akyildiz.Sevkiyat.Application.Suppliers.Commands.CreateSupplier;
+using Akyildiz.Sevkiyat.Application.Suppliers.Commands.DeleteSupplier;
 using Akyildiz.Sevkiyat.Application.Suppliers.Commands.ImportSuppliers;
 using Akyildiz.Sevkiyat.Application.Suppliers.Commands.UpdateSupplier;
 using Akyildiz.Sevkiyat.Application.Suppliers.Queries.GetSuppliers;
@@ -49,6 +50,14 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         {
             var result = await _mediator.Send(new GetSuppliersTemplateQuery());
             return File(result.Content, result.ContentType, result.FileName);
+        }
+
+        [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin,Manager")]
+        public async Task<IActionResult> Delete(Guid id)
+        {
+            await _mediator.Send(new DeleteSupplierCommand(id));
+            return NoContent();
         }
 
         [HttpPost("import")]

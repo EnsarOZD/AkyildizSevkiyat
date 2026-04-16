@@ -33,12 +33,10 @@
     <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-5">
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div>
-          <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Tarih</label>
-          <input type="date" v-model="filters.date" class="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm dark:bg-gray-800 dark:text-gray-100" />
+          <BaseInput type="date" label="Tarih" v-model="filters.date" size="sm" />
         </div>
         <div v-if="activeTab === 'active'">
-          <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Durum</label>
-          <select v-model="filters.status" class="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 dark:text-gray-100">
+          <BaseSelect label="Durum" v-model="filters.status" size="sm">
             <option value="">Tümü</option>
             <option value="0">Taslak</option>
             <option value="1">Depoda</option>
@@ -46,31 +44,48 @@
             <option value="3">Sevke Hazır</option>
             <option value="4">Yolda</option>
             <option value="5">Teslim Edildi</option>
-          </select>
+          </BaseSelect>
         </div>
         <div>
-          <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Bölge</label>
-          <select v-model="filters.zoneId" class="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 dark:text-gray-100">
+          <BaseSelect label="Bölge" v-model="filters.zoneId" size="sm">
             <option value="">Tüm Bölgeler</option>
             <option v-for="z in zones" :key="z.id" :value="z.id">{{ z.name }}</option>
-          </select>
+          </BaseSelect>
         </div>
         <div class="col-span-2 sm:col-span-4 xl:col-span-1">
-          <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Arama</label>
+          <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Arama</label>
           <div class="flex gap-2">
-            <input
+            <BaseInput
               type="text"
               v-model="searchQuery"
               @input="handleSearch"
               placeholder="Sevkiyat No, Talep No, Proje..."
-              class="flex-1 min-w-0 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm dark:bg-gray-800 dark:text-gray-100"
+              size="sm"
+              class="flex-1 min-w-0"
             />
-            <button @click="fetchShipments" class="shrink-0 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+            <BaseButton @click="fetchShipments" variant="secondary" size="sm" class="shrink-0">
               Filtrele
-            </button>
+            </BaseButton>
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Netsis Durum Kontrol butonu (Admin/Manager) -->
+    <div v-role="['Admin', 'Manager']" class="flex justify-end mb-3">
+      <button
+        @click="verifyNetsisTransfers"
+        :disabled="verifyingNetsis"
+        class="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/40 disabled:opacity-50 transition-colors"
+        title="Netsis'e aktarılmış görünen siparişlerin Netsis'te hâlâ mevcut olup olmadığını kontrol eder. Silinmişlerin aktarım durumu sıfırlanır. Aktarılmamış ama Netsis'te mevcut olanlar otomatik işaretlenir."
+      >
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <span v-if="verifyingNetsis">Kontrol başlatıldı...</span>
+        <span v-else>Netsis Durum Kontrol</span>
+      </button>
     </div>
 
     <!-- Skeleton while loading -->
@@ -319,16 +334,8 @@
         Toplam <span class="font-medium text-gray-700 dark:text-gray-300">{{ totalCount }}</span> kayıt · Sayfa {{ page }} / {{ totalPages }}
       </p>
       <div class="flex gap-2 order-1 sm:order-2 w-full sm:w-auto">
-        <button
-          @click="page--; fetchShipments()"
-          :disabled="page <= 1"
-          class="flex-1 sm:flex-none px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >← Önceki</button>
-        <button
-          @click="page++; fetchShipments()"
-          :disabled="page >= totalPages"
-          class="flex-1 sm:flex-none px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >Sonraki →</button>
+        <BaseButton @click="page--; fetchShipments()" :disabled="page <= 1" variant="secondary" size="sm" class="flex-1 sm:flex-none">← Önceki</BaseButton>
+        <BaseButton @click="page++; fetchShipments()" :disabled="page >= totalPages" variant="secondary" size="sm" class="flex-1 sm:flex-none">Sonraki →</BaseButton>
       </div>
     </div>
 
@@ -379,73 +386,53 @@
   </Teleport>
 
   <!-- Bulk assign vehicle modal -->
-  <Teleport to="body">
-    <div v-if="showBulkModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-black/50" @click="showBulkModal = false"></div>
-      <div class="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-6 space-y-4">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Toplu Araç Atama</h3>
-        <p class="text-sm text-gray-500 dark:text-gray-400">
-          <span class="font-medium text-gray-700 dark:text-gray-200">{{ selectedIds.size }} sevkiyat</span>
-          aynı araç ve sürücüye atanacak.
-        </p>
+  <BaseModal :show="showBulkModal" title="Toplu Araç Atama" maxWidth="md" @close="showBulkModal = false">
+    <div class="space-y-4">
+      <p class="text-sm text-gray-500 dark:text-gray-400">
+        <span class="font-medium text-gray-700 dark:text-gray-200">{{ selectedIds.size }} sevkiyat</span>
+        aynı araç ve sürücüye atanacak.
+      </p>
 
-        <div v-if="bulkListsLoading" class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 py-2">
-          <span class="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></span>
-          Yükleniyor...
-        </div>
-
-        <template v-else>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Şoför <span class="text-red-500">*</span></label>
-            <select
-              v-model="bulkForm.driverId"
-              class="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option :value="null">Seçiniz...</option>
-              <option v-for="d in bulkActiveDrivers" :key="d.id" :value="d.id">{{ d.fullName }}</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Araç <span class="text-red-500">*</span></label>
-            <select
-              v-model="bulkForm.vehicleId"
-              class="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option :value="null">Seçiniz...</option>
-              <option v-for="v in bulkActiveVehicles" :key="v.id" :value="v.id">{{ v.plateNumber }}</option>
-            </select>
-            <div v-if="bulkForm.vehicleId" class="mt-1.5">
-              <span v-for="v in bulkActiveVehicles.filter(v => v.id === bulkForm.vehicleId)" :key="v.id"
-                    :class="['text-xs font-medium px-2 py-0.5 rounded',
-                      v.vehicleType === 0 ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' :
-                      v.vehicleType === 1 ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' :
-                                            'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300']">
-                {{ v.vehicleTypeName }}
-              </span>
-            </div>
-          </div>
-        </template>
-
-        <div class="flex gap-3 pt-1">
-          <button
-            @click="showBulkModal = false"
-            class="flex-1 py-2.5 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
-          >
-            İptal
-          </button>
-          <button
-            @click="submitBulkAssign"
-            :disabled="bulkSubmitting || !bulkForm.driverId || !bulkForm.vehicleId"
-            class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2"
-          >
-            <span v-if="bulkSubmitting" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-            {{ bulkSubmitting ? 'Atanıyor...' : 'Araca Ata' }}
-          </button>
-        </div>
+      <div v-if="bulkListsLoading" class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 py-2">
+        <span class="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></span>
+        Yükleniyor...
       </div>
+
+      <template v-else>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Şoför <span class="text-red-500">*</span></label>
+          <select v-model="bulkForm.driverId"
+            class="w-full border border-gray-300 dark:border-gray-700 rounded-input px-3 py-2 text-sm bg-white dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <option :value="null">Seçiniz...</option>
+            <option v-for="d in bulkActiveDrivers" :key="d.id" :value="d.id">{{ d.fullName }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Araç <span class="text-red-500">*</span></label>
+          <select v-model="bulkForm.vehicleId"
+            class="w-full border border-gray-300 dark:border-gray-700 rounded-input px-3 py-2 text-sm bg-white dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <option :value="null">Seçiniz...</option>
+            <option v-for="v in bulkActiveVehicles" :key="v.id" :value="v.id">{{ v.plateNumber }}</option>
+          </select>
+          <div v-if="bulkForm.vehicleId" class="mt-1.5">
+            <span v-for="v in bulkActiveVehicles.filter(v => v.id === bulkForm.vehicleId)" :key="v.id"
+                  :class="['text-xs font-medium px-2 py-0.5 rounded',
+                    v.vehicleType === 0 ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' :
+                    v.vehicleType === 1 ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' :
+                                          'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300']">
+              {{ v.vehicleTypeName }}
+            </span>
+          </div>
+        </div>
+      </template>
     </div>
-  </Teleport>
+    <template #footer>
+      <BaseButton @click="showBulkModal = false" variant="secondary">İptal</BaseButton>
+      <BaseButton @click="submitBulkAssign" :disabled="!bulkForm.driverId || !bulkForm.vehicleId" :loading="bulkSubmitting" variant="primary">
+        Araca Ata
+      </BaseButton>
+    </template>
+  </BaseModal>
 
   </div>
 </template>
@@ -462,6 +449,10 @@ import StatusBadge from '../components/StatusBadge.vue';
 import SkeletonTable from '../components/SkeletonTable.vue';
 import EmptyState from '../components/EmptyState.vue';
 import { useKeyboardShortcut } from '../composables/useKeyboardShortcut';
+import BaseModal from '../components/BaseModal.vue';
+import BaseButton from '../components/BaseButton.vue';
+import BaseInput from '../components/base/BaseInput.vue';
+import BaseSelect from '../components/base/BaseSelect.vue';
 
 const notificationStore = useNotificationStore();
 const route = useRoute();
@@ -587,6 +578,23 @@ async function submitBulkAssign() {
 }
 // ── Netsis export ─────────────────────────────────────────────────────────────
 const isBulkExporting = ref(false);
+
+// ── Netsis durum kontrol ───────────────────────────────────────────────────────
+const verifyingNetsis = ref(false);
+async function verifyNetsisTransfers() {
+  verifyingNetsis.value = true;
+  try {
+    await shipmentService.verifyNetsisTransfers();
+    notificationStore.add(
+      'Netsis durum kontrolü arka planda başlatıldı. Tamamlandığında aktarım durumu güncellenmiş olacak; listeyi yenileyebilirsiniz.',
+      'info'
+    );
+  } catch (e) {
+    notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Netsis durum kontrolü başlatılamadı.', 'error');
+  } finally {
+    verifyingNetsis.value = false;
+  }
+}
 
 async function singleExportToNetsis(id: number) {
   const shipment = shipments.value.find(s => s.id === id);

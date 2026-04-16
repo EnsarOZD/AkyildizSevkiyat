@@ -47,6 +47,9 @@ namespace Akyildiz.Sevkiyat.Application.Interfaces
         // Auth
         DbSet<RefreshToken> RefreshTokens { get; }
 
+        // Print Audit
+        DbSet<ShipmentPrintLog> ShipmentPrintLogs { get; }
+
         // WMS Module
         DbSet<WarehouseLocation> WarehouseLocations { get; }
         DbSet<StockLocation> StockLocations { get; }

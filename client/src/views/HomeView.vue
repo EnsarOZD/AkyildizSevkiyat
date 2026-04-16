@@ -30,8 +30,55 @@
     </template>
 
     <template v-else-if="stats">
-      <!-- Primary KPI row -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- Warehouse KPI row -->
+      <div v-if="isWarehouse" class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Depo Hazırlık (Toplama) -->
+        <router-link to="/warehouse" class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:border-blue-300 hover:shadow-sm transition-all group">
+          <div class="flex items-center justify-between mb-3">
+            <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Depo Hazırlık</p>
+            <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+              <ClipboardDocumentListIcon class="w-4 h-4 text-blue-600" />
+            </div>
+          </div>
+          <p class="text-3xl font-bold text-gray-900 dark:text-gray-100">{{ stats.statusWarehouse }}</p>
+        </router-link>
+
+        <!-- Bekleyen Mal Girişi -->
+        <router-link to="/goods-receipts" class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:border-yellow-300 hover:shadow-sm transition-all group">
+          <div class="flex items-center justify-between mb-3">
+            <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Bekleyen İrsaliye</p>
+            <div class="w-8 h-8 rounded-lg bg-yellow-50 flex items-center justify-center">
+              <InboxArrowDownIcon class="w-4 h-4 text-yellow-600" />
+            </div>
+          </div>
+          <p class="text-3xl font-bold text-gray-900 dark:text-gray-100">{{ stats.pendingGoodsReceiptsCount }}</p>
+        </router-link>
+
+        <!-- Belirsiz İade -->
+        <router-link to="/floating-returns" class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:border-orange-300 hover:shadow-sm transition-all group">
+          <div class="flex items-center justify-between mb-3">
+            <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Belirsiz İadeler</p>
+            <div class="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center">
+              <ExclamationCircleIcon class="w-4 h-4 text-orange-600" />
+            </div>
+          </div>
+          <p class="text-3xl font-bold text-gray-900 dark:text-gray-100">{{ stats.pendingFloatingReturns }}</p>
+        </router-link>
+        
+        <!-- Kritik Stok -->
+        <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:border-red-300 hover:shadow-sm transition-all group">
+          <div class="flex items-center justify-between mb-3">
+            <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Kritik Stok</p>
+            <div class="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center">
+              <ArchiveBoxIcon class="w-4 h-4 text-red-600" />
+            </div>
+          </div>
+          <p class="text-3xl font-bold text-gray-900 dark:text-gray-100">{{ stats.criticalStockCount }}</p>
+        </div>
+      </div>
+
+      <!-- Primary KPI row for Managers/Admin -->
+      <div v-if="!isWarehouse" class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <!-- Aktif Sevkiyat -->
         <router-link to="/shipments" class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:border-blue-300 hover:shadow-sm transition-all group">
           <div class="flex items-center justify-between mb-3">
@@ -139,7 +186,7 @@
       </div>
 
       <!-- Two-column layout -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div v-if="!isWarehouse" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         <!-- Status breakdown -->
         <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
@@ -340,10 +387,6 @@ const load = async () => {
 };
 
 onMounted(() => {
-  if (authStore.userRole === 'Warehouse') {
-    router.replace('/warehouse');
-    return;
-  }
   if (authStore.userRole === 'Dispatcher') {
     router.replace('/driver');
     return;

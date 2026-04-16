@@ -231,7 +231,6 @@ const notify = useNotificationStore();
 interface ShipmentView extends StopShipmentDto {
   projectName: string;
   projectAddress?: string;
-  deliveryDate?: string;
   lines: ShipmentLineDto[];
 }
 
@@ -271,7 +270,7 @@ async function load() {
         shipment.value = { ...sh, projectName: s.projectName, projectAddress: s.projectAddress };
         // Pre-fill teslim alan kişi (ilk kişi)
         if (sh.teslimAlacakKisiler) {
-          form.value.deliveryRecipient = sh.teslimAlacakKisiler.split(',')[0].trim();
+          form.value.deliveryRecipient = sh.teslimAlacakKisiler.split(',')[0]?.trim() || '';
         }
         break;
       }

@@ -5,6 +5,8 @@ export interface Supplier {
     name: string;
     supplierCode?: string;
     email?: string;
+    createdAt?: string;
+    lastModified?: string | null;
 }
 
 export interface SupplierCreateParams {
@@ -43,6 +45,13 @@ export const supplierService = {
      */
     async update(id: string, data: SupplierUpdateParams): Promise<void> {
         await apiClient.put(`/suppliers/${id}`, data);
+    },
+
+    /**
+     * Delete a supplier
+     */
+    async delete(id: string): Promise<void> {
+        await apiClient.delete(`/suppliers/${id}`);
     },
 
     /**

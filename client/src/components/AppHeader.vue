@@ -25,6 +25,7 @@
 
     <!-- Right: search + theme toggle + user info + logout -->
     <div class="flex items-center gap-3 flex-shrink-0">
+      <HeaderWidget />
       <!-- Global search trigger -->
       <button
         @click="$emit('openSearch')"
@@ -81,6 +82,7 @@ import { useRoute } from 'vue-router';
 import { Bars3Icon, ChevronRightIcon, ArrowRightOnRectangleIcon, SunIcon, MoonIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline';
 import { useAuthStore } from '../stores/auth';
 import { useThemeStore } from '../stores/theme';
+import HeaderWidget from './HeaderWidget.vue';
 
 defineEmits(['toggleSidebar', 'openSearch']);
 

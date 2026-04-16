@@ -6,7 +6,7 @@ namespace Akyildiz.Sevkiyat.Application.PurchaseOrders.Commands.CreatePurchaseOr
     public class CreatePurchaseOrderCommand : IRequest<Guid>, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles =>
-            new[] { "Admin", "Manager", "Accounting" };
+            new[] { "Admin", "Manager", "Accounting", "Warehouse" };
         public Guid SupplierId { get; set; }
         public DateOnly OrderDate { get; set; }
         public DateOnly? ExpectedDeliveryDate { get; set; }

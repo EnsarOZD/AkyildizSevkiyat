@@ -4,6 +4,7 @@ using Akyildiz.Sevkiyat.Domain.Entities;
 using Akyildiz.Sevkiyat.Domain.Exceptions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using System.Security.Cryptography;
 
 namespace Akyildiz.Sevkiyat.Application.Auth.Commands.RefreshToken
@@ -12,11 +13,16 @@ namespace Akyildiz.Sevkiyat.Application.Auth.Commands.RefreshToken
     {
         private readonly IApplicationDbContext _context;
         private readonly ITokenService _tokenService;
+        private readonly int _refreshTokenExpiryHours;
 
-        public RefreshTokenCommandHandler(IApplicationDbContext context, ITokenService tokenService)
+        public RefreshTokenCommandHandler(
+            IApplicationDbContext context,
+            ITokenService tokenService,
+            IConfiguration configuration)
         {
             _context = context;
             _tokenService = tokenService;
+            _refreshTokenExpiryHours = int.TryParse(configuration["Jwt:RefreshTokenExpiryHours"], out var h) ? h : 8;
         }
 
         public async Task<LoginResponse> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
@@ -50,7 +56,7 @@ namespace Akyildiz.Sevkiyat.Application.Auth.Commands.RefreshToken
                 Id = Guid.NewGuid(),
                 UserId = existing.UserId,
                 TokenHash = newHash,
-                ExpiresAt = DateTime.UtcNow.AddDays(30),
+                ExpiresAt = DateTime.UtcNow.AddHours(_refreshTokenExpiryHours),
                 CreatedAt = DateTime.UtcNow
             });
 

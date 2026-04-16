@@ -2,12 +2,9 @@
   <div class="h-full flex flex-col p-4">
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Bölge Yönetimi</h1>
-      <button
-        @click="showModal = true; isEdit = false; form = { name: '', order: 0 }"
-        class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
-      >
-        <span>+ Yeni Bölge</span>
-      </button>
+      <BaseButton @click="showModal = true; isEdit = false; form = { name: '', order: 0 }" variant="primary">
+        + Yeni Bölge
+      </BaseButton>
     </div>
 
     <!-- Error -->
@@ -43,28 +40,17 @@
     </div>
 
     <!-- Modal -->
-    <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div class="bg-white dark:bg-gray-900 rounded-lg p-6 w-full max-w-md">
-        <h3 class="text-lg font-bold mb-4 dark:text-gray-100">{{ isEdit ? 'Bölgeyi Düzenle' : 'Yeni Bölge Ekle' }}</h3>
-
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Bölge Adı</label>
-            <input v-model="form.name" type="text" class="w-full border dark:border-gray-700 p-2 rounded focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-gray-100" placeholder="Örn: A Koridoru" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Sıralama</label>
-            <input v-model.number="form.order" type="number" class="w-full border dark:border-gray-700 p-2 rounded focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-gray-100" />
-            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Toplama rotasında hangi sırada gidileceğini belirler (Küçükten büyüğe).</p>
-          </div>
-        </div>
-
-        <div class="mt-6 flex justify-end gap-3">
-          <button @click="showModal = false" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">İptal</button>
-          <button @click="saveZone" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Kaydet</button>
-        </div>
+    <BaseModal :show="showModal" :title="isEdit ? 'Bölgeyi Düzenle' : 'Yeni Bölge Ekle'" maxWidth="sm" @close="showModal = false">
+      <div class="space-y-4">
+        <BaseInput v-model="form.name" label="Bölge Adı" placeholder="Örn: A Koridoru" />
+        <BaseInput v-model.number="form.order" type="number" label="Sıralama"
+          hint="Toplama rotasında hangi sırada gidileceğini belirler (Küçükten büyüğe)." />
       </div>
-    </div>
+      <template #footer>
+        <BaseButton @click="showModal = false" variant="secondary">İptal</BaseButton>
+        <BaseButton @click="saveZone" variant="primary">Kaydet</BaseButton>
+      </template>
+    </BaseModal>
   </div>
 </template>
 
@@ -73,6 +59,9 @@ import { ref, onMounted } from 'vue';
 import projectService from '../services/projectService';
 import { ApiErrorUtils } from '../utils/apiError';
 import { useNotificationStore } from '../stores/notification';
+import BaseModal from '../components/BaseModal.vue';
+import BaseButton from '../components/BaseButton.vue';
+import BaseInput from '../components/base/BaseInput.vue';
 
 const notificationStore = useNotificationStore();
 

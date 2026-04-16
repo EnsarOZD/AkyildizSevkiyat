@@ -88,6 +88,10 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.AssignVehicle
 
                     shipment.SetDriverInfo(driver.FullName, vehicle.PlateNumber, driver.Id);
                     shipment.ChangeStatus(ShipmentStatus.AssignedToVehicle, _currentUserService.UserId);
+                    
+                    // V1 WORKAROUND: İlk versiyonda şöför paneli olmadığı için, araç ataması yapıldığında direkt 'Delivered' (Teslim) yapıyoruz.
+                    shipment.ChangeStatus(ShipmentStatus.Delivered, _currentUserService.UserId, "V1 Otomatik Teslimat (Şöför paneli kullanımı olmadığı için.)");
+                    
                     successCount++;
                 }
                 catch (Exception ex)

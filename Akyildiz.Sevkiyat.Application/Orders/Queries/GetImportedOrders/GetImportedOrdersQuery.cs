@@ -70,7 +70,9 @@ namespace Akyildiz.Sevkiyat.Application.Orders.Queries.GetImportedOrders
             }
             else
             {
-                query = query.Where(o => o.IsActive && !o.IsTransferred); 
+                // Exclude orders already converted to a shipment OR whose shipment was sent to Netsis
+                query = query.Where(o => o.IsActive && !o.IsTransferred
+                    && !_context.Shipments.Any(s => s.IssOrderId == o.Id && s.NetsisTransferredAt != null));
                 
                 if (request.Tab == "NeedsMapping")
                 {

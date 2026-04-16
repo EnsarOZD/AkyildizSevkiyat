@@ -6,24 +6,41 @@
     <span class="text-gray-500 dark:text-gray-400">Sevkiyat bulunamadı.</span>
   </div>
   <div v-else class="max-w-full overflow-x-hidden px-4 sm:px-6 py-4">
+
     <!-- Back button -->
     <button
-      @click="router.back()"
+      @click="router.push({ name: 'ShipmentList' })"
       class="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors mb-4"
     >
       <ChevronLeftIcon class="w-4 h-4" />
       Sevkiyatlar
     </button>
 
+    <!-- Page heading -->
     <div class="mb-5 break-all">
-      <div class="flex items-center gap-2 flex-wrap">
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Sevkiyat #{{ shipment.id }}</h1>
-        <span
-          v-if="shipment.operationTypeValue === 1"
-          class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 border border-purple-200 dark:border-purple-700"
-        >Kıyafet</span>
+      <div class="flex items-start justify-between gap-2 flex-wrap">
+        <div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Sevkiyat #{{ shipment.id }}</h1>
+            <span
+              v-if="shipment.operationTypeValue === 1"
+              class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 border border-purple-200 dark:border-purple-700"
+            >Kıyafet</span>
+          </div>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5 break-all">{{ shipment.projectName }}</p>
+        </div>
+        <router-link
+          :to="{ name: 'ShipmentOrderPrint', params: { id: shipment.id } }"
+          target="_blank"
+          class="flex-shrink-0 flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+          </svg>
+          Sipariş Formu
+        </router-link>
       </div>
-      <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5 break-all">{{ shipment.projectName }}</p>
     </div>
 
     <!-- Uyarı Banneri -->
@@ -44,50 +61,16 @@
       </div>
     </div>
 
-    <!-- 2-col layout: left = content, right = sticky sidebar -->
+    <!-- Two-column layout -->
     <div class="flex flex-col lg:flex-row gap-6 items-stretch lg:items-start w-full">
 
-      <!-- ── LEFT: main content ── -->
+      <!-- LEFT: main content -->
       <div class="flex-1 min-w-0 w-full">
-        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-4 w-full">
-          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-3 text-sm">
-            <div class="min-w-0">
-              <div class="text-xs text-gray-500 dark:text-gray-400 font-medium mb-0.5 truncate">Proje</div>
-              <div class="font-medium text-gray-800 dark:text-gray-200 break-all">{{ shipment.projectName }}</div>
-            </div>
-            <div class="min-w-0">
-              <div class="text-xs text-gray-500 dark:text-gray-400 font-medium mb-0.5">Teslim Tarihi</div>
-              <div class="font-medium text-gray-800 dark:text-gray-200">{{ new Date(shipment.deliveryDate).toLocaleDateString('tr-TR') }}</div>
-            </div>
-            <div v-if="shipment.zoneName" class="min-w-0">
-              <div class="text-xs text-gray-500 dark:text-gray-400 font-medium mb-0.5">Bölge</div>
-              <div class="font-medium text-gray-800 dark:text-gray-200 break-all">{{ shipment.zoneName }}</div>
-            </div>
-            <div v-if="shipment.externalOrderNumber" class="min-w-0">
-              <div class="text-xs text-gray-500 dark:text-gray-400 font-medium mb-0.5">Sipariş No</div>
-              <div class="font-mono text-blue-600 break-all">{{ shipment.externalOrderNumber }}</div>
-            </div>
-            <div v-if="shipment.talepNo" class="min-w-0">
-              <div class="text-xs text-gray-500 dark:text-gray-400 font-medium mb-0.5">Talep No</div>
-              <div class="font-medium text-gray-700 dark:text-gray-300 break-all">{{ shipment.talepNo }}</div>
-            </div>
-            <div v-if="shipment.teslimAlacakKisiler" class="min-w-0">
-              <div class="text-xs text-gray-500 dark:text-gray-400 font-medium mb-0.5">Teslim Alacak</div>
-              <div class="text-gray-700 dark:text-gray-300 break-all">{{ shipment.teslimAlacakKisiler }}</div>
-              <div v-if="shipment.teslimAlacakTelefon" class="text-xs text-gray-500 dark:text-gray-400 break-all">{{ shipment.teslimAlacakTelefon }}</div>
-            </div>
-            <div v-if="shipment.yoneticiMail" class="col-span-1 sm:col-span-2 md:col-span-3 min-w-0">
-              <div class="text-xs text-gray-500 dark:text-gray-400 font-medium mb-0.5">Yönetici Mail</div>
-              <div class="text-xs text-gray-600 dark:text-gray-400 break-all">{{ shipment.yoneticiMail }}</div>
-            </div>
-          </div>
-          <div v-if="shipment.aciklama" class="mt-3 pt-3 border-t text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded p-2 break-all overflow-hidden">
-            <span class="font-bold text-gray-700 dark:text-gray-300">Not: </span>{{ shipment.aciklama }}
-          </div>
-        </div>
 
+        <!-- Info card -->
+        <ShipmentInfoCard :shipment="shipment" />
 
-        <!-- Tab nav wrapper with scroll -->
+        <!-- Tab nav -->
         <div class="border-b border-gray-200 dark:border-gray-700 mb-4 overflow-x-auto scrollbar-hide px-2">
           <nav class="-mb-px flex space-x-6 min-w-max pb-0.5">
             <button
@@ -122,303 +105,52 @@
           </nav>
         </div>
 
-        <!-- Tab: Ürünler -->
-        <div v-if="activeDetailTab === 'lines'" class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden max-w-full w-full">
-          <div v-for="(group, groupIdx) in groupedLines" :key="groupIdx" class="border-b last:border-b-0">
-            <div
-              class="px-5 py-2 font-bold text-sm flex justify-between items-center"
-              :class="group.zoneName === 'Tanımsız' || group.zoneName === 'No Zone'
-                ? 'bg-red-100 text-red-800'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'"
-            >
-              <span class="break-words mr-2 text-left">{{ group.zoneName }}</span>
-              <span class="text-xs font-normal bg-white dark:bg-gray-900 px-2 py-1 rounded border dark:border-gray-700 whitespace-nowrap">{{ group.lines.length }} Kalem</span>
-            </div>
-            <div class="overflow-x-auto">
-              <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead v-if="groupIdx === 0" class="bg-gray-50 dark:bg-gray-800">
-                <tr>
-                  <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Stok Kodu</th>
-                  <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-[200px]">Stok Adı</th>
-                  <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Birim</th>
-                  <th class="px-5 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sipariş</th>
-                  <th class="px-5 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Teslim</th>
-                </tr>
-              </thead>
-              <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-                <tr v-for="line in group.lines" :key="line.id">
-                  <td class="px-5 py-3 whitespace-nowrap text-sm font-mono text-gray-900 dark:text-gray-100">
-                    {{ line.localStockCode || line.stockCode }}
-                    <div v-if="line.localStockCode && line.localStockCode !== line.stockCode" class="text-xs text-gray-400">
-                      ISS: {{ line.stockCode }}
-                    </div>
-                  </td>
-                  <td class="px-5 py-3 text-sm text-gray-900 dark:text-gray-100">{{ line.stockName }}</td>
-                  <td class="px-5 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ line.unit || '-' }}</td>
-                  <td class="px-5 py-3 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-gray-100 text-right">{{ line.orderedQty }}</td>
-                  <td class="px-5 py-3 whitespace-nowrap text-sm text-right"
-                      :class="line.deliveredQty > 0 && line.deliveredQty !== line.orderedQty ? 'text-red-600 font-bold' : 'text-gray-900 dark:text-gray-100'">
-                    {{ line.deliveredQty > 0 ? line.deliveredQty : '-' }}
-                  </td>
-                </tr>
-              </tbody>
-              </table>
-            </div>
-          </div>
-          <div v-if="groupedLines.length === 0" class="px-5 py-10 text-center text-sm text-gray-400">
-            Ürün kaydı bulunamadı.
-          </div>
-        </div>
+        <!-- Tab content -->
+        <ShipmentLinesTab
+          v-if="activeDetailTab === 'lines'"
+          :groupedLines="groupedLines"
+        />
 
-        <!-- Tab: Sürücü & Teslimat -->
-        <div v-if="activeDetailTab === 'delivery'" class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl divide-y divide-gray-100 dark:divide-gray-700">
-          <!-- Araç & Sürücü -->
-          <div class="p-5">
-            <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Araç & Sürücü</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-              <div>
-                <div class="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Sürücü</div>
-                <div class="font-medium text-gray-800 dark:text-gray-200">{{ shipment.driverName || '—' }}</div>
-              </div>
-              <div>
-                <div class="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Plaka</div>
-                <div class="font-medium text-gray-800 dark:text-gray-200">{{ shipment.plateNumber || '—' }}</div>
-              </div>
-            </div>
-          </div>
-          <!-- İrsaliye -->
-          <div class="p-5">
-            <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">İrsaliye</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-              <div>
-                <div class="text-xs text-gray-500 dark:text-gray-400 mb-0.5">İrsaliye No</div>
-                <div class="flex items-center gap-2">
-                  <span class="font-mono text-blue-700 font-medium">{{ shipment.irsaliyeNo || '—' }}</span>
-                  <button
-                    v-role="['Admin', 'Manager']"
-                    @click="openIrsaliyeModal"
-                    class="text-xs text-indigo-600 hover:text-indigo-800 border border-indigo-200 rounded px-1.5 py-0.5 transition-colors"
-                  >{{ shipment.irsaliyeNo ? 'Güncelle' : 'Gir' }}</button>
-                </div>
-              </div>
-              <div v-if="shipment.irsaliyeDate">
-                <div class="text-xs text-gray-500 dark:text-gray-400 mb-0.5">İrsaliye Tarihi</div>
-                <div class="text-gray-700 dark:text-gray-300">{{ shipment.irsaliyeDate }}</div>
-              </div>
-              <div v-if="shipment.netsisTransferredAt" class="col-span-full">
-                <div class="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Netsis Aktarım</div>
-                <div class="text-xs text-green-700 font-medium">{{ new Date(shipment.netsisTransferredAt).toLocaleString('tr-TR') }}</div>
-              </div>
-            </div>
-          </div>
-          <!-- Teslim Bilgisi -->
-          <div v-if="shipment.deliveredAt" class="p-5 bg-green-50 dark:bg-green-900/10">
-            <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Teslim Bilgisi</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-              <div>
-                <div class="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Teslim Zamanı</div>
-                <div class="font-medium text-green-700">{{ new Date(shipment.deliveredAt).toLocaleString('tr-TR') }}</div>
-              </div>
-              <div v-if="shipment.deliveryRecipient">
-                <div class="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Teslim Alan</div>
-                <div class="font-medium text-gray-800 dark:text-gray-200">{{ shipment.deliveryRecipient }}</div>
-              </div>
-              <div v-if="shipment.deliveryNote" class="col-span-2 text-xs text-gray-600 dark:text-gray-400 italic bg-white dark:bg-gray-900 border border-green-100 rounded p-2">
-                {{ shipment.deliveryNote }}
-              </div>
-              <!-- Teslimat Fotoğrafı -->
-              <div v-if="shipment.deliveryPhotoBase64" class="col-span-2">
-                <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">Teslimat Fotoğrafı</div>
-                <img
-                  :src="`data:image/jpeg;base64,${shipment.deliveryPhotoBase64}`"
-                  alt="Teslimat fotoğrafı"
-                  class="rounded-lg border border-green-200 max-h-64 object-contain cursor-pointer hover:opacity-90 transition-opacity"
-                  @click="photoLightboxSrc = `data:image/jpeg;base64,${shipment.deliveryPhotoBase64}`"
-                />
-              </div>
-            </div>
-          </div>
+        <ShipmentDeliveryTab
+          v-if="activeDetailTab === 'delivery'"
+          :shipment="shipment"
+          @openIrsaliye="openIrsaliyeModal"
+          @photoClick="src => photoLightboxSrc = src"
+        />
 
-          <!-- Fotoğraf Lightbox -->
-          <div
-            v-if="photoLightboxSrc"
-            class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
-            @click="photoLightboxSrc = null"
-          >
-            <img :src="photoLightboxSrc" alt="Teslimat fotoğrafı" class="max-w-full max-h-full rounded-lg object-contain" />
-          </div>
-          <!-- Empty state -->
-          <div v-if="!shipment.driverName && !shipment.irsaliyeNo && !shipment.deliveredAt" class="p-8 text-center text-sm text-gray-400">
-            Henüz araç/sürücü atanmamış.
-          </div>
-        </div>
-
-        <!-- Tab: Tarihçe -->
-        <div v-if="activeDetailTab === 'history'" class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
-          <ul class="divide-y divide-gray-200 dark:divide-gray-700">
-            <li v-for="(history, index) in shipment.history" :key="index" class="px-5 py-4">
-              <div class="flex items-start justify-between gap-4">
-                <div>
-                  <p class="text-sm text-gray-800 dark:text-gray-200">
-                    <strong>{{ history.oldStatus }}</strong>
-                    <span class="mx-1 text-gray-400">→</span>
-                    <strong>{{ history.newStatus }}</strong>
-                  </p>
-                  <p v-if="history.description" class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 italic">{{ history.description }}</p>
-                  <p class="text-xs text-gray-400 mt-1">{{ history.changedBy }}</p>
-                </div>
-                <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap shrink-0">
-                  {{ new Date(history.changedAt).toLocaleString('tr-TR') }}
-                </span>
-              </div>
-            </li>
-            <li v-if="shipment.history.length === 0" class="px-5 py-10 text-center text-sm text-gray-400">
-              Henüz tarihçe kaydı yok.
-            </li>
-          </ul>
-        </div>
-
-      </div> <!-- End of LEFT content -->
-
-
-      <!-- ── RIGHT: Sticky sidebar ── -->
-      <div class="w-full lg:w-72 shrink-0 lg:sticky lg:top-4 space-y-4 min-w-0 max-w-full">
-
-        <!-- Status card -->
-        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 w-full">
-          <div class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Durum</div>
-          <StatusBadge :status="shipment.status" type="shipment" />
-          <div v-if="!shipment.zoneId" class="mt-3 text-xs text-red-600 bg-red-50 border border-red-100 rounded px-2 py-1.5 flex items-center gap-1">
-            ⚠️ Bölge henüz atanmamış
-          </div>
-        </div>
-
-        <!-- Actions card -->
-        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 w-full">
-          <div class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">İşlemler</div>
-          <div class="space-y-2">
-
-            <!-- Kıyafet: Netsis'e Gönder -->
-            <button
-              v-if="shipment.operationTypeValue === 1 && shipment.status === 'Created' && !shipment.netsisTransferredAt"
-              v-role="['Admin', 'Manager', 'Accounting', 'Dispatcher']"
-              @click="exportClothingToNetsis"
-              :disabled="clothingExportLoading"
-              class="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition text-sm font-bold disabled:opacity-50"
-            >
-              <span v-if="clothingExportLoading">Netsis'e aktarılıyor...</span>
-              <span v-else>Netsis'e Gönder (Kıyafet)</span>
-            </button>
-
-            <!-- Kıyafet teslim edildi badge -->
-            <div
-              v-if="shipment.operationTypeValue === 1 && shipment.netsisTransferredAt && shipment.irsaliyeNo"
-              class="w-full bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg px-3 py-2 text-xs text-green-700 dark:text-green-300 font-medium"
-            >
-              ✓ Netsis'e aktarıldı<br/>
-              <span class="font-mono">{{ shipment.irsaliyeNo }}</span>
-            </div>
-
-            <!-- İrsaliye Yenile: Netsis'e aktarılmış ama irsaliye numarası boş -->
-            <button
-              v-if="shipment.netsisTransferredAt && !shipment.irsaliyeNo"
-              v-role="['Admin', 'Manager', 'Accounting', 'Dispatcher']"
-              @click="fetchIrsaliye"
-              :disabled="irsaliyeFetchLoading"
-              class="w-full border border-indigo-400 text-indigo-600 py-2 px-4 rounded-lg hover:bg-indigo-50 transition text-sm font-medium disabled:opacity-50"
-            >
-              <span v-if="irsaliyeFetchLoading">İrsaliye çekiliyor...</span>
-              <span v-else>İrsaliye Yenile</span>
-            </button>
-
-            <!-- Admin: İrsaliye varsa bile yeniden sorgula (hatalı numara düzeltme) -->
-            <button
-              v-if="shipment.netsisTransferredAt && shipment.irsaliyeNo"
-              v-role="['Admin']"
-              @click="fetchIrsaliye"
-              :disabled="irsaliyeFetchLoading"
-              class="w-full border border-gray-300 text-gray-500 py-1.5 px-4 rounded-lg hover:bg-gray-50 transition text-xs font-medium disabled:opacity-50"
-              :title="`Mevcut: ${shipment.irsaliyeNo} — Netsis\'ten yeniden sorgula`"
-            >
-              <span v-if="irsaliyeFetchLoading">Sorgulanıyor...</span>
-              <span v-else>↺ İrsaliye No Yenile</span>
-            </button>
-
-            <button
-              v-if="shipment.status === 'Created'"
-              v-role="['Admin', 'Accounting']"
-              @click="openEditModal"
-              class="w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition text-sm font-medium"
-            >Siparişi Düzenle</button>
-
-            <button
-              v-if="shipment.status === 'Created' && !shipment.zoneId"
-              v-role="['Admin']"
-              @click="openZoneModal"
-              class="w-full bg-orange-500 text-white py-2 px-4 rounded-lg hover:bg-orange-600 transition text-sm font-medium"
-            >⚠️ Bölge Ata (Gerekli)</button>
-
-            <!-- Depoya Ata — Clothing projeler için gizle -->
-            <button
-              v-if="shipment.status === 'Created' && shipment.operationTypeValue !== 1"
-              v-role="['Admin', 'Accounting', 'Manager']"
-              @click="assignToWarehouse"
-              class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition text-sm font-medium"
-            >Depoya Ata</button>
-
-            <!-- Sevke Hazır — Clothing projeler için gizle -->
-            <button
-              v-if="['Picking', 'AssignedToWarehouse'].includes(shipment.status) && shipment.operationTypeValue !== 1"
-              v-role="['Admin', 'Warehouse', 'Manager']"
-              @click="openMarkReadyConfirm"
-              class="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition text-sm font-bold"
-            >Sevke Hazır İşaretle</button>
-
-            <button
-              v-if="['Picking', 'AssignedToWarehouse'].includes(shipment.status) && shipment.operationTypeValue !== 1"
-              v-role="['Admin', 'Warehouse']"
-              @click="openQuantitiesModal"
-              class="w-full border border-blue-500 text-blue-600 py-2 px-4 rounded-lg hover:bg-blue-50 transition text-sm font-medium"
-            >Miktarları Düzenle</button>
-
-            <button
-              v-if="shipment.status === 'ReadyForDispatch'"
-              v-role="['Admin', 'Dispatcher']"
-              @click="openAssignVehicleModal"
-              :disabled="!shipment.zoneId"
-              class="w-full text-white py-2 px-4 rounded-lg transition text-sm font-medium"
-              :class="!shipment.zoneId ? 'bg-gray-300 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'"
-            >Araca Ata</button>
-
-            <button
-              v-if="shipment.status === 'AssignedToVehicle'"
-              v-role="['Admin', 'Dispatcher', 'Manager']"
-              @click="openDeliveryModal"
-              class="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition text-sm font-bold"
-            >Teslim Edildi</button>
-
-            <button
-              v-if="['AssignedToVehicle', 'Delivered'].includes(shipment.status)"
-              v-role="['Admin', 'Dispatcher', 'Manager', 'Warehouse']"
-              @click="openVehicleReturnModal"
-              class="w-full bg-orange-500 text-white py-2 px-4 rounded-lg hover:bg-orange-600 transition text-sm font-medium"
-            >Araç İadesi Kaydet</button>
-
-            <!-- İptal / Taslağa Geri Çek — Araca yüklenmeden iptal -->
-            <button
-              v-if="['AssignedToWarehouse', 'Picking', 'ReadyForDispatch'].includes(shipment.status)"
-              v-role="['Admin', 'Manager', 'Warehouse']"
-              @click="openRevertModal"
-              class="w-full border border-red-400 text-red-600 dark:text-red-400 py-2 px-4 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition text-sm font-medium"
-            >Taslağa Geri Al / İptal</button>
-
-            <p v-if="['ReturnedToWarehouse', 'Cancelled'].includes(shipment.status)" class="text-xs text-gray-400 text-center py-2">
-              Bu sevkiyat için açık aksiyon yok.
-            </p>
-          </div>
-        </div>
-
+        <ShipmentHistoryTab
+          v-if="activeDetailTab === 'history'"
+          :history="shipment.history"
+          :printLogs="shipment.printLogs ?? []"
+        />
       </div>
+
+      <!-- RIGHT: sticky sidebar -->
+      <ShipmentActionsPanel
+        :shipment="shipment"
+        :clothingExportLoading="clothingExportLoading"
+        :irsaliyeFetchLoading="irsaliyeFetchLoading"
+        @exportClothing="exportClothingToNetsis"
+        @fetchIrsaliye="fetchIrsaliye"
+        @openEdit="openEditModal"
+        @openZone="openZoneModal"
+        @assignWarehouse="assignToWarehouse"
+        @openMarkReady="openMarkReadyConfirm"
+        @openQuantities="openQuantitiesModal"
+        @openAssignVehicle="openAssignVehicleModal"
+        @openDelivery="openDeliveryModal"
+        @openVehicleReturn="openVehicleReturnModal"
+        @openRevert="openRevertModal"
+      />
+    </div>
+
+    <!-- Fotoğraf Lightbox -->
+    <div
+      v-if="photoLightboxSrc"
+      class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+      @click="photoLightboxSrc = null"
+    >
+      <img :src="photoLightboxSrc" alt="Teslimat fotoğrafı" class="max-w-full max-h-full rounded-lg object-contain" />
     </div>
 
     <!-- ── MODALS ── -->
@@ -456,25 +188,21 @@
             Bu sevkiyat için henüz irsaliye numarası girilmemiş. Devam edebilirsiniz ancak irsaliye numarasını araç çıkışından önce kaydetmeniz önerilir.
           </p>
         </div>
-
         <div v-if="assignListsLoading" class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
           <span class="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></span>
           Yükleniyor...
         </div>
-
         <div v-else>
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Şoför <span class="text-red-500">*</span></label>
-            <select v-model="vehicleForm.driverId"
-                    class="w-full border dark:border-gray-700 p-2 rounded focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100">
+            <select v-model="vehicleForm.driverId" class="w-full border dark:border-gray-700 p-2 rounded focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100">
               <option :value="null">Seçiniz...</option>
               <option v-for="d in activeDrivers" :key="d.id" :value="d.id">{{ d.fullName }}</option>
             </select>
           </div>
           <div class="mt-3">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Araç <span class="text-red-500">*</span></label>
-            <select v-model="vehicleForm.vehicleId"
-                    class="w-full border dark:border-gray-700 p-2 rounded focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100">
+            <select v-model="vehicleForm.vehicleId" class="w-full border dark:border-gray-700 p-2 rounded focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100">
               <option :value="null">Seçiniz...</option>
               <option v-for="v in activeVehicles" :key="v.id" :value="v.id">{{ v.plateNumber }}</option>
             </select>
@@ -499,35 +227,49 @@
 
     <!-- Edit Details Modal -->
     <BaseModal :show="showEditModal" title="Siparişi Düzenle (Taslak)" maxWidth="5xl" @close="showEditModal = false">
-      <div class="mb-6 bg-blue-50 p-4 rounded border border-blue-100">
-        <label class="block text-sm font-bold text-blue-800 mb-1">Teslim Tarihi</label>
-        <input v-model="editForm.deliveryDate" type="date" class="border dark:border-gray-700 p-2 rounded w-full md:w-64 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-gray-100" />
+      <div class="mb-6 bg-blue-50 dark:bg-blue-950/40 p-4 rounded border border-blue-100 dark:border-blue-900">
+        <label class="block text-sm font-bold text-blue-800 dark:text-blue-300 mb-1">Teslim Tarihi</label>
+        <input v-model="editForm.deliveryDate" type="date" class="border dark:border-gray-700 p-2 rounded w-full md:w-64 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" />
       </div>
       <div class="bg-white dark:bg-gray-900 rounded border dark:border-gray-700 shadow-sm pb-48 overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead class="bg-gray-50 dark:bg-gray-800">
             <tr>
-              <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Stok Seçimi</th>
-              <th class="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32">Miktar</th>
-              <th class="px-4 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16">Sil</th>
+              <th class="px-3 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32">Stok Kodu</th>
+              <th class="px-3 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Stok Adı</th>
+              <th class="px-3 py-3 text-right text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-28">Miktar</th>
+              <th class="px-3 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-12">Sil</th>
             </tr>
           </thead>
           <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
             <tr v-for="(line, idx) in editForm.lines" :key="line.id" class="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-              <td class="px-4 py-3 text-sm">
-                <StockCombobox
-                  :ref="(el: any) => stockRefs[idx] = el"
-                  :initialCode="line.stockCode"
-                  :placeholder="line.stockName"
-                  @select="(item: any) => onStockSelect(item, line, idx)"
-                  class="w-full"
-                />
-                <div class="mt-1 flex flex-col gap-0.5" v-if="line.stockCode">
-                  <div class="text-xs text-gray-400">Kod: <span class="font-mono">{{ line.stockCode }}</span></div>
-                  <div class="text-xs text-gray-800 dark:text-gray-200 font-medium">{{ line.stockName }}</div>
-                </div>
+              <td class="px-3 py-2 text-sm">
+                <span class="font-mono text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded select-all whitespace-nowrap">
+                  {{ line.stockCode || '—' }}
+                </span>
               </td>
-              <td class="px-4 py-3 text-sm">
+              <td class="px-3 py-2 text-sm">
+                <template v-if="editingStockIdx === idx">
+                  <StockCombobox
+                    :ref="(el: any) => stockRefs[idx] = el"
+                    :initialCode="line.stockCode"
+                    :placeholder="line.stockName"
+                    @select="(item: any) => { onStockSelect(item, line, idx); editingStockIdx = -1; }"
+                    class="w-full"
+                  />
+                  <button @click="editingStockIdx = -1" class="mt-1 text-xs text-gray-400 hover:text-gray-600">İptal</button>
+                </template>
+                <template v-else>
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="text-gray-800 dark:text-gray-100 text-sm truncate flex-1">{{ line.stockName || '—' }}</span>
+                    <button
+                      @click="editingStockIdx = idx"
+                      class="shrink-0 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 border border-blue-300 dark:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 px-2 py-0.5 rounded transition"
+                    >Değiştir</button>
+                  </div>
+                </template>
+              </td>
+              <td class="px-3 py-3 text-sm">
                 <input
                   :ref="(el: any) => qtyRefs[idx] = el"
                   v-model.number="line.orderedQty"
@@ -540,14 +282,14 @@
                   @focus="($event.target as HTMLInputElement).select()"
                 />
               </td>
-              <td class="px-4 py-3 text-sm text-center">
-                <button @click="removeLine(idx)" class="text-red-500 hover:text-red-700 p-2 rounded hover:bg-red-50 transition">
-                  <span class="text-lg font-bold">&times;</span>
+              <td class="px-3 py-3 text-sm text-center">
+                <button @click="removeLine(idx)" class="text-red-400 hover:text-red-600 p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition">
+                  <span class="text-lg font-bold leading-none">&times;</span>
                 </button>
               </td>
             </tr>
             <tr v-if="editForm.lines.length === 0">
-              <td colspan="3" class="px-4 py-8 text-center text-gray-400 italic">Henüz ürün eklenmemiş.</td>
+              <td colspan="4" class="px-4 py-8 text-center text-gray-400 italic">Henüz ürün eklenmemiş.</td>
             </tr>
           </tbody>
         </table>
@@ -566,49 +308,49 @@
       <div class="overflow-x-auto mb-4">
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead class="bg-gray-50 dark:bg-gray-800">
-          <tr>
-            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Stok</th>
-            <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sipariş</th>
-            <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Hazırlanan</th>
-            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Fark Nedeni</th>
-            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Not</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
-          <tr v-for="line in quantitiesForm" :key="line.lineId" class="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-            <td class="px-3 py-2 text-sm">
-              <div class="font-medium text-gray-900 dark:text-gray-100 font-mono text-xs">{{ line.stockCode }}</div>
-              <div class="text-gray-600 dark:text-gray-400 text-[11px] font-medium">{{ line.stockName }}</div>
-            </td>
-            <td class="px-3 py-2 text-sm text-right bg-gray-50 dark:bg-gray-800 font-bold text-gray-700 dark:text-gray-300">{{ line.orderedQty }}</td>
-            <td class="px-3 py-2 text-sm text-right">
-              <input
-                v-model.number="line.deliveredQty"
-                type="number"
-                min="0"
-                class="w-20 border rounded px-2 py-1 text-right font-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100"
-                :class="line.deliveredQty !== line.orderedQty ? 'bg-red-50 border-red-300 text-red-700 shadow-sm' : 'border-gray-200 text-gray-900 dark:text-gray-100'"
-              />
-            </td>
-            <td class="px-3 py-2 text-sm">
-              <select
-                v-if="line.deliveredQty !== line.orderedQty"
-                v-model="line.differenceReason"
-                class="w-full border border-red-200 rounded px-2 py-1 text-xs font-bold text-red-800 bg-red-50 focus:ring-2 focus:ring-red-500 transition-all animate-pulse"
-              >
-                <option value="">Seçiniz...</option>
-                <option value="StockOut">Stok Yok</option>
-                <option value="Damaged">Hasarlı</option>
-                <option value="CustomerRequest">Müşteri İsteği</option>
-                <option value="Other">Diğer</option>
-              </select>
-              <span v-else class="text-gray-300 text-xs flex justify-center">-</span>
-            </td>
-            <td class="px-3 py-2 text-sm">
-              <input v-model="line.note" type="text" class="w-full border border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-xs focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100" placeholder="Not..." />
-            </td>
-          </tr>
-        </tbody>
+            <tr>
+              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Stok</th>
+              <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sipariş</th>
+              <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Hazırlanan</th>
+              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Fark Nedeni</th>
+              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Not</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
+            <tr v-for="line in quantitiesForm" :key="line.lineId" class="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+              <td class="px-3 py-2 text-sm">
+                <div class="font-medium text-gray-900 dark:text-gray-100 font-mono text-xs">{{ line.stockCode }}</div>
+                <div class="text-gray-600 dark:text-gray-400 text-[11px] font-medium">{{ line.stockName }}</div>
+              </td>
+              <td class="px-3 py-2 text-sm text-right bg-gray-50 dark:bg-gray-800 font-bold text-gray-700 dark:text-gray-300">{{ line.orderedQty }}</td>
+              <td class="px-3 py-2 text-sm text-right">
+                <input
+                  v-model.number="line.deliveredQty"
+                  type="number"
+                  min="0"
+                  class="w-20 border rounded px-2 py-1 text-right font-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100"
+                  :class="line.deliveredQty !== line.orderedQty ? 'bg-red-50 border-red-300 text-red-700 shadow-sm' : 'border-gray-200 text-gray-900 dark:text-gray-100'"
+                />
+              </td>
+              <td class="px-3 py-2 text-sm">
+                <select
+                  v-if="line.deliveredQty !== line.orderedQty"
+                  v-model="line.differenceReason"
+                  class="w-full border border-red-200 rounded px-2 py-1 text-xs font-bold text-red-800 bg-red-50 focus:ring-2 focus:ring-red-500 transition-all animate-pulse"
+                >
+                  <option value="">Seçiniz...</option>
+                  <option value="StockOut">Stok Yok</option>
+                  <option value="Damaged">Hasarlı</option>
+                  <option value="CustomerRequest">Müşteri İsteği</option>
+                  <option value="Other">Diğer</option>
+                </select>
+                <span v-else class="text-gray-300 text-xs flex justify-center">-</span>
+              </td>
+              <td class="px-3 py-2 text-sm">
+                <input v-model="line.note" type="text" class="w-full border border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-xs focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100" placeholder="Not..." />
+              </td>
+            </tr>
+          </tbody>
         </table>
       </div>
       <template #footer>
@@ -625,34 +367,19 @@
         </p>
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teslim Alan Kişi</label>
-          <input
-            v-model="deliveryForm.deliveryRecipient"
-            type="text"
-            placeholder="Ör: Ahmet Yılmaz"
-            class="w-full border dark:border-gray-700 p-2 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-800 dark:text-gray-100"
-          />
+          <input v-model="deliveryForm.deliveryRecipient" type="text" placeholder="Ör: Ahmet Yılmaz"
+            class="w-full border dark:border-gray-700 p-2 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-800 dark:text-gray-100" />
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Not</label>
-          <textarea
-            v-model="deliveryForm.deliveryNote"
-            rows="2"
-            placeholder="İsteğe bağlı sürücü notu..."
-            class="w-full border dark:border-gray-700 p-2 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none dark:bg-gray-800 dark:text-gray-100"
-          />
+          <textarea v-model="deliveryForm.deliveryNote" rows="2" placeholder="İsteğe bağlı sürücü notu..."
+            class="w-full border dark:border-gray-700 p-2 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none dark:bg-gray-800 dark:text-gray-100" />
         </div>
-        <!-- Fotoğraf -->
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teslimat Fotoğrafı</label>
           <label class="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 cursor-pointer hover:border-green-400 transition-colors"
             :class="deliveryForm.photoPreview ? 'border-green-400' : ''">
-            <input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              class="hidden"
-              @change="onDeliveryPhotoSelected"
-            />
+            <input type="file" accept="image/*" capture="environment" class="hidden" @change="onDeliveryPhotoSelected" />
             <template v-if="deliveryForm.photoPreview">
               <img :src="deliveryForm.photoPreview" class="max-h-40 rounded object-contain" />
               <span class="text-xs text-green-600 font-medium">Fotoğraf seçildi — değiştirmek için tıklayın</span>
@@ -670,11 +397,8 @@
       </div>
       <template #footer>
         <button @click="showDeliveryModal = false" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">İptal</button>
-        <button
-          @click="confirmMarkDelivered"
-          :disabled="deliveryForm.photoCompressing"
-          class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-bold disabled:opacity-50"
-        >Teslim Edildi</button>
+        <button @click="confirmMarkDelivered" :disabled="deliveryForm.photoCompressing"
+          class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-bold disabled:opacity-50">Teslim Edildi</button>
       </template>
     </BaseModal>
 
@@ -683,30 +407,19 @@
       <div class="space-y-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">İrsaliye No <span class="text-red-500">*</span></label>
-          <input
-            v-model="irsaliyeForm.irsaliyeNo"
-            type="text"
-            maxlength="50"
-            placeholder="Örn: IRŞ-2024-001"
-            class="w-full border dark:border-gray-700 p-2 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono dark:bg-gray-800 dark:text-gray-100"
-          />
+          <input v-model="irsaliyeForm.irsaliyeNo" type="text" maxlength="50" placeholder="Örn: IRŞ-2024-001"
+            class="w-full border dark:border-gray-700 p-2 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono dark:bg-gray-800 dark:text-gray-100" />
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">İrsaliye Tarihi <span class="text-red-500">*</span></label>
-          <input
-            v-model="irsaliyeForm.irsaliyeDate"
-            type="date"
-            class="w-full border dark:border-gray-700 p-2 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-800 dark:text-gray-100"
-          />
+          <input v-model="irsaliyeForm.irsaliyeDate" type="date"
+            class="w-full border dark:border-gray-700 p-2 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-800 dark:text-gray-100" />
         </div>
       </div>
       <template #footer>
         <button @click="showIrsaliyeModal = false" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">İptal</button>
-        <button
-          @click="saveIrsaliye"
-          :disabled="!irsaliyeForm.irsaliyeNo || !irsaliyeForm.irsaliyeDate"
-          class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 font-bold disabled:bg-indigo-300"
-        >Kaydet</button>
+        <button @click="saveIrsaliye" :disabled="!irsaliyeForm.irsaliyeNo || !irsaliyeForm.irsaliyeDate"
+          class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 font-bold disabled:bg-indigo-300">Kaydet</button>
       </template>
     </BaseModal>
 
@@ -733,21 +446,12 @@
                 <td class="px-3 py-2 text-gray-700 dark:text-gray-300">{{ item.stockName }}</td>
                 <td class="px-3 py-2 text-right text-gray-600 dark:text-gray-400">{{ item.deliveredQty }}</td>
                 <td class="px-3 py-2 text-right">
-                  <input
-                    v-model.number="item.returnedQty"
-                    type="number"
-                    min="0"
-                    :max="item.deliveredQty"
-                    step="0.01"
-                    class="w-24 border dark:border-gray-700 rounded px-2 py-1 text-right focus:ring-2 focus:ring-orange-400 dark:bg-gray-800 dark:text-gray-100"
-                  />
+                  <input v-model.number="item.returnedQty" type="number" min="0" :max="item.deliveredQty" step="0.01"
+                    class="w-24 border dark:border-gray-700 rounded px-2 py-1 text-right focus:ring-2 focus:ring-orange-400 dark:bg-gray-800 dark:text-gray-100" />
                 </td>
                 <td class="px-3 py-2">
-                  <select
-                    v-model.number="item.returnReason"
-                    :disabled="!item.returnedQty"
-                    class="border dark:border-gray-700 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-orange-400 disabled:bg-gray-100 dark:bg-gray-800 dark:text-gray-100"
-                  >
+                  <select v-model.number="item.returnReason" :disabled="!item.returnedQty"
+                    class="border dark:border-gray-700 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-orange-400 disabled:bg-gray-100 dark:bg-gray-800 dark:text-gray-100">
                     <option v-for="r in returnReasons" :key="r.value" :value="r.value">{{ r.label }}</option>
                   </select>
                 </td>
@@ -757,12 +461,8 @@
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Genel Not</label>
-          <textarea
-            v-model="vehicleReturnForm.returnNote"
-            rows="2"
-            placeholder="İsteğe bağlı genel iade notu..."
-            class="w-full border dark:border-gray-700 p-2 rounded focus:ring-2 focus:ring-orange-400 resize-none text-sm dark:bg-gray-800 dark:text-gray-100"
-          />
+          <textarea v-model="vehicleReturnForm.returnNote" rows="2" placeholder="İsteğe bağlı genel iade notu..."
+            class="w-full border dark:border-gray-700 p-2 rounded focus:ring-2 focus:ring-orange-400 resize-none text-sm dark:bg-gray-800 dark:text-gray-100" />
         </div>
       </div>
       <template #footer>
@@ -771,7 +471,7 @@
       </template>
     </BaseModal>
 
-    <!-- MarkReady Confirm Modal (miktar uyumsuzluğu varsa) -->
+    <!-- MarkReady Confirm Modal -->
     <BaseModal :show="showMarkReadyConfirm" title="Sevke Hazır — Uyarılar" maxWidth="sm" @close="showMarkReadyConfirm = false">
       <div class="space-y-3">
         <p class="text-sm text-gray-600 dark:text-gray-400 bg-amber-50 border border-amber-100 rounded p-3">
@@ -797,12 +497,8 @@
         </p>
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Neden (İsteğe Bağlı)</label>
-          <textarea
-            v-model="revertReasonText"
-            rows="3"
-            placeholder="Geri çekme nedeni..."
-            class="w-full border dark:border-gray-700 p-2 rounded resize-none text-sm focus:ring-2 focus:ring-red-400 dark:bg-gray-800 dark:text-gray-100"
-          />
+          <textarea v-model="revertReasonText" rows="3" placeholder="Geri çekme nedeni..."
+            class="w-full border dark:border-gray-700 p-2 rounded resize-none text-sm focus:ring-2 focus:ring-red-400 dark:bg-gray-800 dark:text-gray-100" />
         </div>
       </div>
       <template #footer>
@@ -823,13 +519,18 @@ import projectService from '../services/projectService';
 import transportService, { type Driver, type Vehicle } from '../services/transportService';
 import StockCombobox from '../components/StockCombobox.vue';
 import BaseModal from '../components/BaseModal.vue';
-import StatusBadge from '../components/StatusBadge.vue';
+import ShipmentInfoCard from '../components/shipment/ShipmentInfoCard.vue';
+import ShipmentLinesTab from '../components/shipment/ShipmentLinesTab.vue';
+import ShipmentDeliveryTab from '../components/shipment/ShipmentDeliveryTab.vue';
+import ShipmentHistoryTab from '../components/shipment/ShipmentHistoryTab.vue';
+import ShipmentActionsPanel from '../components/shipment/ShipmentActionsPanel.vue';
 import { useNotificationStore } from '../stores/notification';
 import { ApiErrorUtils } from '../utils/apiError';
 
 interface ShipmentDetail {
   id: number;
   projectId: number;
+  projectCode?: string;
   projectName: string;
   zoneId?: number;
   zoneName?: string;
@@ -872,6 +573,11 @@ interface ShipmentDetail {
     changedBy: string;
     description?: string;
   }>;
+  printLogs: Array<{
+    id: number;
+    printedAt: string;
+    printedByName: string;
+  }>;
 }
 
 const route = useRoute();
@@ -883,58 +589,87 @@ const loading = ref(false);
 // Action warnings banner
 const actionWarnings = ref<string[]>([]);
 
-// Clothing export
+// Loading states for sidebar buttons
 const clothingExportLoading = ref(false);
-
-// Irsaliye fetch
 const irsaliyeFetchLoading = ref(false);
 
-// MarkReady confirm state
+// MarkReady confirm
 const showMarkReadyConfirm = ref(false);
 const pendingMarkReadyWarnings = ref<string[]>([]);
 
 // Tab state
 const activeDetailTab = ref<'lines' | 'delivery' | 'history'>('lines');
 
-// Modal State
+// Photo lightbox
+const photoLightboxSrc = ref<string | null>(null);
+
+// Vehicle modal
 const showVehicleModal = ref(false);
 const vehicleForm = ref<{ driverId: number | null; vehicleId: number | null }>({ driverId: null, vehicleId: null });
 const activeDrivers = ref<Driver[]>([]);
 const activeVehicles = ref<Vehicle[]>([]);
 const assignListsLoading = ref(false);
 
-// Zone Logic
+// Zone modal
 const showZoneModal = ref(false);
 const selectedZoneId = ref<number | null>(null);
 const availableZones = ref<any[]>([]);
 
-const fetchZones = async () => {
-  try {
-    availableZones.value = await projectService.getZones();
-  } catch (e) {
-    console.error('Zones fetch error', e);
-  }
-};
+// Revert modal
+const showRevertModal = ref(false);
+const revertReasonText = ref('');
 
-const openZoneModal = async () => {
-  await fetchZones();
-  showZoneModal.value = true;
-};
+// Delivery modal
+const showDeliveryModal = ref(false);
+const deliveryForm = ref({ deliveryRecipient: '', deliveryNote: '', photoBase64: '', photoPreview: '', photoCompressing: false });
 
-const saveZoneAssignment = async () => {
-  if (!selectedZoneId.value || !shipment.value) return;
-  try {
-    await projectService.assignZone(shipment.value.projectId, selectedZoneId.value);
-    showZoneModal.value = false;
-    await fetchShipmentDetail();
-  } catch (e) {
-    notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Bölge atama hatası.', 'error');
-  }
-};
+// İrsaliye modal
+const showIrsaliyeModal = ref(false);
+const irsaliyeForm = ref({ irsaliyeNo: '', irsaliyeDate: '' });
 
-// Computed Grouped Lines
+// Edit modal
+const showEditModal = ref(false);
+const editForm = ref<{ deliveryDate: string; lines: EditLine[] }>({ deliveryDate: '', lines: [] });
+const qtyRefs = ref<any[]>([]);
+const stockRefs = ref<any[]>([]);
+const editingStockIdx = ref(-1);
+
+// Quantities modal
+const showQuantitiesModal = ref(false);
+const quantitiesForm = ref<any[]>([]);
+
+// Vehicle return modal
+const showVehicleReturnModal = ref(false);
+const vehicleReturnForm = ref<{ lines: VehicleReturnLine[]; returnNote: string }>({ lines: [], returnNote: '' });
+const returnReasons = [
+  { value: 0, label: 'Müşteri Reddi' },
+  { value: 1, label: 'Hasarlı' },
+  { value: 2, label: 'Fazla Yükleme' },
+  { value: 3, label: 'Yanlış Ürün' },
+  { value: 4, label: 'Proje Bulunamadı' },
+  { value: 99, label: 'Diğer' },
+];
+
+interface EditLine {
+  id: string;
+  lineId?: number;
+  stockCode: string;
+  stockName: string;
+  orderedQty: number;
+}
+
+interface VehicleReturnLine {
+  shipmentLineId: number;
+  stockCode: string;
+  stockName: string;
+  deliveredQty: number;
+  returnedQty: number;
+  returnReason: number;
+}
+
+// Grouped lines for ShipmentLinesTab
 const groupedLines = computed(() => {
-  if (!shipment.value || !shipment.value.lines) return [];
+  if (!shipment.value?.lines) return [];
   const groups: { zoneName: string; lines: any[] }[] = [];
   shipment.value.lines.forEach(line => {
     const zoneName = line.zoneName || 'Tanımsız';
@@ -960,64 +695,48 @@ const fetchShipmentDetail = async () => {
   }
 };
 
+// Zone
+const fetchZones = async () => {
+  try { availableZones.value = await projectService.getZones(); } catch (e) { console.error(e); }
+};
+const openZoneModal = async () => { await fetchZones(); showZoneModal.value = true; };
+const saveZoneAssignment = async () => {
+  if (!selectedZoneId.value || !shipment.value) return;
+  try {
+    await projectService.assignZone(shipment.value.projectId, selectedZoneId.value);
+    showZoneModal.value = false;
+    await fetchShipmentDetail();
+  } catch (e) {
+    notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Bölge atama hatası.', 'error');
+  }
+};
+
+// Warehouse / ready / revert actions
 const assignToWarehouse = async () => {
   if (!shipment.value) return;
   try {
     const result = await shipmentService.assignToWarehouse(shipment.value.id);
     await fetchShipmentDetail();
-    if (result?.warnings?.length) {
-      actionWarnings.value = result.warnings;
-    }
+    if (result?.warnings?.length) actionWarnings.value = result.warnings;
   } catch (error) {
     notificationStore.add(ApiErrorUtils.getErrorMessage(error) || 'İşlem başarısız.', 'error');
   }
 };
 
-const startPicking = async () => {
-  if (!shipment.value) return;
-  try {
-    await shipmentService.startPicking(shipment.value.id);
-    await fetchShipmentDetail();
-  } catch (error) {
-    notificationStore.add(ApiErrorUtils.getErrorMessage(error) || 'İşlem başarısız.', 'error');
-  }
-};
-
-const openMarkReadyConfirm = async () => {
-  if (!shipment.value) return;
-  // Pre-check warnings: fetch them by calling a dry-run is not possible,
-  // so just open confirm and run immediately (warnings come back in response)
-  pendingMarkReadyWarnings.value = [];
-  showMarkReadyConfirm.value = true;
-};
-
-const confirmMarkReady = async () => {
-  showMarkReadyConfirm.value = false;
-  await markReady();
-};
-
+const openMarkReadyConfirm = () => { pendingMarkReadyWarnings.value = []; showMarkReadyConfirm.value = true; };
+const confirmMarkReady = async () => { showMarkReadyConfirm.value = false; await markReady(); };
 const markReady = async () => {
   if (!shipment.value) return;
   try {
     const result = await shipmentService.markReady(shipment.value.id);
     await fetchShipmentDetail();
-    if (result?.warnings?.length) {
-      actionWarnings.value = result.warnings;
-    }
+    if (result?.warnings?.length) actionWarnings.value = result.warnings;
   } catch (error) {
     notificationStore.add(ApiErrorUtils.getErrorMessage(error) || 'İşlem başarısız.', 'error');
   }
 };
 
-// Revert to Draft Modal
-const showRevertModal = ref(false);
-const revertReasonText = ref('');
-
-const openRevertModal = () => {
-  revertReasonText.value = '';
-  showRevertModal.value = true;
-};
-
+const openRevertModal = () => { revertReasonText.value = ''; showRevertModal.value = true; };
 const confirmRevert = async () => {
   if (!shipment.value) return;
   showRevertModal.value = false;
@@ -1030,18 +749,14 @@ const confirmRevert = async () => {
   }
 };
 
+// Netsis / irsaliye
 const exportClothingToNetsis = async () => {
   if (!shipment.value) return;
   clothingExportLoading.value = true;
   try {
     const result = await shipmentService.exportClothingToNetsis(shipment.value.id);
     await fetchShipmentDetail();
-    notificationStore.add(
-      result.irsaliyeNo
-        ? `Netsis'e aktarıldı. İrsaliye: ${result.irsaliyeNo}`
-        : 'Netsis\'e aktarıldı. İrsaliye henüz kesilmemiş.',
-      'success'
-    );
+    notificationStore.add(result.irsaliyeNo ? `Netsis'e aktarıldı. İrsaliye: ${result.irsaliyeNo}` : 'Netsis\'e aktarıldı. İrsaliye henüz kesilmemiş.', 'success');
     if (result.warnings?.length) actionWarnings.value = result.warnings;
   } catch (error) {
     notificationStore.add(ApiErrorUtils.getErrorMessage(error) || 'Netsis aktarımı başarısız.', 'error');
@@ -1064,16 +779,33 @@ const fetchIrsaliye = async () => {
   }
 };
 
+const openIrsaliyeModal = () => {
+  irsaliyeForm.value = {
+    irsaliyeNo: shipment.value?.irsaliyeNo || '',
+    irsaliyeDate: shipment.value?.irsaliyeDate || new Date().toISOString().slice(0, 10),
+  };
+  showIrsaliyeModal.value = true;
+};
+const saveIrsaliye = async () => {
+  if (!shipment.value || !irsaliyeForm.value.irsaliyeNo) return;
+  try {
+    await shipmentService.updateIrsaliye(shipment.value.id, irsaliyeForm.value.irsaliyeNo, irsaliyeForm.value.irsaliyeDate);
+    showIrsaliyeModal.value = false;
+    await fetchShipmentDetail();
+    notificationStore.add('İrsaliye bilgisi güncellendi.', 'success');
+  } catch (error) {
+    notificationStore.add(ApiErrorUtils.getErrorMessage(error) || 'İşlem başarısız.', 'error');
+  }
+};
+
+// Vehicle assignment
 const openAssignVehicleModal = async () => {
   vehicleForm.value = { driverId: null, vehicleId: null };
   showVehicleModal.value = true;
   if (activeDrivers.value.length === 0 || activeVehicles.value.length === 0) {
     assignListsLoading.value = true;
     try {
-      const [dList, vList] = await Promise.all([
-        transportService.getActiveDrivers(),
-        transportService.getActiveVehicles(),
-      ]);
+      const [dList, vList] = await Promise.all([transportService.getActiveDrivers(), transportService.getActiveVehicles()]);
       activeDrivers.value = dList;
       activeVehicles.value = vList;
     } catch {
@@ -1083,103 +815,13 @@ const openAssignVehicleModal = async () => {
     }
   }
 };
-
-// Delivery Proof Modal
-const showDeliveryModal = ref(false);
-const deliveryForm = ref({ deliveryRecipient: '', deliveryNote: '', photoBase64: '', photoPreview: '', photoCompressing: false });
-const photoLightboxSrc = ref<string | null>(null);
-
-const openDeliveryModal = () => {
-  deliveryForm.value = { deliveryRecipient: '', deliveryNote: '', photoBase64: '', photoPreview: '', photoCompressing: false };
-  showDeliveryModal.value = true;
-};
-
-const onDeliveryPhotoSelected = (e: Event) => {
-  const file = (e.target as HTMLInputElement).files?.[0];
-  if (!file) return;
-  deliveryForm.value.photoCompressing = true;
-
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    const img = new Image();
-    img.onload = () => {
-      const MAX = 1000;
-      let w = img.width;
-      let h = img.height;
-      if (w > MAX || h > MAX) {
-        if (w > h) { h = Math.round((h * MAX) / w); w = MAX; }
-        else       { w = Math.round((w * MAX) / h); h = MAX; }
-      }
-      const canvas = document.createElement('canvas');
-      canvas.width = w;
-      canvas.height = h;
-      canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
-      deliveryForm.value.photoBase64 = dataUrl.split(',')[1] ?? ''; // strip data:image/jpeg;base64, prefix
-      deliveryForm.value.photoPreview = dataUrl;
-      deliveryForm.value.photoCompressing = false;
-    };
-    img.src = ev.target!.result as string;
-  };
-  reader.readAsDataURL(file);
-};
-
-const confirmMarkDelivered = async () => {
-  if (!shipment.value) return;
-  try {
-    await shipmentService.markDelivered(
-      shipment.value.id,
-      deliveryForm.value.deliveryNote || undefined,
-      deliveryForm.value.deliveryRecipient || undefined,
-      deliveryForm.value.photoBase64 || undefined
-    );
-    showDeliveryModal.value = false;
-    await fetchShipmentDetail();
-    notificationStore.add('Sevkiyat teslim edildi olarak işaretlendi.', 'success');
-  } catch (error) {
-    notificationStore.add(ApiErrorUtils.getErrorMessage(error) || 'İşlem başarısız.', 'error');
-  }
-};
-
-// İrsaliye Modal
-const showIrsaliyeModal = ref(false);
-const irsaliyeForm = ref({ irsaliyeNo: '', irsaliyeDate: '' });
-
-const openIrsaliyeModal = () => {
-  irsaliyeForm.value = {
-    irsaliyeNo: shipment.value?.irsaliyeNo || '',
-    irsaliyeDate: shipment.value?.irsaliyeDate || new Date().toISOString().slice(0, 10)
-  };
-  showIrsaliyeModal.value = true;
-};
-
-const saveIrsaliye = async () => {
-  if (!shipment.value || !irsaliyeForm.value.irsaliyeNo) return;
-  try {
-    await shipmentService.updateIrsaliye(
-      shipment.value.id,
-      irsaliyeForm.value.irsaliyeNo,
-      irsaliyeForm.value.irsaliyeDate
-    );
-    showIrsaliyeModal.value = false;
-    await fetchShipmentDetail();
-    notificationStore.add('İrsaliye bilgisi güncellendi.', 'success');
-  } catch (error) {
-    notificationStore.add(ApiErrorUtils.getErrorMessage(error) || 'İşlem başarısız.', 'error');
-  }
-};
-
 const confirmAssignVehicle = async () => {
-  if (!shipment.value) return;
-  if (!vehicleForm.value.driverId || !vehicleForm.value.vehicleId) {
+  if (!shipment.value || !vehicleForm.value.driverId || !vehicleForm.value.vehicleId) {
     notificationStore.add('Şoför ve araç seçimi zorunludur.', 'warning');
     return;
   }
   try {
-    await shipmentService.assignVehicle(shipment.value.id, {
-      driverId: vehicleForm.value.driverId,
-      vehicleId: vehicleForm.value.vehicleId,
-    });
+    await shipmentService.assignVehicle(shipment.value.id, { driverId: vehicleForm.value.driverId, vehicleId: vehicleForm.value.vehicleId });
     showVehicleModal.value = false;
     await fetchShipmentDetail();
     notificationStore.add('Araç atandı.', 'success');
@@ -1188,103 +830,94 @@ const confirmAssignVehicle = async () => {
   }
 };
 
-// Edit Details (Draft)
-interface EditLine {
-  id: string;
-  lineId?: number;
-  stockCode: string;
-  stockName: string;
-  orderedQty: number;
-}
-
-const showEditModal = ref(false);
-const editForm = ref<{ deliveryDate: string; lines: EditLine[] }>({ deliveryDate: '', lines: [] });
-const qtyRefs = ref<any[]>([]);
-const stockRefs = ref<any[]>([]);
-
-const generateId = () => {
+// Delivery proof
+const openDeliveryModal = () => {
+  deliveryForm.value = { deliveryRecipient: '', deliveryNote: '', photoBase64: '', photoPreview: '', photoCompressing: false };
+  showDeliveryModal.value = true;
+};
+const onDeliveryPhotoSelected = (e: Event) => {
+  const file = (e.target as HTMLInputElement).files?.[0];
+  if (!file) return;
+  deliveryForm.value.photoCompressing = true;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 1000;
+      let w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round((h * MAX) / w); w = MAX; }
+        else       { w = Math.round((w * MAX) / h); h = MAX; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+      deliveryForm.value.photoBase64 = dataUrl.split(',')[1] ?? '';
+      deliveryForm.value.photoPreview = dataUrl;
+      deliveryForm.value.photoCompressing = false;
+    };
+    img.src = ev.target!.result as string;
+  };
+  reader.readAsDataURL(file);
+};
+const confirmMarkDelivered = async () => {
+  if (!shipment.value) return;
   try {
-    return crypto.randomUUID();
-  } catch {
-    return `${Date.now()}-${Math.random()}`;
+    await shipmentService.markDelivered(shipment.value.id, deliveryForm.value.deliveryNote || undefined, deliveryForm.value.deliveryRecipient || undefined, deliveryForm.value.photoBase64 || undefined);
+    showDeliveryModal.value = false;
+    await fetchShipmentDetail();
+    notificationStore.add('Sevkiyat teslim edildi olarak işaretlendi.', 'success');
+  } catch (error) {
+    notificationStore.add(ApiErrorUtils.getErrorMessage(error) || 'İşlem başarısız.', 'error');
   }
 };
 
+// Edit details (draft)
+const generateId = () => { try { return crypto.randomUUID(); } catch { return `${Date.now()}-${Math.random()}`; } };
 const openEditModal = () => {
   if (!shipment.value) return;
   editForm.value.deliveryDate = shipment.value.deliveryDate.split('T')[0] || '';
-  editForm.value.lines = shipment.value.lines.map(l => ({
-    id: generateId(),
-    lineId: l.id,
-    stockCode: l.localStockCode || l.stockCode,
-    stockName: l.stockName,
-    orderedQty: l.orderedQty
-  }));
+  editForm.value.lines = shipment.value.lines.map(l => ({ id: generateId(), lineId: l.id, stockCode: l.localStockCode || l.stockCode, stockName: l.stockName, orderedQty: l.orderedQty }));
   if (editForm.value.lines.length === 0) addNewLine();
+  editingStockIdx.value = -1;
   showEditModal.value = true;
 };
-
 const addNewLine = () => {
   editForm.value.lines.push({ id: generateId(), lineId: 0, stockCode: '', stockName: '', orderedQty: 1 });
+  const newIdx = editForm.value.lines.length - 1;
+  editingStockIdx.value = newIdx;
   requestAnimationFrame(() => {
-    const lastIdx = editForm.value.lines.length - 1;
-    stockRefs.value[lastIdx]?.focus();
-    const el = stockRefs.value[lastIdx]?.$el;
+    stockRefs.value[newIdx]?.focus();
+    const el = stockRefs.value[newIdx]?.$el;
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
   });
 };
-
 const removeLine = (index: number) => {
-  if (editForm.value.lines.length === 1) {
-    const line = editForm.value.lines[0];
-    if (line) { line.stockCode = ''; line.stockName = ''; line.orderedQty = 1; }
-    return;
-  }
+  if (editForm.value.lines.length === 1) { const l = editForm.value.lines[0]; if (l) { l.stockCode = ''; l.stockName = ''; l.orderedQty = 1; } return; }
   editForm.value.lines.splice(index, 1);
 };
-
 const onStockSelect = (item: any, line: EditLine, idx: number) => {
   line.stockCode = item.stockCode || item.StockCode;
   line.stockName = item.stockName || item.StockName;
   requestAnimationFrame(() => { qtyRefs.value[idx]?.focus(); });
 };
-
 const onQtyEnter = (idx: number) => {
   if (idx === editForm.value.lines.length - 1) { addNewLine(); return; }
-  requestAnimationFrame(() => {
-    stockRefs.value[idx + 1]?.focus();
-    const el = stockRefs.value[idx + 1]?.$el;
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  });
+  requestAnimationFrame(() => { stockRefs.value[idx + 1]?.focus(); const el = stockRefs.value[idx + 1]?.$el; if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); });
 };
-
 const removeLineAndFocus = (idx: number) => {
-  const isOnly = editForm.value.lines.length === 1;
   const isLast = idx === editForm.value.lines.length - 1;
   removeLine(idx);
-  const targetIdx = isOnly ? 0 : (isLast ? idx - 1 : idx);
+  const targetIdx = editForm.value.lines.length === 0 ? 0 : (isLast ? idx - 1 : idx);
   requestAnimationFrame(() => { stockRefs.value[targetIdx]?.focus(); });
 };
-
 const saveDetails = async () => {
   if (!shipment.value) return;
-  const emptyLineIdx = editForm.value.lines.findIndex(l => !l.stockCode?.trim());
-  if (emptyLineIdx !== -1) {
-    notificationStore.add('Lütfen tüm satırlar için stok seçimi yapınız.', 'warning');
-    requestAnimationFrame(() => { stockRefs.value[emptyLineIdx]?.focus(); });
-    return;
-  }
+  const emptyIdx = editForm.value.lines.findIndex(l => !l.stockCode?.trim());
+  if (emptyIdx !== -1) { notificationStore.add('Lütfen tüm satırlar için stok seçimi yapınız.', 'warning'); requestAnimationFrame(() => { stockRefs.value[emptyIdx]?.focus(); }); return; }
   try {
-    const payload = {
-      deliveryDate: editForm.value.deliveryDate,
-      lines: editForm.value.lines.map(l => ({
-        lineId: l.lineId,
-        stockCode: l.stockCode,
-        stockName: l.stockName,
-        orderedQty: Number(l.orderedQty)
-      }))
-    };
-    await shipmentService.updateDetails(shipment.value.id, payload as any);
+    await shipmentService.updateDetails(shipment.value.id, { deliveryDate: editForm.value.deliveryDate, lines: editForm.value.lines.map(l => ({ lineId: l.lineId, stockCode: l.stockCode, stockName: l.stockName, orderedQty: Number(l.orderedQty) })) } as any);
     showEditModal.value = false;
     await fetchShipmentDetail();
   } catch (error) {
@@ -1292,43 +925,18 @@ const saveDetails = async () => {
   }
 };
 
-// Quantities Modal
-const showQuantitiesModal = ref(false);
-const quantitiesForm = ref<any[]>([]);
-
+// Quantities
 const openQuantitiesModal = () => {
   if (!shipment.value) return;
-  quantitiesForm.value = shipment.value.lines.map(l => ({
-    lineId: l.id,
-    stockCode: l.localStockCode || l.stockCode,
-    stockName: l.stockName,
-    orderedQty: l.orderedQty,
-    deliveredQty: l.deliveredQty,
-    differenceReason: l.differenceReason || '',
-    note: l.note || ''
-  }));
+  quantitiesForm.value = shipment.value.lines.map(l => ({ lineId: l.id, stockCode: l.localStockCode || l.stockCode, stockName: l.stockName, orderedQty: l.orderedQty, deliveredQty: l.deliveredQty, differenceReason: l.differenceReason || '', note: l.note || '' }));
   showQuantitiesModal.value = true;
 };
-
 const saveQuantities = async () => {
   if (!shipment.value) return;
-  const invalidLines = quantitiesForm.value.filter(l =>
-    l.deliveredQty !== l.orderedQty && !l.differenceReason?.trim()
-  );
-  if (invalidLines.length > 0) {
-    notificationStore.add('Dikkat: Sipariş miktarından farklı teslimat girilen satırlar için "Fark Nedeni" belirtmelisiniz.', 'warning');
-    return;
-  }
+  const invalid = quantitiesForm.value.filter(l => l.deliveredQty !== l.orderedQty && !l.differenceReason?.trim());
+  if (invalid.length > 0) { notificationStore.add('Dikkat: Sipariş miktarından farklı teslimat girilen satırlar için "Fark Nedeni" belirtmelisiniz.', 'warning'); return; }
   try {
-    const payload = {
-      lines: quantitiesForm.value.map(l => ({
-        lineId: l.lineId,
-        deliveredQty: Number(l.deliveredQty),
-        differenceReason: l.differenceReason,
-        note: l.note
-      }))
-    };
-    await shipmentService.updateQuantities(shipment.value.id, payload);
+    await shipmentService.updateQuantities(shipment.value.id, { lines: quantitiesForm.value.map(l => ({ lineId: l.lineId, deliveredQty: Number(l.deliveredQty), differenceReason: l.differenceReason, note: l.note })) });
     showQuantitiesModal.value = false;
     await fetchShipmentDetail();
   } catch (error) {
@@ -1336,60 +944,21 @@ const saveQuantities = async () => {
   }
 };
 
-// Vehicle Return Modal
-const returnReasons = [
-  { value: 0, label: 'Müşteri Reddi' },
-  { value: 1, label: 'Hasarlı' },
-  { value: 2, label: 'Fazla Yükleme' },
-  { value: 3, label: 'Yanlış Ürün' },
-  { value: 4, label: 'Proje Bulunamadı' },
-  { value: 99, label: 'Diğer' },
-];
-
-interface VehicleReturnLine {
-  shipmentLineId: number;
-  stockCode: string;
-  stockName: string;
-  deliveredQty: number;
-  returnedQty: number;
-  returnReason: number;
-}
-
-const showVehicleReturnModal = ref(false);
-const vehicleReturnForm = ref<{ lines: VehicleReturnLine[]; returnNote: string }>({ lines: [], returnNote: '' });
-
+// Vehicle return
 const openVehicleReturnModal = () => {
   if (!shipment.value) return;
   vehicleReturnForm.value = {
-    lines: shipment.value.lines.map(l => ({
-      shipmentLineId: l.id,
-      stockCode: (l as any).localStockCode || l.stockCode,
-      stockName: l.stockName,
-      deliveredQty: l.deliveredQty > 0 ? l.deliveredQty : l.orderedQty,
-      returnedQty: 0,
-      returnReason: 99,
-    })),
+    lines: shipment.value.lines.map(l => ({ shipmentLineId: l.id, stockCode: (l as any).localStockCode || l.stockCode, stockName: l.stockName, deliveredQty: l.deliveredQty > 0 ? l.deliveredQty : l.orderedQty, returnedQty: 0, returnReason: 99 })),
     returnNote: '',
   };
   showVehicleReturnModal.value = true;
 };
-
 const confirmVehicleReturn = async () => {
   if (!shipment.value) return;
   const activeLines = vehicleReturnForm.value.lines.filter(l => l.returnedQty > 0);
-  if (activeLines.length === 0) {
-    notificationStore.add('En az bir kalem için iade miktarı girilmelidir.', 'warning');
-    return;
-  }
+  if (activeLines.length === 0) { notificationStore.add('En az bir kalem için iade miktarı girilmelidir.', 'warning'); return; }
   try {
-    await shipmentService.recordVehicleReturn(shipment.value.id, {
-      lines: activeLines.map(l => ({
-        shipmentLineId: l.shipmentLineId,
-        returnedQty: l.returnedQty,
-        returnReason: l.returnReason,
-      })),
-      returnNote: vehicleReturnForm.value.returnNote || undefined,
-    });
+    await shipmentService.recordVehicleReturn(shipment.value.id, { lines: activeLines.map(l => ({ shipmentLineId: l.shipmentLineId, returnedQty: l.returnedQty, returnReason: l.returnReason })), returnNote: vehicleReturnForm.value.returnNote || undefined });
     showVehicleReturnModal.value = false;
     await fetchShipmentDetail();
     notificationStore.add('Araç iadesi başarıyla kaydedildi.', 'success');
@@ -1398,7 +967,5 @@ const confirmVehicleReturn = async () => {
   }
 };
 
-onMounted(() => {
-  fetchShipmentDetail();
-});
+onMounted(() => { fetchShipmentDetail(); });
 </script>

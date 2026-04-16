@@ -84,7 +84,28 @@
       "Bash(taskkill /PID 29600 /F)",
       "Bash(echo \"EXIT: $?\")",
       "Bash(python -m json.tool)",
-      "Bash(echo \"EXIT:$?\")"
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(dotnet add:*)",
+      "Bash(git commit:*)",
+      "Bash(cd \"D:\\\\\\\\vue\\\\\\\\AkyildizSevkiyat\")",
+      "Bash(xargs wc:*)",
+      "Bash(find . -name \"*.cs\" -type f -exec wc -l {} +)",
+      "Bash(find ./Akyildiz.Sevkiyat.Application -name \"*.cs\" -type f -exec wc -l {} +)",
+      "Bash(find ./Akyildiz.Sevkiyat.Domain -name \"*.cs\" -type f -exec wc -l {} +)",
+      "Bash(git add:*)",
+      "Bash(python3:*)",
+      "Bash(driver)",
+      "Bash(taniml)",
+      "Bash(defin)",
+      "Bash(manage\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); [print\\(i.get\\('name',''\\), '|', i.get\\('request',{}\\).get\\('url',{}\\) if isinstance\\(i.get\\('request',{}\\).get\\('url',{}\\), str\\) else i.get\\('request',{}\\).get\\('url',{}\\).get\\('raw',''\\)\\) for i in d.get\\('item',[]\\)]\")",
+      "Bash(python -c \" import sys, json def walk\\(items, depth=0\\): for item in items: name = item.get\\('name', ''\\) req = item.get\\('request', {}\\) if req: url = req.get\\('url', ''\\) if isinstance\\(url, dict\\): url = url.get\\('raw', ''\\) body = req.get\\('body', {}\\) body_raw = body.get\\('raw', ''\\) if isinstance\\(body, dict\\) else '' print\\(f'{' '*depth}[{name}] {url}'\\) if body_raw and \\('tsql' in body_raw.lower\\(\\) or 'TBL' in body_raw or 'SELECT' in body_raw\\): print\\(f'{' '*depth} BODY: {body_raw[:300]}'\\) if 'item' in item: walk\\(item['item'], depth+1\\) d = json.load\\(sys.stdin\\) walk\\(d.get\\('item', []\\)\\) \")",
+      "Bash(git checkout:*)",
+      "Bash(wc -l \"D:\\\\vue\\\\AkyildizSevkiyat\\\\client\\\\src\"/views/*.vue)",
+      "Bash(find D:\\\\vue\\\\AkyildizSevkiyat:*)",
+      "Bash(npx vite:*)",
+      "Bash(wc:*)",
+      "Bash(xargs -I{} basename {})"
     ]
   }
 }

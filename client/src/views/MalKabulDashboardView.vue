@@ -37,7 +37,7 @@
                 @input="handleSearch"
                 type="text" 
                 placeholder="Tedarikçi, ürün veya sipariş no ara..." 
-                class="w-full pl-12 pr-4 py-3 bg-gray-50/50 dark:bg-gray-950/30 border-none rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 transition-all font-medium"
+                class="w-full pl-12 pr-4 py-3 bg-gray-50/50 dark:bg-gray-950/30 text-gray-900 dark:text-gray-100 border-none rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 transition-all font-medium"
               />
            </div>
            <div class="flex items-center gap-2">

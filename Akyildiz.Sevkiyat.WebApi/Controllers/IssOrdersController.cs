@@ -1,7 +1,9 @@
 using Akyildiz.Sevkiyat.Application.Common.Interfaces;
+using Akyildiz.Sevkiyat.Application.Orders.Commands.CheckNetsisTransfers;
 using Akyildiz.Sevkiyat.Application.Orders.Commands.CheckOrderMappingStatus;
 using Akyildiz.Sevkiyat.Application.Orders.Commands.ImportIssOrders;
 using Akyildiz.Sevkiyat.Application.Orders.Commands.StartImportBatch;
+using Akyildiz.Sevkiyat.Application.Orders.Commands.BulkDeactivateIssOrders;
 using Akyildiz.Sevkiyat.Application.Orders.Commands.ToggleActive;
 using Akyildiz.Sevkiyat.Application.Orders.Queries.GetImportBatches;
 using Akyildiz.Sevkiyat.Application.Orders.Queries.GetImportBatchStatus;
@@ -113,11 +115,29 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             return NoContent();
         }
 
+        [HttpPost("bulk-deactivate")]
+        [Authorize(Roles = "Admin,Manager,Accounting")]
+        public async Task<IActionResult> BulkDeactivate([FromBody] BulkDeactivateRequest request)
+        {
+            var count = await _mediator.Send(new BulkDeactivateIssOrdersCommand(request.Ids));
+            return Ok(new { count });
+        }
+
+        public record BulkDeactivateRequest(IReadOnlyList<int> Ids);
+
         [HttpPost("check-mappings")]
         public async Task<IActionResult> CheckMappings()
         {
             var count = await _mediator.Send(new CheckOrderMappingStatusCommand());
             return Ok(new { Count = count });
+        }
+
+        [HttpPost("check-netsis-transfers")]
+        [Authorize(Roles = "Admin,Accounting,Manager")]
+        public async Task<IActionResult> CheckNetsisTransfers()
+        {
+            var result = await _mediator.Send(new CheckNetsisTransfersCommand());
+            return Ok(result);
         }
     }
 }

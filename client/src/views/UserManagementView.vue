@@ -2,9 +2,7 @@
   <div class="space-y-6">
     <div class="flex justify-between items-center">
       <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Kullanıcı Yönetimi</h1>
-      <button @click="openCreateModal" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-        + Yeni Kullanıcı Ekle
-      </button>
+      <BaseButton @click="openCreateModal" variant="primary">+ Yeni Kullanıcı Ekle</BaseButton>
     </div>
 
     <!-- Kullanıcı Tablosu -->
@@ -62,79 +60,43 @@
     </div>
 
     <!-- Kullanıcı Oluştur / Düzenle Modal -->
-    <div v-if="showUserModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
-      <div class="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full">
-        <h3 class="text-lg font-medium mb-4 dark:text-gray-100">{{ editingUser ? 'Kullanıcı Düzenle' : 'Yeni Kullanıcı Ekle' }}</h3>
-        <div class="space-y-4">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Ad</label>
-              <input v-model="form.firstName" type="text" class="mt-1 block w-full border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border p-2 dark:bg-gray-800 dark:text-gray-100" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Soyad</label>
-              <input v-model="form.lastName" type="text" class="mt-1 block w-full border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border p-2 dark:bg-gray-800 dark:text-gray-100" />
-            </div>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">E-posta</label>
-            <input v-model="form.email" type="email" class="mt-1 block w-full border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border p-2 dark:bg-gray-800 dark:text-gray-100" />
-          </div>
-          <div v-if="!editingUser">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Şifre</label>
-            <input
-              v-model="form.password"
-              type="password"
-              class="mt-1 block w-full border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border p-2 dark:bg-gray-800 dark:text-gray-100"
-              :class="{ 'border-red-500': formErrors.password }"
-            />
-            <p v-if="formErrors.password" class="mt-1 text-xs text-red-600">{{ formErrors.password }}</p>
-          </div>
-          <div v-if="!editingUser">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Şifre Tekrar</label>
-            <input
-              v-model="form.confirmPassword"
-              type="password"
-              class="mt-1 block w-full border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border p-2 dark:bg-gray-800 dark:text-gray-100"
-              :class="{ 'border-red-500': formErrors.confirmPassword }"
-            />
-            <p v-if="formErrors.confirmPassword" class="mt-1 text-xs text-red-600">{{ formErrors.confirmPassword }}</p>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Rol</label>
-            <select v-model="form.role" class="mt-1 block w-full border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border p-2 dark:bg-gray-800 dark:text-gray-100">
-              <option v-for="r in roles" :key="r.value" :value="r.value">{{ r.label }}</option>
-            </select>
-          </div>
+    <BaseModal :show="showUserModal" :title="editingUser ? 'Kullanıcı Düzenle' : 'Yeni Kullanıcı Ekle'" maxWidth="md" @close="showUserModal = false">
+      <div class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <BaseInput v-model="form.firstName" label="Ad" />
+          <BaseInput v-model="form.lastName" label="Soyad" />
         </div>
-        <div class="mt-5 flex justify-end gap-2">
-          <button @click="showUserModal = false" class="px-4 py-2 border rounded text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">İptal</button>
-          <button @click="saveUser" :disabled="saving" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
-            {{ saving ? 'Kaydediliyor...' : 'Kaydet' }}
-          </button>
-        </div>
+        <BaseInput v-model="form.email" type="email" label="E-posta" />
+        <BaseInput v-if="!editingUser" v-model="form.password" type="password" label="Şifre" :error="formErrors.password" />
+        <BaseInput v-if="!editingUser" v-model="form.confirmPassword" type="password" label="Şifre Tekrar" :error="formErrors.confirmPassword" />
+        <BaseSelect v-model.number="form.role" label="Rol">
+          <option v-for="r in roles" :key="r.value" :value="r.value">{{ r.label }}</option>
+        </BaseSelect>
       </div>
-    </div>
+      <template #footer>
+        <BaseButton @click="showUserModal = false" variant="secondary">İptal</BaseButton>
+        <BaseButton @click="saveUser" :disabled="saving" :loading="saving" variant="primary">Kaydet</BaseButton>
+      </template>
+    </BaseModal>
 
     <!-- Şifre Sıfırla Modal -->
-    <div v-if="showResetModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
-      <div class="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-sm w-full">
-        <h3 class="text-lg font-medium mb-1 dark:text-gray-100">Şifre Sıfırla</h3>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+    <BaseModal :show="showResetModal" title="Şifre Sıfırla" maxWidth="sm" @close="showResetModal = false">
+      <div class="space-y-4">
+        <p class="text-sm text-gray-500 dark:text-gray-400">
           {{ resetTarget?.firstName }} {{ resetTarget?.lastName }} için yeni şifre belirleyin.
         </p>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Yeni Şifre</label>
-          <input v-model="newPassword" type="password" class="mt-1 block w-full border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border p-2 dark:bg-gray-800 dark:text-gray-100" />
-        </div>
-        <div class="mt-5 flex justify-end gap-2">
-          <button @click="showResetModal = false" class="px-4 py-2 border rounded text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">İptal</button>
-          <button @click="resetPassword" :disabled="saving" class="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 disabled:opacity-50">
-            {{ saving ? 'Sıfırlanıyor...' : 'Sıfırla' }}
-          </button>
-        </div>
+        <BaseInput
+          v-model="newPassword"
+          type="password"
+          label="Yeni Şifre"
+          hint="En az 8 karakter, bir büyük harf, bir rakam ve bir özel karakter (!@#_...) içermelidir."
+        />
       </div>
-    </div>
+      <template #footer>
+        <BaseButton @click="showResetModal = false" variant="secondary">İptal</BaseButton>
+        <BaseButton @click="resetPassword" :disabled="saving" :loading="saving" variant="primary">Sıfırla</BaseButton>
+      </template>
+    </BaseModal>
   </div>
 </template>
 
@@ -142,6 +104,10 @@
 import { ref, onMounted } from 'vue';
 import userService, { type UserListItem } from '../services/userService';
 import { useNotificationStore } from '../stores/notification';
+import BaseModal from '../components/BaseModal.vue';
+import BaseButton from '../components/BaseButton.vue';
+import BaseInput from '../components/base/BaseInput.vue';
+import BaseSelect from '../components/base/BaseSelect.vue';
 
 const notificationStore = useNotificationStore();
 
@@ -232,8 +198,17 @@ function validatePasswordForm(): boolean {
   if (!form.value.password) {
     formErrors.value.password = 'Şifre zorunludur.';
     valid = false;
-  } else if (form.value.password.length < 6) {
-    formErrors.value.password = 'Şifre en az 6 karakter olmalıdır.';
+  } else if (form.value.password.length < 8) {
+    formErrors.value.password = 'Şifre en az 8 karakter olmalıdır.';
+    valid = false;
+  } else if (!/[A-Z]/.test(form.value.password)) {
+    formErrors.value.password = 'Şifre en az bir büyük harf içermelidir.';
+    valid = false;
+  } else if (!/[0-9]/.test(form.value.password)) {
+    formErrors.value.password = 'Şifre en az bir rakam içermelidir.';
+    valid = false;
+  } else if (!/[^a-zA-Z0-9]/.test(form.value.password)) {
+    formErrors.value.password = 'Şifre en az bir özel karakter içermelidir (örn. !, @, #, _).';
     valid = false;
   }
   if (!form.value.confirmPassword) {
@@ -293,8 +268,20 @@ function openResetPasswordModal(user: UserListItem) {
 
 async function resetPassword() {
   if (!resetTarget.value || !newPassword.value) return;
-  if (newPassword.value.length < 6) {
-    notificationStore.add('Şifre en az 6 karakter olmalı.', 'warning');
+  if (newPassword.value.length < 8) {
+    notificationStore.add('Şifre en az 8 karakter olmalıdır.', 'warning');
+    return;
+  }
+  if (!/[A-Z]/.test(newPassword.value)) {
+    notificationStore.add('Şifre en az bir büyük harf içermelidir.', 'warning');
+    return;
+  }
+  if (!/[0-9]/.test(newPassword.value)) {
+    notificationStore.add('Şifre en az bir rakam içermelidir.', 'warning');
+    return;
+  }
+  if (!/[^a-zA-Z0-9]/.test(newPassword.value)) {
+    notificationStore.add('Şifre en az bir özel karakter içermelidir (örn. !, @, #, _).', 'warning');
     return;
   }
   saving.value = true;

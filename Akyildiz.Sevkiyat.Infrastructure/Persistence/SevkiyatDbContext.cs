@@ -73,6 +73,9 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Persistence
         // System Settings
         public DbSet<SystemSettings> SystemSettings { get; set; } = null!;
 
+        // Print Audit
+        public DbSet<ShipmentPrintLog> ShipmentPrintLogs { get; set; } = null!;
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

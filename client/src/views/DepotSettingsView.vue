@@ -25,17 +25,9 @@
             placeholder="Depo adresi"
             class="flex-1 border dark:border-gray-700 rounded-lg px-3 py-2 dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
           />
-          <button
-            @click="geocodeAddress"
-            :disabled="!form.depotAddress || geocoding"
-            class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm whitespace-nowrap flex items-center gap-2"
-          >
-            <svg v-if="geocoding" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-            </svg>
-            <span>{{ geocoding ? 'Aranıyor...' : 'Koordinatı Bul' }}</span>
-          </button>
+          <BaseButton @click="geocodeAddress" :disabled="!form.depotAddress || geocoding" :loading="geocoding" variant="primary" class="whitespace-nowrap">
+            {{ geocoding ? 'Aranıyor...' : 'Koordinatı Bul' }}
+          </BaseButton>
         </div>
         <p v-if="geocodeError" class="mt-1 text-sm text-red-500">{{ geocodeError }}</p>
       </div>
@@ -78,24 +70,10 @@
       </div>
 
       <div class="flex gap-3 pt-2">
-        <button
-          @click="save"
-          :disabled="saving"
-          class="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 font-medium flex items-center gap-2"
-        >
-          <svg v-if="saving" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-          </svg>
-          <span>{{ saving ? 'Kaydediliyor...' : 'Kaydet' }}</span>
-        </button>
-        <button
-          @click="load"
-          :disabled="loading"
-          class="px-4 py-2 border dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
-        >
-          Sıfırla
-        </button>
+        <BaseButton @click="save" :disabled="saving" :loading="saving" variant="primary">
+          {{ saving ? 'Kaydediliyor...' : 'Kaydet' }}
+        </BaseButton>
+        <BaseButton @click="load" :disabled="loading" variant="secondary">Sıfırla</BaseButton>
       </div>
 
       <p v-if="savedMsg" class="text-sm text-green-600 dark:text-green-400 font-medium">✓ {{ savedMsg }}</p>
@@ -107,6 +85,7 @@
 import { ref, onMounted } from 'vue';
 import systemSettingsService from '../services/systemSettingsService';
 import { useNotificationStore } from '../stores/notification';
+import BaseButton from '../components/BaseButton.vue';
 
 const notificationStore = useNotificationStore();
 

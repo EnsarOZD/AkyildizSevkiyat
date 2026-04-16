@@ -94,6 +94,10 @@ const purchaseOrderService = {
     await apiClient.put(`/purchase-orders/${id}`, data);
   },
 
+  async addLine(id: string, data: { stockMasterId: number; orderedQty: number; note?: string }): Promise<void> {
+    await apiClient.post(`/purchase-orders/${id}/lines`, data);
+  },
+
   async updateLine(id: string, lineId: string, data: { orderedQty?: number; note?: string }): Promise<void> {
     await apiClient.put(`/purchase-orders/${id}/lines/${lineId}`, {
       ...data,

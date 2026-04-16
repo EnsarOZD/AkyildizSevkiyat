@@ -197,109 +197,93 @@
   </div>
 
   <!-- ─── Assign Modal ──────────────────────────────────────────────────────── -->
-  <Teleport to="body">
-    <Transition name="modal">
-      <div v-if="showAssignModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="showAssignModal = false" />
-        <div class="relative w-full max-w-sm bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-6">
-          <h2 class="text-base font-semibold text-gray-900 dark:text-white mb-5">Lokasyona Stok Ata</h2>
-          <form @submit.prevent="saveAssign" class="space-y-4">
-            <div>
-              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Stok *</label>
-              <select v-model.number="assignForm.stockMasterId" required
-                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <option value="">Seçin...</option>
-                <option v-for="s in stockOptions" :key="s.id" :value="s.id">{{ s.stockCode }} — {{ s.stockName }}</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Lokasyon *</label>
-              <select v-model.number="assignForm.warehouseLocationId" required
-                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <option value="">Seçin...</option>
-                <option v-for="l in locationOptions" :key="l.id" :value="l.id">{{ l.code }}</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Miktar *</label>
-              <input v-model.number="assignForm.qty" type="number" min="0" step="0.01" required placeholder="0"
-                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-              <p class="text-xs text-gray-400 mt-1">Mevcut değerin üzerine yazılır.</p>
-            </div>
-            <div class="flex justify-end gap-2 pt-2">
-              <button type="button" @click="showAssignModal = false"
-                class="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">İptal</button>
-              <button type="submit" :disabled="saving"
-                class="px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 rounded-lg">
-                {{ saving ? 'Kaydediliyor...' : 'Kaydet' }}
-              </button>
-            </div>
-          </form>
-        </div>
+  <BaseModal :show="showAssignModal" title="Lokasyona Stok Ata" maxWidth="sm" @close="showAssignModal = false">
+    <div class="space-y-4">
+      <div>
+        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Stok *</label>
+        <select v-model.number="assignForm.stockMasterId"
+          class="w-full px-3 py-2 text-sm rounded-input border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+          <option value="">Seçin...</option>
+          <option v-for="s in stockOptions" :key="s.id" :value="s.id">{{ s.stockCode }} — {{ s.stockName }}</option>
+        </select>
       </div>
-    </Transition>
-  </Teleport>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Lokasyon *</label>
+        <select v-model.number="assignForm.warehouseLocationId"
+          class="w-full px-3 py-2 text-sm rounded-input border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+          <option value="">Seçin...</option>
+          <option v-for="l in locationOptions" :key="l.id" :value="l.id">{{ l.code }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Miktar *</label>
+        <input v-model.number="assignForm.qty" type="number" min="0" step="0.01" placeholder="0"
+          class="w-full px-3 py-2 text-sm rounded-input border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500" />
+        <p class="text-xs text-gray-400 mt-1">Mevcut değerin üzerine yazılır.</p>
+      </div>
+    </div>
+    <template #footer>
+      <button @click="showAssignModal = false"
+        class="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">İptal</button>
+      <button @click="saveAssign" :disabled="saving"
+        class="px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 rounded-lg">
+        {{ saving ? 'Kaydediliyor...' : 'Kaydet' }}
+      </button>
+    </template>
+  </BaseModal>
 
   <!-- ─── Transfer Modal ────────────────────────────────────────────────────── -->
-  <Teleport to="body">
-    <Transition name="modal">
-      <div v-if="showTransferModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="showTransferModal = false" />
-        <div class="relative w-full max-w-sm bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-6">
-          <h2 class="text-base font-semibold text-gray-900 dark:text-white mb-5">Lokasyonlar Arası Transfer</h2>
-          <form @submit.prevent="saveTransfer" class="space-y-4">
-            <div>
-              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Stok *</label>
-              <select v-model.number="transferForm.stockMasterId" required @change="onTransferStockChange"
-                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <option value="">Seçin...</option>
-                <option v-for="s in stockOptions" :key="s.id" :value="s.id">{{ s.stockCode }} — {{ s.stockName }}</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Kaynak Lokasyon *</label>
-              <select v-model.number="transferForm.fromLocationId" required
-                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <option value="">Seçin...</option>
-                <option v-for="sl in stockLocationOptions" :key="sl.warehouseLocationId" :value="sl.warehouseLocationId">
-                  {{ sl.locationCode }} (Mevcut: {{ sl.availableQty }})
-                </option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Hedef Lokasyon *</label>
-              <select v-model.number="transferForm.toLocationId" required
-                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <option value="">Seçin...</option>
-                <option v-for="l in locationOptions" :key="l.id" :value="l.id"
-                  :disabled="l.id === transferForm.fromLocationId">
-                  {{ l.code }}
-                </option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Miktar *</label>
-              <input v-model.number="transferForm.qty" type="number" min="0.01" step="0.01" required
-                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Not</label>
-              <input v-model="transferForm.note" placeholder="Opsiyonel"
-                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-            </div>
-            <div class="flex justify-end gap-2 pt-2">
-              <button type="button" @click="showTransferModal = false"
-                class="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">İptal</button>
-              <button type="submit" :disabled="saving"
-                class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg">
-                {{ saving ? 'Transferring...' : 'Transfer Et' }}
-              </button>
-            </div>
-          </form>
-        </div>
+  <BaseModal :show="showTransferModal" title="Lokasyonlar Arası Transfer" maxWidth="sm" @close="showTransferModal = false">
+    <div class="space-y-4">
+      <div>
+        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Stok *</label>
+        <select v-model.number="transferForm.stockMasterId" @change="onTransferStockChange"
+          class="w-full px-3 py-2 text-sm rounded-input border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+          <option value="">Seçin...</option>
+          <option v-for="s in stockOptions" :key="s.id" :value="s.id">{{ s.stockCode }} — {{ s.stockName }}</option>
+        </select>
       </div>
-    </Transition>
-  </Teleport>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Kaynak Lokasyon *</label>
+        <select v-model.number="transferForm.fromLocationId"
+          class="w-full px-3 py-2 text-sm rounded-input border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+          <option value="">Seçin...</option>
+          <option v-for="sl in stockLocationOptions" :key="sl.warehouseLocationId" :value="sl.warehouseLocationId">
+            {{ sl.locationCode }} (Mevcut: {{ sl.availableQty }})
+          </option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Hedef Lokasyon *</label>
+        <select v-model.number="transferForm.toLocationId"
+          class="w-full px-3 py-2 text-sm rounded-input border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+          <option value="">Seçin...</option>
+          <option v-for="l in locationOptions" :key="l.id" :value="l.id"
+            :disabled="l.id === transferForm.fromLocationId">
+            {{ l.code }}
+          </option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Miktar *</label>
+        <input v-model.number="transferForm.qty" type="number" min="0.01" step="0.01"
+          class="w-full px-3 py-2 text-sm rounded-input border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Not</label>
+        <input v-model="transferForm.note" placeholder="Opsiyonel"
+          class="w-full px-3 py-2 text-sm rounded-input border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500" />
+      </div>
+    </div>
+    <template #footer>
+      <button @click="showTransferModal = false"
+        class="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">İptal</button>
+      <button @click="saveTransfer" :disabled="saving"
+        class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg">
+        {{ saving ? 'Kaydediliyor...' : 'Transfer Et' }}
+      </button>
+    </template>
+  </BaseModal>
   </div>
 </template>
 
@@ -313,6 +297,7 @@ import warehouseLocationService from '../services/warehouseLocationService';
 import { stockService } from '../services/stockService';
 import { ApiErrorUtils } from '../utils/apiError';
 import { turkishIncludes } from '../utils/turkishSearch';
+import BaseModal from '../components/BaseModal.vue';
 
 const authStore  = useAuthStore();
 const notify     = useNotificationStore();
@@ -479,8 +464,3 @@ onMounted(() => {
   loadRefData();
 });
 </script>
-
-<style scoped>
-.modal-enter-active, .modal-leave-active { transition: opacity 0.15s ease; }
-.modal-enter-from, .modal-leave-to { opacity: 0; }
-</style>

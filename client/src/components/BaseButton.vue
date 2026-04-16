@@ -53,10 +53,10 @@ const sizeClasses = {
 };
 
 const variantClasses = {
-  primary: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 shadow-sm shadow-blue-500/20',
+  primary:   'bg-brand-600 text-white hover:bg-brand-700 focus:ring-brand-500 shadow-sm shadow-brand-500/20',
   secondary: 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 focus:ring-gray-200 shadow-sm',
-  danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 shadow-sm shadow-red-500/20',
-  success: 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500 shadow-sm shadow-green-500/20',
-  ghost: 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 border border-transparent'
+  danger:    'bg-danger-600 text-white hover:bg-danger-700 focus:ring-danger-500 shadow-sm shadow-danger-500/20',
+  success:   'bg-success-600 text-white hover:bg-success-700 focus:ring-success-500 shadow-sm shadow-success-500/20',
+  ghost:     'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 border border-transparent',
 };
 </script>

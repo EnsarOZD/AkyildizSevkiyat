@@ -44,6 +44,12 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.UpdateIrsaliyeNo
             if (!shipment.NetsisTransferredAt.HasValue)
                 shipment.MarkNetsisTransferred(DateTime.UtcNow);
 
+            // CLOTHING WORKAROUND: Kıyafet operasyonlarında irsaliye numarası girildiği an teslim edilmiş sayılır
+            if (shipment.OperationType == Akyildiz.Sevkiyat.Domain.Enums.OperationType.Clothing && shipment.Status == Akyildiz.Sevkiyat.Domain.Enums.ShipmentStatus.Created)
+            {
+                shipment.SkipToDelivered();
+            }
+
             await _context.SaveChangesAsync(cancellationToken);
         }
     }

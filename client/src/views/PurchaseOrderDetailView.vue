@@ -235,6 +235,37 @@
                     </div>
                   </td>
                 </tr>
+                <tr v-if="order.status === 'Draft' && showAddLineForm" class="bg-indigo-50/50 dark:bg-indigo-900/20">
+                  <td class="px-6 py-4">
+                     <StockCombobox v-model="newLineForm.stockMasterId" />
+                  </td>
+                  <td class="px-4 py-4 text-center">
+                     <input v-model.number="newLineForm.orderedQty" type="number" step="0.01" class="w-20 border-indigo-200 rounded-lg px-2 py-1 text-sm text-center dark:bg-gray-800 font-black" placeholder="Miktar" />
+                  </td>
+                  <td class="px-4 py-4 text-center">
+                     <!-- New line, no received qty yet -->
+                     <span class="text-sm text-gray-400">-</span>
+                  </td>
+                  <td class="px-4 py-4 text-center">
+                     <span class="text-sm text-gray-400">-</span>
+                  </td>
+                  <td class="px-6 py-4 text-right">
+                     <div class="flex items-center justify-end gap-2">
+                        <button @click="saveAddLine" :disabled="addingLine" class="p-2 text-green-600 hover:bg-green-100 rounded-xl transition-all">
+                           <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                        </button>
+                        <button @click="showAddLineForm = false" class="p-2 text-gray-500 hover:bg-gray-200 rounded-xl transition-all">
+                           <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                     </div>
+                  </td>
+                </tr>
+                <tr v-if="order.status === 'Draft' && !showAddLineForm" class="bg-gray-50/10 hover:bg-gray-50 dark:bg-gray-900 dark:hover:bg-gray-800/50 cursor-pointer" @click="showAddLineForm = true">
+                  <td colspan="5" class="px-6 py-4 text-center text-sm font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center justify-center gap-2">
+                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                     Yeni Kalem Ekle
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -280,6 +311,24 @@
                 <button @click="saveLineEdit(line)" :disabled="updatingLine" class="flex-1 py-1.5 text-xs font-bold text-white bg-green-600 rounded-lg">Kaydet</button>
                 <button @click="editingLineId = null" class="flex-1 py-1.5 text-xs font-bold text-gray-600 bg-gray-100 dark:bg-gray-800 rounded-lg">İptal</button>
               </div>
+            </div>
+            <!-- Mobile Add Line Button -->
+            <div v-if="order.status === 'Draft' && !showAddLineForm" class="px-4 py-4 w-full">
+               <button @click="showAddLineForm = true" class="w-full py-3 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-xl font-bold text-sm tracking-wide uppercase flex items-center justify-center gap-2">
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                  Yeni Kalem Ekle
+               </button>
+            </div>
+            <!-- Mobile Add Line Form -->
+            <div v-if="order.status === 'Draft' && showAddLineForm" class="px-4 py-4 bg-indigo-50/50 dark:bg-indigo-900/10">
+               <div class="space-y-3">
+                  <StockCombobox v-model="newLineForm.stockMasterId" />
+                  <input v-model.number="newLineForm.orderedQty" type="number" step="0.01" class="w-full border-gray-200 rounded-xl px-4 py-2 text-sm dark:bg-gray-800 font-black" placeholder="Miktar girin..." />
+                  <div class="flex gap-2">
+                     <button @click="saveAddLine" :disabled="addingLine" class="flex-1 py-2 text-xs font-bold text-white bg-green-600 rounded-xl">Ekle</button>
+                     <button @click="showAddLineForm = false" class="flex-1 py-2 text-xs font-bold text-gray-600 bg-gray-200 dark:bg-gray-700 rounded-xl">Vazgeç</button>
+                  </div>
+               </div>
             </div>
           </div>
         </div>
@@ -377,10 +426,12 @@ import { useRoute, useRouter } from 'vue-router';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import purchaseOrderService from '../services/purchaseOrderService';
+import { supplierService } from '../services/supplierService';
 import { useNotificationStore } from '../stores/notification';
 import { useAuthStore } from '../stores/auth';
 import { ApiErrorUtils } from '../utils/apiError';
 import StatusBadge from '../components/StatusBadge.vue';
+import StockCombobox from '../components/StockCombobox.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -394,11 +445,14 @@ const actionLoading = ref(false);
 const netsisLoading = ref(false);
 const updating = ref(false);
 const updatingLine = ref(false);
+const addingLine = ref(false);
 const showEditForm = ref(false);
+const showAddLineForm = ref(false);
 const editingLineId = ref<string | null>(null);
 
 const editForm = ref({ orderDate: '', expectedDeliveryDate: '', note: '' });
 const editLineForm = ref({ orderedQty: 0, note: '' });
+const newLineForm = ref({ stockMasterId: 0, orderedQty: 0 });
 const pdfContent = ref<HTMLElement | null>(null);
 
 const totalOrdered = computed(() => order.value?.lines?.reduce((sum: number, l: any) => sum + (l.orderedQty || 0), 0) || 0);
@@ -526,6 +580,28 @@ const saveLineEdit = async (line: any) => {
   }
 };
 
+const saveAddLine = async () => {
+  if (!newLineForm.value.stockMasterId || newLineForm.value.orderedQty <= 0) {
+     notificationStore.add('Lütfen geçerli bir stok ve miktar seçin.', 'warning');
+     return;
+  }
+  addingLine.value = true;
+  try {
+     await purchaseOrderService.addLine(order.value.id, {
+        stockMasterId: newLineForm.value.stockMasterId,
+        orderedQty: newLineForm.value.orderedQty
+     });
+     notificationStore.add('Yeni kalem eklendi.', 'success');
+     newLineForm.value = { stockMasterId: 0, orderedQty: 0 };
+     showAddLineForm.value = false;
+     await fetchOrder();
+  } catch (e) {
+     notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Kalem eklenemedi.', 'error');
+  } finally {
+     addingLine.value = false;
+  }
+};
+
 const confirmRemoveLine = async (line: any) => {
   const ok = await notificationStore.promptConfirm({
     title: 'Kalemi Sil',
@@ -588,12 +664,42 @@ const downloadPdf = async () => {
   }
 };
 
-const openMail = () => {
+const openMail = async () => {
   const o = order.value;
   if (!o.supplierEmail) {
-    notificationStore.add('Tedarikçi mail adresi tanımlı değil. Tedarikçi sayfasından ekleyin.', 'warning');
-    return;
+    const emailStr = window.prompt('Tedarikçi mail adresi tanımlı değil. Lütfen bir e-posta girin (bu adrese gönderilecek ve tedarikçi güncellenecektir):');
+    if (!emailStr) return; // User cancelled
+    
+    // validate simple email
+    if (!emailStr.includes('@')) {
+       notificationStore.add('Geçerli bir e-posta adresi girmediniz.', 'warning');
+       return;
+    }
+    
+    try {
+        actionLoading.value = true;
+        const sups = await supplierService.getAll();
+        const sup = sups.find(s => s.id === o.supplierId);
+        if (sup) {
+           await supplierService.update(sup.id, { 
+               name: sup.name, 
+               supplierCode: sup.supplierCode, 
+               email: emailStr 
+           });
+           o.supplierEmail = emailStr;
+           notificationStore.add('Tedarikçi e-posta adresi başarıyla kaydedildi.', 'success');
+        } else {
+           notificationStore.add('Tedarikçi bulunamadı.', 'error');
+           return;
+        }
+    } catch (e) {
+       notificationStore.add('Tedarikçi güncellenemedi.', 'error');
+       return;
+    } finally {
+       actionLoading.value = false;
+    }
   }
+
   const subject = encodeURIComponent(`Satın Alma Siparişi - ${o.orderNumber} - ${o.supplierNameSnapshot}`);
   const termin = o.expectedDeliveryDate ? `Termin tarihi: ${formatDate(o.expectedDeliveryDate)}\n\n` : '';
   const body = encodeURIComponent(

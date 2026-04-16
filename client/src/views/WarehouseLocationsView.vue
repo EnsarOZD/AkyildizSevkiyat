@@ -179,158 +179,140 @@
   </div>
 
   <!-- ── Toplu Oluşturma Modal ────────────────────────────────────────────── -->
-  <Teleport to="body">
-    <div v-if="showBulkModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-black/60" @click="showBulkModal = false"></div>
-      <div class="relative w-full max-w-md bg-white dark:bg-[#0f2744] rounded-2xl shadow-xl p-6 space-y-5">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Toplu Adres Oluştur</h2>
+  <BaseModal :show="showBulkModal" title="Toplu Adres Oluştur" maxWidth="md" @close="showBulkModal = false">
+    <div class="space-y-4">
+      <div class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-sm text-blue-800 dark:text-blue-300">
+        <span class="font-semibold">Önizleme:</span>
+        <span class="font-mono ml-1">{{ bulkPreviewCode }}</span>
+        <span class="ml-2 text-blue-600 dark:text-blue-400 font-medium">({{ bulkPreviewCount }} adres)</span>
+      </div>
 
-        <div class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-sm text-blue-800 dark:text-blue-300">
-          <span class="font-semibold">Önizleme:</span>
-          <span class="font-mono ml-1">{{ bulkPreviewCode }}</span>
-          <span class="ml-2 text-blue-600 dark:text-blue-400 font-medium">({{ bulkPreviewCount }} adres)</span>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Koridor</label>
+          <select v-model.number="bulk.koridorNo"
+            class="w-full px-3 py-2 text-sm rounded-input border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <option v-for="k in [1,2,3,4]" :key="k" :value="k">{{ k }}. Koridor</option>
+          </select>
         </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Taraf</label>
+          <select v-model="bulk.taraf"
+            class="w-full px-3 py-2 text-sm rounded-input border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <option value="K">Kuzey (K)</option>
+            <option value="G">Güney (G)</option>
+          </select>
+        </div>
+      </div>
 
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Modül Aralığı</label>
+        <div class="flex items-center gap-2">
+          <input v-model.number="bulk.modulFrom" type="number" min="1" placeholder="Başlangıç"
+            class="w-full px-3 py-2 text-sm rounded-input border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500" />
+          <span class="text-gray-400 flex-shrink-0">–</span>
+          <input v-model.number="bulk.modulTo" type="number" min="1" placeholder="Bitiş"
+            class="w-full px-3 py-2 text-sm rounded-input border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500" />
+        </div>
+        <p class="text-xs text-gray-400 mt-1">Örn: 1 – 20 → 001, 002 … 020</p>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kat Aralığı</label>
+        <div class="flex items-center gap-2">
+          <input v-model.number="bulk.katFrom" type="number" min="1" placeholder="Alt kat"
+            class="w-full px-3 py-2 text-sm rounded-input border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500" />
+          <span class="text-gray-400 flex-shrink-0">–</span>
+          <input v-model.number="bulk.katTo" type="number" min="1" placeholder="Üst kat"
+            class="w-full px-3 py-2 text-sm rounded-input border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500" />
+        </div>
+        <p class="text-xs text-gray-400 mt-1">Örn: 1 – 5 → kat 01, 02, 03, 04, 05</p>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Raf Tipi</label>
+        <select v-model.number="bulk.locationType"
+          class="w-full px-3 py-2 text-sm rounded-input border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+          <option v-for="t in locationTypes" :key="t.id" :value="t.id">{{ t.label }}</option>
+        </select>
+      </div>
+    </div>
+    <template #footer>
+      <button @click="showBulkModal = false"
+        class="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">İptal</button>
+      <button @click="submitBulk" :disabled="bulkSubmitting || bulkPreviewCount === 0"
+        class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg">
+        <span v-if="bulkSubmitting" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+        {{ bulkSubmitting ? 'Oluşturuluyor...' : `${bulkPreviewCount} Adres Oluştur` }}
+      </button>
+    </template>
+  </BaseModal>
+
+  <!-- ── Tekli Ekleme / Düzenleme Modal ──────────────────────────────────── -->
+  <BaseModal :show="showFormModal" :title="editTarget ? 'Adres Düzenle' : 'Tekli Adres Ekle'" maxWidth="md" @close="showFormModal = false">
+    <div class="space-y-4">
+      <template v-if="!editTarget">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Koridor</label>
-            <select v-model.number="bulk.koridorNo"
-              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white">
-              <option v-for="k in [1,2,3,4]" :key="k" :value="k">{{ k }}. Koridor</option>
+            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Koridor</label>
+            <select v-model.number="form.koridorNo"
+              class="w-full px-3 py-2 text-sm rounded-input border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+              <option v-for="k in [1,2,3,4]" :key="k" :value="k">{{ k }}</option>
             </select>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Taraf</label>
-            <select v-model="bulk.taraf"
-              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white">
+            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Taraf</label>
+            <select v-model="form.taraf"
+              class="w-full px-3 py-2 text-sm rounded-input border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
               <option value="K">Kuzey (K)</option>
               <option value="G">Güney (G)</option>
             </select>
           </div>
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Modül Aralığı</label>
-          <div class="flex items-center gap-2">
-            <input v-model.number="bulk.modulFrom" type="number" min="1" placeholder="Başlangıç"
-              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white" />
-            <span class="text-gray-400 flex-shrink-0">–</span>
-            <input v-model.number="bulk.modulTo" type="number" min="1" placeholder="Bitiş"
-              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white" />
+          <div>
+            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Modül No</label>
+            <input v-model.number="form.modulNo" type="number" min="1"
+              class="w-full px-3 py-2 text-sm rounded-input border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500" />
           </div>
-          <p class="text-xs text-gray-400 mt-1">Örn: 1 – 20 → 001, 002 … 020</p>
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kat Aralığı</label>
-          <div class="flex items-center gap-2">
-            <input v-model.number="bulk.katFrom" type="number" min="1" placeholder="Alt kat"
-              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white" />
-            <span class="text-gray-400 flex-shrink-0">–</span>
-            <input v-model.number="bulk.katTo" type="number" min="1" placeholder="Üst kat"
-              class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white" />
+          <div>
+            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Kat</label>
+            <input v-model.number="form.kat" type="number" min="1"
+              class="w-full px-3 py-2 text-sm rounded-input border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500" />
           </div>
-          <p class="text-xs text-gray-400 mt-1">Örn: 1 – 5 → kat 01, 02, 03, 04, 05</p>
         </div>
+        <div class="text-sm font-mono font-semibold text-blue-700 dark:text-blue-300 px-1">
+          → {{ singlePreviewCode }}
+        </div>
+      </template>
 
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Raf Tipi</label>
-          <select v-model.number="bulk.locationType"
-            class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white">
-            <option v-for="t in locationTypes" :key="t.id" :value="t.id">{{ t.label }}</option>
-          </select>
-        </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Raf Tipi</label>
+        <select v-model.number="form.locationType"
+          class="w-full px-3 py-2 text-sm rounded-input border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+          <option v-for="t in locationTypes" :key="t.id" :value="t.id">{{ t.label }}</option>
+        </select>
+      </div>
 
-        <div class="flex gap-3 pt-1">
-          <button @click="showBulkModal = false"
-            class="flex-1 py-2.5 border border-gray-300 dark:border-white/20 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-sm">
-            İptal
-          </button>
-          <button @click="submitBulk" :disabled="bulkSubmitting || bulkPreviewCount === 0"
-            class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-xl transition-colors text-sm flex items-center justify-center gap-2">
-            <span v-if="bulkSubmitting" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-            {{ bulkSubmitting ? 'Oluşturuluyor...' : `${bulkPreviewCount} Adres Oluştur` }}
-          </button>
-        </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Açıklama (isteğe bağlı)</label>
+        <input v-model="form.description" type="text"
+          class="w-full px-3 py-2 text-sm rounded-input border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500" />
+      </div>
+
+      <div v-if="editTarget" class="flex items-center gap-2">
+        <input type="checkbox" v-model="form.isActive" id="isActiveChk" class="rounded" />
+        <label for="isActiveChk" class="text-sm text-gray-700 dark:text-gray-300">Aktif</label>
       </div>
     </div>
-  </Teleport>
-
-  <!-- ── Tekli Ekleme / Düzenleme Modal ──────────────────────────────────── -->
-  <Teleport to="body">
-    <div v-if="showFormModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-black/60" @click="showFormModal = false"></div>
-      <div class="relative w-full max-w-md bg-white dark:bg-[#0f2744] rounded-2xl shadow-xl p-6 space-y-4">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-          {{ editTarget ? 'Adres Düzenle' : 'Tekli Adres Ekle' }}
-        </h2>
-
-        <template v-if="!editTarget">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Koridor</label>
-              <select v-model.number="form.koridorNo"
-                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white">
-                <option v-for="k in [1,2,3,4]" :key="k" :value="k">{{ k }}</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Taraf</label>
-              <select v-model="form.taraf"
-                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white">
-                <option value="K">Kuzey (K)</option>
-                <option value="G">Güney (G)</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Modül No</label>
-              <input v-model.number="form.modulNo" type="number" min="1"
-                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white" />
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Kat</label>
-              <input v-model.number="form.kat" type="number" min="1"
-                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white" />
-            </div>
-          </div>
-          <div class="text-sm font-mono font-semibold text-blue-700 dark:text-blue-300 px-1">
-            → {{ singlePreviewCode }}
-          </div>
-        </template>
-
-        <div>
-          <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Raf Tipi</label>
-          <select v-model.number="form.locationType"
-            class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white">
-            <option v-for="t in locationTypes" :key="t.id" :value="t.id">{{ t.label }}</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Açıklama (isteğe bağlı)</label>
-          <input v-model="form.description" type="text"
-            class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white" />
-        </div>
-
-        <div v-if="editTarget" class="flex items-center gap-2">
-          <input type="checkbox" v-model="form.isActive" id="isActiveChk" class="rounded" />
-          <label for="isActiveChk" class="text-sm text-gray-700 dark:text-gray-300">Aktif</label>
-        </div>
-
-        <div class="flex gap-3 pt-1">
-          <button @click="showFormModal = false"
-            class="flex-1 py-2.5 border border-gray-300 dark:border-white/20 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-sm">
-            İptal
-          </button>
-          <button @click="submitForm" :disabled="formSubmitting"
-            class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-xl transition-colors text-sm flex items-center justify-center gap-2">
-            <span v-if="formSubmitting" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-            {{ editTarget ? 'Kaydet' : 'Ekle' }}
-          </button>
-        </div>
-      </div>
-    </div>
-  </Teleport>
+    <template #footer>
+      <button @click="showFormModal = false"
+        class="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">İptal</button>
+      <button @click="submitForm" :disabled="formSubmitting"
+        class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg">
+        <span v-if="formSubmitting" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+        {{ editTarget ? 'Kaydet' : 'Ekle' }}
+      </button>
+    </template>
+  </BaseModal>
   </div>
 </template>
 
@@ -341,6 +323,7 @@ import warehouseLocationService, { type WarehouseLocation } from '../services/wa
 import { useNotificationStore } from '../stores/notification';
 import { useAuthStore } from '../stores/auth';
 import { ApiErrorUtils } from '../utils/apiError';
+import BaseModal from '../components/BaseModal.vue';
 
 const notify    = useNotificationStore();
 const authStore = useAuthStore();

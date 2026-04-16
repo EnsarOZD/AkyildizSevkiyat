@@ -193,6 +193,17 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
         }
 
         /// <summary>
+        /// Netsis'te sipariş artık mevcut değilse aktarım bilgisini sıfırlar.
+        /// Sevkiyat tekrar "Netsis'e Aktar" butonuyla gönderilebilir hale gelir.
+        /// </summary>
+        public void RevertNetsisTransfer()
+        {
+            NetsisTransferredAt = null;
+            IrsaliyeNo          = null;
+            IrsaliyeDate        = null;
+        }
+
+        /// <summary>
         /// Kıyafet operasyonu: Netsis aktarımı sonrası sevkiyatı doğrudan Delivered'a taşır.
         /// Sadece Created durumundaki sevkiyatlara uygulanabilir.
         /// </summary>

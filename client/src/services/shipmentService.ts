@@ -38,9 +38,19 @@ export interface IssOrderQueryParams {
   talepNoStatus?: string;
 }
 
+export interface ShipmentPrintLog {
+  id: number;
+  printedAt: string;
+  printedByName: string;
+}
+
 export interface ShipmentDetail extends Shipment {
   history: any[];
   lines: ShipmentLine[];
+  printLogs: ShipmentPrintLog[];
+  projectCode?: string;
+  projectName?: string;
+  projectAddress?: string;
   driverName?: string;
   plateNumber?: string;
   irsaliyeNo?: string;
@@ -65,9 +75,11 @@ export interface ShipmentDetail extends Shipment {
 export interface ShipmentLine {
   id: number;
   stockCode: string;
+  localStockCode?: string;
   stockName: string;
   orderedQty: number;
   deliveredQty: number;
+  unit?: string;
   differenceReason?: string;
   note?: string;
   returnedQty?: number;
@@ -298,6 +310,16 @@ const shipmentService = {
     return response.data;
   },
 
+  async checkNetsisTransfers(): Promise<{ checked: number; markedAsTransferred: number; error?: string }> {
+    const response = await apiClient.post('/issorders/check-netsis-transfers');
+    return response.data;
+  },
+
+  async bulkDeactivateOrders(ids: number[]): Promise<{ count: number }> {
+    const response = await apiClient.post('/issorders/bulk-deactivate', { ids });
+    return response.data;
+  },
+
   // Stock Mapping logic
   async getUnmappedStocks(): Promise<any[]> {
     const response = await apiClient.get('/stockmappings/unmapped');
@@ -349,6 +371,22 @@ const shipmentService = {
 
   async fetchShipmentIrsaliye(id: number): Promise<{ irsaliyeNo?: string; message: string }> {
     const response = await apiClient.post(`/netsis/shipments/${id}/fetch-irsaliye`);
+    return response.data;
+  },
+
+  async verifyNetsisTransfers(): Promise<{ message: string }> {
+    const response = await apiClient.post('/netsis/shipments/verify-transfers');
+    return response.data;
+  },
+
+  async logPrint(id: number): Promise<{
+    logId: number;
+    printedAt: string;
+    printedByName: string;
+    wasPreviouslyPrinted: boolean;
+    previousPrintCount: number;
+  }> {
+    const response = await apiClient.post(`/shipments/${id}/log-print`);
     return response.data;
   },
 };

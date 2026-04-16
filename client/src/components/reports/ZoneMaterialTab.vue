@@ -1,12 +1,12 @@
 <template>
   <div class="space-y-6">
     <!-- Header -->
-    <div class="flex justify-between items-center bg-white dark:bg-gray-900 p-6 rounded-lg shadow-sm border dark:border-gray-700">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-gray-900 p-6 rounded-lg shadow-sm border dark:border-gray-700">
       <div>
         <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200">Bölge Malzeme Raporu</h3>
-        <p class="text-gray-500 dark:text-gray-400 text-sm">Araca atanan sevkiyatların bölge bazlı malzeme özetleri.</p>
+        <p class="text-gray-500 dark:text-gray-400 text-sm whitespace-normal">Araca atanan sevkiyatların bölge bazlı malzeme özetleri.</p>
       </div>
-      <div class="flex gap-2">
+      <div class="flex flex-wrap gap-2 w-full sm:w-auto">
         <button
           @click="fetchReport"
           class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200 flex items-center gap-2"

@@ -133,7 +133,7 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipments
                     PlateNumber = s.AssignedPlateNumber,
                     TalepNo = s.IssOrder != null ? s.IssOrder.TalepNo : null,
                     ExternalOrderNumber = s.IssOrder != null ? s.IssOrder.ExternalOrderNumber : null,
-                    WaybillNumber = s.IssOrder != null ? s.IssOrder.NetsisOrderNumber : null,
+                    WaybillNumber = s.IrsaliyeNo,
                     Aciklama = s.IssOrder != null ? s.IssOrder.Aciklama : null,
                     NetsisTransferredAt  = s.NetsisTransferredAt,
                     OperationType        = s.OperationType == Domain.Enums.OperationType.Clothing ? "Kıyafet" : "Catering",

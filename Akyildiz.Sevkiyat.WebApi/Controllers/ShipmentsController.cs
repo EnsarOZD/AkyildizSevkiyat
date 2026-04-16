@@ -21,6 +21,7 @@ using Akyildiz.Sevkiyat.Application.Shipments.Commands.ToggleShipmentStatus;
 using Akyildiz.Sevkiyat.Application.Shipments.Commands.UpdateShipmentDetails;
 using Akyildiz.Sevkiyat.Application.Shipments.Commands.UpdateIrsaliyeNo;
 using Akyildiz.Sevkiyat.Application.Shipments.Commands.RecordVehicleReturn;
+using Akyildiz.Sevkiyat.Application.Shipments.Commands.LogShipmentPrint;
 using Microsoft.AspNetCore.Authorization;
 
 namespace Akyildiz.Sevkiyat.WebApi.Controllers
@@ -200,6 +201,14 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         public async Task<IActionResult> BulkAssignVehicle([FromBody] BulkAssignVehicleRequest request)
         {
             var result = await _mediator.Send(new BulkAssignVehicleCommand(request.ShipmentIds, request.DriverId, request.VehicleId));
+            return Ok(result);
+        }
+
+        [HttpPost("{id:int}/log-print")]
+        [Authorize(Roles = "Admin,Manager,Dispatcher,Warehouse,Accounting")]
+        public async Task<IActionResult> LogPrint(int id)
+        {
+            var result = await _mediator.Send(new LogShipmentPrintCommand(id));
             return Ok(result);
         }
 

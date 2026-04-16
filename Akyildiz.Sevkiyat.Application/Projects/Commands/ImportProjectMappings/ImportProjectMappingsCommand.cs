@@ -55,6 +55,24 @@ namespace Akyildiz.Sevkiyat.Application.Projects.Commands.ImportProjectMappings
                 // Get all zones for name lookup
                 var zones = await _context.Zones.ToListAsync(cancellationToken);
 
+                // Build a list of project codes from the excel file to fetch them in a single query
+                var projectCodesToFetch = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
+                foreach (DataRow row in table.Rows)
+                {
+                    var code = row[0]?.ToString()?.Trim();
+                    if (!string.IsNullOrEmpty(code))
+                    {
+                        projectCodesToFetch.Add(code);
+                    }
+                }
+
+                var codesArray = projectCodesToFetch.ToArray();
+
+                // Batch fetch projects from DB (Prevents N+1 query issue)
+                var projectsByCode = await _context.Projects
+                    .Where(p => codesArray.Contains(p.Code))
+                    .ToDictionaryAsync(p => p.Code, p => p, System.StringComparer.OrdinalIgnoreCase, cancellationToken);
+
                 foreach (DataRow row in table.Rows)
                 {
                     var projectCode      = row[0]?.ToString()?.Trim();
@@ -69,10 +87,7 @@ namespace Akyildiz.Sevkiyat.Application.Projects.Commands.ImportProjectMappings
                         continue;
                     }
 
-                    var project = await _context.Projects
-                        .FirstOrDefaultAsync(p => p.Code == projectCode, cancellationToken);
-
-                    if (project == null)
+                    if (!projectsByCode.TryGetValue(projectCode, out var project))
                     {
                         result.NotFoundProjects.Add(projectCode);
                         continue;

@@ -6,15 +6,12 @@
       <div>
         <h1 class="text-xl font-bold text-gray-900 dark:text-gray-100">Mal Kabul İrsaliyeleri</h1>
       </div>
-      <button
-        @click="$router.push('/goods-receipts/select-po')"
-        class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold shadow-sm transition-colors w-full sm:w-auto justify-center"
-      >
-        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <BaseButton @click="$router.push('/goods-receipts/intake')" variant="primary" class="w-full sm:w-auto">
+        <svg class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
         </svg>
         Yeni İrsaliye
-      </button>
+      </BaseButton>
     </div>
 
     <!-- Filters -->
@@ -44,12 +41,7 @@
           />
         </div>
         <div class="flex items-end">
-          <button
-            @click="fetchReceipts"
-            class="w-full sm:w-auto px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors border border-gray-200 dark:border-gray-700"
-          >
-            Yenile
-          </button>
+          <BaseButton @click="fetchReceipts" variant="secondary" size="sm" class="w-full sm:w-auto">Yenile</BaseButton>
         </div>
       </div>
     </div>
@@ -136,14 +128,6 @@
       </div>
     </div>
 
-    <!-- Create Modal (Shared Component) -->
-    <CreateGoodsReceiptModal
-      v-if="showCreateModal"
-      :isOpen="showCreateModal"
-      :purchaseOrder="selectedPoForCreate"
-      @close="showCreateModal = false"
-      @saved="onGRSaved"
-    />
 
     <!-- Detail Modal -->
     <div v-if="showDetailModal && selectedReceipt" class="fixed inset-0 bg-black/50 flex items-start justify-center p-0 sm:p-4 z-50 overflow-y-auto">
@@ -406,7 +390,7 @@ import StockCombobox from '../components/StockCombobox.vue';
 import StatusBadge from '../components/StatusBadge.vue';
 import SkeletonTable from '../components/SkeletonTable.vue';
 import EmptyState from '../components/EmptyState.vue';
-import CreateGoodsReceiptModal from '../components/CreateGoodsReceiptModal.vue';
+import BaseButton from '../components/BaseButton.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -416,10 +400,8 @@ const loading = ref(false);
 const error = ref('');
 const filters = ref({ status: '', supplierName: '' });
 
-const showCreateModal = ref(false);
 const showDetailModal = ref(false);
 const selectedReceipt = ref<any>(null);
-const selectedPoForCreate = ref<any>(null);
 
 const posting = ref(false);
 const cancelling = ref(false);
@@ -428,7 +410,7 @@ const addingLine = ref(false);
 const hasUnsavedChanges = ref(false);
 
 // N tuşu → yeni mal girişi oluştur
-useKeyboardShortcut('n', () => { if (!showCreateModal.value && !showDetailModal.value) showCreateModal.value = true; });
+useKeyboardShortcut('n', () => { if (!showDetailModal.value) router.push('/goods-receipts/intake'); });
 
 const lineForm = ref({ stockMasterId: 0, receivedQty: 0 });
 const rejectReasons = ['Hasarlı', 'Eksik / Kırık', 'Yanlış Ürün', 'Kalite Sorunu', 'Diğer'];
@@ -479,7 +461,6 @@ const handleSearch = () => { fetchReceipts(); };
 // saveCreate removed as it's handled by component
 
 const onGRSaved = (grId: string | number) => {
-  showCreateModal.value = false;
   fetchReceipts();
   openDetail(grId);
 };
@@ -581,16 +562,7 @@ const cancelReceipt = async () => {
 };
 
 const openCreateModalFromSelection = async (poId: string) => {
-  try {
-    const po = await purchaseOrderService.getById(String(poId));
-    if (po) {
-      selectedPoForCreate.value = po;
-      showCreateModal.value = true;
-      router.replace({ query: { ...route.query, createPoId: undefined } });
-    }
-  } catch {
-    // ignore
-  }
+  router.push({ path: '/goods-receipts/intake', query: { poId } });
 };
 
 onMounted(() => {

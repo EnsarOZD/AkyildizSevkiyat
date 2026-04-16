@@ -6,19 +6,21 @@ namespace Akyildiz.Sevkiyat.Infrastructure.ExternalServices.IssIp
     {
         [Required]
         public string BaseUrl { get; init; } = "https://generalapi.issturkiye.com/";
-        
+
         [Required]
         public string EndpointPath { get; init; } = "/";
-        
+
         [Required]
         public string KullaniciAdi { get; init; } = default!;
-        
+
         [Required]
         public string Sifre { get; init; } = default!;
-        
-        public string? BasicAuthUsername { get; init; }
 
-        public string? BasicAuthPassword { get; init; }
+        [Required]
+        public string BasicAuthUsername { get; init; } = default!;
+
+        [Required]
+        public string BasicAuthPassword { get; init; } = default!;
         public int TimeoutSeconds { get; init; } = 30;
     }
 }

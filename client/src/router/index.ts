@@ -27,13 +27,13 @@ const router = createRouter({
                     path: 'shipments',
                     name: 'ShipmentList',
                     component: () => import('../views/ShipmentListView.vue'),
-                    meta: { title: 'Sevkiyatlar' }
+                    meta: { title: 'Sevkiyatlar', roles: ['Admin', 'Accounting', 'Manager', 'Dispatcher'] }
                 },
                 {
                     path: 'shipments/:id',
                     name: 'ShipmentDetail',
                     component: () => import('../views/ShipmentDetailView.vue'),
-                    meta: { title: 'Sevkiyat Detayı', breadcrumb: [{ label: 'Sevkiyatlar', to: '/shipments' }] }
+                    meta: { title: 'Sevkiyat Detayı', roles: ['Admin', 'Accounting', 'Manager', 'Dispatcher'], breadcrumb: [{ label: 'Sevkiyatlar', to: '/shipments' }] }
                 },
                 {
                     path: 'settings',
@@ -89,7 +89,7 @@ const router = createRouter({
                     path: 'purchase-orders',
                     name: 'PurchaseOrders',
                     component: () => import('../views/PurchaseOrdersView.vue'),
-                    meta: { title: 'Satınalma Siparişleri', roles: ['Admin', 'Accounting', 'Manager'] }
+                    meta: { title: 'Satınalma Siparişleri', roles: ['Admin', 'Accounting', 'Manager', 'Warehouse'] }
                 },
                 {
                     path: 'goods-receipts',
@@ -113,7 +113,7 @@ const router = createRouter({
                     path: 'purchase-orders/:id',
                     name: 'PurchaseOrderDetail',
                     component: () => import('../views/PurchaseOrderDetailView.vue'),
-                    meta: { title: 'Sipariş Detayı', roles: ['Admin', 'Accounting', 'Manager'] }
+                    meta: { title: 'Sipariş Detayı', roles: ['Admin', 'Accounting', 'Manager', 'Warehouse'] }
                 },
                 {
                     path: 'goods-receipts/list',
@@ -153,7 +153,7 @@ const router = createRouter({
                     path: 'reports',
                     name: 'ReportsDashboard',
                     component: () => import('../views/ReportsDashboardView.vue'),
-                    meta: { title: 'Raporlar', roles: ['Admin', 'Accounting', 'Warehouse', 'Manager'] }
+                    meta: { title: 'Raporlar', roles: ['Admin', 'Accounting', 'Manager'] }
                 },
                 {
                     path: 'admin/driver-sessions',
@@ -240,6 +240,12 @@ const router = createRouter({
             name: 'DriverQrScan',
             component: () => import('../views/DriverQrScanView.vue'),
             meta: { requiresAuth: true, roles: ['Driver'], title: 'QR Sefer' }
+        },
+        {
+            path: '/shipments/:id/print',
+            name: 'ShipmentOrderPrint',
+            component: () => import('../views/ShipmentOrderPrintView.vue'),
+            meta: { requiresAuth: true, title: 'Sipariş Formu' }
         },
     ],
 });

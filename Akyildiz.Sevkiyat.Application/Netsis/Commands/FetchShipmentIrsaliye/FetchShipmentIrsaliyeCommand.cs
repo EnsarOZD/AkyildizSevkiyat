@@ -64,6 +64,13 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.FetchShipmentIrsaliye
 
             var ilk = irsaliyeler.First();
             shipment.SetIrsaliyeInfo(ilk.IrsaliyeNo, ilk.IrsaliyeTarihi);
+
+            // CLOTHING WORKAROUND: Kıyafet operasyonlarında irsaliye çekildiği an teslim edilmiş sayılır
+            if (shipment.OperationType == Akyildiz.Sevkiyat.Domain.Enums.OperationType.Clothing && shipment.Status == Akyildiz.Sevkiyat.Domain.Enums.ShipmentStatus.Created)
+            {
+                shipment.SkipToDelivered();
+            }
+
             await _context.SaveChangesAsync(cancellationToken);
 
             return new FetchShipmentIrsaliyeResult(

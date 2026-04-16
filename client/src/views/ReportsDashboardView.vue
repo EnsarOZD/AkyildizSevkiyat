@@ -29,8 +29,8 @@
       <ZoneMaterialTab v-else-if="activeTab === 'zone-material'" />
       <StockStatusTab v-else-if="activeTab === 'stock'" />
       <ReturnsTab v-else-if="activeTab === 'returns'" />
-      <OpenOrdersTab v-else-if="activeTab === 'pos'" />
       <PendingReceiptsTab v-else-if="activeTab === 'gr'" />
+      <MaterialPurchaseTab v-else-if="activeTab === 'material-purchase'" />
     </div>
   </div>
 </template>
@@ -47,6 +47,7 @@ import StockStatusTab from '../components/reports/StockStatusTab.vue';
 import ReturnsTab from '../components/reports/ReturnsTab.vue';
 import OpenOrdersTab from '../components/reports/OpenOrdersTab.vue';
 import PendingReceiptsTab from '../components/reports/PendingReceiptsTab.vue';
+import MaterialPurchaseTab from '../components/reports/MaterialPurchaseTab.vue';
 
 const route = useRoute();
 
@@ -58,6 +59,7 @@ const tabs = [
   { key: 'returns',      label: 'İade Analizi' },
   { key: 'pos',          label: 'Açık Satın Alma' },
   { key: 'gr',           label: 'Bekleyen Mal Girişi' },
+  { key: 'material-purchase', label: 'Tedarikçi/Malzeme Raporu' },
 ];
 
 const activeTab = ref('shipments');

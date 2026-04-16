@@ -9,11 +9,27 @@
       <div class="flex gap-2 flex-wrap">
         <button
           v-if="selectedIds.size > 0"
+          @click="applySelectedGeocodedCoords"
+          :disabled="bulkRunning || selectedWithGeocode.length === 0"
+          class="px-4 py-2 bg-green-600 text-white rounded font-medium text-sm hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          :title="selectedWithGeocode.length === 0 ? 'Seçili projelerde uygulanacak geocode koordinatı yok' : ''"
+        >
+          Seçili Koordinatları Uygula ({{ selectedWithGeocode.length }})
+        </button>
+        <button
+          v-if="selectedIds.size > 0"
           @click="validateSelected"
           :disabled="bulkRunning"
           class="px-4 py-2 bg-indigo-600 text-white rounded font-medium text-sm hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Seçilileri Doğrula ({{ selectedIds.size }})
+        </button>
+        <button
+          @click="validateAll"
+          :disabled="bulkRunning || filteredProjects.length === 0"
+          class="px-4 py-2 bg-indigo-500 text-white rounded font-medium text-sm hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Tümünü Doğrula ({{ filteredProjects.length }})
         </button>
         <button
           @click="startBulkGeocode"
@@ -25,14 +41,14 @@
       </div>
     </div>
 
-    <!-- Toplu Geocoding Progress -->
+    <!-- Toplu İşlem Progress -->
     <div v-if="bulkRunning" class="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
       <div class="flex items-center justify-between mb-2">
         <span class="text-sm font-medium text-orange-800 dark:text-orange-200">
-          Geocoding devam ediyor... {{ bulkDone }}/{{ bulkTotal }} tamamlandı
+          {{ bulkLabel }} devam ediyor... {{ bulkDone }}/{{ bulkTotal }} tamamlandı
         </span>
         <span class="text-xs text-orange-600 dark:text-orange-400">
-          Saniyede ~10 istek · Tahmini süre: {{ estimatedMinutes }} dakika
+          Tahmini süre: {{ estimatedMinutes }} dakika
         </span>
       </div>
       <div class="w-full bg-orange-200 dark:bg-orange-800 rounded-full h-2">
@@ -229,6 +245,7 @@ const activeTab = ref<string>('all');
 const bulkRunning = ref(false);
 const bulkDone = ref(0);
 const bulkTotal = ref(0);
+const bulkLabel = ref('İşlem');
 
 // ─── Computed ────────────────────────────────────────────────────────────────
 
@@ -288,6 +305,12 @@ const allSelected = computed(() =>
   filteredProjects.value.every(p => selectedIds.value.has(p.id))
 );
 
+const selectedWithGeocode = computed(() =>
+  [...selectedIds.value]
+    .map(id => ({ id, v: validations.value.get(id) }))
+    .filter(x => x.v?.geocodedLat && x.v?.geocodedLng)
+);
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const getValidation = (id: number) => validations.value.get(id);
@@ -337,7 +360,7 @@ const validateOne = async (p: Project) => {
   try {
     const results = await projectService.validateCoordinates([p.id]);
     if (results.length > 0) {
-      validations.value = new Map([...validations.value, [p.id, results[0]]]);
+      validations.value = new Map([...validations.value, [p.id, results[0] as ProjectCoordinateValidationDto]]);
     }
   } catch (e) {
     notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Doğrulama başarısız.', 'error');
@@ -351,19 +374,96 @@ const validateOne = async (p: Project) => {
 // ─── Seçili Doğrulama ────────────────────────────────────────────────────────
 
 const validateSelected = async () => {
-  const ids = [...selectedIds.value].slice(0, 100);
-  ids.forEach(id => rowLoading.value = new Set([...rowLoading.value, id]));
-  try {
-    const results = await projectService.validateCoordinates(ids);
-    const map = new Map(validations.value);
-    results.forEach(r => map.set(r.projectId, r));
-    validations.value = map;
-    notificationStore.add(`${results.length} proje doğrulandı.`, 'success');
-  } catch (e) {
-    notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Toplu doğrulama başarısız.', 'error');
-  } finally {
-    rowLoading.value = new Set();
+  const targets = [...selectedIds.value];
+  if (targets.length === 0) return;
+
+  bulkRunning.value = true;
+  bulkLabel.value = 'Doğrulama';
+  bulkDone.value = 0;
+  bulkTotal.value = targets.length;
+
+  const batchSize = 20;
+  for (let i = 0; i < targets.length; i += batchSize) {
+    if (!bulkRunning.value) break;
+    const batch = targets.slice(i, i + batchSize);
+    batch.forEach(id => rowLoading.value = new Set([...rowLoading.value, id]));
+    try {
+      const results = await projectService.validateCoordinates(batch);
+      const map = new Map(validations.value);
+      results.forEach(r => map.set(r.projectId, r));
+      validations.value = map;
+    } catch {
+      // Batch hatası — devam et
+    } finally {
+      const next = new Set(rowLoading.value);
+      batch.forEach(id => next.delete(id));
+      rowLoading.value = next;
+    }
+    bulkDone.value = Math.min(i + batchSize, targets.length);
   }
+
+  bulkRunning.value = false;
+  notificationStore.add(`${bulkDone.value} proje doğrulandı.`, 'success');
+};
+
+// ─── Tümünü Doğrula ──────────────────────────────────────────────────────────
+
+const validateAll = async () => {
+  const targets = filteredProjects.value.filter(p => p.address);
+  if (targets.length === 0) {
+    notificationStore.add('Doğrulanacak proje bulunamadı (adres gerekli).', 'warning');
+    return;
+  }
+
+  bulkRunning.value = true;
+  bulkLabel.value = 'Doğrulama';
+  bulkDone.value = 0;
+  bulkTotal.value = targets.length;
+
+  const batchSize = 20;
+  for (let i = 0; i < targets.length; i += batchSize) {
+    if (!bulkRunning.value) break;
+    const batch = targets.slice(i, i + batchSize);
+    batch.forEach(p => rowLoading.value = new Set([...rowLoading.value, p.id]));
+    try {
+      const results = await projectService.validateCoordinates(batch.map(p => p.id));
+      const map = new Map(validations.value);
+      results.forEach(r => map.set(r.projectId, r));
+      validations.value = map;
+    } catch {
+      // Batch hatası — devam et
+    } finally {
+      const next = new Set(rowLoading.value);
+      batch.forEach(p => next.delete(p.id));
+      rowLoading.value = next;
+    }
+    bulkDone.value = Math.min(i + batchSize, targets.length);
+  }
+
+  bulkRunning.value = false;
+  notificationStore.add(`Toplu doğrulama tamamlandı. ${bulkDone.value} proje işlendi.`, 'success');
+};
+
+// ─── Seçili Koordinat Uygula ─────────────────────────────────────────────────
+
+const applySelectedGeocodedCoords = async () => {
+  const targets = selectedWithGeocode.value;
+  if (targets.length === 0) return;
+
+  let successCount = 0;
+  for (const { id, v } of targets) {
+    try {
+      await projectService.updateLocation(id, v!.geocodedLat!, v!.geocodedLng!);
+      const idx = allProjects.value.findIndex(x => x.id === id);
+      if (idx !== -1) {
+        allProjects.value[idx] = { ...(allProjects.value[idx] as Project), latitude: v!.geocodedLat!, longitude: v!.geocodedLng! };
+      }
+      successCount++;
+    } catch {
+      // Sessizce geç
+    }
+  }
+  notificationStore.add(`${successCount} projenin koordinatı güncellendi.`, 'success');
 };
 
 // ─── Koordinat Güncelle ───────────────────────────────────────────────────────
@@ -376,7 +476,7 @@ const applyGeocodedCoords = async (p: Project) => {
     // Yerel state güncelle
     const idx = allProjects.value.findIndex(x => x.id === p.id);
     if (idx !== -1) {
-      allProjects.value[idx] = { ...allProjects.value[idx], latitude: v.geocodedLat, longitude: v.geocodedLng };
+      allProjects.value[idx] = { ...(allProjects.value[idx] as Project), latitude: v.geocodedLat, longitude: v.geocodedLng } as Project;
     }
     notificationStore.add(`${p.code} koordinatı güncellendi.`, 'success');
   } catch (e) {
@@ -391,7 +491,7 @@ const resetCoords = async (p: Project) => {
     await projectService.resetLocation(p.id);
     const idx = allProjects.value.findIndex(x => x.id === p.id);
     if (idx !== -1) {
-      allProjects.value[idx] = { ...allProjects.value[idx], latitude: undefined, longitude: undefined };
+      allProjects.value[idx] = { ...(allProjects.value[idx] as Project), latitude: undefined, longitude: undefined } as Project;
     }
     const map = new Map(validations.value);
     map.delete(p.id);
@@ -409,6 +509,7 @@ const startBulkGeocode = async () => {
   if (targets.length === 0) return;
 
   bulkRunning.value = true;
+  bulkLabel.value = 'Geocoding';
   bulkDone.value = 0;
   bulkTotal.value = targets.length;
 
@@ -428,7 +529,7 @@ const startBulkGeocode = async () => {
             await projectService.updateLocation(r.projectId, r.geocodedLat, r.geocodedLng);
             const idx = allProjects.value.findIndex(x => x.id === r.projectId);
             if (idx !== -1) {
-              allProjects.value[idx] = { ...allProjects.value[idx], latitude: r.geocodedLat, longitude: r.geocodedLng };
+              allProjects.value[idx] = { ...(allProjects.value[idx] as Project), latitude: r.geocodedLat, longitude: r.geocodedLng } as Project;
             }
           } catch {
             // Kayıt hatası sessizce geç

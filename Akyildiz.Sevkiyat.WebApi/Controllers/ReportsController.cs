@@ -5,6 +5,7 @@ using Akyildiz.Sevkiyat.Application.Reports.Queries.GetPendingGoodsReceipts;
 using Akyildiz.Sevkiyat.Application.Reports.Queries.GetShipmentPerformance;
 using Akyildiz.Sevkiyat.Application.Reports.Queries.GetStockStatusReport;
 using Akyildiz.Sevkiyat.Application.Reports.Queries.GetReturnsReport;
+using Akyildiz.Sevkiyat.Application.Reports.Queries.GetMaterialPurchaseReport;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -106,6 +107,21 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             if (startDate == default) startDate = DateTime.Today.AddDays(-30);
             if (endDate == default)   endDate   = DateTime.Today;
             var result = await _mediator.Send(new GetReturnsReportQuery(startDate, endDate, zoneId));
+            return Ok(result);
+        }
+
+        [HttpGet("material-purchases")]
+        [Authorize(Roles = "Admin,Accounting,Manager,Warehouse")]
+        public async Task<ActionResult<List<MaterialPurchaseReportRow>>> GetMaterialPurchases(
+            [FromQuery] Guid? supplierId,
+            [FromQuery] int? stockMasterId)
+        {
+            var query = new GetMaterialPurchaseReportQuery 
+            { 
+                SupplierId = supplierId, 
+                StockMasterId = stockMasterId 
+            };
+            var result = await _mediator.Send(query);
             return Ok(result);
         }
     }

@@ -1031,6 +1031,35 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                     b.ToTable("ShipmentHistories");
                 });
 
+            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.ShipmentPrintLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("PrintedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PrintedByName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int?>("PrintedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ShipmentId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ShipmentId");
+
+                    b.ToTable("ShipmentPrintLogs");
+                });
+
             modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.ShipmentLine", b =>
                 {
                     b.Property<int>("Id")
@@ -1962,6 +1991,17 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                         .HasForeignKey("ShipmentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.ShipmentPrintLog", b =>
+                {
+                    b.HasOne("Akyildiz.Sevkiyat.Domain.Entities.Shipment", "Shipment")
+                        .WithMany()
+                        .HasForeignKey("ShipmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Shipment");
                 });
 
             modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.ShipmentLine", b =>

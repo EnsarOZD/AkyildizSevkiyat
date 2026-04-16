@@ -11,7 +11,8 @@ namespace Akyildiz.Sevkiyat.Infrastructure.ExternalServices.Netsis
         [Required]
         public string KullaniciAdi { get; init; } = default!;
 
-        public string Sifre { get; init; } = string.Empty;
+        [Required]
+        public string Sifre { get; init; } = default!;
 
         [Required]
         public string FirmaKodu { get; init; } = default!;

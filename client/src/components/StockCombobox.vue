@@ -8,7 +8,7 @@
             :placeholder="placeholder"
             v-model="searchTerm"
             @input="onInput"
-            @focus="showDropdown = true"
+            @focus="onFocus"
             @blur="delayedHide"
         />
         <div v-if="loading" class="absolute right-2 top-1.5">
@@ -19,29 +19,33 @@
         </div>
     </div>
 
-    <!-- Dropdown -->
-    <div v-if="showDropdown && (results.length > 0)"
-         class="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded shadow-lg max-h-60 overflow-y-auto text-sm">
-        <div
-            v-for="item in results"
-            :key="item.id || item.Id"
-            class="px-3 py-2 cursor-pointer hover:bg-blue-100 border-b last:border-b-0"
-            @mousedown.prevent="selectItem(item)"
-        >
-            <div class="font-bold text-gray-800 dark:text-gray-200">{{ item.stockCode || item.StockCode }}</div>
-            <div class="text-xs text-gray-600 dark:text-gray-400 break-words whitespace-normal">{{ item.stockName || item.StockName }}</div>
-        </div>
-    </div>
+    <!-- Dropdown teleported to body to escape overflow constraints -->
+    <Teleport to="body">
+      <div v-if="showDropdown && (results.length > 0)"
+           :style="dropdownStyle"
+           class="fixed z-[9999] bg-white dark:bg-gray-800 border dark:border-gray-700 rounded shadow-lg max-h-60 overflow-y-auto text-sm">
+          <div
+              v-for="item in results"
+              :key="item.id || item.Id"
+              class="px-3 py-2 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-800/50 border-b dark:border-gray-700 last:border-b-0"
+              @mousedown.prevent="selectItem(item)"
+          >
+              <div class="font-bold text-gray-800 dark:text-gray-200">{{ item.stockCode || item.StockCode }}</div>
+              <div class="text-xs text-gray-600 dark:text-gray-400 break-words whitespace-normal">{{ item.stockName || item.StockName }}</div>
+          </div>
+      </div>
 
-    <div v-if="showDropdown && results.length === 0 && searchTerm.length > 1 && !loading"
-         class="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded shadow-lg p-2 text-xs text-gray-500 dark:text-gray-400">
-         No matches found.
-    </div>
+      <div v-if="showDropdown && results.length === 0 && searchTerm.length > 1 && !loading"
+           :style="dropdownStyle"
+           class="fixed z-[9999] bg-white dark:bg-gray-800 border dark:border-gray-700 rounded shadow-lg p-2 text-xs text-gray-500 dark:text-gray-400">
+           No matches found.
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, onUnmounted, watch, type CSSProperties } from 'vue';
 import { stockService } from '../services/stockService';
 
 const props = defineProps<{
@@ -102,6 +106,7 @@ const search = async () => {
         });
 
         results.value = data.items;
+        updateDropdownPosition();
         showDropdown.value = true;
     } catch (error) {
         console.error('[StockCombobox] Search error:', error);
@@ -129,6 +134,22 @@ const delayedHide = () => {
 };
 
 const inputRef = ref<HTMLInputElement | null>(null);
+const dropdownStyle = ref<CSSProperties>({});
+
+const updateDropdownPosition = () => {
+    if (!inputRef.value) return;
+    const rect = inputRef.value.getBoundingClientRect();
+    dropdownStyle.value = {
+        top: `${rect.bottom + 4}px`,
+        left: `${rect.left}px`,
+        width: `${rect.width}px`,
+    };
+};
+
+const onFocus = () => {
+    updateDropdownPosition();
+    showDropdown.value = true;
+};
 
 const focus = () => {
     inputRef.value?.focus();
@@ -141,5 +162,12 @@ onMounted(() => {
         isInternalChange = true;
         searchTerm.value = props.initialCode;
     }
+    window.addEventListener('scroll', updateDropdownPosition, true);
+    window.addEventListener('resize', updateDropdownPosition);
+});
+
+onUnmounted(() => {
+    window.removeEventListener('scroll', updateDropdownPosition, true);
+    window.removeEventListener('resize', updateDropdownPosition);
 });
 </script>

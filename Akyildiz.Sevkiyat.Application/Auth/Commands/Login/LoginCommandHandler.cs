@@ -3,6 +3,7 @@ using Akyildiz.Sevkiyat.Domain.Exceptions;
 using RefreshTokenEntity = Akyildiz.Sevkiyat.Domain.Entities.RefreshToken;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using System.Security.Cryptography;
 
 namespace Akyildiz.Sevkiyat.Application.Auth.Commands.Login
@@ -12,15 +13,18 @@ namespace Akyildiz.Sevkiyat.Application.Auth.Commands.Login
         private readonly IApplicationDbContext _context;
         private readonly IPasswordHasher _passwordHasher;
         private readonly ITokenService _tokenService;
+        private readonly int _refreshTokenExpiryHours;
 
         public LoginCommandHandler(
             IApplicationDbContext context,
             IPasswordHasher passwordHasher,
-            ITokenService tokenService)
+            ITokenService tokenService,
+            IConfiguration configuration)
         {
             _context = context;
             _passwordHasher = passwordHasher;
             _tokenService = tokenService;
+            _refreshTokenExpiryHours = int.TryParse(configuration["Jwt:RefreshTokenExpiryHours"], out var h) ? h : 8;
         }
 
         public async Task<LoginResponse> Handle(LoginCommand request, CancellationToken cancellationToken)
@@ -48,7 +52,7 @@ namespace Akyildiz.Sevkiyat.Application.Auth.Commands.Login
                 Id = Guid.NewGuid(),
                 UserId = user.Id,
                 TokenHash = tokenHash,
-                ExpiresAt = DateTime.UtcNow.AddDays(30),
+                ExpiresAt = DateTime.UtcNow.AddHours(_refreshTokenExpiryHours),
                 CreatedAt = DateTime.UtcNow
             });
 

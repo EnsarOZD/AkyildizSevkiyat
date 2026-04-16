@@ -120,18 +120,16 @@
 
       <!-- Save bar -->
       <div class="sticky bottom-4 pt-2">
-        <button
+        <BaseButton
           @click="saveOrder"
-          :disabled="saving || !isDirty"
-          class="w-full py-3.5 font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 text-sm"
-          :class="isDirty
-            ? 'bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50'
-            : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed'"
+          :disabled="!isDirty"
+          :loading="saving"
+          variant="primary"
+          class="w-full py-3.5"
         >
-          <span v-if="saving" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-          <CheckIcon v-else class="w-4 h-4" aria-hidden="true" />
-          {{ saving ? 'Kaydediliyor...' : isDirty ? 'Sırayı Kaydet' : 'Kaydedildi ✓' }}
-        </button>
+          <template #icon><CheckIcon class="w-4 h-4 mr-1" aria-hidden="true" /></template>
+          {{ isDirty ? 'Sırayı Kaydet' : 'Kaydedildi ✓' }}
+        </BaseButton>
       </div>
     </template>
 
@@ -144,6 +142,7 @@ import { MapIcon, MapPinIcon, Bars3Icon, CheckIcon } from '@heroicons/vue/24/out
 import projectService, { type Zone } from '../services/projectService';
 import { ApiErrorUtils } from '../utils/apiError';
 import { useNotificationStore } from '../stores/notification';
+import BaseButton from '../components/BaseButton.vue';
 
 interface ProjectItem {
   id: number;

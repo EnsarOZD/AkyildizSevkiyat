@@ -41,9 +41,7 @@
     <!-- Drivers Tab -->
     <div v-if="activeTab === 'drivers'" class="space-y-4">
         <div class="flex justify-end">
-            <button @click="openDriverModal()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                + Yeni Şoför Ekle
-            </button>
+            <BaseButton @click="openDriverModal()" variant="primary">+ Yeni Şoför Ekle</BaseButton>
         </div>
 
         <div class="bg-white dark:bg-gray-900 shadow overflow-hidden rounded-lg">
@@ -79,9 +77,7 @@
     <!-- Vehicles Tab -->
     <div v-if="activeTab === 'vehicles'" class="space-y-4">
          <div class="flex justify-end">
-            <button @click="openVehicleModal()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                + Yeni Araç Ekle
-            </button>
+            <BaseButton @click="openVehicleModal()" variant="primary">+ Yeni Araç Ekle</BaseButton>
         </div>
 
         <div class="bg-white dark:bg-gray-900 shadow overflow-hidden rounded-lg">
@@ -131,72 +127,109 @@
     </div>
 
     <!-- Driver Modal -->
-    <div v-if="showDriverModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
-        <div class="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-sm w-full">
-            <h3 class="text-lg font-medium mb-4">{{ editingDriver ? 'Şoför Düzenle' : 'Yeni Şoför Ekle' }}</h3>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Ad Soyad</label>
-                    <input v-model="driverForm.fullName" type="text" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border p-2 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100">
-                </div>
-                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Telefon</label>
-                    <input v-model="driverForm.phone" type="text" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border p-2 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100">
-                </div>
-                <!-- IsActive check for edit -->
-            </div>
-            <div class="mt-5 flex justify-end gap-2">
-                <button @click="showDriverModal = false" class="px-4 py-2 border dark:border-gray-700 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">İptal</button>
-                <button @click="saveDriver" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Kaydet</button>
-            </div>
-        </div>
-    </div>
+    <BaseModal :show="showDriverModal" :title="editingDriver ? 'Şoför Düzenle' : 'Yeni Şoför Ekle'" maxWidth="sm" @close="showDriverModal = false">
+      <div class="space-y-4">
+        <BaseInput v-model="driverForm.fullName" label="Ad Soyad" />
+        <BaseInput v-model="driverForm.phone" label="Telefon" />
+      </div>
+      <template #footer>
+        <BaseButton @click="showDriverModal = false" variant="secondary">İptal</BaseButton>
+        <BaseButton @click="saveDriver" variant="primary">Kaydet</BaseButton>
+      </template>
+    </BaseModal>
 
     <!-- Vehicle Modal -->
-    <div v-if="showVehicleModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
-        <div class="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-sm w-full">
-            <h3 class="text-lg font-medium mb-4">{{ editingVehicle ? 'Araç Düzenle' : 'Yeni Araç Ekle' }}</h3>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Plaka</label>
-                    <input v-model="vehicleForm.plateNumber" type="text" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border p-2 uppercase dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Araç Tipi</label>
-                    <select v-model="vehicleForm.vehicleType" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border p-2 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100">
-                      <option :value="0">Kamyon</option>
-                      <option :value="1">Kamyonet</option>
-                      <option :value="2">Minibüs</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Kapasite / Notlar <span class="text-gray-400 font-normal">(opsiyonel)</span></label>
-                    <input v-model="vehicleForm.capacity" type="text" placeholder="Örn: 5 ton" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border p-2 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Açıklama <span class="text-gray-400 font-normal">(opsiyonel)</span></label>
-                    <input v-model="vehicleForm.description" type="text" placeholder="Araç hakkında ek bilgi" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border p-2 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100">
-                </div>
-            </div>
-            <div class="mt-5 flex justify-end gap-2">
-                 <button @click="showVehicleModal = false" class="px-4 py-2 border dark:border-gray-700 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">İptal</button>
-                <button @click="saveVehicle" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Kaydet</button>
-            </div>
-        </div>
-    </div>
+    <BaseModal :show="showVehicleModal" :title="editingVehicle ? 'Araç Düzenle' : 'Yeni Araç Ekle'" maxWidth="sm" @close="showVehicleModal = false">
+      <div class="space-y-4">
+        <BaseInput v-model="vehicleForm.plateNumber" label="Plaka" class="uppercase" />
+        <BaseSelect v-model.number="vehicleForm.vehicleType" label="Araç Tipi">
+          <option :value="0">Kamyon</option>
+          <option :value="1">Kamyonet</option>
+          <option :value="2">Minibüs</option>
+        </BaseSelect>
+        <BaseInput v-model="vehicleForm.capacity" label="Kapasite / Notlar" placeholder="Örn: 5 ton" hint="Opsiyonel" />
+        <BaseInput v-model="vehicleForm.description" label="Açıklama" placeholder="Araç hakkında ek bilgi" hint="Opsiyonel" />
+      </div>
+      <template #footer>
+        <BaseButton @click="showVehicleModal = false" variant="secondary">İptal</BaseButton>
+        <BaseButton @click="saveVehicle" variant="primary">Kaydet</BaseButton>
+      </template>
+    </BaseModal>
 
     <!-- QR Modal -->
-    <div v-if="showQrModal && qrVehicle" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50 print:hidden" @click.self="showQrModal = false">
-      <div class="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-xs w-full text-center">
-        <h3 class="text-lg font-medium mb-1 text-gray-900 dark:text-gray-100">QR Kod</h3>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ qrVehicle.plateNumber }}</p>
-        <div id="qr-print-area" class="flex flex-col items-center">
-          <img v-if="qrImageBase64" :src="qrImageBase64" alt="QR Kod" class="w-48 h-48 mx-auto" />
-          <p class="mt-3 text-xl font-bold tracking-widest text-gray-900">{{ qrVehicle.plateNumber }}</p>
+    <div v-if="showQrModal && qrVehicle" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 print:hidden" @click.self="showQrModal = false">
+      <div class="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-sm mx-4">
+
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700">
+          <div>
+            <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">Araç QR Etiketi</h3>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ qrVehicle.plateNumber }} — {{ vehicleTypeName(qrVehicle.vehicleType) }}</p>
+          </div>
+          <button @click="showQrModal = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
         </div>
-        <div class="mt-5 flex justify-center gap-3">
-          <button @click="printQr" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Yazdır</button>
-          <button @click="showQrModal = false" class="px-4 py-2 border dark:border-gray-700 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">Kapat</button>
+
+        <!-- Label Preview -->
+        <div class="px-5 py-4">
+          <p class="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3 font-medium">Etiket Önizleme</p>
+          <div class="flex justify-center">
+            <!-- This is exactly what will print -->
+            <div class="qr-label-preview border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+              <div class="qr-label bg-white" style="width:240px; padding: 16px 16px 20px; font-family: 'Arial', sans-serif;">
+                <!-- Header bar -->
+                <div style="background:#1e3a5f; padding:8px 12px; margin:-16px -16px 14px; text-align:center;">
+                  <div style="color:#ffffff; font-size:13px; font-weight:700; letter-spacing:2px;">AKYİLDIZ</div>
+                  <div style="color:#93c5fd; font-size:9px; letter-spacing:1px; margin-top:2px;">SEVKİYAT SİSTEMİ</div>
+                </div>
+                <!-- QR Code -->
+                <div style="text-align:center; margin-bottom:12px;">
+                  <div v-if="qrImageLoading" style="width:160px; height:160px; background:#f3f4f6; margin:0 auto; display:flex; align-items:center; justify-content:center; font-size:11px; color:#9ca3af;">Yükleniyor...</div>
+                  <img v-else-if="qrImageBase64" :src="qrImageBase64" alt="QR" style="width:160px; height:160px; display:block; margin:0 auto;" />
+                </div>
+                <!-- Plate Number -->
+                <div style="text-align:center; border:2px solid #1e3a5f; border-radius:6px; padding:6px 10px; margin-bottom:10px;">
+                  <div style="font-size:22px; font-weight:900; letter-spacing:3px; color:#1e3a5f; font-family:'Arial Black', sans-serif;">{{ qrVehicle.plateNumber }}</div>
+                </div>
+                <!-- Vehicle Type -->
+                <div style="text-align:center;">
+                  <span style="background:#e0e7ff; color:#3730a3; font-size:10px; font-weight:600; padding:3px 10px; border-radius:999px; letter-spacing:0.5px;">{{ vehicleTypeName(qrVehicle.vehicleType) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p class="text-xs text-center text-gray-400 dark:text-gray-500 mt-3">Yaklaşık 6×9 cm etiket boyutu</p>
+        </div>
+
+        <!-- Actions -->
+        <div class="px-5 py-4 border-t border-gray-200 dark:border-gray-700 flex gap-2">
+          <BaseButton @click="printQr" :disabled="qrImageLoading || !qrImageBase64" variant="primary" class="flex-1">
+            <svg class="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+            Yazdır
+          </BaseButton>
+          <BaseButton @click="showQrModal = false" variant="secondary">Kapat</BaseButton>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Yazdırma alanı (sadece print modunda görünür) ─────────────────── -->
+    <div id="qr-print-area" style="display:none;">
+      <div class="qr-label" style="width:226px; font-family:'Arial',sans-serif; margin:0 auto;">
+        <div style="background:#1e3a5f; padding:10px 14px; text-align:center;">
+          <div style="color:#ffffff; font-size:14px; font-weight:700; letter-spacing:2px;">AKYİLDIZ</div>
+          <div style="color:#93c5fd; font-size:9px; letter-spacing:1px; margin-top:2px;">SEVKİYAT SİSTEMİ</div>
+        </div>
+        <div style="padding:14px 14px 18px; background:#ffffff;">
+          <div style="text-align:center; margin-bottom:12px;">
+            <img v-if="qrImageBase64" :src="qrImageBase64" alt="QR" style="width:168px; height:168px; display:block; margin:0 auto;" />
+          </div>
+          <div style="text-align:center; border:2.5px solid #1e3a5f; border-radius:6px; padding:6px 10px; margin-bottom:10px;">
+            <div style="font-size:24px; font-weight:900; letter-spacing:3px; color:#1e3a5f; font-family:'Arial Black',sans-serif;">{{ qrVehicle?.plateNumber }}</div>
+          </div>
+          <div style="text-align:center;">
+            <span style="background:#e0e7ff; color:#3730a3; font-size:10px; font-weight:600; padding:3px 10px; border-radius:999px; letter-spacing:0.5px;">{{ vehicleTypeName(qrVehicle?.vehicleType) }}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -205,9 +238,32 @@
 </template>
 
 <style>
+/* ── Print Styles ─────────────────────────────────────────── */
 @media print {
-  body > * { display: none !important; }
-  #qr-print-area { display: flex !important; flex-direction: column; align-items: center; padding: 2rem; }
+  /* Sayfadaki her şeyi gizle */
+  body * { visibility: hidden !important; }
+
+  /* Sadece print alanını göster */
+  #qr-print-area,
+  #qr-print-area * { visibility: visible !important; }
+
+  #qr-print-area {
+    display: block !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: white !important;
+  }
+
+  @page {
+    size: 80mm 100mm;
+    margin: 0;
+  }
 }
 </style>
 
@@ -217,6 +273,10 @@ import transportService from '../services/transportService';
 import apiClient from '../services/apiClient';
 import { ApiErrorUtils } from '../utils/apiError';
 import { useNotificationStore } from '../stores/notification';
+import BaseModal from '../components/BaseModal.vue';
+import BaseButton from '../components/BaseButton.vue';
+import BaseInput from '../components/base/BaseInput.vue';
+import BaseSelect from '../components/base/BaseSelect.vue';
 
 const notificationStore = useNotificationStore();
 
@@ -239,6 +299,10 @@ const vehicleForm = ref({ plateNumber: '', capacity: '', vehicleType: 0, descrip
 const showQrModal = ref(false);
 const qrVehicle = ref<any>(null);
 const qrImageBase64 = ref<string | null>(null);
+const qrImageLoading = ref(false);
+
+const vehicleTypeNames = ['Kamyon', 'Kamyonet', 'Minibüs'];
+const vehicleTypeName = (type: number | undefined) => vehicleTypeNames[type ?? 0] ?? 'Kamyon';
 
 onMounted(() => {
     fetchDrivers();
@@ -350,23 +414,30 @@ const deleteVehicle = async (id: number) => {
 
 // QR Actions
 const generateQr = async (vehicle: any) => {
+    qrVehicle.value = vehicle;
+    qrImageBase64.value = null;
+    qrImageLoading.value = true;
+    showQrModal.value = true;
     try {
         const res = await apiClient.post<{ qrCode: string; qrImageBase64: string }>(
             `/vehicles/${vehicle.id}/generate-qr`
         );
         vehicle.qrCode = res.data.qrCode;
-        qrVehicle.value = vehicle;
         qrImageBase64.value = res.data.qrImageBase64;
-        showQrModal.value = true;
         notificationStore.add('QR kod oluşturuldu.', 'success');
+        await fetchVehicles();
     } catch(e) {
         notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'QR oluşturulamadı.', 'error');
+        showQrModal.value = false;
+    } finally {
+        qrImageLoading.value = false;
     }
 };
 
 const openQrModal = async (vehicle: any) => {
     qrVehicle.value = vehicle;
     qrImageBase64.value = null;
+    qrImageLoading.value = true;
     showQrModal.value = true;
     try {
         const res = await apiClient.post<{ qrCode: string; qrImageBase64: string }>(
@@ -375,11 +446,17 @@ const openQrModal = async (vehicle: any) => {
         qrImageBase64.value = res.data.qrImageBase64;
     } catch(e) {
         notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'QR yüklenemedi.', 'error');
+    } finally {
+        qrImageLoading.value = false;
     }
 };
 
 const printQr = () => {
+    // print alanını görünür yap, yazdır, gizle
+    const el = document.getElementById('qr-print-area');
+    if (el) el.style.display = 'flex';
     window.print();
+    if (el) el.style.display = 'none';
 };
 
 </script>

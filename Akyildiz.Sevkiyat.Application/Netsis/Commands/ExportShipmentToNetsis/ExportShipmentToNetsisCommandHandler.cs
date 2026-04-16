@@ -132,11 +132,11 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportShipmentToNetsis
         {
             var warnings = new List<string>();
 
-            // Belge No: "0" veya boş değerleri atla, ilk geçerli numarayı kullan
+            // Belge No: Netsis'e gönderilecek sipariş numarası — ExternalOrderNumber öncelikli
             var belgeNo = PickBelgeNo(
+                shipment.IssOrder?.ExternalOrderNumber,
                 shipment.TalepNo,
-                shipment.IssOrder?.TalepNo,
-                shipment.IssOrder?.ExternalOrderNumber);
+                shipment.IssOrder?.TalepNo);
 
             // NetsisStockCode doğrulaması — boş olanları listele
             var missingNetsisCode = shipment.Lines

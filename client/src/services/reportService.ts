@@ -130,6 +130,16 @@ export interface ReturnRow {
   returnNote?: string;
 }
 
+export interface MaterialPurchaseReportRow {
+  supplierId: string;
+  supplierName: string;
+  stockMasterId: number;
+  stockName: string;
+  orderedQty: number;
+  receivedQty: number;
+  remainingQty: number;
+}
+
 const reportService = {
   async getZoneMaterialReport(params: {
     deliveryDate: string;
@@ -181,6 +191,14 @@ const reportService = {
   }): Promise<ReturnsReportDto> {
     const response = await apiClient.get('/reports/returns', { params });
     return response.data;
+  },
+
+  async getMaterialPurchases(params?: {
+    supplierId?: string | null;
+    stockMasterId?: number | null;
+  }): Promise<MaterialPurchaseReportRow[]> {
+    const response = await apiClient.get('/reports/material-purchases', { params });
+    return response.data || [];
   },
 };
 

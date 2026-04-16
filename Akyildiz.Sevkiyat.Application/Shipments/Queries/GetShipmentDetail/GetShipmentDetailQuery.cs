@@ -15,7 +15,9 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipmentDetail
     {
         public int Id { get; set; }
         public int ProjectId { get; set; }
+        public string ProjectCode { get; set; } = string.Empty;
         public string ProjectName { get; set; } = string.Empty;
+        public string? ProjectAddress { get; set; }
         public int? ZoneId { get; set; } // Added
         public string? ZoneName { get; set; } // Added
         public string Status { get; set; } = string.Empty;
@@ -46,6 +48,7 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipmentDetail
 
         public List<ShipmentLineDetailDto> Lines { get; set; } = new();
         public List<ShipmentHistoryDto> History { get; set; } = new();
+        public List<ShipmentPrintLogDto> PrintLogs { get; set; } = new();
     }
 
     public class ShipmentLineDetailDto
@@ -72,6 +75,13 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipmentDetail
         public string NewStatus { get; set; } = string.Empty;
         public DateTime ChangedAt { get; set; }
         public string ChangedBy { get; set; } = string.Empty;
-        public string? Description { get; set; } // Added
+        public string? Description { get; set; }
+    }
+
+    public class ShipmentPrintLogDto
+    {
+        public int Id { get; set; }
+        public DateTime PrintedAt { get; set; }
+        public string PrintedByName { get; set; } = string.Empty;
     }
 }

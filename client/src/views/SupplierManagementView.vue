@@ -1,8 +1,8 @@
 <template>
   <div>
-    <div class="mb-6 flex justify-between items-center">
+    <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
       <h1 class="text-2xl font-semibold text-gray-900 dark:text-gray-100">Tedarikçi Yönetimi</h1>
-      <div class="flex gap-2">
+      <div class="flex flex-wrap gap-2 w-full sm:w-auto">
          <button @click="downloadTemplate" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
             Şablon İndir
          </button>
@@ -39,7 +39,7 @@
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tedarikçi Adı</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Kod</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden sm:table-cell">E-posta</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">Oluşturulma</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">Oluşturulma / Güncelleme</th>
             <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">İşlemler</th>
           </tr>
         </thead>
@@ -57,9 +57,13 @@
                <a v-if="supplier.email" :href="'mailto:' + supplier.email" class="text-blue-600 hover:underline">{{ supplier.email }}</a>
                <span v-else class="text-gray-300 dark:text-gray-600">—</span>
              </td>
-             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden lg:table-cell">{{ formatDate(supplier.createdAt) }}</td>
-             <td class="px-6 py-4 whitespace-nowrap text-right">
-               <button @click="openEdit(supplier)" class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">Düzenle</button>
+             <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 hidden lg:table-cell">
+               <div>{{ formatDate(supplier.createdAt) }}</div>
+               <div v-if="supplier.lastModified" class="text-xs text-gray-400 dark:text-gray-500">{{ formatDate(supplier.lastModified) }}</div>
+             </td>
+             <td class="px-6 py-4 whitespace-nowrap text-right space-x-3">
+               <button @click="openEdit(supplier)" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 text-sm font-medium">Düzenle</button>
+               <button @click="confirmDelete(supplier)" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium">Sil</button>
              </td>
            </tr>
         </tbody>
@@ -74,39 +78,31 @@
     />
 
     <!-- Edit Supplier Modal -->
-    <Teleport to="body">
-      <div v-if="showEditModal" class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
-        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-          <div class="fixed inset-0 bg-gray-500 bg-opacity-75" @click="closeEdit"></div>
-          <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
-          <div class="inline-block align-bottom bg-white dark:bg-gray-900 rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
-            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Tedarikçi Düzenle</h3>
-            <div class="space-y-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Tedarikçi Adı <span class="text-red-500">*</span></label>
-                <input v-model="editForm.name" type="text" class="mt-1 bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Netsis Cari Kodu <span class="text-xs text-gray-400 font-normal">(Netsis'e aktarım için zorunlu)</span></label>
-                <input v-model="editForm.supplierCode" type="text" class="mt-1 bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="örn: 120.001.001">
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">E-posta (Opsiyonel)</label>
-                <input v-model="editForm.email" type="email" class="mt-1 bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="ornek@tedarikci.com">
-              </div>
-            </div>
-            <div class="mt-5 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
-              <button @click="saveEdit" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 sm:col-start-2 sm:text-sm">
-                Kaydet
-              </button>
-              <button @click="closeEdit" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-700 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 sm:mt-0 sm:col-start-1 sm:text-sm">
-                İptal
-              </button>
-            </div>
-          </div>
+    <BaseModal :show="showEditModal" title="Tedarikçi Düzenle" maxWidth="md" @close="closeEdit">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tedarikçi Adı <span class="text-danger-500">*</span></label>
+          <input v-model="editForm.name" type="text"
+            class="w-full px-3 py-2 text-sm rounded-input border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Netsis Cari Kodu <span class="text-danger-500">*</span></label>
+          <input v-model="editForm.supplierCode" type="text" placeholder="örn: 120.001.001"
+            class="w-full px-3 py-2 text-sm rounded-input border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">E-posta (Opsiyonel)</label>
+          <input v-model="editForm.email" type="email" placeholder="ornek@tedarikci.com"
+            class="w-full px-3 py-2 text-sm rounded-input border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500" />
         </div>
       </div>
-    </Teleport>
+      <template #footer>
+        <button @click="closeEdit"
+          class="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">İptal</button>
+        <button @click="saveEdit"
+          class="px-4 py-2 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg">Kaydet</button>
+      </template>
+    </BaseModal>
   </div>
 </template>
 <script setup lang="ts">
@@ -115,6 +111,7 @@ import { supplierService } from '../services/supplierService';
 import { ApiErrorUtils } from '../utils/apiError';
 import { useNotificationStore } from '../stores/notification';
 import CreateSupplierModal from '../components/CreateSupplierModal.vue';
+import BaseModal from '../components/BaseModal.vue';
 
 const suppliers = ref<any[]>([]);
 const loading = ref(false);
@@ -168,6 +165,10 @@ const saveEdit = async () => {
         notificationStore.add('Tedarikçi adı zorunludur.', 'warning');
         return;
     }
+    if (!editForm.supplierCode) {
+        notificationStore.add('Netsis cari kodu zorunludur.', 'warning');
+        return;
+    }
     try {
         await supplierService.update(editingId.value, {
             name: editForm.name,
@@ -179,6 +180,17 @@ const saveEdit = async () => {
         fetchSuppliers();
     } catch (e) {
         notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Güncelleme başarısız.', 'error');
+    }
+};
+
+const confirmDelete = async (supplier: any) => {
+    if (!confirm(`"${supplier.name}" tedarikçisini silmek istediğinizden emin misiniz?`)) return;
+    try {
+        await supplierService.delete(supplier.id);
+        notificationStore.add('Tedarikçi silindi.', 'success');
+        fetchSuppliers();
+    } catch (e) {
+        notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Silme işlemi başarısız.', 'error');
     }
 };
 

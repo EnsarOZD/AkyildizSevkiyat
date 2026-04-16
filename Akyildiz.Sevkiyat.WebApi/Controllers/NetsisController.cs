@@ -4,10 +4,13 @@ using Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportPurchaseOrderToNetsis;
 using Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportShipmentToNetsis;
 using Akyildiz.Sevkiyat.Application.Netsis.Commands.FetchShipmentIrsaliye;
 using Akyildiz.Sevkiyat.Application.Netsis.Commands.SyncNetsisStockBalance;
+using Akyildiz.Sevkiyat.Application.Netsis.Commands.VerifyNetsisShipmentTransfers;
 using Akyildiz.Sevkiyat.Application.Netsis.Queries.GetReconciliation;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Akyildiz.Sevkiyat.WebApi.Controllers
 {
@@ -70,6 +73,32 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         }
 
         public record BulkExportBody(List<int> ShipmentIds);
+
+        /// <summary>
+        /// Netsis'e aktarılmış görünen sevkiyatların siparişlerini Netsis'te doğrular.
+        /// Netsis'te artık mevcut olmayan (silinmiş) siparişlerin NetsisTransferredAt'ını sıfırlar.
+        /// Ek olarak, henüz aktarılmamış ama Netsis'te mevcut olan siparişleri otomatik işaretler.
+        /// </summary>
+        [HttpPost("shipments/verify-transfers")]
+        public IActionResult VerifyTransfers([FromServices] IServiceScopeFactory scopeFactory)
+        {
+            _ = Task.Run(async () =>
+            {
+                using var scope = scopeFactory.CreateScope();
+                var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+                var logger   = scope.ServiceProvider.GetRequiredService<ILogger<NetsisController>>();
+                try
+                {
+                    await mediator.Send(new VerifyNetsisShipmentTransfersCommand(), CancellationToken.None);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Background VerifyNetsisShipmentTransfers failed");
+                }
+            });
+
+            return Accepted(new { message = "Netsis durum kontrolü arka planda başlatıldı. Birkaç dakika içinde tamamlanacak." });
+        }
 
         /// <summary>
         /// Netsis ile toplanan/teslim edilen miktar uzlaştırma raporu.

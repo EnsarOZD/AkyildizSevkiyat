@@ -25,27 +25,11 @@
     <!-- Import Controls -->
     <div class="bg-white dark:bg-gray-900 p-4 rounded shadow">
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-        <div>
-          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Başlangıç</label>
-          <input type="date" v-model="startDate" class="w-full border dark:border-gray-700 rounded px-3 py-2 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500" />
-        </div>
-        <div>
-          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Bitiş</label>
-          <input type="date" v-model="endDate" class="w-full border dark:border-gray-700 rounded px-3 py-2 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500" />
-        </div>
-
-        <button
-          @click="importOrders"
-          class="w-full bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 flex items-center justify-center gap-2 font-medium transition-colors"
-          :disabled="importing"
-        >
-          <svg v-if="importing" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-          </svg>
-          <span v-if="importing">Aktarılıyor...</span>
-          <span v-else>Aktarımı Başlat</span>
-        </button>
+        <BaseInput type="date" label="Başlangıç" v-model="startDate" size="sm" />
+        <BaseInput type="date" label="Bitiş" v-model="endDate" size="sm" />
+        <BaseButton @click="importOrders" :loading="importing" variant="primary" class="w-full">
+          Aktarımı Başlat
+        </BaseButton>
 
         <div class="flex gap-2 w-full">
             <button
@@ -66,6 +50,16 @@
             >
                 <span v-if="checking">...</span>
                 <span v-else>Kontrol</span>
+            </button>
+
+            <button
+                @click="checkNetsisTransfers"
+                class="flex-1 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 px-3 py-2 rounded hover:bg-indigo-100 dark:hover:bg-indigo-900/40 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center gap-2 text-sm font-medium transition-colors"
+                title="Netsis'te aktarılmış siparişleri işaretle"
+                :disabled="checkingNetsis"
+            >
+                <span v-if="checkingNetsis">...</span>
+                <span v-else>Netsis</span>
             </button>
         </div>
       </div>
@@ -114,47 +108,50 @@
 
             <!-- Filter & Action Bar -->
             <div class="p-3 sm:p-4 bg-gray-50/50 dark:bg-gray-800/30 border-b dark:border-gray-800 flex flex-col sm:flex-row gap-3 sm:items-center justify-between">
-                <div class="flex items-center gap-2">
-                    <!-- Bulk Action Button -->
-                    <button
-                        v-if="activeTab === 'Ready' && selectedIds.size > 0"
-                        @click="createBulkShipments"
-                        class="bg-blue-600 text-white px-3 py-2 rounded-lg shadow-sm hover:bg-blue-700 font-bold text-xs flex items-center gap-2 transition-transform active:scale-95"
-                    >
-                        <span class="bg-white text-blue-600 rounded-full w-5 h-5 flex items-center justify-center text-[10px]">{{ selectedIds.size }}</span>
-                        <span>SEÇİLENLERİ OLUŞTUR</span>
-                    </button>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <!-- Bulk Action Buttons -->
+                    <template v-if="selectedIds.size > 0">
+                        <button
+                            v-if="activeTab === 'Ready'"
+                            @click="createBulkShipments"
+                            class="bg-blue-600 text-white px-3 py-2 rounded-lg shadow-sm hover:bg-blue-700 font-bold text-xs flex items-center gap-2 transition-transform active:scale-95"
+                        >
+                            <span class="bg-white text-blue-600 rounded-full w-5 h-5 flex items-center justify-center text-[10px]">{{ selectedIds.size }}</span>
+                            <span>SEÇİLENLERİ OLUŞTUR</span>
+                        </button>
+                        <button
+                            v-if="activeTab === 'Ready' || activeTab === 'NeedsMapping'"
+                            @click="bulkDeactivateSelected"
+                            :disabled="deactivating"
+                            class="bg-red-500 text-white px-3 py-2 rounded-lg shadow-sm hover:bg-red-600 font-bold text-xs flex items-center gap-2 transition-transform active:scale-95 disabled:opacity-50"
+                        >
+                            <span class="bg-white text-red-500 rounded-full w-5 h-5 flex items-center justify-center text-[10px]">{{ selectedIds.size }}</span>
+                            <span>{{ deactivating ? 'PASİFE ALINIYOR...' : 'PASİFE AL' }}</span>
+                        </button>
+                    </template>
                     <div v-else class="text-gray-400 text-xs italic sm:block hidden">Sipariş listesini aşağıdan yönetebilirsiniz.</div>
                 </div>
 
                 <div class="flex flex-wrap gap-2">
-                    <div class="relative flex-1 min-w-[120px]">
-                        <input
-                            type="text"
-                            v-model="zoneSearch"
-                            @input="handleSearch"
-                            placeholder="Bölge..."
-                            class="w-full border dark:border-gray-700 rounded-lg pr-3 pl-8 py-2 text-xs dark:bg-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-indigo-500"
-                        />
-                        <svg class="w-3 h-3 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
-                    </div>
-                    
-                    <select v-model="talepNoFilter" @change="loadOrders" class="border dark:border-gray-700 rounded-lg px-2 py-2 text-xs bg-white dark:bg-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-indigo-500">
+                    <BaseInput
+                        v-model="zoneSearch"
+                        @input="handleSearch"
+                        placeholder="Bölge..."
+                        size="sm"
+                        class="flex-1 min-w-[120px]"
+                    />
+                    <BaseSelect v-model="talepNoFilter" @change="loadOrders" size="sm">
                         <option value="">İş Türü</option>
                         <option value="Zero">Catering</option>
                         <option value="NonZero">Diğer</option>
-                    </select>
-
-                    <div class="relative flex-[2] min-w-[160px]">
-                        <input
-                            type="text"
-                            v-model="searchQuery"
-                            @input="handleSearch"
-                            placeholder="Sipariş / Proje / Talep..."
-                            class="w-full border dark:border-gray-700 rounded-lg pr-3 pl-8 py-2 text-xs dark:bg-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-indigo-500"
-                        />
-                        <svg class="w-3 h-3 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
-                    </div>
+                    </BaseSelect>
+                    <BaseInput
+                        v-model="searchQuery"
+                        @input="handleSearch"
+                        placeholder="Sipariş / Proje / Talep..."
+                        size="sm"
+                        class="flex-[2] min-w-[160px]"
+                    />
                 </div>
             </div>
 
@@ -387,20 +384,8 @@
                             Toplam <span class="text-gray-900 dark:text-gray-100 font-bold">{{ totalCount }}</span> kayıt, Sayfa {{ page }} / {{ totalPages }}
                         </div>
                         <div class="flex gap-2 order-1 sm:order-2 w-full sm:w-auto">
-                            <button
-                                @click="page--"
-                                :disabled="page <= 1"
-                                class="flex-1 sm:flex-none px-4 py-2 text-xs font-bold border dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-30 transition-colors shadow-sm"
-                            >
-                                ÖNCEKİ
-                            </button>
-                            <button
-                                @click="page++"
-                                :disabled="page >= totalPages"
-                                class="flex-1 sm:flex-none px-4 py-2 text-xs font-bold border dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-30 transition-colors shadow-sm"
-                            >
-                                SONRAKİ
-                            </button>
+                            <BaseButton @click="page--" :disabled="page <= 1" variant="secondary" size="sm" class="flex-1 sm:flex-none">← Önceki</BaseButton>
+                            <BaseButton @click="page++" :disabled="page >= totalPages" variant="secondary" size="sm" class="flex-1 sm:flex-none">Sonraki →</BaseButton>
                         </div>
                     </div>
                 </div>
@@ -439,6 +424,47 @@
                              </div>
                          </div>
 
+                         <!-- Malzemeler -->
+                         <div class="col-span-full border-t dark:border-gray-800 pt-4 mt-2">
+                             <h4 class="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-3">Malzemeler</h4>
+
+                             <!-- Loading -->
+                             <div v-if="detailLoading" class="flex items-center gap-2 text-sm text-gray-400 py-4">
+                                 <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                                 </svg>
+                                 Yükleniyor...
+                             </div>
+
+                             <!-- Empty -->
+                             <p v-else-if="!selectedOrder.lines?.length" class="text-sm text-gray-400 italic py-2">Malzeme kaydı bulunamadı.</p>
+
+                             <!-- Table -->
+                             <div v-else class="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700">
+                                 <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+                                     <thead class="bg-gray-50 dark:bg-gray-800">
+                                         <tr>
+                                             <th class="px-3 py-2 text-left text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-8">#</th>
+                                             <th class="px-3 py-2 text-left text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Stok Kodu</th>
+                                             <th class="px-3 py-2 text-left text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Stok Adı</th>
+                                             <th class="px-3 py-2 text-right text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Miktar</th>
+                                             <th class="px-3 py-2 text-right text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Birim</th>
+                                         </tr>
+                                     </thead>
+                                     <tbody class="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-gray-900">
+                                         <tr v-for="line in selectedOrder.lines" :key="line.id" class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                                             <td class="px-3 py-2 text-gray-400 dark:text-gray-600 text-xs">{{ line.lineNumber }}</td>
+                                             <td class="px-3 py-2 font-mono text-xs text-gray-600 dark:text-gray-400">{{ line.stockCode }}</td>
+                                             <td class="px-3 py-2 text-gray-900 dark:text-gray-100 font-medium">{{ line.stockName }}</td>
+                                             <td class="px-3 py-2 text-right font-bold text-gray-900 dark:text-gray-100">{{ line.orderedQty }}</td>
+                                             <td class="px-3 py-2 text-right text-xs text-gray-500 dark:text-gray-400">{{ line.unit }}</td>
+                                         </tr>
+                                     </tbody>
+                                 </table>
+                             </div>
+                         </div>
+
                          <div class="col-span-full border-t dark:border-gray-800 pt-4 mt-2">
                              <h4 class="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-3">İletişim & Teslimat</h4>
                              <div class="space-y-4">
@@ -469,9 +495,9 @@
                 </div>
                 
                 <div class="p-4 bg-gray-50 dark:bg-gray-800/80 border-t dark:border-gray-800 flex gap-3">
-                    <button @click="selectedOrder = null" class="flex-1 py-3 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl font-bold text-sm shadow-sm border dark:border-gray-600 transition-all active:scale-95">KAPAT</button>
+                    <BaseButton @click="selectedOrder = null" variant="secondary" class="flex-1">Kapat</BaseButton>
                     <template v-if="activeTab === 'Ready'">
-                         <button @click="createShipment(selectedOrder.id || selectedOrder.Id)" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-500/20 transition-all active:scale-95">SEVKİYAT OLUŞTUR</button>
+                        <BaseButton @click="createShipment(selectedOrder.id || selectedOrder.Id)" variant="primary" class="flex-1">Sevkiyat Oluştur</BaseButton>
                     </template>
                 </div>
             </div>
@@ -483,9 +509,13 @@
 import { ref, watch, onMounted, computed, onUnmounted } from 'vue';
 import shipmentService from '../services/shipmentService';
 import projectService from '../services/projectService';
+import apiClient from '../services/apiClient';
 import StockMappingManager from '../components/StockMappingManager.vue';
 import { useNotificationStore } from '../stores/notification';
 import { ApiErrorUtils } from '../utils/apiError';
+import BaseButton from '../components/BaseButton.vue';
+import BaseInput from '../components/base/BaseInput.vue';
+import BaseSelect from '../components/base/BaseSelect.vue';
 
 const notificationStore = useNotificationStore();
 const confirm = {
@@ -531,6 +561,7 @@ const needsMappingCount = ref(0);
 const passiveCount = ref(0);
 
 const selectedOrder = ref<any>(null);
+const detailLoading = ref(false);
 
 const isAllSelected = computed(() => {
     return orders.value.length > 0 && orders.value.every(order => selectedIds.value.has(order.id));
@@ -573,6 +604,25 @@ const createBulkShipments = async () => {
     } catch (e) {
         console.error(e);
         notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Toplu oluşturma sırasında hata oluştu.', 'error');
+    }
+};
+
+const deactivating = ref(false);
+const bulkDeactivateSelected = async () => {
+    if (selectedIds.value.size === 0) return;
+    if (!await confirm.show(`${selectedIds.value.size} adet sipariş pasife alınacak. Bu siparişler artık aktif listede görünmeyecek. Onaylıyor musunuz?`)) return;
+
+    deactivating.value = true;
+    try {
+        const res = await shipmentService.bulkDeactivateOrders(Array.from(selectedIds.value));
+        notificationStore.add(`${res.count} adet sipariş pasife alındı.`, 'success');
+        await loadOrders();
+        clearSelection();
+    } catch (e) {
+        console.error(e);
+        notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Pasife alma sırasında hata oluştu.', 'error');
+    } finally {
+        deactivating.value = false;
     }
 };
 
@@ -701,6 +751,25 @@ const syncProjects = async () => {
     }
 };
 
+const checkingNetsis = ref(false);
+const checkNetsisTransfers = async () => {
+    checkingNetsis.value = true;
+    try {
+        const res = await shipmentService.checkNetsisTransfers();
+        const msg = res.markedAsTransferred > 0
+            ? `Netsis kontrolü tamamlandı. ${res.checked} sipariş kontrol edildi, ${res.markedAsTransferred} tanesi aktarıldı olarak işaretlendi.`
+            : `Netsis kontrolü tamamlandı. ${res.checked} sipariş kontrol edildi, yeni aktarım bulunamadı.`;
+        notificationStore.add(msg, 'success');
+        if (res.error) notificationStore.add(`Netsis uyarısı: ${res.error}`, 'warning');
+        if (res.markedAsTransferred > 0) await loadOrders();
+    } catch (e) {
+        console.error(e);
+        notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Netsis kontrolü sırasında hata oluştu.', 'error');
+    } finally {
+        checkingNetsis.value = false;
+    }
+};
+
 const checking = ref(false);
 const checkMappings = async () => {
     checking.value = true;
@@ -738,8 +807,17 @@ const toggleActive = async (id: number, isActive: boolean) => {
     }
 };
 
-const openDetail = (order: any) => {
-    selectedOrder.value = order;
+const openDetail = async (order: any) => {
+    selectedOrder.value = { ...order, lines: null };
+    detailLoading.value = true;
+    try {
+        const res = await apiClient.get<any>(`/orders/${order.id || order.Id}`);
+        selectedOrder.value = { ...selectedOrder.value, lines: res.data.lines ?? [] };
+    } catch {
+        selectedOrder.value = { ...selectedOrder.value, lines: [] };
+    } finally {
+        detailLoading.value = false;
+    }
 };
 
 const formatDate = (d: string) => {

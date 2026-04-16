@@ -23,14 +23,19 @@ namespace Akyildiz.Sevkiyat.Application.Orders.Queries.GetImportedOrders
 
         public async Task<IssOrderCountsDto> Handle(GetIssOrderCountsQuery request, CancellationToken cancellationToken)
         {
-            var stats = await _context.IssOrders
-                .GroupBy(o => new { o.ImportStatus, o.IsActive })
-                .Select(g => new { g.Key.ImportStatus, g.Key.IsActive, Count = g.Count() })
-                .ToListAsync(cancellationToken);
+            // Hazır: aktif, haritalanmış, henüz sevkiyata dönüşmemiş siparişler.
+            // IsTransferred == true olanlar zaten sevkiyat haline getirilmiştir — badge'e dahil edilmez.
+            var ready = await _context.IssOrders
+                .CountAsync(o => o.IsActive
+                              && o.ImportStatus == ImportStatus.Ready
+                              && !o.IsTransferred, cancellationToken);
 
-            var ready = stats.Where(x => x.IsActive && x.ImportStatus == ImportStatus.Ready).Sum(x => x.Count);
-            var needsMapping = stats.Where(x => x.IsActive && x.ImportStatus == ImportStatus.NeedsMapping).Sum(x => x.Count);
-            var passive = stats.Where(x => !x.IsActive).Sum(x => x.Count);
+            var needsMapping = await _context.IssOrders
+                .CountAsync(o => o.IsActive
+                              && o.ImportStatus == ImportStatus.NeedsMapping, cancellationToken);
+
+            var passive = await _context.IssOrders
+                .CountAsync(o => !o.IsActive, cancellationToken);
 
             return new IssOrderCountsDto(ready, needsMapping, passive);
         }

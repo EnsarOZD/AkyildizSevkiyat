@@ -1,11 +1,11 @@
 <template>
   <div class="p-6 space-y-6">
-    <div class="flex justify-between items-center">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
       <div>
         <h1 class="text-2xl font-bold mb-2">Stok Yönetimi</h1>
-        <p class="text-gray-600 dark:text-gray-400">Sistemdeki stok tanımlarını yönetin.</p>
+        <p class="text-gray-600 dark:text-gray-400 whitespace-normal">Sistemdeki stok tanımlarını yönetin.</p>
       </div>
-      <div class="flex gap-2">
+      <div class="flex flex-wrap gap-2">
         <button
           @click="downloadTemplate"
           class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 flex items-center gap-2"
@@ -35,13 +35,13 @@
 
     <!-- Search + Filter Panel -->
     <div class="bg-white dark:bg-gray-900 p-4 rounded shadow space-y-3">
-      <div class="flex items-center gap-2">
+      <div class="flex flex-wrap items-center gap-2">
         <input
           v-model="searchQuery"
           @input="debouncedSearch"
           type="text"
           placeholder="Stok Kodu veya Adı Ara..."
-          class="flex-1 border rounded px-3 py-2 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100"
+          class="flex-1 min-w-[200px] border rounded px-3 py-2 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100"
         />
         <button
           @click="filterOpen = !filterOpen"
@@ -194,7 +194,7 @@
 
     <!-- Create/Edit Modal -->
     <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div class="bg-white dark:bg-gray-900 rounded-lg p-6 w-full max-w-md">
+        <div class="bg-white dark:bg-gray-900 rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <h3 class="text-lg font-bold mb-4">{{ isEditing ? 'Stok Düzenle' : 'Yeni Stok Ekle' }}</h3>
             <div class="space-y-4">
                  <div>
@@ -304,7 +304,7 @@
 
     <!-- Threshold Modal -->
     <div v-if="showThresholdModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div class="bg-white dark:bg-gray-900 rounded-lg p-6 w-full max-w-sm">
+        <div class="bg-white dark:bg-gray-900 rounded-lg p-6 w-full max-w-sm max-h-[90vh] overflow-y-auto">
             <h3 class="text-lg font-bold mb-1">Eşik Değerleri</h3>
             <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ thresholdForm.stockName }}</p>
             <div class="space-y-4">
@@ -328,7 +328,7 @@
 
     <!-- Import Modal -->
     <div v-if="showImportModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div class="bg-white dark:bg-gray-900 rounded-lg p-6 w-full max-w-md">
+        <div class="bg-white dark:bg-gray-900 rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
              <div class="text-sm text-gray-600 dark:text-gray-400 mb-4 bg-gray-50 dark:bg-gray-800 p-3 rounded border dark:border-gray-700">
                 <p class="font-bold mb-1 border-b dark:border-gray-700 pb-1">Excel Kolon Yapısı:</p>
                 <ul class="space-y-1 list-disc list-inside">

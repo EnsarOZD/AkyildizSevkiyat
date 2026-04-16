@@ -16,5 +16,8 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Security
 
         [Range(1, 10080)] // 1 minute to 1 week
         public int ExpiresInMinutes { get; init; } = 60;
+
+        [Range(1, 720)] // 1 hour to 30 days
+        public int RefreshTokenExpiryHours { get; init; } = 8;
     }
 }

@@ -82,6 +82,12 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipmentDetail
                 }
             }
 
+            // Fetch print logs
+            var printLogs = await _context.ShipmentPrintLogs
+                .Where(l => l.ShipmentId == request.Id)
+                .OrderByDescending(l => l.PrintedAt)
+                .ToListAsync(cancellationToken);
+
             // Fetch history
             var history = await _context.ShipmentHistories
                 .Where(h => h.ShipmentId == request.Id)
@@ -99,7 +105,9 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipmentDetail
             {
                 Id = shipment.Id,
                 ProjectId = shipment.ProjectId,
+                ProjectCode = shipment.Project.Code,
                 ProjectName = shipment.Project.Name,
+                ProjectAddress = shipment.Project.Address,
                 ZoneId = shipment.Project.ZoneId,
                 ZoneName = shipment.Project.Zone?.Name,
                 Status = shipment.Status.ToString(),
@@ -109,7 +117,7 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipmentDetail
 
                 // Netsis / İrsaliye
                 IrsaliyeNo = shipment.IrsaliyeNo,
-                IrsaliyeDate = shipment.IrsaliyeDate,
+                IrsaliyeDate = shipment.IrsaliyeDate == DateOnly.MinValue ? null : shipment.IrsaliyeDate,
                 NetsisTransferredAt = shipment.NetsisTransferredAt,
 
                 // Delivery Proof
@@ -159,10 +167,16 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipmentDetail
                     OldStatus = h.OldStatus.ToString(),
                     NewStatus = h.NewStatus.ToString(),
                     ChangedAt = h.ChangedAt,
-                    ChangedBy = h.ChangedByUserId.HasValue && users.ContainsKey(h.ChangedByUserId.Value) 
-                        ? users[h.ChangedByUserId.Value] 
+                    ChangedBy = h.ChangedByUserId.HasValue && users.ContainsKey(h.ChangedByUserId.Value)
+                        ? users[h.ChangedByUserId.Value]
                         : (h.ChangedByUserId.HasValue ? h.ChangedByUserId.Value.ToString() : "System"),
-                    Description = h.Description // Added
+                    Description = h.Description
+                }).ToList(),
+                PrintLogs = printLogs.Select(l => new ShipmentPrintLogDto
+                {
+                    Id = l.Id,
+                    PrintedAt = l.PrintedAt,
+                    PrintedByName = l.PrintedByName,
                 }).ToList()
             };
         }

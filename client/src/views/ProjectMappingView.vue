@@ -1,21 +1,21 @@
 <template>
   <div class="h-full flex flex-col p-4">
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
       <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Proje - Bölge Yönetimi</h1>
-      <div class="flex gap-4 items-center">
+      <div class="flex flex-wrap gap-2 md:gap-4 items-center w-full md:w-auto">
            <input
               v-model="searchTerm"
               type="text"
               placeholder="Proje Ara..."
-              class="border dark:border-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none w-64 dark:bg-gray-800 dark:text-gray-100"
+              class="flex-1 min-w-[150px] border dark:border-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none w-full md:w-64 dark:bg-gray-800 dark:text-gray-100"
             />
-            <button 
-              @click="exportToExcel" 
-              class="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors shadow-sm text-sm font-medium"
-              title="Excel'e Aktar"
-            >
-              <i class="fas fa-file-export"></i>
+            <BaseButton @click="exportToExcel" variant="success" title="Excel'e Aktar">
+              <i class="fas fa-file-export mr-1.5"></i>
               Excel'e Aktar
+            </BaseButton>
+            <button @click="downloadTemplate" class="flex items-center gap-2 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors cursor-pointer shadow-sm text-sm font-medium" title="Şablon İndir">
+              <i class="fas fa-download"></i>
+              Şablon İndir
             </button>
             <label class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors cursor-pointer shadow-sm text-sm font-medium" title="Excel'den Yükle">
               <i class="fas fa-file-import"></i>
@@ -137,10 +137,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
+import BaseButton from '../components/BaseButton.vue';
 import projectService from '../services/projectService';
 import { ApiErrorUtils } from '../utils/apiError';
 import { turkishIncludes } from '../utils/turkishSearch';
 import { useNotificationStore } from '../stores/notification';
+import * as XLSX from 'xlsx';
 
 const notificationStore = useNotificationStore();
 
@@ -303,6 +305,26 @@ const exportToExcel = async () => {
   } catch (err) {
     notificationStore.add(ApiErrorUtils.getErrorMessage(err) || 'Excel\'e aktarma başarısız.', 'error');
   }
+};
+
+const downloadTemplate = () => {
+  const ws = XLSX.utils.aoa_to_sheet([
+      ['Proje Kodu', 'Proje Adı', 'Bölge', 'Netsis Cari Kodu', 'Netsis Teslim Cari Kodu', 'Teslimat Sırası'],
+      ['PRJ-001', 'Örnek Proje Adı', 'Marmara', '120.01.001', '10029', '1']
+  ]);
+  const wscols = [
+      { wch: 20 },
+      { wch: 40 },
+      { wch: 15 },
+      { wch: 20 },
+      { wch: 20 },
+      { wch: 15 }
+  ];
+  ws['!cols'] = wscols;
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Şablon');
+  XLSX.writeFile(wb, 'Proje_Yükleme_Şablonu.xlsx');
 };
 
 const importFromExcel = async (event: Event) => {

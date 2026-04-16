@@ -54,14 +54,19 @@ const goodsReceiptService = {
   async create(data: {
     purchaseOrderId?: string;
     purchaseOrderIds?: string[];
-    supplierId: string;
+    supplierId?: string;
     waybillNo: string;
     waybillDate: string;
     receiptDate: string;
     note?: string;
     ignoreDuplicateWarning?: boolean;
   }): Promise<{ id: string; hasDuplicateWarning?: boolean }> {
-    const response = await apiClient.post('/goods-receipts', data);
+    const payload = {
+      ...data,
+      // Empty string can't be deserialized to Guid? on the backend
+      supplierId: data.supplierId || null
+    };
+    const response = await apiClient.post('/goods-receipts', payload);
     return response.data;
   },
 

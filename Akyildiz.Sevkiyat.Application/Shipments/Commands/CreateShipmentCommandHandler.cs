@@ -34,19 +34,22 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands
             if (order == null)
                 throw new NotFoundException("ISS siparişi bulunamadı.");
 
-            // Check if already transferred
+            // Check if already transferred via flag
             if (order.IsTransferred)
-            {
                 throw new ConflictException("Bu sipariş zaten bir sevkiyata dönüştürülmüş.");
-            }
 
-            // Double check existing shipments just in case
+            // Defensive: check for any existing shipment (covers flag-inconsistency edge cases)
             var existingShipment = await _context.Shipments
-                .AnyAsync(s => s.IssOrderId == request.IssOrderId, cancellationToken);
+                .Where(s => s.IssOrderId == request.IssOrderId)
+                .Select(s => new { s.NetsisTransferredAt })
+                .FirstOrDefaultAsync(cancellationToken);
 
-            if (existingShipment)
+            if (existingShipment != null)
             {
-                throw new ConflictException("Bu sipariş zaten bir sevkiyata dönüştürülmüş.");
+                var msg = existingShipment.NetsisTransferredAt != null
+                    ? "Bu siparişin sevkiyatı daha önce Netsis'e aktarılmış. Yeni sevkiyat oluşturulamaz."
+                    : "Bu sipariş zaten bir sevkiyata dönüştürülmüş.";
+                throw new ConflictException(msg);
             }
 
             if (order.ImportStatus == ImportStatus.NeedsMapping)

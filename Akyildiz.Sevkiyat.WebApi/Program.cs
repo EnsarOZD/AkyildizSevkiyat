@@ -284,12 +284,16 @@ var sensitiveConfigs = new Dictionary<string, string?>
     { "Jwt:Key", app.Services.GetRequiredService<IOptions<JwtOptions>>().Value.Key },
     { "ISSIp:KullaniciAdi", app.Services.GetRequiredService<IOptions<ISSIpOptions>>().Value.KullaniciAdi },
     { "ISSIp:Sifre", app.Services.GetRequiredService<IOptions<ISSIpOptions>>().Value.Sifre },
+    { "ISSIp:BasicAuthUsername", app.Services.GetRequiredService<IOptions<ISSIpOptions>>().Value.BasicAuthUsername },
+    { "ISSIp:BasicAuthPassword", app.Services.GetRequiredService<IOptions<ISSIpOptions>>().Value.BasicAuthPassword },
+    { "SeedData:AdminPassword", app.Services.GetRequiredService<IOptions<SeedDataOptions>>().Value.AdminPassword },
     { "Smtp:Host", app.Services.GetRequiredService<IOptions<SmtpOptions>>().Value.Host },
     { "Smtp:UserName", app.Services.GetRequiredService<IOptions<SmtpOptions>>().Value.UserName },
     { "Smtp:Password", app.Services.GetRequiredService<IOptions<SmtpOptions>>().Value.Password },
     { "Smtp:FromAddress", app.Services.GetRequiredService<IOptions<SmtpOptions>>().Value.FromAddress },
     { "Netsis:BaseUrl",      app.Services.GetRequiredService<IOptions<NetsisOptions>>().Value.BaseUrl },
     { "Netsis:KullaniciAdi", app.Services.GetRequiredService<IOptions<NetsisOptions>>().Value.KullaniciAdi },
+    { "Netsis:Sifre",        app.Services.GetRequiredService<IOptions<NetsisOptions>>().Value.Sifre },
     { "Netsis:FirmaKodu",    app.Services.GetRequiredService<IOptions<NetsisOptions>>().Value.FirmaKodu },
     { "Netsis:SubeKodu",     app.Services.GetRequiredService<IOptions<NetsisOptions>>().Value.SubeKodu },
 };
@@ -336,8 +340,7 @@ using (var scope = app.Services.CreateScope())
     context.Database.Migrate();
 
     var seedOpt = services.GetRequiredService<IOptions<SeedDataOptions>>().Value;
-    var adminPassword = string.IsNullOrWhiteSpace(seedOpt.AdminPassword) ? "Admin123!" : seedOpt.AdminPassword;
-    await Akyildiz.Sevkiyat.Infrastructure.Persistence.Seeding.UserSeeder.SeedAsync(context, hasher, adminPassword);
+    await Akyildiz.Sevkiyat.Infrastructure.Persistence.Seeding.UserSeeder.SeedAsync(context, hasher, seedOpt.AdminPassword);
     await Akyildiz.Sevkiyat.Infrastructure.Persistence.Seeding.ShipmentSeeder.SeedAsync(context);
 }
 

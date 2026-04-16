@@ -220,9 +220,75 @@ namespace Akyildiz.Sevkiyat.Application.External.Netsis.Dtos
         [JsonPropertyName("SIPARIS_NO")]
         public string? SiparisNo { get; set; }
 
-        // Computed — TarihStr'den parse edilir
-        public DateOnly IrsaliyeTarihi =>
-            DateOnly.TryParse(TarihStr, out var d) ? d : DateOnly.MinValue;
+        // Computed — TarihStr'den parse edilir; parse edilemezse null.
+        public DateOnly? IrsaliyeTarihi =>
+            DateOnly.TryParse(TarihStr, out var d) ? d : null;
+    }
+
+    // ── Sipariş GET ───────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// GET /api/v2/ItemSlips/ftSSip;{FATIRS_NO}; yanıtından ihtiyaç duyulan alanlar.
+    /// EKACK1 = bizim sistemimizin Shipment.Id'si (aktarımda set edilir).
+    /// Hem flat hem de FatUst-nested formatı desteklenir.
+    /// </summary>
+    public sealed class NetsisSiparisGetDto
+    {
+        [JsonPropertyName("FATIRS_NO")]
+        public string? FatIrsNo { get; set; }
+
+        /// <summary>Flat yanıtta EKACK1 doğrudan root'ta olabilir.</summary>
+        [JsonPropertyName("EKACK1")]
+        public string? Ekack1 { get; set; }
+
+        /// <summary>Nested yanıtta FatUst objesi içinde olabilir.</summary>
+        [JsonPropertyName("FatUst")]
+        public NetsisSiparisGetFatUstDto? FatUst { get; set; }
+
+        /// <summary>Her iki formattan EKACK1'i döndürür.</summary>
+        public string? GetEkack1() => Ekack1 ?? FatUst?.Ekack1;
+    }
+
+    public sealed class NetsisSiparisGetFatUstDto
+    {
+        [JsonPropertyName("EKACK1")]
+        public string? Ekack1 { get; set; }
+    }
+
+    // ── İrsaliye GET ──────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// GET /api/v2/ItemSlips/ftSIrs;{FATIRS_NO}; tam yanıt wrapper'ı.
+    /// Gerçek irsaliye verisi Data.FatUst altındadır.
+    /// </summary>
+    public sealed class NetsisIrsaliyeGetResponse
+    {
+        [JsonPropertyName("IsSuccessful")]
+        public bool IsSuccessful { get; set; }
+
+        [JsonPropertyName("ErrorCode")]
+        public string? ErrorCode { get; set; }
+
+        [JsonPropertyName("ErrorDesc")]
+        public string? ErrorDesc { get; set; }
+
+        [JsonPropertyName("Data")]
+        public NetsisIrsaliyeGetData? Data { get; set; }
+    }
+
+    public sealed class NetsisIrsaliyeGetData
+    {
+        [JsonPropertyName("FatUst")]
+        public NetsisIrsaliyeGetFatUst? FatUst { get; set; }
+    }
+
+    public sealed class NetsisIrsaliyeGetFatUst
+    {
+        [JsonPropertyName("FATIRS_NO")]
+        public string? FatIrsNo { get; set; }
+
+        [JsonPropertyName("Tarih")]
+        public string? Tarih { get; set; }
     }
 
     // ── Stok Bakiye ───────────────────────────────────────────────────────────

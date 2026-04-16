@@ -9,8 +9,8 @@
         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bitiş</label>
         <input v-model="filter.endDate" type="date" class="border dark:border-gray-700 p-2 rounded dark:bg-gray-800 dark:text-gray-100" />
       </div>
-      <button @click="loadPerformance" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Filtrele</button>
-      <button v-if="perfData" @click="exportPerformance" class="ml-auto flex items-center gap-1.5 px-4 py-2 text-sm border border-green-600 text-green-700 dark:text-green-400 dark:border-green-600 rounded hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors">
+      <button @click="loadPerformance" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 mt-auto">Filtrele</button>
+      <button v-if="perfData" @click="exportPerformance" class="md:ml-auto w-full md:w-auto justify-center flex items-center gap-1.5 px-4 py-2 text-sm border border-green-600 text-green-700 dark:text-green-400 dark:border-green-600 rounded hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors">
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
         Excel İndir
       </button>
@@ -72,9 +72,9 @@
 
       <!-- Detail rows -->
       <div class="bg-white dark:bg-gray-900 shadow rounded overflow-hidden">
-        <div class="px-4 py-3 border-b dark:border-gray-700 flex items-center justify-between">
+        <div class="px-4 py-3 border-b dark:border-gray-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <h3 class="font-medium text-gray-900 dark:text-gray-100">Teslim Detayları ({{ perfData.rows.length }})</h3>
-          <label class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 cursor-pointer">
+          <label class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 cursor-pointer mt-2 sm:mt-0">
             <input v-model="perfLateOnly" type="checkbox" class="rounded" />
             Sadece gecikmişler
           </label>

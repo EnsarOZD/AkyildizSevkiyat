@@ -66,9 +66,9 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportClothingShipmentTo
                     $"Aşağıdaki ürünlerin Netsis Stok Kodu tanımlanmamış: {string.Join(", ", missingNetsisCode)}");
 
             var belgeNo = PickBelgeNo(
+                shipment.IssOrder?.ExternalOrderNumber,
                 shipment.TalepNo,
-                shipment.IssOrder?.TalepNo,
-                shipment.IssOrder?.ExternalOrderNumber);
+                shipment.IssOrder?.TalepNo);
 
             // Kıyafet operasyonunda ISS orijinal miktarı kullanılır
             var lines = shipment.Lines
@@ -125,33 +125,14 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportClothingShipmentTo
                 Description     = $"Kıyafet — Netsis'e aktarıldı ve teslim edildi. Belge No: {shipment.IssOrder?.NetsisOrderNumber}",
             });
 
-            // İrsaliye otomatik çekme (sessiz, non-blocking)
-            string? irsaliyeNo = null;
-            try
-            {
-                var netsisOrderNo = shipment.IssOrder?.NetsisOrderNumber;
-                var cariKod       = shipment.Project.NetsisCariKodu;
-                if (!string.IsNullOrWhiteSpace(netsisOrderNo) && !string.IsNullOrWhiteSpace(cariKod))
-                {
-                    var irsaliyeler = await _netsisClient.GetIrsaliyelerAsync(
-                        new NetsisIrsaliyeQuery { SiparisNo = netsisOrderNo, CariKod = cariKod },
-                        cancellationToken);
-
-                    if (irsaliyeler?.Any() == true)
-                    {
-                        var ilk = irsaliyeler.First();
-                        shipment.SetIrsaliyeInfo(ilk.IrsaliyeNo, ilk.IrsaliyeTarihi);
-                        irsaliyeNo = ilk.IrsaliyeNo;
-                    }
-                }
-            }
-            catch { /* irsaliye çekimi başarısız — sessizce devam */ }
+            // Not: İrsaliye otomatik çekme kaldırıldı — sipariş Netsis'e iletildiği anda
+            // irsaliye henüz kesilmemiştir. İrsaliye çekimi "İrsaliye Yenile" butonu ile yapılmalıdır.
 
             await _context.SaveChangesAsync(cancellationToken);
 
             return new ExportClothingShipmentToNetsisResult(
                 shipment.IssOrder?.NetsisOrderNumber ?? string.Empty,
-                irsaliyeNo,
+                null,
                 new List<string>());
         }
 
