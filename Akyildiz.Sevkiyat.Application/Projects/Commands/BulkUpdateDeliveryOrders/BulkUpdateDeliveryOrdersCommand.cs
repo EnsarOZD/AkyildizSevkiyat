@@ -9,7 +9,7 @@ namespace Akyildiz.Sevkiyat.Application.Projects.Commands.BulkUpdateDeliveryOrde
 
     public record BulkUpdateDeliveryOrdersCommand(List<ProjectOrderItem> Orders) : IRequest, IRequireRoles
     {
-        public IReadOnlyList<string> AllowedRoles => new[] { "Admin", "Manager", "Dispatcher" };
+        public IReadOnlyList<string> AllowedRoles => new[] { "Admin", "Manager", "Driver" };
     }
 
     public class BulkUpdateDeliveryOrdersCommandHandler : IRequestHandler<BulkUpdateDeliveryOrdersCommand>

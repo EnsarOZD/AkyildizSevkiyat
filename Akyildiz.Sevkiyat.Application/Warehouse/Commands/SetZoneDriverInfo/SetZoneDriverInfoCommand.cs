@@ -33,7 +33,7 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.SetZoneDriverInfo
         public TimeOnly? DepartureTime { get; init; }
 
         public IReadOnlyList<string> AllowedRoles =>
-            new[] { "Admin", "Manager", "Dispatcher", "Warehouse" };
+            new[] { "Admin", "Manager", "Driver", "Warehouse" };
     }
 
     // ── Validator ─────────────────────────────────────────────────────────────

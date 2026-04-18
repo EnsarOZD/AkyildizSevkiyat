@@ -17,28 +17,29 @@
     </button>
 
     <!-- Page heading -->
-    <div class="mb-5 break-all">
-      <div class="flex items-start justify-between gap-2 flex-wrap">
-        <div>
+    <div class="mb-5">
+      <div class="flex items-start justify-between gap-4">
+        <div class="min-w-0">
           <div class="flex items-center gap-2 flex-wrap">
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Sevkiyat #{{ shipment.id }}</h1>
+            <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">Sevkiyat #{{ shipment.id }}</h1>
             <span
               v-if="shipment.operationTypeValue === 1"
-              class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 border border-purple-200 dark:border-purple-700"
+              class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 border border-purple-200 dark:border-purple-700 uppercase"
             >Kıyafet</span>
           </div>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5 break-all">{{ shipment.projectName }}</p>
+          <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 break-words font-medium">{{ shipment.projectName }}</p>
         </div>
         <router-link
           :to="{ name: 'ShipmentOrderPrint', params: { id: shipment.id } }"
           target="_blank"
-          class="flex-shrink-0 flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          class="flex-shrink-0 flex items-center gap-1.5 text-[11px] font-bold px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all shadow-sm active:scale-95"
         >
-          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
           </svg>
-          Sipariş Formu
+          <span class="hidden sm:inline">Sipariş Formu</span>
+          <span class="sm:hidden">Yazdır</span>
         </router-link>
       </div>
     </div>
@@ -141,6 +142,7 @@
         @openDelivery="openDeliveryModal"
         @openVehicleReturn="openVehicleReturnModal"
         @openRevert="openRevertModal"
+        @openAdminReset="openAdminResetModal"
       />
     </div>
 
@@ -489,6 +491,25 @@
       </template>
     </BaseModal>
 
+    <!-- Admin Reset Modal -->
+    <BaseModal :show="showAdminResetModal" title="Sıfırla & Siparişi Serbest Bırak" maxWidth="sm" @close="showAdminResetModal = false">
+      <div class="space-y-3">
+        <p class="text-sm text-gray-600 dark:text-gray-400 bg-red-50 border border-red-100 rounded p-3">
+          Bu sevkiyat <strong>Created</strong> durumuna sıfırlanacak. Netsis transfer verisi, araç/şoför bilgisi ve iade verileri temizlenir. ISS siparişi yeniden aktarılabilir hale gelir.
+        </p>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Neden <span class="text-red-500">*</span></label>
+          <textarea v-model="adminResetReason" rows="3" placeholder="Sıfırlama nedeni..."
+            class="w-full border dark:border-gray-700 p-2 rounded resize-none text-sm focus:ring-2 focus:ring-red-400 dark:bg-gray-800 dark:text-gray-100" />
+        </div>
+      </div>
+      <template #footer>
+        <button @click="showAdminResetModal = false" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">İptal</button>
+        <button @click="confirmAdminReset" :disabled="!adminResetReason.trim()"
+          class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-bold disabled:opacity-50">Sıfırla</button>
+      </template>
+    </BaseModal>
+
     <!-- Revert to Draft Modal -->
     <BaseModal :show="showRevertModal" title="Taslağa Geri Çek" maxWidth="sm" @close="showRevertModal = false">
       <div class="space-y-3">
@@ -619,6 +640,10 @@ const availableZones = ref<any[]>([]);
 const showRevertModal = ref(false);
 const revertReasonText = ref('');
 
+// Admin reset modal
+const showAdminResetModal = ref(false);
+const adminResetReason = ref('');
+
 // Delivery modal
 const showDeliveryModal = ref(false);
 const deliveryForm = ref({ deliveryRecipient: '', deliveryNote: '', photoBase64: '', photoPreview: '', photoCompressing: false });
@@ -737,6 +762,19 @@ const markReady = async () => {
 };
 
 const openRevertModal = () => { revertReasonText.value = ''; showRevertModal.value = true; };
+
+const openAdminResetModal = () => { adminResetReason.value = ''; showAdminResetModal.value = true; };
+const confirmAdminReset = async () => {
+  if (!shipment.value || !adminResetReason.value.trim()) return;
+  showAdminResetModal.value = false;
+  try {
+    await shipmentService.adminReset(shipment.value.id, adminResetReason.value.trim());
+    await fetchShipmentDetail();
+    notificationStore.add('Sevkiyat sıfırlandı ve sipariş serbest bırakıldı.', 'success');
+  } catch (error) {
+    notificationStore.add(ApiErrorUtils.getErrorMessage(error) || 'İşlem başarısız.', 'error');
+  }
+};;
 const confirmRevert = async () => {
   if (!shipment.value) return;
   showRevertModal.value = false;

@@ -8,12 +8,13 @@
     </div>
 
     <!-- Header -->
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-xl font-bold text-gray-900 dark:text-gray-100">Teslimat Sırası</h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Bölge seçerek projeleri sürükle-bırak ile sıralayın</p>
-      </div>
-    </div>
+    <PageHeader title="Teslimat Sırası" subtitle="Bölge seçerek projeleri sürükle-bırak ile sıralayın" color="indigo">
+      <template #icon>
+        <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+        </svg>
+      </template>
+    </PageHeader>
 
     <!-- Zone selector tabs -->
     <div class="flex flex-wrap gap-2">
@@ -138,6 +139,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import PageHeader from '../components/PageHeader.vue';
 import { MapIcon, MapPinIcon, Bars3Icon, CheckIcon } from '@heroicons/vue/24/outline';
 import projectService, { type Zone } from '../services/projectService';
 import { ApiErrorUtils } from '../utils/apiError';
@@ -294,10 +296,10 @@ async function loadData() {
   try {
     const [zoneList, projectList] = await Promise.all([
       projectService.getZones(),
-      projectService.getProjects(),
+      projectService.getProjects({ pageSize: 9999 }),
     ]);
     zones.value = zoneList.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    allProjects.value = projectList.map((p: any) => ({
+    allProjects.value = projectList.items.map((p: any) => ({
       id: p.id,
       code: p.code,
       name: p.name,

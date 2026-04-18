@@ -105,7 +105,20 @@
       "Bash(find D:\\\\vue\\\\AkyildizSevkiyat:*)",
       "Bash(npx vite:*)",
       "Bash(wc:*)",
-      "Bash(xargs -I{} basename {})"
+      "Bash(xargs -I{} basename {})",
+      "Bash(sed -i 's/new\\\\[\\\\] { \"Admin\", \"Manager\", \"Warehouse\" };/new[] { \"Admin\", \"Manager\", \"Accounting\", \"Warehouse\" };/g' Akyildiz.Sevkiyat.Application/Shipments/Commands/AssignToWarehouse/AssignToWarehouseCommand.cs)",
+      "Bash(sed -i 's/new\\\\[\\\\] { \"Admin\", \"Manager\", \"Warehouse\", \"Dispatcher\" };/new[] { \"Admin\", \"Manager\", \"Accounting\", \"Warehouse\", \"Dispatcher\" };/g' Akyildiz.Sevkiyat.Application/Shipments/Commands/StartPicking/StartPickingCommand.cs)",
+      "Bash(sed -i 's/new\\\\[\\\\] { \"Admin\", \"Manager\", \"Warehouse\", \"Dispatcher\" };/new[] { \"Admin\", \"Manager\", \"Accounting\", \"Warehouse\", \"Dispatcher\" };/g' Akyildiz.Sevkiyat.Application/Shipments/Commands/MarkReady/MarkReadyCommand.cs)",
+      "Bash(sed -i 's/new\\\\[\\\\] { \"Admin\", \"Manager\", \"Dispatcher\" };/new[] { \"Admin\", \"Manager\", \"Accounting\", \"Dispatcher\" };/g' Akyildiz.Sevkiyat.Application/Shipments/Commands/UpdateIrsaliyeNo/UpdateIrsaliyeNoCommand.cs)",
+      "Bash(sed -i 's/new\\\\[\\\\] { \"Admin\", \"Manager\", \"Dispatcher\", \"Warehouse\" };/new[] { \"Admin\", \"Manager\", \"Accounting\", \"Dispatcher\", \"Warehouse\" };/g' Akyildiz.Sevkiyat.Application/Shipments/Commands/AssignVehicle/AssignVehicleCommand.cs)",
+      "Bash(sed -i 's/new\\\\[\\\\] { \"Admin\", \"Manager\", \"Warehouse\" };/new[] { \"Admin\", \"Manager\", \"Accounting\", \"Warehouse\" };/g' Akyildiz.Sevkiyat.Application/GoodsReceipts/Commands/CreateGoodsReceipt/CreateGoodsReceiptCommand.cs Akyildiz.Sevkiyat.Application/GoodsReceipts/Commands/PostGoodsReceipt/PostGoodsReceiptCommand.cs)",
+      "Bash(sed -i 's/new\\\\[\\\\] { \"Admin\", \"Manager\" };/new[] { \"Admin\", \"Manager\", \"Accounting\" };/g' Akyildiz.Sevkiyat.Application/GoodsReceipts/Commands/CancelGoodsReceipt/CancelGoodsReceiptCommand.cs Akyildiz.Sevkiyat.Application/GoodsReceipts/Commands/CreateCorrectionGoodsReceipt/CreateCorrectionGoodsReceiptCommand.cs)",
+      "Bash(sed -i 's/new\\\\[\\\\] { \"Admin\", \"Manager\" };/new[] { \"Admin\", \"Manager\", \"Accounting\" };/g' Akyildiz.Sevkiyat.Application/PurchaseOrders/Commands/ApprovePurchaseOrder/ApprovePurchaseOrderCommand.cs Akyildiz.Sevkiyat.Application/PurchaseOrders/Commands/ClosePurchaseOrder/ClosePurchaseOrderCommand.cs Akyildiz.Sevkiyat.Application/PurchaseOrders/Commands/CancelPurchaseOrder/CancelPurchaseOrderCommand.cs)",
+      "Bash(sed -i 's/new\\\\[\\\\] { \"Admin\", \"Manager\" };/new[] { \"Admin\", \"Manager\", \"Accounting\" };/g' Akyildiz.Sevkiyat.Application/Stocks/Commands/DeleteStock/DeleteStockCommand.cs)",
+      "Bash(sed -i 's/new\\\\[\\\\] { \"Admin\", \"Manager\" };/new[] { \"Admin\", \"Manager\", \"Accounting\" };/g' Akyildiz.Sevkiyat.Application/Transport/Vehicles/Commands/CreateVehicle/CreateVehicleCommand.cs Akyildiz.Sevkiyat.Application/Transport/Vehicles/Commands/UpdateVehicle/UpdateVehicleCommand.cs Akyildiz.Sevkiyat.Application/Transport/Drivers/Commands/UpdateDriver/UpdateDriverCommand.cs)",
+      "Bash(sed -i 's/new\\\\[\\\\] { \"Admin\", \"Manager\" };/new[] { \"Admin\", \"Manager\", \"Accounting\" };/g' Akyildiz.Sevkiyat.Application/Transport/Drivers/Commands/CreateDriver/CreateDriverCommand.cs)",
+      "Bash(grep -rn 'IRequireRoles\\\\|AllowedRoles' Akyildiz.Sevkiyat.Application/Zones/)",
+      "Bash(find \"D:/vue/AkyildizSevkiyat/Akyildiz.Sevkiyat.Domain\" -name \"Zone.cs\" -exec cat {} \\\\;)"
     ]
   }
 }

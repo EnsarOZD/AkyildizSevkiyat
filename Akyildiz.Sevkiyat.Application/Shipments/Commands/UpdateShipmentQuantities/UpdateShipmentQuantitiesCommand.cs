@@ -12,7 +12,7 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.UpdateShipmentQuantit
     public record UpdateShipmentQuantitiesCommand(int ShipmentId, List<ShipmentLineUpdateDto> Lines) : IRequest<Unit>, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles =>
-            new[] { "Admin", "Manager", "Warehouse" };
+            new[] { "Admin", "Manager", "Accounting", "Warehouse" };
     }
 
     public class UpdateShipmentQuantitiesCommandHandler : IRequestHandler<UpdateShipmentQuantitiesCommand, Unit>

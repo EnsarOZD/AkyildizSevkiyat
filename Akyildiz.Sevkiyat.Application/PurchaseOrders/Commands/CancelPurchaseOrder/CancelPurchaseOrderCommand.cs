@@ -8,7 +8,7 @@ namespace Akyildiz.Sevkiyat.Application.PurchaseOrders.Commands.CancelPurchaseOr
         public Guid Id { get; set; }
 
         public IReadOnlyList<string> AllowedRoles =>
-            new[] { "Admin", "Manager" };
+            new[] { "Admin", "Manager", "Accounting" };
     }
 
     public class CancelPurchaseOrderCommandHandler : IRequestHandler<CancelPurchaseOrderCommand, Unit>

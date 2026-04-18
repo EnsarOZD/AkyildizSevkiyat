@@ -38,7 +38,7 @@ namespace Akyildiz.Sevkiyat.Application.Orders.Queries.GetImportedOrders
     public class GetImportedOrdersQuery : IRequest<PaginatedList<ImportedOrderDto>>, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles =>
-            new[] { "Admin", "Manager", "Dispatcher", "Accounting" };
+            new[] { "Admin", "Manager", "Driver", "Accounting" };
 
         public string Tab { get; set; } = "Ready";
         public string? Search { get; set; }

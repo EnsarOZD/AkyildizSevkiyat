@@ -11,7 +11,7 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.FetchZoneIrsaliye
     public record FetchZoneIrsaliyeCommand(int ZonePreparationId) : IRequest<FetchZoneIrsaliyeResult>, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles =>
-            new[] { "Admin", "Manager", "Warehouse", "Dispatcher" };
+            new[] { "Admin", "Manager", "Warehouse", "Driver" };
     }
 
     public record FetchZoneIrsaliyeResult(int Fetched, int Skipped, List<string> Errors, List<string> Warnings);

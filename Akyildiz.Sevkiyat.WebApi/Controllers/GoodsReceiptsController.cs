@@ -26,7 +26,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             _mediator = mediator;
         }
 
-        [Authorize(Roles = "Admin,Warehouse,Manager")]
+        [Authorize(Roles = "Admin,Warehouse,Manager,Accounting")]
         [HttpGet]
         public async Task<IActionResult> Get([FromQuery] GetGoodsReceiptsQuery query)
         {
@@ -34,7 +34,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             return Ok(result);
         }
 
-        [Authorize(Roles = "Admin,Warehouse,Manager")]
+        [Authorize(Roles = "Admin,Warehouse,Manager,Accounting")]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetDetail(Guid id)
         {
@@ -42,7 +42,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             return Ok(result);
         }
 
-        [Authorize(Roles = "Admin,Warehouse,Manager")]
+        [Authorize(Roles = "Admin,Warehouse,Manager,Accounting")]
         [HttpPost]
         public async Task<IActionResult> Create(CreateGoodsReceiptCommand command)
         {
@@ -50,7 +50,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             return Ok(response);
         }
 
-        [Authorize(Roles = "Admin,Warehouse,Manager")]
+        [Authorize(Roles = "Admin,Warehouse,Manager,Accounting")]
         [HttpPost("{id}/lines")]
         public async Task<IActionResult> AddLine(Guid id, AddGoodsReceiptLineCommand command)
         {
@@ -60,7 +60,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             return Ok(lineId);
         }
 
-        [Authorize(Roles = "Admin,Warehouse,Manager")]
+        [Authorize(Roles = "Admin,Warehouse,Manager,Accounting")]
         [HttpPut("{id}/lines/{lineId}")]
         public async Task<IActionResult> UpdateLine(Guid id, Guid lineId, UpdateGoodsReceiptLineCommand command)
         {
@@ -70,7 +70,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Admin,Warehouse,Manager")]
+        [Authorize(Roles = "Admin,Warehouse,Manager,Accounting")]
         [HttpPost("{id}/post")]
         public async Task<IActionResult> Post(Guid id)
         {
@@ -78,7 +78,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Admin,Warehouse,Manager")]
+        [Authorize(Roles = "Admin,Warehouse,Manager,Accounting")]
         [HttpDelete("{id}/lines/{lineId}")]
         public async Task<IActionResult> RemoveLine(Guid id, Guid lineId)
         {
@@ -86,7 +86,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Admin,Manager,Accounting")]
         [HttpPost("{id}/cancel")]
         public async Task<IActionResult> Cancel(Guid id)
         {
@@ -94,7 +94,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Admin,Manager,Accounting")]
         [HttpPost("{id}/corrections")]
         public async Task<IActionResult> CreateCorrection(Guid id, CreateCorrectionGoodsReceiptCommand command)
         {

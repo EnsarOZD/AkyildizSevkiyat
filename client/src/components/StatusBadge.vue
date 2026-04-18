@@ -24,42 +24,42 @@ type StockCountStatus = 'Draft' | 'Completed';
 interface StatusConfig { label: string; classes: string; }
 
 const SHIPMENT_MAP: Record<ShipmentStatus, StatusConfig> = {
-  Created:             { label: 'Taslak',         classes: 'bg-gray-100 text-gray-700' },
-  AssignedToWarehouse: { label: 'Depoda',          classes: 'bg-yellow-100 text-yellow-800' },
-  Picking:             { label: 'Toplanıyor',      classes: 'bg-blue-100 text-blue-800' },
-  ReadyForDispatch:    { label: 'Sevke Hazır',     classes: 'bg-purple-100 text-purple-800' },
-  AssignedToVehicle:   { label: 'Yolda',           classes: 'bg-indigo-100 text-indigo-800' },
-  Delivered:           { label: 'Teslim Edildi',   classes: 'bg-green-100 text-green-800' },
-  ReturnedToWarehouse: { label: 'İade',            classes: 'bg-orange-100 text-orange-800' },
-  Cancelled:           { label: 'İptal',           classes: 'bg-red-100 text-red-700' },
-  Passive:             { label: 'Pasif',           classes: 'bg-gray-200 text-gray-500' },
+  Created:             { label: 'Taslak',         classes: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-400' },
+  AssignedToWarehouse: { label: 'Depoda',          classes: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400' },
+  Picking:             { label: 'Toplanıyor',      classes: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400' },
+  ReadyForDispatch:    { label: 'Sevke Hazır',     classes: 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 transition-all' },
+  AssignedToVehicle:   { label: 'Yolda',           classes: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-400' },
+  Delivered:           { label: 'Teslim Edildi',   classes: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' },
+  ReturnedToWarehouse: { label: 'İade',            classes: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400' },
+  Cancelled:           { label: 'İptal',           classes: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' },
+  Passive:             { label: 'Pasif',           classes: 'bg-gray-200 dark:bg-gray-800 text-gray-500 dark:text-gray-500' },
 };
 
 const PURCHASE_ORDER_MAP: Record<PurchaseOrderStatus, StatusConfig> = {
-  Draft:             { label: 'Taslak',           classes: 'bg-gray-100 text-gray-700' },
-  Approved:          { label: 'Onaylandı',        classes: 'bg-blue-100 text-blue-800' },
-  PartiallyReceived: { label: 'Kısmen Alındı',    classes: 'bg-yellow-100 text-yellow-800' },
-  FullyReceived:     { label: 'Tam Alındı',       classes: 'bg-green-100 text-green-800' },
-  Closed:            { label: 'Kapatıldı',        classes: 'bg-gray-200 text-gray-600' },
-  Cancelled:         { label: 'İptal',            classes: 'bg-red-100 text-red-700' },
+  Draft:             { label: 'Taslak',           classes: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-400' },
+  Approved:          { label: 'Onaylandı',        classes: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400' },
+  PartiallyReceived: { label: 'Kısmen Alındı',    classes: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400' },
+  FullyReceived:     { label: 'Tam Alındı',       classes: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' },
+  Closed:            { label: 'Kapatıldı',        classes: 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-500' },
+  Cancelled:         { label: 'İptal',            classes: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' },
 };
 
 const GOODS_RECEIPT_MAP: Record<GoodsReceiptStatus, StatusConfig> = {
-  Draft:     { label: 'Taslak',   classes: 'bg-gray-100 text-gray-700' },
-  Posted:    { label: 'Onaylandı',classes: 'bg-green-100 text-green-800' },
-  Cancelled: { label: 'İptal',    classes: 'bg-red-100 text-red-700' },
+  Draft:     { label: 'Taslak',   classes: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-400' },
+  Posted:    { label: 'Onaylandı',classes: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' },
+  Cancelled: { label: 'İptal',    classes: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' },
 };
 
 const FLOATING_RETURN_MAP: Record<FloatingReturnStatus, StatusConfig> = {
-  Pending:           { label: 'Beklemede',        classes: 'bg-orange-100 text-orange-800' },
-  MatchedToShipment: { label: 'Eşleştirildi',    classes: 'bg-blue-100 text-blue-800' },
-  AddedToStock:      { label: 'Stoğa Eklendi',   classes: 'bg-green-100 text-green-800' },
-  WrittenOff:        { label: 'Hariç Tutuldu',   classes: 'bg-gray-200 text-gray-600' },
+  Pending:           { label: 'Beklemede',        classes: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400' },
+  MatchedToShipment: { label: 'Eşleştirildi',    classes: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400' },
+  AddedToStock:      { label: 'Stoğa Eklendi',   classes: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' },
+  WrittenOff:        { label: 'Hariç Tutuldu',   classes: 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-500' },
 };
 
 const STOCK_COUNT_MAP: Record<StockCountStatus, StatusConfig> = {
-  Draft:     { label: 'Devam Ediyor', classes: 'bg-yellow-100 text-yellow-800' },
-  Completed: { label: 'Tamamlandı',   classes: 'bg-green-100 text-green-800' },
+  Draft:     { label: 'Devam Ediyor', classes: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400' },
+  Completed: { label: 'Tamamlandı',   classes: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' },
 };
 
 const props = withDefaults(defineProps<{

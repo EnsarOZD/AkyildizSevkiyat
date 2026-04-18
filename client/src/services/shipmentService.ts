@@ -194,6 +194,10 @@ const shipmentService = {
     await apiClient.post(`/shipments/${id}/revert-to-draft`, request);
   },
 
+  async adminReset(id: number, reason: string): Promise<void> {
+    await apiClient.post(`/shipments/${id}/admin-reset`, { reason });
+  },
+
   async assignVehicle(id: number, request: VehicleAssignmentRequest): Promise<AssignVehicleResult> {
     const response = await apiClient.post(`/shipments/${id}/assign-vehicle`, request);
     return response.data;
@@ -310,7 +314,7 @@ const shipmentService = {
     return response.data;
   },
 
-  async checkNetsisTransfers(): Promise<{ checked: number; markedAsTransferred: number; error?: string }> {
+  async checkNetsisTransfers(): Promise<{ checked: number; markedAsTransferred: number; resetToActive: number; error?: string }> {
     const response = await apiClient.post('/issorders/check-netsis-transfers');
     return response.data;
   },

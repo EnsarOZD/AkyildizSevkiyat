@@ -38,7 +38,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Admin,Manager,Accounting")]
         public async Task<IActionResult> Create(
             [FromBody] CreateWarehouseLocationCommand command,
             CancellationToken ct = default)
@@ -48,7 +48,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         }
 
         [HttpPost("bulk")]
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Admin,Manager,Accounting")]
         public async Task<IActionResult> BulkCreate(
             [FromBody] BulkCreateWarehouseLocationsCommand command,
             CancellationToken ct = default)
@@ -58,7 +58,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         }
 
         [HttpPut("{id:int}")]
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Admin,Manager,Accounting")]
         public async Task<IActionResult> Update(
             int id,
             [FromBody] UpdateWarehouseLocationRequest request,

@@ -18,7 +18,7 @@
         <!-- Kıyafet: Netsis'e Gönder -->
         <button
           v-if="shipment.operationTypeValue === 1 && shipment.status === 'Created' && !shipment.netsisTransferredAt"
-          v-role="['Admin', 'Manager', 'Accounting', 'Dispatcher']"
+          v-role="['Admin', 'Manager', 'Accounting', 'Driver']"
           @click="$emit('exportClothing')"
           :disabled="clothingExportLoading"
           class="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition text-sm font-bold disabled:opacity-50"
@@ -39,7 +39,7 @@
         <!-- İrsaliye Yenile: aktarılmış ama irsaliye yok -->
         <button
           v-if="shipment.netsisTransferredAt && !shipment.irsaliyeNo"
-          v-role="['Admin', 'Manager', 'Accounting', 'Dispatcher']"
+          v-role="['Admin', 'Manager', 'Accounting', 'Driver']"
           @click="$emit('fetchIrsaliye')"
           :disabled="irsaliyeFetchLoading"
           class="w-full border border-indigo-400 text-indigo-600 py-2 px-4 rounded-lg hover:bg-indigo-50 transition text-sm font-medium disabled:opacity-50"
@@ -70,7 +70,7 @@
 
         <button
           v-if="shipment.status === 'Created' && !shipment.zoneId"
-          v-role="['Admin']"
+          v-role="['Admin', 'Manager', 'Accounting']"
           @click="$emit('openZone')"
           class="w-full bg-orange-500 text-white py-2 px-4 rounded-lg hover:bg-orange-600 transition text-sm font-medium"
         >⚠️ Bölge Ata (Gerekli)</button>
@@ -86,21 +86,21 @@
         <!-- Sevke Hazır — Kıyafet için gizle -->
         <button
           v-if="['Picking', 'AssignedToWarehouse'].includes(shipment.status) && shipment.operationTypeValue !== 1"
-          v-role="['Admin', 'Warehouse', 'Manager']"
+          v-role="['Admin', 'Warehouse', 'Manager', 'Accounting']"
           @click="$emit('openMarkReady')"
           class="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition text-sm font-bold"
         >Sevke Hazır İşaretle</button>
 
         <button
           v-if="['Picking', 'AssignedToWarehouse'].includes(shipment.status) && shipment.operationTypeValue !== 1"
-          v-role="['Admin', 'Warehouse']"
+          v-role="['Admin', 'Warehouse', 'Accounting']"
           @click="$emit('openQuantities')"
           class="w-full border border-blue-500 text-blue-600 py-2 px-4 rounded-lg hover:bg-blue-50 transition text-sm font-medium"
         >Miktarları Düzenle</button>
 
         <button
           v-if="shipment.status === 'ReadyForDispatch'"
-          v-role="['Admin', 'Dispatcher']"
+          v-role="['Admin', 'Driver', 'Manager', 'Accounting']"
           @click="$emit('openAssignVehicle')"
           :disabled="!shipment.zoneId"
           class="w-full text-white py-2 px-4 rounded-lg transition text-sm font-medium"
@@ -109,14 +109,14 @@
 
         <button
           v-if="shipment.status === 'AssignedToVehicle'"
-          v-role="['Admin', 'Dispatcher', 'Manager']"
+          v-role="['Admin', 'Driver', 'Manager', 'Accounting']"
           @click="$emit('openDelivery')"
           class="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition text-sm font-bold"
         >Teslim Edildi</button>
 
         <button
           v-if="['AssignedToVehicle', 'Delivered'].includes(shipment.status)"
-          v-role="['Admin', 'Dispatcher', 'Manager', 'Warehouse']"
+          v-role="['Admin', 'Driver', 'Manager', 'Accounting', 'Warehouse']"
           @click="$emit('openVehicleReturn')"
           class="w-full bg-orange-500 text-white py-2 px-4 rounded-lg hover:bg-orange-600 transition text-sm font-medium"
         >Araç İadesi Kaydet</button>
@@ -124,10 +124,18 @@
         <!-- Taslağa Geri Al -->
         <button
           v-if="['AssignedToWarehouse', 'Picking', 'ReadyForDispatch'].includes(shipment.status)"
-          v-role="['Admin', 'Manager', 'Warehouse']"
+          v-role="['Admin', 'Manager', 'Accounting', 'Warehouse']"
           @click="$emit('openRevert')"
           class="w-full border border-red-400 text-red-600 dark:text-red-400 py-2 px-4 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition text-sm font-medium"
         >Taslağa Geri Al / İptal</button>
+
+        <!-- Admin Sıfırla -->
+        <button
+          v-if="['ReturnedToWarehouse', 'Delivered', 'Cancelled'].includes(shipment.status)"
+          v-role="['Admin', 'Manager']"
+          @click="$emit('openAdminReset')"
+          class="w-full border border-red-500 text-red-600 dark:text-red-400 py-2 px-4 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition text-sm font-medium"
+        >⚙️ Sıfırla & Siparişi Serbest Bırak</button>
 
         <p
           v-if="['ReturnedToWarehouse', 'Cancelled'].includes(shipment.status)"
@@ -169,5 +177,6 @@ defineEmits<{
   openDelivery: []
   openVehicleReturn: []
   openRevert: []
+  openAdminReset: []
 }>()
 </script>

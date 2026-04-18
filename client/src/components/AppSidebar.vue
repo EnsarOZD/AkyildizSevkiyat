@@ -22,7 +22,8 @@
       <div v-for="(group, gIdx) in filteredNav" :key="gIdx" class="mb-5 last:mb-0">
 
         <!-- Group Title -->
-        <div v-if="group.title" class="px-3 mb-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+        <div v-if="group.title" class="px-3 mb-1.5 text-[10px] font-bold uppercase tracking-widest"
+          :class="group.title === 'Planlanan' ? 'text-gray-600' : 'text-gray-500'">
           {{ group.title }}
         </div>
 
@@ -32,8 +33,11 @@
             v-for="(item, iIdx) in group.items"
             :key="iIdx"
             :to="item.to"
-            class="group flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-150 text-gray-400 hover:text-white hover:bg-gray-800"
-            active-class="!bg-blue-600/20 !text-blue-400 border-l-2 border-blue-400"
+            class="group flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-150 hover:bg-gray-800"
+            :class="group.title === 'Planlanan'
+              ? 'text-gray-600 hover:text-gray-400 opacity-60'
+              : 'text-gray-400 hover:text-white'"
+            active-class="!bg-blue-600/20 !text-blue-400 border-l-2 border-blue-400 !opacity-100"
           >
             <component
               v-if="item.icon"
@@ -41,16 +45,7 @@
               class="w-4 h-4 flex-shrink-0 transition-colors duration-150"
             />
             <span class="text-sm font-medium truncate">{{ item.label }}</span>
-
-            <span
-              v-if="item.badge"
-              class="ml-auto px-1.5 py-0.5 text-[9px] font-bold rounded uppercase tracking-wide flex-shrink-0"
-              :class="item.badge === 'Beta'
-                ? 'bg-yellow-500/15 text-yellow-500 border border-yellow-500/30'
-                : 'bg-green-500/15 text-green-500 border border-green-500/30'"
-            >
-              {{ item.badge }}
-            </span>
+            <span v-if="group.title === 'Planlanan'" class="ml-auto text-[9px] text-gray-600 italic shrink-0">yakında</span>
           </router-link>
         </div>
       </div>

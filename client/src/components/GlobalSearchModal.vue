@@ -283,10 +283,14 @@ const statusLabelMap: Record<string, string> = {
   Delivered: 'Teslim', Cancelled: 'İptal', Passive: 'Pasif',
 };
 const statusClassMap: Record<string, string> = {
-  Created: 'bg-gray-100 text-gray-600', AssignedToWarehouse: 'bg-yellow-100 text-yellow-700',
-  Picking: 'bg-blue-100 text-blue-700', ReadyForDispatch: 'bg-purple-100 text-purple-700',
-  AssignedToVehicle: 'bg-indigo-100 text-indigo-700', Delivered: 'bg-green-100 text-green-700',
-  Cancelled: 'bg-red-100 text-red-600', Passive: 'bg-gray-100 text-gray-400',
+  Created: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400',
+  AssignedToWarehouse: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400',
+  Picking: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
+  ReadyForDispatch: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400',
+  AssignedToVehicle: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400',
+  Delivered: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
+  Cancelled: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400',
+  Passive: 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500',
 };
 const statusLabel = (s: string) => statusLabelMap[s] ?? s;
 const statusClass = (s: string) => statusClassMap[s] ?? 'bg-gray-100 text-gray-600';

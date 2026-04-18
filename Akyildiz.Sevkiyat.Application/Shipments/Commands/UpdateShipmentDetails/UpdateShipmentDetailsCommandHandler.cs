@@ -82,16 +82,16 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.UpdateShipmentDetails
                     var dbLine = shipment.Lines.FirstOrDefault(l => l.Id == lineDto.LineId.Value);
                     if (dbLine != null)
                     {
-                        dbLine.UpdateStockInfo(lineDto.StockCode, lineDto.StockName, lineDto.Unit, stockMaster?.Id, updateStockMasterId: true);
+                        dbLine.UpdateStockInfo(lineDto.StockCode ?? "", lineDto.StockName ?? "", lineDto.Unit, stockMaster?.Id, updateStockMasterId: true);
                         dbLine.UpdateOrderedQty(lineDto.OrderedQty);
                     }
                 }
                 else
                 {
                     // Insert
-                    var newLine = ShipmentLine.Create(null, null, lineDto.StockCode, lineDto.StockName, lineDto.Unit, lineDto.OrderedQty);
+                    var newLine = ShipmentLine.Create(null, null, lineDto.StockCode ?? "", lineDto.StockName ?? "", lineDto.Unit, lineDto.OrderedQty);
                     if (stockMaster != null)
-                        newLine.UpdateStockInfo(lineDto.StockCode, lineDto.StockName, lineDto.Unit, stockMaster.Id);
+                        newLine.UpdateStockInfo(lineDto.StockCode ?? "", lineDto.StockName ?? "", lineDto.Unit, stockMaster.Id);
                     _context.ShipmentLines.Add(newLine);
                 }
             }

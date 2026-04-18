@@ -14,7 +14,7 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.UpdateIrsaliyeNo
     ) : IRequest, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles =>
-            new[] { "Admin", "Manager", "Dispatcher" };
+            new[] { "Admin", "Manager", "Accounting", "Driver" };
     }
 
     public class UpdateIrsaliyeNoCommandValidator : AbstractValidator<UpdateIrsaliyeNoCommand>

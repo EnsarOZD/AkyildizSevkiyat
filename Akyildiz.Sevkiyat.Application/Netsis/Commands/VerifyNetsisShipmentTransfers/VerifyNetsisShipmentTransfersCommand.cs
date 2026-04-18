@@ -1,4 +1,5 @@
 using Akyildiz.Sevkiyat.Application.Interfaces;
+using Akyildiz.Sevkiyat.Domain.Entities;
 using Akyildiz.Sevkiyat.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -8,19 +9,22 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.VerifyNetsisShipmentTran
 {
     /// <summary>
     /// Netsis'e aktarılmış görünen ama Netsis tarafından silinmiş olabilecek
-    /// sevkiyatları kontrol eder. Silinmişse NetsisTransferredAt sıfırlanır,
-    /// böylece sevkiyat tekrar "Netsis'e Aktar" ile gönderilebilir.
+    /// sevkiyatları kontrol eder.
+    /// - Delivered durumundaki sevkiyatlarda irsaliye silinmişse otomatik stok iadesi yapılır
+    ///   ve sevkiyat ReturnedToWarehouse'a alınır.
+    /// - Diğer durumlarda NetsisTransferredAt sıfırlanır; sevkiyat tekrar "Netsis'e Aktar" ile gönderilebilir.
     /// </summary>
     public record VerifyNetsisShipmentTransfersCommand : IRequest<VerifyNetsisShipmentTransfersResult>;
 
     public class VerifyNetsisShipmentTransfersResult
     {
-        public int Checked       { get; set; }
-        public int Reset         { get; set; }   // Netsis'te hiç bulunamayan → sıfırlanan
-        public int StillOk       { get; set; }   // Netsis'te bizim aktarımımız olarak mevcut
-        public int Foreign       { get; set; }   // Netsis'te var ama başka sistem aktarmış — dokunulmadı
-        public int AutoDetected  { get; set; }   // Aktarılmamış ama Netsis'te bulundu → otomatik işaretlendi
-        public string? Error     { get; set; }
+        public int Checked          { get; set; }
+        public int Reset            { get; set; }   // Netsis'te hiç bulunamayan → sıfırlanan
+        public int AutoReturnCreated { get; set; }  // Delivered + silinmiş irsaliye → otomatik iade + stok girişi
+        public int StillOk          { get; set; }   // Netsis'te bizim aktarımımız olarak mevcut
+        public int Foreign          { get; set; }   // Netsis'te var ama başka sistem aktarmış — dokunulmadı
+        public int AutoDetected     { get; set; }   // Aktarılmamış ama Netsis'te bulundu → otomatik işaretlendi
+        public string? Error        { get; set; }
     }
 
     public class VerifyNetsisShipmentTransfersCommandHandler
@@ -44,28 +48,30 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.VerifyNetsisShipmentTran
             VerifyNetsisShipmentTransfersCommand request,
             CancellationToken cancellationToken)
         {
-            // Netsis'e aktarılmış ama henüz teslim edilmemiş sevkiyatları al.
-            // Teslim edilmişler zaten işlenmiş, tekrar aktarılmaları anlamsız.
-            var exportableStatuses = new[]
+            // Netsis'e aktarılmış tüm aktif sevkiyatları kontrol et (Delivered dahil)
+            var verifyStatuses = new[]
             {
                 ShipmentStatus.ReadyForDispatch,
                 ShipmentStatus.AssignedToVehicle,
+                ShipmentStatus.Dispatched,
+                ShipmentStatus.Delivered,
             };
 
-            var shipments = await _context.Shipments
+            var shipmentSummaries = await _context.Shipments
                 .Include(s => s.IssOrder)
                 .Where(s => s.NetsisTransferredAt.HasValue
-                         && exportableStatuses.Contains(s.Status)
+                         && verifyStatuses.Contains(s.Status)
                          && s.IssOrder != null
                          && s.IssOrder.NetsisOrderNumber != null)
                 .Select(s => new
                 {
-                    s.Id,                                              // EKACK1 kontrolü için
+                    s.Id,
+                    s.Status,
                     NetsisOrderNumber = s.IssOrder!.NetsisOrderNumber!,
                 })
                 .ToListAsync(cancellationToken);
 
-            if (!shipments.Any())
+            if (!shipmentSummaries.Any())
             {
                 var emptyResult = new VerifyNetsisShipmentTransfersResult();
                 emptyResult.AutoDetected = await DetectAlreadyInNetsisAsync(cancellationToken);
@@ -73,10 +79,10 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.VerifyNetsisShipmentTran
             }
 
             _logger.LogInformation(
-                "VerifyNetsisTransfers: {Count} aktarılmış sevkiyat kontrol ediliyor.", shipments.Count);
+                "VerifyNetsisTransfers: {Count} aktarılmış sevkiyat kontrol ediliyor.", shipmentSummaries.Count);
 
             var (missing, foreign, netsisError) = await _netsis.CheckShipmentOrdersMissingAsync(
-                shipments.Select(s => (s.NetsisOrderNumber, s.Id.ToString())),
+                shipmentSummaries.Select(s => (s.NetsisOrderNumber, s.Id.ToString())),
                 cancellationToken);
 
             if (netsisError != null)
@@ -84,7 +90,7 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.VerifyNetsisShipmentTran
 
             var result = new VerifyNetsisShipmentTransfersResult
             {
-                Checked = shipments.Count,
+                Checked = shipmentSummaries.Count,
                 Foreign = foreign.Count,
                 Error   = netsisError,
             };
@@ -97,50 +103,129 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.VerifyNetsisShipmentTran
 
             if (missing.Any())
             {
-                // Silinmiş olanları bul ve sıfırla
-                var missingIds = shipments
+                var missingIds = shipmentSummaries
                     .Where(s => missing.Contains(s.NetsisOrderNumber))
                     .Select(s => s.Id)
                     .ToHashSet();
 
-                var toReset = await _context.Shipments
-                    .Include(s => s.IssOrder)
-                    .Where(s => missingIds.Contains(s.Id))
-                    .ToListAsync(cancellationToken);
+                var deliveredMissingIds = shipmentSummaries
+                    .Where(s => missing.Contains(s.NetsisOrderNumber) && s.Status == ShipmentStatus.Delivered)
+                    .Select(s => s.Id)
+                    .ToHashSet();
 
-                foreach (var shipment in toReset)
+                var nonDeliveredMissingIds = missingIds.Except(deliveredMissingIds).ToHashSet();
+
+                // ── Delivered + silinmiş irsaliye: otomatik stok iadesi ─────────────
+                if (deliveredMissingIds.Any())
                 {
-                    _logger.LogWarning(
-                        "VerifyNetsisTransfers: Sevkiyat #{Id} — Netsis'te bulunamadı, aktarım sıfırlanıyor. NetsisOrderNumber={No}",
-                        shipment.Id, shipment.IssOrder?.NetsisOrderNumber);
+                    var toAutoReturn = await _context.Shipments
+                        .Include(s => s.IssOrder)
+                        .Include(s => s.Lines)
+                        .Where(s => deliveredMissingIds.Contains(s.Id))
+                        .ToListAsync(cancellationToken);
 
-                    shipment.RevertNetsisTransfer();
+                    var stockMasterIds = toAutoReturn
+                        .SelectMany(s => s.Lines)
+                        .Where(l => l.StockMasterId.HasValue)
+                        .Select(l => l.StockMasterId!.Value)
+                        .Distinct()
+                        .ToList();
 
-                    if (shipment.IssOrder != null)
-                        shipment.IssOrder.NetsisOrderNumber = null;
+                    var stockMap = stockMasterIds.Count > 0
+                        ? (await _context.StockMasters
+                            .Where(s => stockMasterIds.Contains(s.Id))
+                            .ToListAsync(cancellationToken))
+                            .ToDictionary(s => s.Id)
+                        : new Dictionary<int, StockMaster>();
+
+                    var now = DateTime.UtcNow;
+
+                    foreach (var shipment in toAutoReturn)
+                    {
+                        _logger.LogWarning(
+                            "VerifyNetsisTransfers: Sevkiyat #{Id} (Delivered) — Netsis irsaliyesi silinmiş, otomatik iade kaydı oluşturuluyor.",
+                            shipment.Id);
+
+                        // Stok girişi: her satır için teslim edilen miktar kadar iade
+                        foreach (var line in shipment.Lines)
+                        {
+                            var returnQty = line.DeliveredQty > 0 ? line.DeliveredQty : line.OrderedQty;
+                            if (returnQty <= 0) continue;
+
+                            line.RecordReturn((line.ReturnedQty ?? 0) + returnQty,
+                                ReturnReason.Other);
+
+                            if (line.StockMasterId.HasValue
+                                && stockMap.TryGetValue(line.StockMasterId.Value, out var stock))
+                            {
+                                stock.Increase(returnQty);
+
+                                _context.StockTransactions.Add(new StockTransaction
+                                {
+                                    StockMasterId   = stock.Id,
+                                    Type            = StockTransactionType.VehicleReturn,
+                                    Qty             = returnQty,
+                                    Reference       = $"SHP-{shipment.Id}",
+                                    Date            = now,
+                                    Note            = $"Sevkiyat #{shipment.Id} — Netsis irsaliyesi silindi, otomatik stok iadesi"
+                                });
+                            }
+                        }
+
+                        shipment.RevertNetsisTransfer();
+                        shipment.RecordVehicleReturn(now, "Netsis irsaliyesi silindi — otomatik iade");
+                        shipment.ChangeStatus(ShipmentStatus.ReturnedToWarehouse, null,
+                            "Netsis irsaliyesi silindi — sistem tarafından otomatik depoya iade");
+
+                        if (shipment.IssOrder != null)
+                        {
+                            shipment.IssOrder.NetsisOrderNumber = null;
+                            shipment.IssOrder.IsTransferred = false;
+                        }
+                    }
+
+                    result.AutoReturnCreated = toAutoReturn.Count;
+                }
+
+                // ── Delivered olmayan + silinmiş irsaliye: sadece aktarım sıfırla ───
+                if (nonDeliveredMissingIds.Any())
+                {
+                    var toReset = await _context.Shipments
+                        .Include(s => s.IssOrder)
+                        .Where(s => nonDeliveredMissingIds.Contains(s.Id))
+                        .ToListAsync(cancellationToken);
+
+                    foreach (var shipment in toReset)
+                    {
+                        _logger.LogWarning(
+                            "VerifyNetsisTransfers: Sevkiyat #{Id} ({Status}) — Netsis'te bulunamadı, aktarım sıfırlanıyor.",
+                            shipment.Id, shipment.Status);
+
+                        shipment.RevertNetsisTransfer();
+
+                        if (shipment.IssOrder != null)
+                        {
+                            shipment.IssOrder.NetsisOrderNumber = null;
+                            shipment.IssOrder.IsTransferred = false;
+                        }
+                    }
+
+                    result.Reset = toReset.Count;
                 }
 
                 await _context.SaveChangesAsync(cancellationToken);
-
-                result.Reset   = toReset.Count;
-                result.StillOk = shipments.Count - toReset.Count - foreign.Count;
+                result.StillOk = shipmentSummaries.Count - missingIds.Count - foreign.Count;
             }
             else
             {
-                result.StillOk = shipments.Count - foreign.Count;
+                result.StillOk = shipmentSummaries.Count - foreign.Count;
             }
 
-            // ── 2. Henüz aktarılmamış sevkiyatları kontrol et ────────────────────
             result.AutoDetected = await DetectAlreadyInNetsisAsync(cancellationToken);
 
             return result;
         }
 
-        /// <summary>
-        /// NetsisTransferredAt == null olan exportable sevkiyatların sipariş numaralarının
-        /// Netsis'te mevcut olup olmadığını kontrol eder. Bulunursa MarkNetsisTransferred
-        /// ile işaretler ve NetsisOrderNumber'ı doldurur.
-        /// </summary>
         private async Task<int> DetectAlreadyInNetsisAsync(CancellationToken cancellationToken)
         {
             var exportableStatuses = new[]

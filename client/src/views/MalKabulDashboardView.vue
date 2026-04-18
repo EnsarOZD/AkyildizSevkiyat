@@ -1,28 +1,29 @@
 <template>
-  <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+  <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    <PageHeader title="Mal Kabul Merkezi" subtitle="Siparişleri bulun, tarayın ve hızlıca sisteme dahil edin" color="green">
+      <template #icon>
+        <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+        </svg>
+      </template>
+      <template #actions>
+        <div class="flex items-center gap-3">
+          <div class="px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl border border-indigo-100 dark:border-indigo-800 text-center min-w-[90px]">
+            <p class="text-[10px] font-bold text-indigo-500 uppercase tracking-widest leading-none mb-1">Bekleyen</p>
+            <p class="text-xl font-black text-indigo-700 dark:text-indigo-300 leading-none">{{ receivableCount }}</p>
+          </div>
+          <div class="px-4 py-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl border border-emerald-100 dark:border-emerald-800 text-center min-w-[90px]">
+            <p class="text-[10px] font-bold text-emerald-500 uppercase tracking-widest leading-none mb-1">Tamamlanan</p>
+            <p class="text-xl font-black text-emerald-700 dark:text-emerald-300 leading-none">{{ completedTodayCount }}</p>
+          </div>
+        </div>
+      </template>
+    </PageHeader>
     <!-- Main Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-      
+
       <!-- Left: Discovery & Selection (Col 8) -->
       <div class="lg:col-span-8 space-y-6">
-        
-        <!-- Header & Stats Card -->
-        <div class="bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all hover:shadow-md">
-           <div class="space-y-1">
-              <h1 class="text-3xl font-extrabold text-gray-900 dark:text-gray-100 font-display tracking-tight">Mal Kabul Merkezi</h1>
-              <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">Siparişlerinizi bulun, tarayın ve hızlıca sisteme dahil edin.</p>
-           </div>
-           <div class="flex items-center gap-4">
-              <div class="px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl border border-indigo-100 dark:border-indigo-800 text-center min-w-[100px]">
-                 <p class="text-[10px] font-bold text-indigo-500 uppercase tracking-widest leading-none mb-1">Bekleyen</p>
-                 <p class="text-xl font-black text-indigo-700 dark:text-indigo-300 leading-none">{{ receivableCount }}</p>
-              </div>
-              <div class="px-4 py-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl border border-emerald-100 dark:border-emerald-800 text-center min-w-[100px]">
-                 <p class="text-[10px] font-bold text-emerald-500 uppercase tracking-widest leading-none mb-1">Tamamlanan</p>
-                 <p class="text-xl font-black text-emerald-700 dark:text-emerald-300 leading-none">{{ completedTodayCount }}</p>
-              </div>
-           </div>
-        </div>
 
         <!-- Search & Filter Bar -->
         <div class="bg-white dark:bg-gray-900 p-3 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row gap-3">
@@ -178,6 +179,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import PageHeader from '../components/PageHeader.vue';
 import { useRouter, useRoute } from 'vue-router';
 import purchaseOrderService from '../services/purchaseOrderService';
 import goodsReceiptService from '../services/goodsReceiptService';

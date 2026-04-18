@@ -750,8 +750,8 @@ async function copyToClipboard() {
 onMounted(async () => {
   loadingProjects.value = true;
   try {
-    const data = await projectService.getProjects();
-    projects.value = data.map((p: any) => ({
+    const data = await projectService.getProjects({ pageSize: 9999 });
+    projects.value = data.items.map((p: any) => ({
       code: p.code,
       name: p.name,
       address: p.address ?? null,

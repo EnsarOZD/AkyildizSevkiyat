@@ -10,6 +10,6 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.CreateShipment
         public int IssOrderId { get; init; }
 
         public IReadOnlyList<string> AllowedRoles =>
-            new[] { "Admin", "Manager", "Accounting", "Dispatcher" };
+            new[] { "Admin", "Manager", "Accounting", "Driver" };
     }
 }

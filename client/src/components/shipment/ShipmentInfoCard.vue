@@ -15,7 +15,7 @@
       </div>
       <div v-if="shipment.externalOrderNumber" class="min-w-0">
         <div class="text-xs text-gray-500 dark:text-gray-400 font-medium mb-0.5">Sipariş No</div>
-        <div class="font-mono text-blue-600 break-all">{{ shipment.externalOrderNumber }}</div>
+        <div class="font-mono text-blue-600 dark:text-blue-400 break-all">{{ shipment.externalOrderNumber }}</div>
       </div>
       <div v-if="shipment.talepNo" class="min-w-0">
         <div class="text-xs text-gray-500 dark:text-gray-400 font-medium mb-0.5">Talep No</div>

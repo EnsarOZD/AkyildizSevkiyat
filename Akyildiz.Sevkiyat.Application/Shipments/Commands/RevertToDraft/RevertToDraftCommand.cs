@@ -1,5 +1,6 @@
 using Akyildiz.Sevkiyat.Application.Common.Interfaces;
 using Akyildiz.Sevkiyat.Application.Interfaces;
+using Akyildiz.Sevkiyat.Application.Warehouse.Services;
 using Akyildiz.Sevkiyat.Domain.Entities;
 using Akyildiz.Sevkiyat.Domain.Enums;
 using Akyildiz.Sevkiyat.Domain.Exceptions;
@@ -15,18 +16,23 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.RevertToDraft
     public record RevertToDraftCommand(int ShipmentId, string Reason) : IRequest<Unit>, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles =>
-            new[] { "Admin", "Manager", "Warehouse", "User" };
+            new[] { "Admin", "Manager", "Accounting", "Warehouse" };
     }
 
     public class RevertToDraftCommandHandler : IRequestHandler<RevertToDraftCommand, Unit>
     {
         private readonly IApplicationDbContext _context;
         private readonly ICurrentUserService _currentUserService;
+        private readonly ZoneAutoCloseService _zoneAutoClose;
 
-        public RevertToDraftCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+        public RevertToDraftCommandHandler(
+            IApplicationDbContext context,
+            ICurrentUserService currentUserService,
+            ZoneAutoCloseService zoneAutoClose)
         {
             _context = context;
             _currentUserService = currentUserService;
+            _zoneAutoClose = zoneAutoClose;
         }
 
         public async Task<Unit> Handle(RevertToDraftCommand request, CancellationToken cancellationToken)
@@ -92,6 +98,7 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.RevertToDraft
                 shipment.MarkStockReleased();
 
             // Clear warehouse linkage so it disappears from dashboard
+            var prevZoneId = shipment.ZonePreparationId;
             shipment.ZonePreparationId = null;
             shipment.ZonePreparation = null;
 
@@ -113,6 +120,11 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.RevertToDraft
                                   $"toplam {dirtyLines.Sum(l => l.OrderedQty)} adet sıfırlandı."
                 });
             }
+
+            await _context.SaveChangesAsync(cancellationToken);
+
+            if (prevZoneId.HasValue)
+                await _zoneAutoClose.TryAutoCloseAsync(prevZoneId.Value, cancellationToken);
 
             await _context.SaveChangesAsync(cancellationToken);
             return Unit.Value;

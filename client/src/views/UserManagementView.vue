@@ -1,9 +1,15 @@
 <template>
   <div class="space-y-6">
-    <div class="flex justify-between items-center">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Kullanıcı Yönetimi</h1>
-      <BaseButton @click="openCreateModal" variant="primary">+ Yeni Kullanıcı Ekle</BaseButton>
-    </div>
+    <PageHeader title="Kullanıcı Yönetimi" subtitle="Sistem kullanıcılarını ve rollerini yönetin" color="blue">
+      <template #icon>
+        <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+      </template>
+      <template #actions>
+        <BaseButton @click="openCreateModal" variant="primary">+ Yeni Kullanıcı Ekle</BaseButton>
+      </template>
+    </PageHeader>
 
     <!-- Kullanıcı Tablosu -->
     <div class="bg-white dark:bg-gray-900 shadow overflow-hidden rounded-lg">
@@ -102,6 +108,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import PageHeader from '../components/PageHeader.vue';
 import userService, { type UserListItem } from '../services/userService';
 import { useNotificationStore } from '../stores/notification';
 import BaseModal from '../components/BaseModal.vue';
@@ -128,7 +135,6 @@ const roles = [
   { value: 0, label: 'Admin' },
   { value: 1, label: 'Muhasebe (Accounting)' },
   { value: 2, label: 'Depo (Warehouse)' },
-  { value: 3, label: 'Dağıtıcı (Dispatcher)' },
   { value: 4, label: 'Yönetici (Manager)' },
   { value: 5, label: 'Şoför (Driver)' },
 ];
@@ -138,7 +144,6 @@ const roleLabel = (role: string) => {
     Admin: 'Admin',
     Accounting: 'Muhasebe',
     Warehouse: 'Depo',
-    Dispatcher: 'Dağıtıcı',
     Manager: 'Yönetici',
     Driver: 'Şoför',
   };
@@ -150,7 +155,6 @@ const roleBadgeClass = (role: string) => {
     Admin: 'bg-purple-100 text-purple-800',
     Accounting: 'bg-blue-100 text-blue-800',
     Warehouse: 'bg-yellow-100 text-yellow-800',
-    Dispatcher: 'bg-orange-100 text-orange-800',
     Manager: 'bg-green-100 text-green-800',
     Driver: 'bg-teal-100 text-teal-800',
   };
@@ -172,14 +176,14 @@ async function fetchUsers() {
 
 function openCreateModal() {
   editingUser.value = null;
-  form.value = { firstName: '', lastName: '', email: '', password: '', confirmPassword: '', role: 3 };
+  form.value = { firstName: '', lastName: '', email: '', password: '', confirmPassword: '', role: 5 };
   formErrors.value = { password: '', confirmPassword: '' };
   showUserModal.value = true;
 }
 
 function openEditModal(user: UserListItem) {
   editingUser.value = user;
-  const roleMap: Record<string, number> = { Admin: 0, Accounting: 1, Warehouse: 2, Dispatcher: 3, Manager: 4, Driver: 5 };
+  const roleMap: Record<string, number> = { Admin: 0, Accounting: 1, Warehouse: 2, Manager: 4, Driver: 5 };
   form.value = {
     firstName: user.firstName,
     lastName: user.lastName,

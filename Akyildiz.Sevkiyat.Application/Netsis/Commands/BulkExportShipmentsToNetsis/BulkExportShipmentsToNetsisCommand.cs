@@ -124,9 +124,9 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.BulkExportShipmentsToNet
 
                     var siparisRequest = new NetsisSiparisRequest
                     {
-                        BelgeNo      = belgeNo,
+                        BelgeNo      = belgeNo ?? string.Empty,
                         CariKodu     = shipment.Project!.NetsisCariKodu!,
-                        ProjeKodu    = shipment.Project.NetsisTeslimCariKodu ?? shipment.Project.Code,
+                        ProjeKodu    = shipment.Project.NetsisTeslimCariKodu ?? shipment.Project.Code ?? string.Empty,
                         TeslimTarihi = shipment.DeliveryDate,
                         SiparisId    = shipment.Id.ToString(),
                         KurumKodu    = shipment.Project.InstitutionCode,

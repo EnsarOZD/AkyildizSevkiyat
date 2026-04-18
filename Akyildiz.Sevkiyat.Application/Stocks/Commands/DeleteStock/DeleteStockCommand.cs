@@ -12,7 +12,7 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Commands.DeleteStock
     public record DeleteStockCommand(int Id) : IRequest<Unit>, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles =>
-            new[] { "Admin", "Manager" };
+            new[] { "Admin", "Manager", "Accounting" };
     }
 
     public class DeleteStockCommandHandler : IRequestHandler<DeleteStockCommand, Unit>

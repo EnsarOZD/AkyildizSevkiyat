@@ -156,6 +156,21 @@ export interface SetZoneDriverInfoResult {
   optimizationWarning: string | null;
 }
 
+export type CargoProviderType = 'MNG' | 'YurticiKargo' | 'Aras' | 'PTT' | 'Other';
+export const CARGO_PROVIDERS: { value: number; label: string }[] = [
+  { value: 0, label: 'MNG Kargo' },
+  { value: 1, label: 'Yurtiçi Kargo' },
+  { value: 2, label: 'Aras Kargo' },
+  { value: 3, label: 'PTT Kargo' },
+  { value: 99, label: 'Diğer' },
+];
+
+export interface DispatchAsCargoRequest {
+  zonePreparationId: number;
+  cargoProvider: number;
+  cargoTrackingNumber?: string | null;
+}
+
 const warehouseService = {
   async getDashboardAll(): Promise<DashboardZoneDto[]> {
     const response = await apiClient.get('/warehouse/dashboard-all');
@@ -225,6 +240,14 @@ const warehouseService = {
   async confirmLoading(zonePreparationId: number): Promise<boolean> {
     const response = await apiClient.post('/warehouse/confirm-loading', { zonePreparationId });
     return response.data;
+  },
+
+  async dispatchAsCargo(data: DispatchAsCargoRequest): Promise<void> {
+    await apiClient.post('/warehouse/dispatch-as-cargo', data);
+  },
+
+  async adminForceCloseZone(zonePreparationId: number): Promise<void> {
+    await apiClient.post('/warehouse/admin-force-close-zone', { zonePreparationId });
   }
 };
 

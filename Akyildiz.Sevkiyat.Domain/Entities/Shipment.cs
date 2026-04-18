@@ -62,6 +62,10 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
         public DateTime? DispatchedAt { get; private set; }
         public string? DispatchConfirmedByName { get; private set; }
 
+        // Cargo dispatch
+        public CargoProvider? CargoProvider { get; private set; }
+        public string? CargoTrackingNumber { get; private set; }
+
         // Operasyon tipi — sevkiyat oluşturulurken stok kategorilerine göre otomatik belirlenir
         public OperationType OperationType { get; set; } = OperationType.Catering;
 
@@ -246,10 +250,26 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
             ReturnNote = returnNote;
         }
 
+        public void ClearVehicleAssignment()
+        {
+            AssignedDriverName   = null;
+            AssignedPlateNumber  = null;
+            AssignedDriverId     = null;
+            ReturnedAt           = null;
+            ReturnNote           = null;
+        }
+
         public void RecordDispatch(DateTime dispatchedAt, string confirmedByName)
         {
             DispatchedAt = dispatchedAt;
             DispatchConfirmedByName = confirmedByName;
+        }
+
+        public void SetCargoDispatch(Domain.Enums.CargoProvider provider, string? trackingNumber)
+        {
+            CargoProvider = provider;
+            CargoTrackingNumber = trackingNumber;
+            DispatchedAt = DateTime.UtcNow;
         }
 
         private void ValidateTransition(ShipmentStatus newStatus)
@@ -294,11 +314,14 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
                            || newStatus == ShipmentStatus.Cancelled;
                     break;
                 case ShipmentStatus.Delivered:
-                    isValid = newStatus == ShipmentStatus.ReturnedToWarehouse; // kısmi iade sonrası
+                    isValid = newStatus == ShipmentStatus.ReturnedToWarehouse // kısmi iade sonrası
+                           || newStatus == ShipmentStatus.Created;             // admin sıfırlama
                     break;
                 case ShipmentStatus.ReturnedToWarehouse:
+                    isValid = newStatus == ShipmentStatus.Created; // admin sıfırlama
+                    break;
                 case ShipmentStatus.Cancelled:
-                    isValid = false;
+                    isValid = newStatus == ShipmentStatus.Created; // admin sıfırlama
                     break;
                 default:
                     isValid = false;

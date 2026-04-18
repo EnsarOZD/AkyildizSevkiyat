@@ -1,8 +1,12 @@
 <template>
   <div class="p-4 md:p-6">
-    <div class="mb-6 flex justify-between items-center flex-wrap gap-3">
-      <h1 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Netsis Uzlaştırma</h1>
-    </div>
+    <PageHeader title="Netsis Uzlaştırma" subtitle="Netsis ile sevkiyat irsaliye mutabakatı" color="amber" class="mb-6">
+      <template #icon>
+        <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </template>
+    </PageHeader>
 
     <!-- Filtreler -->
     <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-5 flex gap-3 flex-wrap items-end">
@@ -149,6 +153,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import PageHeader from '../components/PageHeader.vue';
 import apiClient from '../services/apiClient';
 
 interface LineReconciliationDto {

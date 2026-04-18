@@ -6,7 +6,7 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.MarkReady
     public record MarkReadyCommand(int ShipmentId, string? Reason = null) : IRequest<MarkReadyCommandResponse>, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles =>
-            new[] { "Admin", "Manager", "Warehouse", "Dispatcher" };
+            new[] { "Admin", "Manager", "Accounting", "Warehouse", "Driver" };
     }
 
     public class MarkReadyCommandResponse

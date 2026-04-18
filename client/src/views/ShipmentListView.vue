@@ -1,9 +1,13 @@
 <template>
   <div>
   <div class="p-3 sm:p-6">
-    <div class="mb-6 flex justify-between items-center">
-      <h1 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Sevkiyatlar</h1>
-    </div>
+    <PageHeader title="Sevkiyatlar" subtitle="Aktif ve pasif sevkiyat listesi" color="blue">
+      <template #icon>
+        <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+        </svg>
+      </template>
+    </PageHeader>
 
     <!-- Tabs -->
     <div class="mb-5 border-b border-gray-200 dark:border-gray-700">
@@ -368,7 +372,7 @@
           {{ isBulkExporting ? 'Aktarılıyor...' : 'Netsis\'e Aktar' }}
         </button>
         <button
-          v-role="['Admin', 'Dispatcher', 'Manager']"
+          v-role="['Admin', 'Driver', 'Manager']"
           @click="openBulkModal"
           class="flex items-center gap-1.5 bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold px-3 py-1.5 rounded-lg transition-colors"
         >
@@ -439,6 +443,7 @@
 
 <script setup lang="ts">
 import { ref, computed, reactive, onMounted, watch } from 'vue';
+import PageHeader from '../components/PageHeader.vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ClipboardDocumentListIcon } from '@heroicons/vue/24/outline';
 import shipmentService, { type ZoneItem } from '../services/shipmentService';
@@ -586,7 +591,7 @@ async function verifyNetsisTransfers() {
   try {
     await shipmentService.verifyNetsisTransfers();
     notificationStore.add(
-      'Netsis durum kontrolü arka planda başlatıldı. Tamamlandığında aktarım durumu güncellenmiş olacak; listeyi yenileyebilirsiniz.',
+      'Netsis durum kontrolü arka planda başlatıldı. Teslim edilmiş irsaliyeler dahil silinmiş aktarımlar tespit edilip sıfırlanacak; tamamlandığında listeyi yenileyebilirsiniz.',
       'info'
     );
   } catch (e) {

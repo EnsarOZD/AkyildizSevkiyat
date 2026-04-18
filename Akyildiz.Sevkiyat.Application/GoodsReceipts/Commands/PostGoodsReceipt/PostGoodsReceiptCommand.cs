@@ -13,7 +13,7 @@ namespace Akyildiz.Sevkiyat.Application.GoodsReceipts.Commands.PostGoodsReceipt
         public Guid Id { get; set; }
 
         public IReadOnlyList<string> AllowedRoles =>
-            new[] { "Admin", "Manager", "Warehouse" };
+            new[] { "Admin", "Manager", "Accounting", "Warehouse" };
     }
 
     public class PostGoodsReceiptCommandHandler : IRequestHandler<PostGoodsReceiptCommand, Unit>

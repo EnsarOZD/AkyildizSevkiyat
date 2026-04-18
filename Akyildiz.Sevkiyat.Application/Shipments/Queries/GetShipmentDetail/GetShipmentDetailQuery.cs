@@ -8,7 +8,7 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipmentDetail
     public sealed record GetShipmentDetailQuery(int Id) : IRequest<ShipmentDetailDto>, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles =>
-            new[] { "Admin", "Manager", "Warehouse", "Dispatcher", "Accounting" };
+            new[] { "Admin", "Manager", "Warehouse", "Driver", "Accounting" };
     }
 
     public class ShipmentDetailDto

@@ -11,7 +11,7 @@ namespace Akyildiz.Sevkiyat.Application.Transport.Drivers.Commands.CreateDriver
     public record CreateDriverCommand(string FullName, string? Phone) : IRequest<int>, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles =>
-            new[] { "Admin", "Manager" };
+            new[] { "Admin", "Manager", "Accounting" };
     }
 
     public class CreateDriverCommandHandler : IRequestHandler<CreateDriverCommand, int>

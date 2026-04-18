@@ -1,24 +1,20 @@
 <template>
   <div>
-    <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-      <h1 class="text-2xl font-semibold text-gray-900 dark:text-gray-100">Tedarikçi Yönetimi</h1>
-      <div class="flex flex-wrap gap-2 w-full sm:w-auto">
-         <button @click="downloadTemplate" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
-            Şablon İndir
-         </button>
-         <button @click="triggerFileInput" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-            </svg>
-            Excel Yükle
-         </button>
-         <input type="file" ref="fileInput" class="hidden" accept=".xlsx, .xls" @change="handleFileUpload" />
-
-         <button @click="showCreateModal = true" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-           + Yeni Tedarikçi
-         </button>
-      </div>
-    </div>
+    <PageHeader title="Tedarikçi Yönetimi" subtitle="Tedarikçi tanımlarını yönetin" color="slate" class="mb-6">
+      <template #icon>
+        <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+        </svg>
+      </template>
+      <template #actions>
+        <div class="flex flex-wrap gap-2">
+          <button @click="downloadTemplate" class="px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-sm font-medium">Şablon İndir</button>
+          <button @click="triggerFileInput" class="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium">Excel Yükle</button>
+          <input type="file" ref="fileInput" class="hidden" accept=".xlsx, .xls" @change="handleFileUpload" />
+          <button @click="showCreateModal = true" class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">+ Yeni Tedarikçi</button>
+        </div>
+      </template>
+    </PageHeader>
 
     <!-- Filters -->
     <div class="bg-white dark:bg-gray-900 p-4 rounded-lg shadow mb-6">
@@ -107,6 +103,7 @@
 </template>
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue';
+import PageHeader from '../components/PageHeader.vue';
 import { supplierService } from '../services/supplierService';
 import { ApiErrorUtils } from '../utils/apiError';
 import { useNotificationStore } from '../stores/notification';

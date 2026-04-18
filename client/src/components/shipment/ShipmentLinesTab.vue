@@ -4,7 +4,7 @@
       <div
         class="px-5 py-2 font-bold text-sm flex justify-between items-center"
         :class="group.zoneName === 'Tanımsız' || group.zoneName === 'No Zone'
-          ? 'bg-red-100 text-red-800'
+          ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400'
           : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'"
       >
         <span class="break-words mr-2 text-left">{{ group.zoneName }}</span>
@@ -12,7 +12,8 @@
           {{ group.lines.length }} Kalem
         </span>
       </div>
-      <div class="overflow-x-auto">
+      <!-- Table View (Desktop/Tablet) -->
+      <div class="hidden md:block overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead v-if="groupIdx === 0" class="bg-gray-50 dark:bg-gray-800">
             <tr>
@@ -45,6 +46,44 @@
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- Card View (Mobile) -->
+      <div class="md:hidden divide-y divide-gray-200 dark:divide-gray-700">
+        <div v-for="line in group.lines" :key="line.id" class="px-5 py-4 space-y-2">
+          <div class="flex justify-between items-start gap-4 text-left">
+            <div class="min-w-0 flex-1">
+              <div class="text-[10px] font-mono text-gray-500 dark:text-gray-400">
+                {{ line.localStockCode || line.stockCode }}
+              </div>
+              <div class="text-sm font-bold text-gray-900 dark:text-gray-100 mt-0.5 leading-tight">
+                {{ line.stockName }}
+              </div>
+            </div>
+            <div class="flex-shrink-0">
+              <span class="text-[10px] font-bold bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded border border-gray-200 dark:border-gray-700 uppercase">
+                {{ line.unit || '-' }}
+              </span>
+            </div>
+          </div>
+          <div class="flex justify-between items-center pt-1 border-t border-gray-50 dark:border-gray-800/50 mt-2">
+            <div class="text-xs text-gray-500 dark:text-gray-400 font-medium">
+              Sipariş: <span class="font-bold text-gray-900 dark:text-gray-100 ml-1">{{ line.orderedQty }}</span>
+            </div>
+            <div v-if="line.deliveredQty > 0" class="text-xs">
+              <span class="text-gray-500 dark:text-gray-400 font-medium">Teslimat: </span>
+              <span 
+                class="ml-1 px-1.5 py-0.5 rounded-full"
+                :class="line.deliveredQty !== line.orderedQty 
+                  ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-bold' 
+                  : 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 font-bold'"
+              >
+                {{ line.deliveredQty }}
+              </span>
+            </div>
+            <div v-else class="text-xs text-gray-500 dark:text-gray-400 italic font-medium">Teslim edilmedi</div>
+          </div>
+        </div>
       </div>
     </div>
     <div v-if="groupedLines.length === 0" class="px-5 py-10 text-center text-sm text-gray-400">

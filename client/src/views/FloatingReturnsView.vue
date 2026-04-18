@@ -1,18 +1,21 @@
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="flex justify-between items-center mb-6">
-      <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Belirsiz Araç İadeleri</h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Kaynağı bilinmeyen / sevkiyatı belirsiz iade kalemleri</p>
-      </div>
-      <button
-        v-role="['Admin', 'Manager', 'Warehouse', 'Dispatcher']"
-        @click="openCreateModal"
-        class="px-4 py-2 bg-orange-500 text-white rounded font-semibold hover:bg-orange-600 transition"
-      >
-        + Yeni İade Kaydı
-      </button>
-    </div>
+    <PageHeader title="Belirsiz İadeler" subtitle="Kaynağı bilinmeyen / sevkiyatı belirsiz iade kalemleri" color="orange">
+      <template #icon>
+        <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+      </template>
+      <template #actions>
+        <button
+          v-role="['Admin', 'Manager', 'Warehouse', 'Driver']"
+          @click="openCreateModal"
+          class="px-4 py-2 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 transition text-sm"
+        >
+          + Yeni İade Kaydı
+        </button>
+      </template>
+    </PageHeader>
 
     <!-- Filters -->
     <div class="flex gap-3 mb-4 flex-wrap">
@@ -246,6 +249,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import PageHeader from '../components/PageHeader.vue';
 import BaseModal from '../components/BaseModal.vue';
 import StockCombobox from '../components/StockCombobox.vue';
 import floatingReturnService, { type FloatingReturnDto, ResolveAction } from '../services/floatingReturnService';

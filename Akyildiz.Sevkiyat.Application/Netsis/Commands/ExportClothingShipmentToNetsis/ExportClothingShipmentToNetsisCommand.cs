@@ -11,7 +11,7 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportClothingShipmentTo
     public record ExportClothingShipmentToNetsisCommand(int ShipmentId) : IRequest<ExportClothingShipmentToNetsisResult>, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles =>
-            new[] { "Admin", "Manager", "Accounting", "Dispatcher" };
+            new[] { "Admin", "Manager", "Accounting", "Driver" };
     }
 
     public record ExportClothingShipmentToNetsisResult(

@@ -8,7 +8,7 @@ namespace Akyildiz.Sevkiyat.Application.GoodsReceipts.Commands.CreateCorrectionG
         public string? Note { get; set; }
 
         public IReadOnlyList<string> AllowedRoles =>
-            new[] { "Admin", "Manager" };
+            new[] { "Admin", "Manager", "Accounting" };
     }
 
     public class CreateCorrectionGoodsReceiptCommandHandler

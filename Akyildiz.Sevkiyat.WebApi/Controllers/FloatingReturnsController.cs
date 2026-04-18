@@ -32,7 +32,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin,Manager,Warehouse,Dispatcher")]
+        [Authorize(Roles = "Admin,Manager,Warehouse")]
         public async Task<IActionResult> Create([FromBody] CreateFloatingReturnRequest request)
         {
             var id = await _mediator.Send(new CreateFloatingReturnCommand(

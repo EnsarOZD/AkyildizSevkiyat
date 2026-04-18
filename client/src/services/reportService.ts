@@ -134,7 +134,9 @@ export interface MaterialPurchaseReportRow {
   supplierId: string;
   supplierName: string;
   stockMasterId: number;
+  stockCode: string;
   stockName: string;
+  unit: string;
   orderedQty: number;
   receivedQty: number;
   remainingQty: number;
@@ -196,6 +198,7 @@ const reportService = {
   async getMaterialPurchases(params?: {
     supplierId?: string | null;
     stockMasterId?: number | null;
+    materialName?: string | null;
   }): Promise<MaterialPurchaseReportRow[]> {
     const response = await apiClient.get('/reports/material-purchases', { params });
     return response.data || [];

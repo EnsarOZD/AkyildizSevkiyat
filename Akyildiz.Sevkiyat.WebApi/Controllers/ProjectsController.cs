@@ -11,6 +11,7 @@ using Akyildiz.Sevkiyat.Application.Projects.Commands.UpdateProjectLocation;
 using Akyildiz.Sevkiyat.Application.Projects.Commands.UpdateProjectDeliveryOrder;
 using Akyildiz.Sevkiyat.Application.Projects.Commands.BulkUpdateDeliveryOrders;
 using Akyildiz.Sevkiyat.Application.Projects.Commands.UpdateProjectDeliveryWindow;
+using Akyildiz.Sevkiyat.Application.Projects.Commands.ToggleProjectActive;
 using Akyildiz.Sevkiyat.Application.Projects.Queries.ValidateProjectCoordinates;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -32,9 +33,13 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll(
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 50,
+            [FromQuery] string? search = null,
+            [FromQuery] bool showInactive = false)
         {
-            var result = await _mediator.Send(new GetAllProjectsQuery());
+            var result = await _mediator.Send(new GetAllProjectsQuery(pageNumber, pageSize, search, showInactive));
             return Ok(result);
         }
 
@@ -73,6 +78,13 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         public async Task<IActionResult> Delete(int id)
         {
             await _mediator.Send(new DeleteProjectCommand(id));
+            return NoContent();
+        }
+
+        [HttpPatch("{id}/toggle-active")]
+        public async Task<IActionResult> ToggleActive(int id, [FromQuery] bool isActive)
+        {
+            await _mediator.Send(new ToggleProjectActiveCommand(id, isActive));
             return NoContent();
         }
         [HttpPatch("{id}/zone")]

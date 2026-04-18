@@ -24,7 +24,7 @@ const {
   needRefresh,
   updateServiceWorker,
 } = useRegisterSW({
-  onRegisteredSW(swUrl, r) {
+  onRegisteredSW(_swUrl, r) {
     if (r) {
       setInterval(() => {
         r.update()

@@ -1,11 +1,12 @@
 <template>
   <div class="p-4 sm:p-6 space-y-4 sm:space-y-6">
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-      <div>
-        <h1 class="text-xl sm:text-2xl font-bold dark:text-gray-100">Sipariş Aktarımı (ISS-IP)</h1>
-        <p class="text-sm text-gray-600 dark:text-gray-400">Siparişleri içeri aktarın ve stok eşleşmelerini yönetin.</p>
-      </div>
-    </div>
+    <PageHeader title="ISS Entegrasyon" subtitle="Sipariş Aktarımı ve Stok Eşleşmesi" color="blue">
+      <template #icon>
+        <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
+        </svg>
+      </template>
+    </PageHeader>
 
     <!-- Giysi/Tekstil Operasyonları Uyarısı -->
     <div class="rounded-lg bg-amber-50 border border-amber-200 p-3 sm:p-4 mb-2 sm:mb-4 flex items-start gap-3">
@@ -507,6 +508,7 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted, computed, onUnmounted } from 'vue';
+import PageHeader from '../components/PageHeader.vue';
 import shipmentService from '../services/shipmentService';
 import projectService from '../services/projectService';
 import apiClient from '../services/apiClient';
@@ -756,12 +758,12 @@ const checkNetsisTransfers = async () => {
     checkingNetsis.value = true;
     try {
         const res = await shipmentService.checkNetsisTransfers();
-        const msg = res.markedAsTransferred > 0
-            ? `Netsis kontrolü tamamlandı. ${res.checked} sipariş kontrol edildi, ${res.markedAsTransferred} tanesi aktarıldı olarak işaretlendi.`
-            : `Netsis kontrolü tamamlandı. ${res.checked} sipariş kontrol edildi, yeni aktarım bulunamadı.`;
-        notificationStore.add(msg, 'success');
+        const parts: string[] = [`${res.checked} sipariş kontrol edildi`];
+        if (res.markedAsTransferred > 0) parts.push(`${res.markedAsTransferred} tanesi aktarıldı olarak işaretlendi`);
+        if (res.resetToActive > 0) parts.push(`${res.resetToActive} tanesi sevkiyatı silindiğinden aktif listeye geri alındı`);
+        notificationStore.add(`Netsis kontrolü tamamlandı. ${parts.join(', ')}.`, 'success');
         if (res.error) notificationStore.add(`Netsis uyarısı: ${res.error}`, 'warning');
-        if (res.markedAsTransferred > 0) await loadOrders();
+        if (res.markedAsTransferred > 0 || res.resetToActive > 0) await loadOrders();
     } catch (e) {
         console.error(e);
         notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Netsis kontrolü sırasında hata oluştu.', 'error');

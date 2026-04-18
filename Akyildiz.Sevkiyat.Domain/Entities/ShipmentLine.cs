@@ -70,6 +70,12 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
             ReturnReason = returnReason;
         }
 
+        public void ClearReturnData()
+        {
+            ReturnedQty  = null;
+            ReturnReason = null;
+        }
+
         /// <summary>
         /// Toplama miktarını set eder.
         /// Fazla toplama (DeliveredQty > OrderedQty) operasyonel olarak geçerlidir —

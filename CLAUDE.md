@@ -4,36 +4,35 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Akyildiz Sevkiyat** is a shipment/logistics management system for Akyildiz, a facility services company. It integrates with an external ERP system called **ISS-IP** to import orders. The application is built as:
+**Akyildiz Sevkiyat** is a shipment/logistics management system for Akyildiz, a facility services company. It integrates with two external ERPs:
+- **ISS-IP** — source of customer orders (imported automatically on a configurable interval)
+- **Netsis** — accounting ERP (shipments, purchase orders, and goods receipts are exported to it)
 
+Stack:
 - **Backend**: ASP.NET Core 10 Web API (Clean Architecture)
 - **Frontend**: Vue 3 + TypeScript SPA (in `client/`)
-- **Database**: SQL Server (via Entity Framework Core 10)
+- **Database**: SQL Server via Entity Framework Core 10
 
 ## Common Commands
 
-### Backend (run from solution root or project directory)
+### Backend (run from solution root)
 
 ```bash
-# Build the solution
 dotnet build Akyildiz.Sevkiyat.sln
-
-# Run the API (development)
 dotnet run --project Akyildiz.Sevkiyat.WebApi
 
-# EF Core migrations (run from solution root)
+# EF Core migrations
 dotnet ef migrations add <MigrationName> --project Akyildiz.Sevkiyat.Infrastructure --startup-project Akyildiz.Sevkiyat.WebApi
 dotnet ef database update --project Akyildiz.Sevkiyat.Infrastructure --startup-project Akyildiz.Sevkiyat.WebApi
 ```
 
+Swagger UI is available at `/swagger` in Development mode.
+
 ### Frontend (run from `client/`)
 
 ```bash
-cd client
-npm install
-npm run dev      # Vite dev server (http://localhost:5173)
+npm run dev      # Vite dev server → http://localhost:5173
 npm run build    # Type-check + production build
-npm run preview  # Preview production build
 ```
 
 ## Architecture
@@ -41,18 +40,22 @@ npm run preview  # Preview production build
 ### Backend — Clean Architecture (4 layers)
 
 ```
-Domain       → Entities, Enums, Exceptions, Domain Events (no dependencies)
-Application  → MediatR Commands/Queries, Validators, Interfaces, DTOs
-Infrastructure → EF Core DbContext, Migrations, JwtTokenService, ISSIpClient, Seeders
-WebApi       → Controllers, Middlewares, Program.cs
+Domain          → Entities, Enums, Exceptions, Domain Events (no dependencies)
+Application     → MediatR Commands/Queries, Validators, Interfaces, DTOs
+Infrastructure  → EF Core DbContext, Migrations, JwtTokenService, ISSIpClient, NetsisClient, Seeders
+WebApi          → Controllers, Middlewares, Program.cs
 ```
 
+**MediatR pipeline order (Program.cs):**
+1. `AuthorizationBehavior` — role/claim checks before the handler runs
+2. `ValidationBehavior` — FluentValidation; validators are co-located with their command/query
+
 **Key patterns:**
-- Every feature follows CQRS via **MediatR** — commands and queries are in `Application/<Feature>/Commands|Queries/<Name>/`
-- **FluentValidation** validators are co-located with their command/query and wired into a MediatR `ValidationBehavior` pipeline
-- `IApplicationDbContext` is the Application layer's abstraction over EF Core — handlers depend on this interface, not `SevkiyatDbContext` directly
-- Domain exceptions (`NotFoundException`, `ConflictException`, `DomainException`, `UnauthorizedException`, `ForbiddenException`) are thrown in handlers and caught by `GlobalExceptionMiddleware`, which serializes them to a consistent JSON error format: `{ type, message, errors?, traceId }`
-- JWT auth: `JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear()` is set so the `sub` claim is NOT remapped to `nameidentifier`
+- Every feature follows CQRS via **MediatR** — handlers live in `Application/<Feature>/Commands|Queries/<Name>/`
+- `IApplicationDbContext` is the Application layer's abstraction over EF Core; handlers depend on this interface, not `SevkiyatDbContext` directly
+- Domain exceptions (`NotFoundException`, `ConflictException`, `DomainException`, `UnauthorizedException`, `ForbiddenException`) are thrown in handlers and caught by `GlobalExceptionMiddleware` → consistent JSON: `{ type, message, errors?, traceId }`
+- JWT auth: `JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear()` is set so the `sub` claim is **not** remapped to `nameidentifier`
+- Rate limiting: login endpoint 5 req/15 min; route-optimization endpoint 5 req/min
 
 ### Configuration & Secrets
 
@@ -60,42 +63,78 @@ All sensitive config values use `SET_BY_ENV_` placeholders in `appsettings.json`
 
 Environment variable format uses double-underscore for nesting: e.g., `ConnectionStrings__SevkiyatConnection`, `Jwt__Key`, `ISSIp__KullaniciAdi`.
 
-### External Integration — ISS-IP
+### External Integrations
 
-`ISSIpClient` (Infrastructure) fetches orders from `http://isstr-dmz1.tr.issworld.com:88/`. It uses Basic Auth + form-based credentials. Configuration in `appsettings.json` under `ISSIp` section. The client is registered as a typed `HttpClient`.
+**ISS-IP** (`Infrastructure/ExternalServices/ISSIpClient`):
+- Fetches orders from `http://isstr-dmz1.tr.issworld.com:88/`
+- Basic Auth + form-based credentials; config under `ISSIp` section
+- Polly retry policy: 3 retries with exponential back-off (2s, 4s, 8s) on transient HTTP errors
+- `IssOrderImportBackgroundService` runs on `IssImport:IntervalMinutes` interval to auto-import
+
+**Netsis** (`Infrastructure/ExternalServices/NetsisClient`):
+- Internal ERP at `http://192.168.1.200:7071`; config under `Netsis` section
+- Token-based auth with `NetsisTokenCache` (singleton, token refreshed every ~55 min)
+- In Development, TLS validation is skipped (self-signed cert on internal IP)
+- Used to export: shipments (irsaliye), purchase orders, and to sync stock balances/irsaliye
 
 ### Frontend — Vue 3 SPA
+
+**Two layouts:**
+- `DefaultLayout` — all authenticated staff routes under `/`
+- `DriverLayout` — mobile-optimized driver interface under `/driver/*`
 
 ```
 client/src/
   services/     # Axios-based API service files (one per domain)
-  stores/       # Pinia stores (auth, notification)
+  stores/       # Pinia stores: auth, notification, theme
   views/        # Page-level components (mapped to routes)
   components/   # Reusable UI components
-  composables/  # Vue composables (useNotification)
-  directives/   # Custom directives (v-role for RBAC)
+  composables/  # useNotification, useKeyboardShortcut
+  directives/   # v-role (RBAC), others
   router/       # Vue Router with auth + role guards
-  layouts/      # DefaultLayout wraps all authenticated views
+  layouts/      # DefaultLayout, DriverLayout
+  utils/        # apiError, exportExcel, turkishSearch
+  navigation.ts # Sidebar nav items grouped by section with role filters
 ```
 
-**API communication:** All HTTP calls go through `src/services/apiClient.ts` (Axios instance). The base URL is `VITE_API_BASE_URL` env var (defaults to `/api`). The request interceptor injects the JWT from `localStorage`. The response interceptor normalizes errors to `ApiError` and dispatches DOM custom events (`api:unauthorized`, `api:forbidden`, `api:server-error`).
+**API client** (`src/services/apiClient.ts`):
+- Base URL: `VITE_API_BASE_URL` env var (defaults to `/api`)
+- Request interceptor injects Bearer token from `localStorage`
+- Response interceptor: normalizes errors to `ApiError`, dispatches DOM events (`api:unauthorized`, `api:forbidden`, `api:server-error`)
+- Implements a **concurrent token refresh queue** — parallel 401s all wait for a single refresh call before being retried
 
-**Auth flow:** JWT stored in `localStorage`. `authStore.init()` listens for `api:unauthorized` events to auto-logout. RBAC is enforced in the router `beforeEach` guard via `meta.roles` on route definitions, and also via the `v-role` directive for UI elements.
+**Auth flow:** JWT + refresh token stored in `localStorage`. `authStore.init()` listens for `api:unauthorized` to auto-logout. RBAC enforced in router `beforeEach` via `meta.roles` and via the `v-role` directive for UI elements.
 
-**User roles:** `Admin`, `Manager`, `Accounting`, `Warehouse`, `Dispatcher`
+**User roles:** `Admin`, `Manager`, `Accounting`, `Warehouse`, `Dispatcher`, `Driver`
 
-### Key Domain Entities
+### Key Domain Entities & Status Workflows
 
-- **Shipment / ShipmentLine** — core entity with a status workflow (Draft → Warehouse → Picking → Ready → Preparing → Delivered)
-- **IssOrder / IssOrderLine** — imported orders from ISS-IP ERP
-- **Zone / ZonePreparation / ZonePreparationProject** — warehouse zone-based picking preparation
-- **StockMaster / StockMapping** — internal stock catalog with mapping to ISS stock codes
-- **PurchaseOrder / GoodsReceipt** — procurement module
-- **Driver / Vehicle** — transport management
+**Shipment / ShipmentLine** — core entity:
+```
+Created → AssignedToWarehouse → Picking → ReadyForDispatch → AssignedToVehicle → Dispatched → Delivered
+                                                                                              ↓
+                                                                               ReturnedToWarehouse | Cancelled | Passive
+```
+
+**IssOrder / IssOrderLine** — imported from ISS-IP; grouped into `ImportBatch` records per import run
+
+**Zone / ZonePreparation / ZonePreparationProject** — warehouse zone-based picking preparation workflow
+
+**StockMaster / StockMapping** — internal stock catalog mapped to ISS stock codes; StockLocation tracks bin-level position
+
+**PurchaseOrder / GoodsReceipt** — procurement module; GoodsReceipts can be exported to Netsis
+
+**Driver / Vehicle / DriverSession** — transport management; driver sessions track time on duty
+
+**StockCount** — periodic physical inventory counts with Excel template export/import
+
+**FloatingReturn** — unmatched returns awaiting resolution
+
+**ReconciliationIssue** — data integrity checks (5 check types) with acknowledge workflow
 
 ### Database
 
-- Migrations live in `Akyildiz.Sevkiyat.Infrastructure/Migrations/`
+- Migrations: `Akyildiz.Sevkiyat.Infrastructure/Migrations/`
 - `context.Database.Migrate()` runs automatically on startup
 - `UserSeeder` and `ShipmentSeeder` run after migration on every startup
 - Admin password for seeding comes from `SeedData:AdminPassword` config

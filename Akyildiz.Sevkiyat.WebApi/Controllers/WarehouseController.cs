@@ -1,4 +1,6 @@
 using Akyildiz.Sevkiyat.Application.Warehouse.Commands.AllocateMacroShortage;
+using Akyildiz.Sevkiyat.Application.Warehouse.Commands.DispatchZoneAsCargo;
+using Akyildiz.Sevkiyat.Application.Warehouse.Commands.AdminForceCloseZone;
 using Akyildiz.Sevkiyat.Application.Warehouse.Commands.FetchZoneIrsaliye;
 using Akyildiz.Sevkiyat.Application.Warehouse.Commands.MarkProjectMicroReady;
 using Akyildiz.Sevkiyat.Application.Warehouse.Commands.StartZonePreparation;
@@ -126,6 +128,20 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         public async Task<ActionResult<bool>> ConfirmLoading([FromBody] Akyildiz.Sevkiyat.Application.Warehouse.Commands.ConfirmZoneLoading.ConfirmZoneLoadingCommand command)
         {
             return await _mediator.Send(command);
+        }
+
+        [HttpPost("dispatch-as-cargo")]
+        public async Task<IActionResult> DispatchAsCargo([FromBody] DispatchZoneAsCargoCommand command)
+        {
+            await _mediator.Send(command);
+            return Ok();
+        }
+
+        [HttpPost("admin-force-close-zone")]
+        public async Task<IActionResult> AdminForceCloseZone([FromBody] AdminForceCloseZoneCommand command)
+        {
+            await _mediator.Send(command);
+            return Ok();
         }
     }
 }

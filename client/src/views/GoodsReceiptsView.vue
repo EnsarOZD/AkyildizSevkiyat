@@ -2,17 +2,21 @@
   <div class="space-y-4">
 
     <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-      <div>
-        <h1 class="text-xl font-bold text-gray-900 dark:text-gray-100">Mal Kabul İrsaliyeleri</h1>
-      </div>
-      <BaseButton @click="$router.push('/goods-receipts/intake')" variant="primary" class="w-full sm:w-auto">
-        <svg class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+    <PageHeader title="Mal Kabul İrsaliyeleri" subtitle="Teslim alınan mal kabul kayıtları" color="blue">
+      <template #icon>
+        <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h7" />
         </svg>
-        Yeni İrsaliye
-      </BaseButton>
-    </div>
+      </template>
+      <template #actions>
+        <BaseButton @click="$router.push('/goods-receipts/intake')" variant="primary">
+          <svg class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          Yeni İrsaliye
+        </BaseButton>
+      </template>
+    </PageHeader>
 
     <!-- Filters -->
     <div class="bg-white dark:bg-gray-900 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
@@ -157,8 +161,9 @@
           </div>
 
           <!-- Actions -->
-          <div v-if="selectedReceipt.isEditable" class="flex flex-wrap gap-2 mt-3">
+          <div v-if="selectedReceipt.isEditable || (selectedReceipt.status === 'Posted' && isManagerOrAdmin)" class="flex flex-wrap gap-2 mt-3">
             <button
+              v-if="selectedReceipt.isEditable"
               @click="postReceipt"
               :disabled="posting || hasUnsavedChanges"
               :title="hasUnsavedChanges ? 'Önce değişiklikleri kaydedin' : ''"
@@ -169,7 +174,7 @@
             </button>
             <button @click="cancelReceipt" :disabled="cancelling" class="flex-1 sm:flex-none px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50">
               <span v-if="cancelling">İşleniyor...</span>
-              <span v-else>İptal Et</span>
+              <span v-else>{{ selectedReceipt.status === 'Posted' ? 'Kesinleşmiş İrsaliyeyi İptal Et' : 'İptal Et' }}</span>
             </button>
           </div>
         </div>
@@ -378,10 +383,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
+import PageHeader from '../components/PageHeader.vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useAuthStore } from '../stores/auth';
 import { InboxArrowDownIcon } from '@heroicons/vue/24/outline';
-import purchaseOrderService from '../services/purchaseOrderService';
+
 import goodsReceiptService from '../services/goodsReceiptService';
 import { ApiErrorUtils } from '../utils/apiError';
 import { useNotificationStore } from '../stores/notification';
@@ -395,6 +402,7 @@ import BaseButton from '../components/BaseButton.vue';
 const route = useRoute();
 const router = useRouter();
 const notificationStore = useNotificationStore();
+const authStore = useAuthStore();
 const receipts = ref<any[]>([]);
 const loading = ref(false);
 const error = ref('');
@@ -408,6 +416,10 @@ const cancelling = ref(false);
 const updatingLineId = ref<string | null>(null);
 const addingLine = ref(false);
 const hasUnsavedChanges = ref(false);
+
+const isManagerOrAdmin = computed(() =>
+  authStore.userRole === 'Manager' || authStore.userRole === 'Admin'
+);
 
 // N tuşu → yeni mal girişi oluştur
 useKeyboardShortcut('n', () => { if (!showDetailModal.value) router.push('/goods-receipts/intake'); });
@@ -460,10 +472,7 @@ const handleSearch = () => { fetchReceipts(); };
 
 // saveCreate removed as it's handled by component
 
-const onGRSaved = (grId: string | number) => {
-  fetchReceipts();
-  openDetail(grId);
-};
+
 
 const openDetail = async (id: any) => {
   try {
@@ -546,7 +555,17 @@ const postReceipt = async () => {
 };
 
 const cancelReceipt = async () => {
-  const ok = await notificationStore.promptConfirm({ title: 'İrsaliye İptal', message: 'Mal kabul irsaliyesini iptal etmek istiyor musunuz?', confirmText: 'İptal Et', type: 'danger' });
+  const isPosted = selectedReceipt.value.status === 'Posted';
+  const confirmMessage = isPosted 
+    ? 'BU İRSALİYE KESİNLEŞMİŞTİR! İptal işlemi stok bakiyesini geri alacaktır ve stok kontrolü yapılacaktır. Devam etmek istiyor musunuz?'
+    : 'Mal kabul irsaliyesini iptal etmek istiyor musunuz?';
+
+  const ok = await notificationStore.promptConfirm({ 
+    title: isPosted ? 'KESİNLEŞMİŞ İRSALİYE İPTALİ' : 'İrsaliye İptal', 
+    message: confirmMessage, 
+    confirmText: 'İptal Et', 
+    type: 'danger' 
+  });
   if (!ok) return;
   cancelling.value = true;
   try {

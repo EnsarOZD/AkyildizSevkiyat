@@ -1,13 +1,13 @@
 ﻿using Akyildiz.Sevkiyat.Application.Common.Dtos;
+using Akyildiz.Sevkiyat.Application.Common.Models;
 using Akyildiz.Sevkiyat.Application.Interfaces;
-using Akyildiz.Sevkiyat.Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace Akyildiz.Sevkiyat.Application.Projects.Queries
 {
     public class GetAllProjectsQueryHandler
-        : IRequestHandler<GetAllProjectsQuery, List<ProjectDto>>
+        : IRequestHandler<GetAllProjectsQuery, PaginatedList<ProjectDto>>
     {
         private readonly IApplicationDbContext _context;
 
@@ -16,27 +16,31 @@ namespace Akyildiz.Sevkiyat.Application.Projects.Queries
             _context = context;
         }
 
-        public async Task<List<ProjectDto>> Handle(GetAllProjectsQuery request, CancellationToken cancellationToken)
+        public async Task<PaginatedList<ProjectDto>> Handle(GetAllProjectsQuery request, CancellationToken cancellationToken)
         {
-            return await _context.Projects
-                .Include(p => p.Zone)
-                .Select(p => new ProjectDto(
-                    p.Id,
-                    p.Code,
-                    p.Name,
-                    p.Region,
-                    p.IsActive,
-                    p.ZoneId,
-                    p.Zone != null ? p.Zone.Name : null,
-                    p.NetsisCariKodu,
-                    p.DeliveryOrder,
-                    p.Latitude,
-                    p.Longitude,
-                    p.Address,
-                    p.DeliveryWindowStart,
-                    p.DeliveryWindowEnd,
-                    p.NetsisTeslimCariKodu
-                )).ToListAsync(cancellationToken);
+            var query = _context.Projects.Include(p => p.Zone).AsQueryable();
+
+            if (!request.ShowInactive)
+                query = query.Where(p => p.IsActive);
+
+            if (!string.IsNullOrWhiteSpace(request.Search))
+            {
+                var s = request.Search.ToLower();
+                query = query.Where(p =>
+                    p.Code.ToLower().Contains(s) ||
+                    p.Name.ToLower().Contains(s));
+            }
+
+            var projected = query.Select(p => new ProjectDto(
+                p.Id, p.Code, p.Name, p.Region, p.IsActive,
+                p.ZoneId, p.Zone != null ? p.Zone.Name : null,
+                p.NetsisCariKodu, p.DeliveryOrder,
+                p.Latitude, p.Longitude, p.Address,
+                p.DeliveryWindowStart, p.DeliveryWindowEnd,
+                p.NetsisTeslimCariKodu
+            )).OrderBy(p => p.Code);
+
+            return await PaginatedList<ProjectDto>.CreateAsync(projected, request.PageNumber, request.PageSize);
         }
     }
 }

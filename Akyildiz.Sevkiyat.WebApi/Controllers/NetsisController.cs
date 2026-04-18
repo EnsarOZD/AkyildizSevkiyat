@@ -47,7 +47,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         /// Önkoşul: Clothing tipi, Created durumu, NetsisTransferredAt == null.
         /// </summary>
         [HttpPost("shipments/{id:int}/export-clothing")]
-        [Authorize(Roles = "Admin,Manager,Accounting,Dispatcher")]
+        [Authorize(Roles = "Admin,Manager,Accounting")]
         public async Task<IActionResult> ExportClothingShipment(int id, CancellationToken ct)
         {
             var result = await _mediator.Send(new ExportClothingShipmentToNetsisCommand(id), ct);
@@ -123,7 +123,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         /// Önkoşul: NetsisTransferredAt dolu olmalı.
         /// </summary>
         [HttpPost("shipments/{id:int}/fetch-irsaliye")]
-        [Authorize(Roles = "Admin,Manager,Accounting,Dispatcher")]
+        [Authorize(Roles = "Admin,Manager,Accounting")]
         public async Task<IActionResult> FetchShipmentIrsaliye(int id, CancellationToken ct)
         {
             var result = await _mediator.Send(new FetchShipmentIrsaliyeCommand(id), ct);

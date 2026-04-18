@@ -15,8 +15,7 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Persistence.Seeding
                 {
                     CreateUser("Admin", "User", "admin@akyildiz.com", UserRole.Admin, passwordHasher, adminPassword),
                     CreateUser("Fatma", "Yılmaz", "accounting@akyildiz.com", UserRole.Accounting, passwordHasher, adminPassword),
-                    CreateUser("Mehmet", "Depo", "warehouse@akyildiz.com", UserRole.Warehouse, passwordHasher, adminPassword),
-                    CreateUser("Ali", "Dağıtıcı", "dispatcher@akyildiz.com", UserRole.Dispatcher, passwordHasher, adminPassword)
+                    CreateUser("Mehmet", "Depo", "warehouse@akyildiz.com", UserRole.Warehouse, passwordHasher, adminPassword)
                 };
 
                 context.Users.AddRange(users);

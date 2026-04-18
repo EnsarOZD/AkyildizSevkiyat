@@ -27,19 +27,19 @@ const router = createRouter({
                     path: 'shipments',
                     name: 'ShipmentList',
                     component: () => import('../views/ShipmentListView.vue'),
-                    meta: { title: 'Sevkiyatlar', roles: ['Admin', 'Accounting', 'Manager', 'Dispatcher'] }
+                    meta: { title: 'Sevkiyatlar', roles: ['Admin', 'Accounting', 'Manager', 'Driver', 'Warehouse'] }
                 },
                 {
                     path: 'shipments/:id',
                     name: 'ShipmentDetail',
                     component: () => import('../views/ShipmentDetailView.vue'),
-                    meta: { title: 'Sevkiyat Detayı', roles: ['Admin', 'Accounting', 'Manager', 'Dispatcher'], breadcrumb: [{ label: 'Sevkiyatlar', to: '/shipments' }] }
+                    meta: { title: 'Sevkiyat Detayı', roles: ['Admin', 'Accounting', 'Manager', 'Driver', 'Warehouse', 'Driver'], breadcrumb: [{ label: 'Sevkiyatlar', to: '/shipments' }] }
                 },
                 {
                     path: 'settings',
                     name: 'Settings',
                     component: () => import('../views/SettingsView.vue'),
-                    meta: { title: 'Tanımlamalar', roles: ['Admin', 'Manager'] }
+                    meta: { title: 'Tanımlamalar', roles: ['Admin', 'Manager', 'Accounting'] }
                 },
                 {
                     path: 'zones',
@@ -67,7 +67,7 @@ const router = createRouter({
                     path: 'orders/import',
                     name: 'OrderImport',
                     component: () => import('../views/OrderImportView.vue'),
-                    meta: { title: 'ISS Entegrasyon', roles: ['Admin', 'Accounting', 'Manager', 'Dispatcher'] }
+                    meta: { title: 'ISS Entegrasyon', roles: ['Admin', 'Accounting', 'Manager', 'Driver'] }
                 },
                 {
                     path: 'stocks',
@@ -79,7 +79,7 @@ const router = createRouter({
                     path: 'warehouse',
                     name: 'WarehouseDashboard',
                     component: () => import('../views/WarehouseDashboard.vue'),
-                    meta: { title: 'Depo Hazırlık', roles: ['Admin', 'Warehouse', 'Manager', 'Dispatcher'] }
+                    meta: { title: 'Depo Hazırlık', roles: ['Admin', 'Warehouse', 'Manager', 'Driver'] }
                 },
                 {
                     path: 'transport',
@@ -95,13 +95,13 @@ const router = createRouter({
                     path: 'goods-receipts',
                     name: 'GoodsReceipts',
                     component: () => import('../views/GoodsReceiptsView.vue'),
-                    meta: { title: 'Mal Kabul İrsaliyeleri', roles: ['Admin', 'Warehouse', 'Manager'] }
+                    meta: { title: 'Mal Kabul İrsaliyeleri', roles: ['Admin', 'Warehouse', 'Manager', 'Accounting'] }
                 },
                 {
                     path: 'goods-receipts/intake',
                     name: 'MalKabulDashboard',
                     component: () => import('../views/MalKabulDashboardView.vue'),
-                    meta: { title: 'Mal Kabul Merkezi', roles: ['Admin', 'Warehouse', 'Manager'], breadcrumb: [{ label: 'Mal Kabul', to: '/goods-receipts' }] }
+                    meta: { title: 'Mal Kabul Merkezi', roles: ['Admin', 'Warehouse', 'Manager', 'Accounting'], breadcrumb: [{ label: 'Mal Kabul', to: '/goods-receipts' }] }
                 },
                 {
                     path: 'goods-receipts/select-po',
@@ -165,7 +165,7 @@ const router = createRouter({
                     path: 'floating-returns',
                     name: 'FloatingReturns',
                     component: () => import('../views/FloatingReturnsView.vue'),
-                    meta: { title: 'Belirsiz İadeler', roles: ['Admin', 'Manager', 'Warehouse', 'Dispatcher'] }
+                    meta: { title: 'Belirsiz İadeler', roles: ['Admin', 'Manager', 'Warehouse', 'Driver'] }
                 },
                 {
                     path: 'stock-counts',
@@ -195,7 +195,7 @@ const router = createRouter({
                     path: 'route-optimization',
                     name: 'RouteOptimization',
                     component: () => import('../views/RouteOptimizationView.vue'),
-                    meta: { title: 'Rota Optimizasyonu', roles: ['Admin', 'Manager', 'Dispatcher'] }
+                    meta: { title: 'Rota Optimizasyonu', roles: ['Admin', 'Manager', 'Driver'] }
                 },
                 {
                     path: 'netsis/reconciliation',
@@ -212,7 +212,7 @@ const router = createRouter({
         {
             path: '/driver',
             component: () => import('../layouts/DriverLayout.vue'),
-            meta: { requiresAuth: true, roles: ['Admin', 'Manager', 'Dispatcher', 'Driver'] },
+            meta: { requiresAuth: true, roles: ['Admin', 'Manager', 'Driver', 'Driver'] },
             children: [
                 {
                     path: '',

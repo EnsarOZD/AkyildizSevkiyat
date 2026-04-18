@@ -17,7 +17,7 @@ namespace Akyildiz.Sevkiyat.Application.Transport.Vehicles.Commands.UpdateVehicl
     ) : IRequest<bool>, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles =>
-            new[] { "Admin", "Manager" };
+            new[] { "Admin", "Manager", "Accounting" };
     }
 
     public class UpdateVehicleCommandHandler : IRequestHandler<UpdateVehicleCommand, bool>

@@ -2,18 +2,21 @@
   <div class="p-4 md:p-6">
 
     <!-- Header -->
-    <div class="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-      <div>
-        <h1 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Mutabakat Kontrolleri</h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Operasyonel tutarsızlıkları görüntüle ve yönet</p>
-      </div>
-      <BaseButton @click="runChecks" :disabled="isRunning" :loading="isRunning" variant="primary">
-        <svg v-if="!isRunning" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+    <PageHeader title="Mutabakat Kontrolleri" subtitle="Operasyonel tutarsızlıkları görüntüle ve yönet" color="red" class="mb-5">
+      <template #icon>
+        <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.538-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
         </svg>
-        {{ isRunning ? 'Çalışıyor...' : 'Kontrolleri Çalıştır' }}
-      </BaseButton>
-    </div>
+      </template>
+      <template #actions>
+        <BaseButton @click="runChecks" :disabled="isRunning" :loading="isRunning" variant="primary">
+          <svg v-if="!isRunning" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          {{ isRunning ? 'Çalışıyor...' : 'Kontrolleri Çalıştır' }}
+        </BaseButton>
+      </template>
+    </PageHeader>
 
     <!-- Last run result banner -->
     <div v-if="lastRunResult" class="mb-5 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl p-4 flex flex-wrap items-center gap-4">
@@ -248,6 +251,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick } from 'vue';
+import PageHeader from '../components/PageHeader.vue';
 import BaseButton from '../components/BaseButton.vue';
 import reconciliationService, {
   type ReconciliationIssueDto,

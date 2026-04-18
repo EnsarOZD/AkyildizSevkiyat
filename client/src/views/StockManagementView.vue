@@ -1,37 +1,20 @@
 <template>
   <div class="p-6 space-y-6">
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-      <div>
-        <h1 class="text-2xl font-bold mb-2">Stok Yönetimi</h1>
-        <p class="text-gray-600 dark:text-gray-400 whitespace-normal">Sistemdeki stok tanımlarını yönetin.</p>
-      </div>
-      <div class="flex flex-wrap gap-2">
-        <button
-          @click="downloadTemplate"
-          class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 flex items-center gap-2"
-        >
-          <span>Şablon İndir</span>
-        </button>
-        <button
-          @click="exportStocks"
-          class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center gap-2"
-        >
-          <span>📄 Excel İndir</span>
-        </button>
-        <button
-          @click="openImportModal"
-          class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 flex items-center gap-2"
-        >
-          <span>Excel ile Yükle / Güncelle</span>
-        </button>
-        <button
-          @click="openModal()"
-          class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 flex items-center gap-2"
-        >
-          <span>+ Yeni Stok</span>
-        </button>
-      </div>
-    </div>
+    <PageHeader title="Stok Yönetimi" subtitle="Sistemdeki stok tanımlarını yönetin" color="gray">
+      <template #icon>
+        <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+        </svg>
+      </template>
+      <template #actions>
+        <div class="flex flex-wrap gap-2">
+          <button @click="downloadTemplate" class="bg-gray-600 text-white px-3 py-2 rounded-lg hover:bg-gray-700 text-sm font-medium">Şablon İndir</button>
+          <button @click="exportStocks" class="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium">Excel İndir</button>
+          <button @click="openImportModal" class="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 text-sm font-medium">Excel ile Yükle</button>
+          <button @click="openModal()" class="bg-indigo-600 text-white px-3 py-2 rounded-lg hover:bg-indigo-700 text-sm font-medium">+ Yeni Stok</button>
+        </div>
+      </template>
+    </PageHeader>
 
     <!-- Search + Filter Panel -->
     <div class="bg-white dark:bg-gray-900 p-4 rounded shadow space-y-3">
@@ -374,6 +357,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import PageHeader from '../components/PageHeader.vue';
 import { stockService } from '../services/stockService';
 import type { Stock, ImportStocksResult } from '../services/stockService';
 import Pagination from '../components/Pagination.vue';

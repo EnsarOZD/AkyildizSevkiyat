@@ -10,6 +10,7 @@ namespace Akyildiz.Sevkiyat.Application.Orders.Commands.CheckNetsisTransfers
     {
         public int Checked { get; set; }
         public int MarkedAsTransferred { get; set; }
+        public int ResetToActive { get; set; }
         public string? Error { get; set; }
     }
 
@@ -31,19 +32,27 @@ namespace Akyildiz.Sevkiyat.Application.Orders.Commands.CheckNetsisTransfers
             CheckNetsisTransfersCommand request,
             CancellationToken cancellationToken)
         {
+            // IsTransferred=true ama artık NetsisTransferredAt olan sevkiyatı olmayan siparişler
+            // (sevkiyat silindiyse) → tekrar aktif hale getir
+            var orphaned = await _context.IssOrders
+                .Where(o => o.IsTransferred
+                    && !_context.Shipments.Any(s => s.IssOrderId == o.Id && s.NetsisTransferredAt != null))
+                .ToListAsync(cancellationToken);
+
+            foreach (var o in orphaned)
+                o.IsTransferred = false;
+
             // Sevkiyatı Netsis'e aktarılmış ama IsTransferred bayrağı hâlâ false olan siparişleri onar
-            // (SQL reset veya veri tutarsızlığından kaynaklanabilir)
             var staleOrders = await _context.IssOrders
                 .Where(o => !o.IsTransferred
                     && _context.Shipments.Any(s => s.IssOrderId == o.Id && s.NetsisTransferredAt != null))
                 .ToListAsync(cancellationToken);
 
-            if (staleOrders.Count > 0)
-            {
-                foreach (var o in staleOrders)
-                    o.IsTransferred = true;
+            foreach (var o in staleOrders)
+                o.IsTransferred = true;
+
+            if (orphaned.Count > 0 || staleOrders.Count > 0)
                 await _context.SaveChangesAsync(cancellationToken);
-            }
 
             // Henüz aktarılmamış tüm siparişleri al — sevkiyatı Netsis'e gönderilmişleri hariç tut
             var orders = await _context.IssOrders
@@ -81,6 +90,7 @@ namespace Akyildiz.Sevkiyat.Application.Orders.Commands.CheckNetsisTransfers
             {
                 Checked             = orders.Count,
                 MarkedAsTransferred = matchedIds.Count,
+                ResetToActive       = orphaned.Count,
                 Error               = netsisError
             };
         }

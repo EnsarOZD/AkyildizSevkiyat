@@ -1,8 +1,13 @@
 <template>
   <div class="space-y-6">
-    <div class="flex justify-between items-center">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Tanımlamalar</h1>
-    </div>
+    <PageHeader title="Tanımlamalar" subtitle="Şoför, araç ve sistem tanımlamaları" color="gray">
+      <template #icon>
+        <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      </template>
+    </PageHeader>
 
     <!-- Tab Navigation -->
     <div class="border-b border-gray-200 dark:border-gray-700">
@@ -490,6 +495,85 @@
       </div>
     </div>
 
+    <!-- ===== TAB: Sipariş Sayaçları ===== -->
+    <div v-show="activeTab === 'po_counter'" class="space-y-4">
+      <div class="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Satınalma Sipariş Sayaçları</h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Sipariş numarasının sıra kısmını değiştirebilirsiniz. Bir sonraki sipariş "Sonraki Numara" ile başlar.</p>
+          </div>
+          <button @click="loadPoCounters" :disabled="poCounterLoading"
+            class="text-sm text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 underline">
+            Yenile
+          </button>
+        </div>
+
+        <div v-if="poCounterError" class="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded text-red-700 dark:text-red-300 text-sm">
+          {{ poCounterError }}
+        </div>
+
+        <div v-if="poCounterLoading" class="text-sm text-gray-500">Yükleniyor...</div>
+
+        <div v-else-if="poCounters.length === 0" class="text-sm text-gray-500">
+          Henüz sayaç kaydı yok (ilk sipariş oluşturulduğunda otomatik eklenir).
+        </div>
+
+        <div v-else class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 text-xs uppercase">
+                <th class="py-2 px-3 text-left">Dönem</th>
+                <th class="py-2 px-3 text-left">Son Sipariş No</th>
+                <th class="py-2 px-3 text-left">Sonraki Numara</th>
+                <th class="py-2 px-3 text-left">Sayaç Değeri</th>
+                <th class="py-2 px-3 text-left"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="counter in poCounters" :key="counter.id"
+                class="border-b border-gray-100 dark:border-gray-800">
+                <td class="py-3 px-3 font-medium text-gray-800 dark:text-gray-200">
+                  {{ counter.year }}/{{ String(counter.month).padStart(2, '0') }}
+                </td>
+                <td class="py-3 px-3 font-mono text-gray-700 dark:text-gray-300">{{ counter.formattedNumber }}</td>
+                <td class="py-3 px-3 font-mono text-green-600 dark:text-green-400 font-semibold">{{ counter.nextNumber }}</td>
+                <td class="py-3 px-3">
+                  <input
+                    v-if="editingCounterId === counter.id"
+                    v-model.number="editingCounterValue"
+                    type="number" min="0"
+                    class="w-28 px-2 py-1 border border-indigo-400 rounded text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-800 dark:text-gray-200"
+                  />
+                  <span v-else class="font-mono text-gray-600 dark:text-gray-400">{{ counter.lastValue }}</span>
+                </td>
+                <td class="py-3 px-3">
+                  <div v-if="editingCounterId === counter.id" class="flex gap-2">
+                    <button @click="savePoCounter(counter)" :disabled="poCounterSaving"
+                      class="px-3 py-1 bg-indigo-600 text-white rounded text-xs hover:bg-indigo-700 disabled:opacity-50">
+                      Kaydet
+                    </button>
+                    <button @click="editingCounterId = null"
+                      class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700">
+                      İptal
+                    </button>
+                  </div>
+                  <button v-else @click="startEditCounter(counter)"
+                    class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700">
+                    Düzenle
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded text-xs text-yellow-700 dark:text-yellow-300">
+          ⚠️ Sayaç değerini düşürmek, daha önce kullanılmış numara üretebilir. Yalnızca yeni dönem başlangıcında veya hatalı artışları düzeltmek için kullanın.
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -506,10 +590,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import PageHeader from '../components/PageHeader.vue';
 import transportService from '../services/transportService';
 import apiClient from '../services/apiClient';
 import projectService from '../services/projectService';
-import systemSettingsService from '../services/systemSettingsService';
+import systemSettingsService, { type PoCounterDto } from '../services/systemSettingsService';
 import { ApiErrorUtils } from '../utils/apiError';
 import { useNotificationStore } from '../stores/notification';
 import BaseModal from '../components/BaseModal.vue';
@@ -521,6 +606,7 @@ const tabs = [
   { key: 'zones',     label: 'Bölge Yönetimi' },
   { key: 'depot',     label: 'Depo Tanımları' },
   { key: 'locations', label: 'Depo Adresleri' },
+  { key: 'po_counter', label: 'Sipariş Sayaçları' },
 ];
 const activeTab = ref('transport');
 
@@ -789,6 +875,47 @@ const depot_save = async () => {
   }
 };
 
+// ─── PO Counter ──────────────────────────────────────────────────────────────
+
+const poCounters = ref<PoCounterDto[]>([]);
+const poCounterLoading = ref(false);
+const poCounterSaving = ref(false);
+const poCounterError = ref<string | null>(null);
+const editingCounterId = ref<number | null>(null);
+const editingCounterValue = ref(0);
+
+async function loadPoCounters() {
+  poCounterLoading.value = true;
+  poCounterError.value = null;
+  try {
+    poCounters.value = await systemSettingsService.getPoCounters();
+  } catch (e) {
+    poCounterError.value = ApiErrorUtils.getErrorMessage(e) || 'Sayaçlar yüklenemedi.';
+  } finally {
+    poCounterLoading.value = false;
+  }
+}
+
+function startEditCounter(counter: PoCounterDto) {
+  editingCounterId.value = counter.id;
+  editingCounterValue.value = counter.lastValue;
+}
+
+async function savePoCounter(counter: PoCounterDto) {
+  poCounterSaving.value = true;
+  try {
+    const updated = await systemSettingsService.updatePoCounter(counter.id, editingCounterValue.value);
+    const idx = poCounters.value.findIndex(c => c.id === counter.id);
+    if (idx !== -1) poCounters.value[idx] = updated;
+    editingCounterId.value = null;
+    notificationStore.add(`Sayaç güncellendi. Sonraki sipariş numarası: ${updated.nextNumber}`, 'success');
+  } catch (e) {
+    notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Güncelleme başarısız.', 'error');
+  } finally {
+    poCounterSaving.value = false;
+  }
+}
+
 // ─── Init ────────────────────────────────────────────────────────────────────
 
 onMounted(() => {
@@ -796,5 +923,6 @@ onMounted(() => {
   fetchVehicles();
   fetchZones();
   depot_load();
+  loadPoCounters();
 });
 </script>

@@ -30,7 +30,7 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipments
     public class GetShipmentsQuery : IRequest<PaginatedList<ShipmentDto>>, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles =>
-            new[] { "Admin", "Manager", "Warehouse", "Dispatcher", "Accounting" };
+            new[] { "Admin", "Manager", "Warehouse", "Driver", "Accounting" };
 
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }

@@ -1,6 +1,7 @@
 using Akyildiz.Sevkiyat.Application.Interfaces;
 using Akyildiz.Sevkiyat.Application.External.IssIp.Dtos;
 using Akyildiz.Sevkiyat.Infrastructure.ExternalServices.IssIp;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Net.Http.Json;
@@ -14,17 +15,18 @@ namespace Akyildiz.Sevkiyat.Infrastructure.ExternalServices
     {
         private readonly HttpClient _http;
         private readonly ISSIpOptions _opt;
+        private readonly ILogger<ISSIpClient> _logger;
 
-        public ISSIpClient(HttpClient http, IOptions<ISSIpOptions> opt)
+        public ISSIpClient(HttpClient http, IOptions<ISSIpOptions> opt, ILogger<ISSIpClient> logger)
         {
             _http = http;
             _opt = opt.Value;
+            _logger = logger;
 
-            if (!string.IsNullOrEmpty(_opt.BasicAuthUsername) && !string.IsNullOrEmpty(_opt.BasicAuthPassword))
-            {
-                var authValue = Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes($"{_opt.BasicAuthUsername}:{_opt.BasicAuthPassword}"));
-                _http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", authValue);
-            }
+            var authValue = Convert.ToBase64String(
+                System.Text.Encoding.ASCII.GetBytes($"{_opt.BasicAuthUsername}:{_opt.BasicAuthPassword}"));
+            _http.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", authValue);
         }
 
         public Task<ISSIpEnvelope> GetSiparisListesiAsync(DateTime start, DateTime end, CancellationToken ct)
@@ -64,22 +66,44 @@ namespace Akyildiz.Sevkiyat.Infrastructure.ExternalServices
         {
             var req = new ISSIpRequest<TParams> { MethodName = methodName, MtdParams = mtdParams };
 
-            // EndpointPath config'ten gelir. Boşsa / varsayılır.
             var url = string.IsNullOrWhiteSpace(_opt.EndpointPath) ? "/" : _opt.EndpointPath;
 
+            _logger.LogDebug("ISS-IP → {Method} | POST {BaseUrl}{Path}", methodName, _opt.BaseUrl, url);
+
             using var resp = await _http.PostAsJsonAsync(url, req, cancellationToken: ct);
-            
+
+            var contentType = resp.Content.Headers.ContentType?.MediaType ?? "(none)";
+            var body = await resp.Content.ReadAsStringAsync(ct);
+            var preview = body.Length > 500 ? body[..500] : body;
+
+            _logger.LogDebug(
+                "ISS-IP ← {Method} | Status={Status} ContentType={ContentType} BodyPreview={Preview}",
+                methodName, (int)resp.StatusCode, contentType, preview);
+
             if (!resp.IsSuccessStatusCode)
-            {
-                var errorContent = await resp.Content.ReadAsStringAsync(ct);
-                throw new HttpRequestException($"ISS-IP API Error ({resp.StatusCode}): {errorContent}");
-            }
+                throw new HttpRequestException(
+                    $"ISS-IP [{methodName}] HTTP {(int)resp.StatusCode}: {preview}");
 
-            var json = await resp.Content.ReadAsStringAsync(ct);
-            var doc = JsonDocument.Parse(json);
+            // Yeni endpoint HTML döndürebilir (auth sayfası, yanlış path, vb.)
+            // JSON olmayan response'u erken yakala ve diagnostik bilgiyle fırlat.
+            if (!IsJson(contentType, body))
+                throw new InvalidOperationException(
+                    $"ISS-IP [{methodName}] JSON beklendi ama '{contentType}' döndü. " +
+                    $"BaseUrl='{_opt.BaseUrl}' Path='{url}'. " +
+                    $"Response (ilk 500 karakter): {preview}");
 
-            // Cloning RootElement to keep it independent of the Document (which is disposed)
+            var doc = JsonDocument.Parse(body);
             return new ISSIpEnvelope { Root = doc.RootElement.Clone() };
+        }
+
+        private static bool IsJson(string contentType, string body)
+        {
+            if (contentType.Contains("json", StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            // Content-Type güvenilmez olabilir; body'nin gerçekten JSON başladığını kontrol et.
+            var trimmed = body.TrimStart();
+            return trimmed.StartsWith('{') || trimmed.StartsWith('[');
         }
     }
 }

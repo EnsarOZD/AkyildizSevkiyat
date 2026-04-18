@@ -14,7 +14,7 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.FetchShipmentIrsaliye
     public record FetchShipmentIrsaliyeCommand(int ShipmentId) : IRequest<FetchShipmentIrsaliyeResult>, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles =>
-            new[] { "Admin", "Manager", "Accounting", "Dispatcher" };
+            new[] { "Admin", "Manager", "Accounting", "Driver" };
     }
 
     public record FetchShipmentIrsaliyeResult(string? IrsaliyeNo, string Message);

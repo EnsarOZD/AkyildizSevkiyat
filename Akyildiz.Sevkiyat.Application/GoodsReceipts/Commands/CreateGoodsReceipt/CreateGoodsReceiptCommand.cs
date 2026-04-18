@@ -6,7 +6,7 @@ namespace Akyildiz.Sevkiyat.Application.GoodsReceipts.Commands.CreateGoodsReceip
     public class CreateGoodsReceiptCommand : IRequest<CreateGoodsReceiptResponse>, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles =>
-            new[] { "Admin", "Manager", "Warehouse" };
+            new[] { "Admin", "Manager", "Accounting", "Warehouse" };
 
         public bool IgnoreDuplicateWarning { get; set; }
 

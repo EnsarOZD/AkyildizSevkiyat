@@ -173,6 +173,7 @@ builder.Services.AddScoped<Akyildiz.Sevkiyat.Application.Interfaces.IStockCountE
 
 // Pre-dispatch enforcement
 builder.Services.AddScoped<Akyildiz.Sevkiyat.Application.Warehouse.Services.PreDispatchGuard>();
+builder.Services.AddScoped<Akyildiz.Sevkiyat.Application.Warehouse.Services.ZoneAutoCloseService>();
 
 // Configure SeedData Options
 builder.Services.AddOptions<SeedDataOptions>()

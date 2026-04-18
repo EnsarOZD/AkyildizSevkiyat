@@ -18,7 +18,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         }
 
         [HttpPost("{vehicleId:int}/generate-qr")]
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Admin,Manager,Accounting")]
         public async Task<IActionResult> GenerateQr(int vehicleId, CancellationToken ct)
         {
             var result = await _mediator.Send(new GenerateVehicleQrCodeCommand(vehicleId), ct);

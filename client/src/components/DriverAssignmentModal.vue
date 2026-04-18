@@ -49,15 +49,6 @@
           </span>
         </div>
 
-        <!-- Optimization info -->
-        <div class="rounded-md bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-3 flex items-start gap-2">
-          <svg class="h-4 w-4 text-blue-500 dark:text-blue-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
-          </svg>
-          <span class="text-sm text-blue-700 dark:text-blue-400">
-            Araç ataması sonrası rota otomatik optimize edilecek. Mevcut proje sıralaması güncellenecektir.
-          </span>
-        </div>
       </div>
 
       <!-- Form -->
@@ -123,7 +114,7 @@
             v-model="departureTime"
             class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border p-2 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100"
           />
-          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Rota optimizasyonunda başlangıç saati olarak kullanılır.</p>
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Planlanan hareket saati.</p>
         </div>
       </div>
 
@@ -138,7 +129,7 @@
           class="px-6 py-3 min-h-[44px] bg-blue-600 text-white rounded font-bold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
           <span v-if="isSaving" class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
-          <span>{{ isSaving ? 'Rota optimize ediliyor ve kaydediliyor...' : 'KAYDET VE TRANSFERE HAZIRLA' }}</span>
+          <span>{{ isSaving ? 'Kaydediliyor...' : 'KAYDET VE TRANSFERE HAZIRLA' }}</span>
         </button>
       </div>
 

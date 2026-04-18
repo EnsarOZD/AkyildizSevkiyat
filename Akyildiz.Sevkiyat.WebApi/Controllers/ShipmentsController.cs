@@ -22,6 +22,7 @@ using Akyildiz.Sevkiyat.Application.Shipments.Commands.UpdateShipmentDetails;
 using Akyildiz.Sevkiyat.Application.Shipments.Commands.UpdateIrsaliyeNo;
 using Akyildiz.Sevkiyat.Application.Shipments.Commands.RecordVehicleReturn;
 using Akyildiz.Sevkiyat.Application.Shipments.Commands.LogShipmentPrint;
+using Akyildiz.Sevkiyat.Application.Shipments.Commands.AdminResetShipment;
 using Microsoft.AspNetCore.Authorization;
 
 namespace Akyildiz.Sevkiyat.WebApi.Controllers
@@ -119,7 +120,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         }
 
         [HttpPost("{id:int}/mark-delivered")]
-        [Authorize(Roles = "Admin,Manager,Dispatcher,Driver")]
+        [Authorize(Roles = "Admin,Manager,Accounting,Driver")]
         public async Task<IActionResult> MarkDelivered(int id, [FromBody] MarkDeliveredRequest? request)
         {
             await _mediator.Send(new MarkShipmentDeliveredCommand(id, request?.DeliveryNote, request?.DeliveryRecipient, request?.DeliveryPhotoBase64, request?.OverrideNote));
@@ -147,7 +148,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         }
 
         [HttpPost("{id:int}/start-picking")]
-        [Authorize(Roles = "Admin,Warehouse,Manager")]
+        [Authorize(Roles = "Admin,Warehouse,Manager,Accounting")]
         public async Task<IActionResult> StartPicking(int id, [FromBody] ChangeStatusRequest? request)
         {
             await _mediator.Send(new StartPickingCommand(id, request?.Reason));
@@ -163,7 +164,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         }
 
         [HttpPost("{id:int}/mark-ready")]
-        [Authorize(Roles = "Admin,Warehouse,Manager")]
+        [Authorize(Roles = "Admin,Warehouse,Manager,Accounting")]
         public async Task<IActionResult> MarkReady(int id, [FromBody] ChangeStatusRequest? request)
         {
             var result = await _mediator.Send(new MarkReadyCommand(id, request?.Reason));
@@ -173,7 +174,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         }
 
         [HttpPost("{id:int}/assign-vehicle")]
-        [Authorize(Roles = "Admin,Dispatcher,Manager")]
+        [Authorize(Roles = "Admin,Manager,Accounting")]
         public async Task<IActionResult> AssignVehicle(int id, [FromBody] AssignVehicleRequest request)
         {
             var result = await _mediator.Send(new AssignVehicleCommand(id, request.DriverId, request.VehicleId));
@@ -181,7 +182,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         }
 
         [HttpPut("{id:int}/irsaliye")]
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Admin,Manager,Accounting")]
         public async Task<IActionResult> UpdateIrsaliye(int id, [FromBody] UpdateIrsaliyeRequest request)
         {
             await _mediator.Send(new UpdateIrsaliyeNoCommand(id, request.IrsaliyeNo, request.IrsaliyeDate));
@@ -189,7 +190,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         }
 
         [HttpGet("{id:int}/detail")]
-        [Authorize(Roles = "Admin,Manager,Dispatcher,Warehouse,Accounting,Driver")]
+        [Authorize(Roles = "Admin,Manager,Warehouse,Accounting,Driver")]
         public async Task<IActionResult> GetDetail(int id)
         {
             var result = await _mediator.Send(new GetShipmentDetailQuery(id));
@@ -197,7 +198,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         }
 
         [HttpPost("bulk-assign-vehicle")]
-        [Authorize(Roles = "Admin,Dispatcher,Manager")]
+        [Authorize(Roles = "Admin,Manager,Accounting")]
         public async Task<IActionResult> BulkAssignVehicle([FromBody] BulkAssignVehicleRequest request)
         {
             var result = await _mediator.Send(new BulkAssignVehicleCommand(request.ShipmentIds, request.DriverId, request.VehicleId));
@@ -205,15 +206,23 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         }
 
         [HttpPost("{id:int}/log-print")]
-        [Authorize(Roles = "Admin,Manager,Dispatcher,Warehouse,Accounting")]
+        [Authorize(Roles = "Admin,Manager,Warehouse,Accounting")]
         public async Task<IActionResult> LogPrint(int id)
         {
             var result = await _mediator.Send(new LogShipmentPrintCommand(id));
             return Ok(result);
         }
 
+        [HttpPost("{id:int}/admin-reset")]
+        [Authorize(Roles = "Admin,Manager")]
+        public async Task<IActionResult> AdminReset(int id, [FromBody] AdminResetRequest request)
+        {
+            await _mediator.Send(new AdminResetShipmentCommand(id, request.Reason));
+            return NoContent();
+        }
+
         [HttpPost("{id:int}/record-vehicle-return")]
-        [Authorize(Roles = "Admin,Manager,Warehouse,Dispatcher,Driver")]
+        [Authorize(Roles = "Admin,Manager,Accounting,Warehouse,Driver")]
         public async Task<IActionResult> RecordVehicleReturn(int id, [FromBody] RecordVehicleReturnRequest request)
         {
             var lines = request.Lines

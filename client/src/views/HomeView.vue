@@ -286,7 +286,6 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { dashboardService, type DashboardStats, type CriticalStockItem } from '../services/dashboardService';
 import CriticalStockWidget from '../components/CriticalStockWidget.vue';
@@ -303,8 +302,6 @@ import {
 } from '@heroicons/vue/24/outline';
 
 const authStore = useAuthStore();
-const router = useRouter();
-
 const stats = ref<DashboardStats | null>(null);
 const loading = ref(false);
 const error = ref(false);
@@ -387,10 +384,6 @@ const load = async () => {
 };
 
 onMounted(() => {
-  if (authStore.userRole === 'Dispatcher') {
-    router.replace('/driver');
-    return;
-  }
   load();
 });
 </script>

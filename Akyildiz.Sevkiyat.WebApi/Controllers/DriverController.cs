@@ -11,7 +11,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Admin,Manager,Dispatcher,Driver")]
+    [Authorize(Roles = "Admin,Manager,Accounting,Driver")]
     public class DriverController : ControllerBase
     {
         private readonly IMediator _mediator;

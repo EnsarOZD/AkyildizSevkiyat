@@ -56,7 +56,7 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.RecordVehicleReturn
             }
             else
             {
-                // Dispatcher/Admin processing shipment -> always an override
+                // Driver/Admin processing shipment -> always an override
                 isOverride = true;
                 if (string.IsNullOrWhiteSpace(request.OverrideNote))
                 {

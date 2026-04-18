@@ -1,5 +1,14 @@
 import apiClient from './apiClient';
 
+export interface PoCounterDto {
+  id: number;
+  year: number;
+  month: number;
+  lastValue: number;
+  formattedNumber: string;
+  nextNumber: string;
+}
+
 export interface DepotSettingsDto {
   depotName: string | null;
   depotAddress: string | null;
@@ -20,6 +29,16 @@ const systemSettingsService = {
       depotLatitude: data.depotLatitude,
       depotLongitude: data.depotLongitude,
     });
+    return response.data;
+  },
+
+  async getPoCounters(): Promise<PoCounterDto[]> {
+    const response = await apiClient.get<PoCounterDto[]>('/system-settings/po-counter');
+    return response.data;
+  },
+
+  async updatePoCounter(id: number, lastValue: number): Promise<PoCounterDto> {
+    const response = await apiClient.put<PoCounterDto>(`/system-settings/po-counter/${id}`, { lastValue });
     return response.data;
   },
 

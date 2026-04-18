@@ -20,15 +20,47 @@ export interface ProjectCoordinateValidationDto {
   status: 'Compatible' | 'Suspicious' | 'Incompatible' | 'NoAddress' | 'NoCoordinate';
 }
 
+export interface ProjectQueryParams {
+  pageNumber?: number;
+  pageSize?: number;
+  search?: string;
+  showInactive?: boolean;
+}
+
+export interface PaginatedProjects {
+  items: any[];
+  pageIndex: number;
+  totalPages: number;
+  totalCount: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+}
+
 const projectService = {
   async getZones(): Promise<Zone[]> {
     const response = await apiClient.get('/zones');
     return response.data || [];
   },
 
-  async getProjects(): Promise<any[]> {
-    const response = await apiClient.get('/projects');
-    return response.data || [];
+  async getProjects(params: ProjectQueryParams = {}): Promise<PaginatedProjects> {
+    const response = await apiClient.get('/projects', { params });
+    const d = response.data;
+    return {
+      items: d.items || d.Items || [],
+      pageIndex: d.pageIndex ?? d.PageIndex ?? 1,
+      totalPages: d.totalPages ?? d.TotalPages ?? 1,
+      totalCount: d.totalCount ?? d.TotalCount ?? 0,
+      hasPreviousPage: d.hasPreviousPage ?? d.HasPreviousPage ?? false,
+      hasNextPage: d.hasNextPage ?? d.HasNextPage ?? false,
+    };
+  },
+
+  async toggleProjectActive(projectId: number, isActive: boolean): Promise<void> {
+    await apiClient.patch(`/projects/${projectId}/toggle-active`, null, { params: { isActive } });
+  },
+
+  async deleteProject(projectId: number): Promise<void> {
+    await apiClient.delete(`/projects/${projectId}`);
   },
 
   async assignZone(projectId: number, zoneId: number): Promise<void> {

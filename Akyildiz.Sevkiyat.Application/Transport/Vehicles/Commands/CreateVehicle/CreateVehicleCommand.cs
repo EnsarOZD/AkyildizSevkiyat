@@ -16,7 +16,7 @@ namespace Akyildiz.Sevkiyat.Application.Transport.Vehicles.Commands.CreateVehicl
     ) : IRequest<int>, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles =>
-            new[] { "Admin", "Manager" };
+            new[] { "Admin", "Manager", "Accounting" };
     }
 
     public class CreateVehicleCommandHandler : IRequestHandler<CreateVehicleCommand, int>

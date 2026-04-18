@@ -19,7 +19,7 @@ namespace Akyildiz.Sevkiyat.Application.GoodsReceipts.Commands.CancelGoodsReceip
         public Guid Id { get; set; }
 
         public IReadOnlyList<string> AllowedRoles =>
-            new[] { "Admin", "Manager" };
+            new[] { "Admin", "Manager", "Accounting" };
     }
 
     public class CancelGoodsReceiptCommandHandler : IRequestHandler<CancelGoodsReceiptCommand, Unit>
@@ -34,9 +34,15 @@ namespace Akyildiz.Sevkiyat.Application.GoodsReceipts.Commands.CancelGoodsReceip
         public async Task<Unit> Handle(CancelGoodsReceiptCommand request, CancellationToken cancellationToken)
         {
             var entity = await _context.GoodsReceipts
+                .Include(x => x.Lines)
                 .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
             
             if (entity == null) throw new NotFoundException("GoodsReceipt", request.Id);
+
+            if (entity.Status == GoodsReceiptStatus.Cancelled)
+            {
+                 return Unit.Value;
+            }
 
             if (entity.Status == GoodsReceiptStatus.Posted)
             {
@@ -76,8 +82,8 @@ namespace Akyildiz.Sevkiyat.Application.GoodsReceipts.Commands.CancelGoodsReceip
                     _context.StockTransactions.Add(new StockTransaction
                     {
                         StockMasterId = line.StockMasterId,
-                        Type = StockTransactionType.GoodsOut,
-                        Qty = incomingQty,
+                        Type = StockTransactionType.GoodsInCorrection,
+                        Qty = -incomingQty,
                         Reference = "İPTAL-" + entity.WaybillNo,
                         Date = DateTime.UtcNow,
                         Note = $"İptal: {entity.WaybillNo}"
@@ -105,6 +111,7 @@ namespace Akyildiz.Sevkiyat.Application.GoodsReceipts.Commands.CancelGoodsReceip
                 if (poIds.Any())
                 {
                     var linkedPos = await _context.PurchaseOrders
+                        .Include(p => p.Lines)
                         .Where(p => poIds.Contains(p.Id))
                         .ToListAsync(cancellationToken);
 
@@ -112,20 +119,30 @@ namespace Akyildiz.Sevkiyat.Application.GoodsReceipts.Commands.CancelGoodsReceip
                     {
                         if (po.Status == PurchaseOrderStatus.Cancelled) continue;
                         
-                        po.Status = PurchaseOrderStatus.PartiallyReceived; 
+                        // Check if any other non-cancelled receipts exist for this PO
+                        var otherReceipts = await _context.GoodsReceipts
+                            .Where(gr => gr.PurchaseOrderId == po.Id 
+                                      && gr.Id != entity.Id 
+                                      && gr.Status != GoodsReceiptStatus.Cancelled)
+                            .ToListAsync(cancellationToken);
+
+                        if (!otherReceipts.Any())
+                        {
+                            po.Status = PurchaseOrderStatus.Approved;
+                        }
+                        else 
+                        {
+                            // If there are other receipts, check if they are all posted and fulfilled
+                            // For simplicity, if any active receipt exists, we mark it as PartiallyReceived 
+                            // unless we want to re-calculate if it should be Closed (unlikely during cancellation)
+                            po.Status = PurchaseOrderStatus.PartiallyReceived;
+                        }
                     }
                 }
             }
-
-            if (entity.Status == GoodsReceiptStatus.Cancelled)
+            else if (entity.Status != GoodsReceiptStatus.Draft)
             {
-                 // Already cancelled. Return success (Idempotent).
-                 return Unit.Value;
-            }
-
-            if (entity.Status != GoodsReceiptStatus.Draft)
-            {
-                throw new DomainException($"Cannot cancel Goods Receipt in status {entity.Status}. Only Draft can be cancelled.");
+                throw new DomainException($"Cannot cancel Goods Receipt in status {entity.Status}. Only Draft or Posted can be cancelled.");
             }
 
             entity.Status = GoodsReceiptStatus.Cancelled;

@@ -2,57 +2,51 @@
   <div class="space-y-4">
 
     <!-- ── Header ── -->
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-xl font-bold text-gray-900 dark:text-gray-100">Depo Hazırlık</h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-          <span v-if="!loading">
-            <span v-if="activePickingCount > 0" class="text-orange-600 dark:text-orange-400 font-medium">{{ activePickingCount }} bekleyen hazırlık</span>
-            <span v-else class="text-green-600 dark:text-green-400 font-medium">Bekleyen hazırlık yok</span>
-            <span v-if="overdueCount > 0" class="ml-2 text-red-600 dark:text-red-400 font-medium">• {{ overdueCount }} gecikmiş</span>
-          </span>
-          <span v-else class="italic">Yükleniyor...</span>
-        </p>
-      </div>
-      <div class="flex items-center gap-2">
-        <!-- 3-sekme filtre -->
-        <div class="flex rounded-lg border border-gray-300 dark:border-gray-700 overflow-hidden text-xs">
+    <PageHeader title="Depo Hazırlık" :subtitle="loading ? 'Yükleniyor...' : activePickingCount > 0 ? `${activePickingCount} bekleyen hazırlık${overdueCount > 0 ? ` • ${overdueCount} gecikmiş` : ''}` : 'Bekleyen hazırlık yok'" color="amber">
+      <template #icon>
+        <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+        </svg>
+      </template>
+      <template #actions>
+        <div class="flex items-center gap-2">
+          <div class="flex rounded-lg border border-gray-300 dark:border-gray-700 overflow-hidden text-xs">
+            <button
+              v-for="tab in tabOptions" :key="tab.key"
+              @click="activeTab = tab.key"
+              class="relative px-3 py-1.5 transition-colors"
+              :class="activeTab === tab.key
+                ? 'bg-blue-600 text-white'
+                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'"
+            >
+              {{ tab.label }}
+              <span
+                v-if="tab.key === 'irsaliye' && irsaliyePendingCount > 0"
+                class="ml-1 bg-red-500 text-white rounded-full px-1.5 py-0.5 text-[10px] font-bold"
+              >{{ irsaliyePendingCount }}</span>
+              <span
+                v-if="tab.key === 'vehicle' && vehiclePendingCount > 0"
+                class="ml-1 bg-purple-500 text-white rounded-full px-1.5 py-0.5 text-[10px] font-bold"
+              >{{ vehiclePendingCount }}</span>
+              <span
+                v-if="tab.key === 'loading' && loadingPendingCount > 0"
+                class="ml-1 bg-emerald-500 text-white rounded-full px-1.5 py-0.5 text-[10px] font-bold"
+              >{{ loadingPendingCount }}</span>
+            </button>
+          </div>
           <button
-            v-for="tab in tabOptions" :key="tab.key"
-            @click="activeTab = tab.key"
-            class="relative px-3 py-1.5 transition-colors"
-            :class="activeTab === tab.key
-              ? 'bg-blue-600 text-white'
-              : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'"
+            @click="fetchAll"
+            :disabled="loading"
+            class="p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+            title="Yenile"
           >
-            {{ tab.label }}
-            <span
-              v-if="tab.key === 'irsaliye' && irsaliyePendingCount > 0"
-              class="ml-1 bg-red-500 text-white rounded-full px-1.5 py-0.5 text-[10px] font-bold"
-            >{{ irsaliyePendingCount }}</span>
-            <span
-              v-if="tab.key === 'vehicle' && vehiclePendingCount > 0"
-              class="ml-1 bg-purple-500 text-white rounded-full px-1.5 py-0.5 text-[10px] font-bold"
-            >{{ vehiclePendingCount }}</span>
-            <span
-              v-if="tab.key === 'loading' && loadingPendingCount > 0"
-              class="ml-1 bg-emerald-500 text-white rounded-full px-1.5 py-0.5 text-[10px] font-bold"
-            >{{ loadingPendingCount }}</span>
+            <svg :class="loading ? 'animate-spin' : ''" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
           </button>
         </div>
-        <!-- Refresh -->
-        <button
-          @click="fetchAll"
-          :disabled="loading"
-          class="p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
-          title="Yenile"
-        >
-          <svg :class="loading ? 'animate-spin' : ''" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-        </button>
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
     <!-- ── Kritik Stok Widget ── -->
     <CriticalStockWidget :items="criticalStocks" :loading="criticalStocksLoading" />
@@ -150,7 +144,7 @@
           </div>
 
           <!-- Action buttons row (always visible) -->
-          <div class="px-4 pb-3 flex flex-wrap gap-2">
+          <div class="px-4 pb-3 flex flex-wrap gap-2" :class="{ 'justify-between': true }">
 
             <button
               v-if="zonePrep.statusId === 0 && !zonePrep.isFrozen"
@@ -183,14 +177,21 @@
               <span>Netsisten İrsaliye Çek</span>
             </button>
 
-            <!-- Assign vehicle (shown at status 4, after irsaliye fetched) -->
-            <button
-              v-if="zonePrep.statusId === 4 && zonePrep.irsaliyeFetched && zonePrep.isFrozen"
-              @click.stop="openDriverModal(zonePrep)"
-              class="flex-1 md:flex-none bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition-colors"
-            >
-              🚚 <span>Araca Ata</span>
-            </button>
+            <!-- Assign driver (shown at status 4, after irsaliye fetched) -->
+            <template v-if="zonePrep.statusId === 4 && zonePrep.irsaliyeFetched && zonePrep.isFrozen">
+              <button
+                @click.stop="openDriverModal(zonePrep)"
+                class="flex-1 md:flex-none bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition-colors"
+              >
+                🚚 <span>Şoför Ata</span>
+              </button>
+              <button
+                @click.stop="openCargoModal(zonePrep)"
+                class="flex-1 md:flex-none bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition-colors"
+              >
+                📦 <span>Kargo ile Gönder</span>
+              </button>
+            </template>
 
             <!-- Confirm loading (shown at status 5 = ReadyForTransfer) -->
             <button
@@ -205,6 +206,21 @@
               </svg>
               <span v-else>🚛</span>
               <span>Yüklemeyi Onayla</span>
+            </button>
+
+            <!-- Admin: force-close stuck zone -->
+            <button
+              v-role="['Admin']"
+              v-if="zonePrep.statusId < 6"
+              @click.stop="confirmForceClose(zonePrep)"
+              :disabled="forcingCloseId === zonePrep.id"
+              class="ml-auto flex-none bg-transparent border border-red-300 dark:border-red-800 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors disabled:opacity-50"
+              title="Bu hazırlığı zorla kapat (Admin)"
+            >
+              <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              <span>Zorla Kapat</span>
             </button>
           </div>
 
@@ -304,12 +320,21 @@
       @close="closeDriverModal"
       @completed="fetchAll"
     />
+    <CargoDispatchModal
+      v-if="showCargoModal && selectedZonePrep"
+      :zone-preparation-id="selectedZonePrep.id"
+      :zone-name="selectedZonePrep.zoneName"
+      :shipment-count="selectedZonePrep.projects?.length ?? 0"
+      @close="showCargoModal = false; selectedZonePrep = null"
+      @completed="fetchAll"
+    />
 
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import PageHeader from '../components/PageHeader.vue';
 import warehouseService, { type DashboardZoneDto } from '../services/warehouseService';
 import { dashboardService, type CriticalStockItem } from '../services/dashboardService';
 import { ApiErrorUtils } from '../utils/apiError';
@@ -317,6 +342,7 @@ import { useNotificationStore } from '../stores/notification';
 import MicroPickingModal from '../components/MicroPickingModal.vue';
 import MacroPickingModal from '../components/MacroPickingModal.vue';
 import DriverAssignmentModal from '../components/DriverAssignmentModal.vue';
+import CargoDispatchModal from '../components/CargoDispatchModal.vue';
 import CriticalStockWidget from '../components/CriticalStockWidget.vue';
 
 const notificationStore = useNotificationStore();
@@ -330,7 +356,7 @@ const activeTab = ref<TabKey>('active');
 const tabOptions: { key: TabKey; label: string }[] = [
   { key: 'active',    label: 'Aktif Hazırlık' },
   { key: 'irsaliye',  label: 'İrsaliye Bekleyen' },
-  { key: 'vehicle',   label: 'Araç Atama Bekleyen' },
+  { key: 'vehicle',   label: 'Şoför/Kargo Bekleyen' },
   { key: 'loading',   label: 'Yükleme Bekleyen' },
   { key: 'all',       label: 'Tümü' },
 ];
@@ -495,6 +521,28 @@ const openDriverModal = (zone: DashboardZoneDto) => {
   showDriverModal.value = true;
 };
 const closeDriverModal = () => { showDriverModal.value = false; };
+
+const showCargoModal = ref(false);
+const openCargoModal = (zone: DashboardZoneDto) => {
+  selectedZonePrep.value = zone;
+  showCargoModal.value = true;
+};
+
+const forcingCloseId = ref<number | null>(null);
+const confirmForceClose = async (zone: DashboardZoneDto) => {
+  const ok = confirm(`"${zone.zoneName} - ${zone.batchLabel}" hazırlığını zorla kapatmak istediğinize emin misiniz?\n\nBu işlem geri alınamaz. Bağlı tüm sevkiyatlar serbest bırakılacak.`);
+  if (!ok) return;
+  forcingCloseId.value = zone.id;
+  try {
+    await warehouseService.adminForceCloseZone(zone.id);
+    notificationStore.add('Hazırlık zorla kapatıldı.', 'success');
+    await fetchAll();
+  } catch (e: any) {
+    notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Kapatma başarısız.', 'error');
+  } finally {
+    forcingCloseId.value = null;
+  }
+};
 
 const fetchIrsaliye = async (zonePrep: DashboardZoneDto) => {
   if (fetchingIrsaliyeId.value) return;

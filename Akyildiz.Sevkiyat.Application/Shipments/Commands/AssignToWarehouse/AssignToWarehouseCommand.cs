@@ -6,7 +6,7 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.AssignToWarehouse
     public record AssignToWarehouseCommand(int ShipmentId) : IRequest<AssignToWarehouseResult>, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles =>
-            new[] { "Admin", "Manager", "Warehouse" };
+            new[] { "Admin", "Manager", "Accounting", "Warehouse" };
     }
 
     public class AssignToWarehouseResult

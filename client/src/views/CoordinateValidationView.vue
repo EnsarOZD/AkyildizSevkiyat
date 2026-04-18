@@ -336,8 +336,8 @@ const distanceClass = (km?: number | null) => {
 const load = async () => {
   loading.value = true;
   try {
-    const data = await projectService.getProjects();
-    allProjects.value = data.map((p: any) => ({
+    const data = await projectService.getProjects({ pageSize: 9999, showInactive: true });
+    allProjects.value = data.items.map((p: any) => ({
       id: p.id,
       code: p.code,
       name: p.name,
