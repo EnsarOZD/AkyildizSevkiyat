@@ -325,6 +325,7 @@ import vehicleReturnService, {
 import apiClient from '../services/apiClient';
 import { useNotificationStore } from '../stores/notification';
 import { ApiErrorUtils } from '../utils/apiError';
+import { formatDate } from '../utils/dateFormat';
 
 const notificationStore = useNotificationStore();
 
@@ -386,8 +387,6 @@ const loadData = async (page = currentPage.value) => {
     loading.value = false;
   }
 };
-
-const formatDate = (d: string) => new Date(d).toLocaleDateString('tr-TR');
 
 const lineStatusLabel = (status: string) => {
   const map: Record<string, string> = {

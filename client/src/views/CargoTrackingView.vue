@@ -184,6 +184,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import warehouseService, { type YkCargoReportItem } from '../services/warehouseService'
 import { useNotification } from '../composables/useNotification'
+import { formatDate } from '../utils/dateFormat'
 
 const { notify } = useNotification()
 
@@ -229,10 +230,6 @@ function ykStatusClass(code: string): string {
   if (code === 'DLV') return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
   if (YK_SUCCESS.has(code)) return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
   return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-}
-
-function formatDate(val: string): string {
-  return new Date(val).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
 async function loadReport(page = 1) {

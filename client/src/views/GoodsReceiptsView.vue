@@ -391,6 +391,7 @@ import { InboxArrowDownIcon } from '@heroicons/vue/24/outline';
 
 import goodsReceiptService from '../services/goodsReceiptService';
 import { ApiErrorUtils } from '../utils/apiError';
+import { formatDate } from '../utils/dateFormat';
 import { useNotificationStore } from '../stores/notification';
 import { useKeyboardShortcut } from '../composables/useKeyboardShortcut';
 import StockCombobox from '../components/StockCombobox.vue';
@@ -447,7 +448,6 @@ const markLineDirty = (line: any) => {
 };
 
 const calculateAccepted = (line: any) => (line.receivedQty || 0) - (line.rejectedQty || 0);
-const formatDate = (date: string) => date ? new Date(date).toLocaleDateString('tr-TR') : '-';
 
 const fetchReceipts = async () => {
   loading.value = true;

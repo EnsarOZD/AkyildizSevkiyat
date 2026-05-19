@@ -344,6 +344,7 @@ import shipmentService, { type ZoneItem } from '../services/shipmentService';
 import apiClient from '../services/apiClient';
 import { useNotificationStore } from '../stores/notification';
 import { ApiErrorUtils } from '../utils/apiError';
+import { formatDate } from '../utils/dateFormat';
 
 const notify = useNotificationStore();
 const route = useRoute();
@@ -455,10 +456,6 @@ function toggle(id: number) {
 }
 
 // ── Formatters ───────────────────────────────────────────────────────────────
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-}
 
 function statusLabel(s: string) {
   const m: Record<string, string> = {

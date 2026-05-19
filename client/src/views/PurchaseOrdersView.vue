@@ -328,6 +328,7 @@ import purchaseOrderService from '../services/purchaseOrderService';
 import CreatePurchaseOrderModal from '../components/CreatePurchaseOrderModal.vue';
 import { useNotificationStore } from '../stores/notification';
 import { ApiErrorUtils } from '../utils/apiError';
+import { formatDate } from '../utils/dateFormat';
 import StatusBadge from '../components/StatusBadge.vue';
 import SkeletonTable from '../components/SkeletonTable.vue';
 import { useKeyboardShortcut } from '../composables/useKeyboardShortcut';
@@ -355,11 +356,6 @@ const showCreateModal = ref(false);
 
 // N tuşu → yeni sipariş oluştur
 useKeyboardShortcut('n', () => { if (!showCreateModal.value) showCreateModal.value = true; });
-
-const formatDate = (date: string) => {
-  if (!date) return '-';
-  return new Date(date).toLocaleDateString('tr-TR');
-};
 
 const formatDateTime = (dt: string) => {
   if (!dt) return '-';

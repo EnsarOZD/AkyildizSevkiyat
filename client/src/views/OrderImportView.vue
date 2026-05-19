@@ -569,6 +569,7 @@ import projectService from '../services/projectService';
 import apiClient from '../services/apiClient';
 import { useNotificationStore } from '../stores/notification';
 import { ApiErrorUtils } from '../utils/apiError';
+import { formatDate } from '../utils/dateFormat';
 import BaseButton from '../components/BaseButton.vue';
 import BaseInput from '../components/base/BaseInput.vue';
 import BaseSelect from '../components/base/BaseSelect.vue';
@@ -911,11 +912,6 @@ const openDetail = async (order: any) => {
     } finally {
         detailLoading.value = false;
     }
-};
-
-const formatDate = (d: string) => {
-    if(!d) return '';
-    return new Date(d).toLocaleDateString('tr-TR');
 };
 
 watch([activeTab, page], loadOrders);

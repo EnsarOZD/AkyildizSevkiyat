@@ -228,6 +228,7 @@ import { useRouter } from 'vue-router';
 import purchaseOrderService from '../services/purchaseOrderService';
 import { supplierService } from '../services/supplierService';
 import CreateGoodsReceiptModal from '../components/CreateGoodsReceiptModal.vue';
+import { formatDate } from '../utils/dateFormat';
 
 const router = useRouter();
 const loading = ref(false);
@@ -277,10 +278,6 @@ const resetFilters = () => {
         toDate: new Date().toISOString().split('T')[0]
     };
     poList.value = [];
-};
-
-const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('tr-TR');
 };
 
 const selectPO = async (id: string) => {

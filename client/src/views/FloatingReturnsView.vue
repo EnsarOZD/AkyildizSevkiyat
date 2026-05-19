@@ -256,6 +256,7 @@ import floatingReturnService, { type FloatingReturnDto, ResolveAction } from '..
 import shipmentService, { type Shipment } from '../services/shipmentService';
 import { useNotificationStore } from '../stores/notification';
 import { ApiErrorUtils } from '../utils/apiError';
+import { formatDate } from '../utils/dateFormat';
 import StatusBadge from '../components/StatusBadge.vue';
 
 const notificationStore = useNotificationStore();
@@ -307,8 +308,6 @@ const loadData = async (page = currentPage.value) => {
     loading.value = false;
   }
 };
-
-const formatDate = (d: string) => new Date(d).toLocaleDateString('tr-TR');
 
 const formatReturnReason = (r: string) => {
   const map: Record<string, string> = {

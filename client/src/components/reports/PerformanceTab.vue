@@ -116,6 +116,7 @@ import { ref, computed } from 'vue';
 import reportService from '../../services/reportService';
 import type { ShipmentPerformanceDto } from '../../services/reportService';
 import { ApiErrorUtils } from '../../utils/apiError';
+import { formatDate as fmtDate } from '../../utils/dateFormat';
 import { useNotification } from '../../composables/useNotification';
 import { exportToExcel } from '../../utils/exportExcel';
 
@@ -128,8 +129,6 @@ const filter = ref({ startDate: monthAgo, endDate: today });
 const perfData = ref<ShipmentPerformanceDto | null>(null);
 const loading = ref(false);
 const perfLateOnly = ref(false);
-
-const fmtDate = (d: string) => new Date(d).toLocaleDateString('tr-TR');
 
 const filteredPerfRows = computed(() =>
   perfLateOnly.value ? (perfData.value?.rows.filter(r => r.isLate) ?? []) : (perfData.value?.rows ?? [])

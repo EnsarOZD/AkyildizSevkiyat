@@ -441,6 +441,7 @@ import { supplierService } from '../services/supplierService';
 import { useNotificationStore } from '../stores/notification';
 import { useAuthStore } from '../stores/auth';
 import { ApiErrorUtils } from '../utils/apiError';
+import { formatDate } from '../utils/dateFormat';
 import StatusBadge from '../components/StatusBadge.vue';
 import StockCombobox from '../components/StockCombobox.vue';
 
@@ -473,11 +474,6 @@ const canEdit = computed(() => {
   const role = authStore.userRole;
   return ['Admin', 'Accounting', 'Manager'].includes(role);
 });
-
-const formatDate = (date: string) => {
-  if (!date) return '-';
-  return new Date(date).toLocaleDateString('tr-TR');
-};
 
 const fetchOrder = async () => {
   loading.value = true;

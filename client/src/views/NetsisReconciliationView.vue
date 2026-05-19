@@ -155,6 +155,7 @@
 import { ref, onMounted } from 'vue';
 import PageHeader from '../components/PageHeader.vue';
 import apiClient from '../services/apiClient';
+import { formatDate } from '../utils/dateFormat';
 
 interface LineReconciliationDto {
   shipmentLineId: number;
@@ -221,9 +222,6 @@ const toggleExpand = (id: number) => {
     expanded.value.add(id);
   }
 };
-
-const formatDate = (d: string) =>
-  new Date(d).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
 const statusLabel = (status: string): string => {
   const map: Record<string, string> = {

@@ -106,6 +106,7 @@ import { ref, onMounted, reactive } from 'vue';
 import PageHeader from '../components/PageHeader.vue';
 import { supplierService } from '../services/supplierService';
 import { ApiErrorUtils } from '../utils/apiError';
+import { formatDate } from '../utils/dateFormat';
 import { useNotificationStore } from '../stores/notification';
 import CreateSupplierModal from '../components/CreateSupplierModal.vue';
 import BaseModal from '../components/BaseModal.vue';
@@ -227,11 +228,6 @@ const downloadTemplate = async () => {
     } catch (e) {
         notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Şablon indirilemedi.', 'error');
     }
-};
-
-const formatDate = (date: string) => {
-    if(!date) return '-';
-    return new Date(date).toLocaleDateString('tr-TR');
 };
 
 onMounted(() => {

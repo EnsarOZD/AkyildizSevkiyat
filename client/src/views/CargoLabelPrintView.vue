@@ -102,16 +102,13 @@ import { useRoute } from 'vue-router';
 import JsBarcode from 'jsbarcode';
 import shipmentService, { type ShipmentDetail } from '../services/shipmentService';
 import logoUrl from '../assets/logo.png';
+import { formatDate } from '../utils/dateFormat';
 
 const route = useRoute();
 const shipment = ref<ShipmentDetail | null>(null);
 const loading = ref(true);
 const error = ref<string | null>(null);
 const barcodeEl = ref<SVGSVGElement | null>(null);
-
-function formatDate(d: string | Date) {
-  return new Date(d).toLocaleDateString('tr-TR');
-}
 
 function renderBarcode() {
   if (!barcodeEl.value || !shipment.value?.ykBarcode) return;

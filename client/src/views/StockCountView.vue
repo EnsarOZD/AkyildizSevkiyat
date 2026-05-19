@@ -313,6 +313,7 @@ import BaseModal from '../components/BaseModal.vue';
 import stockCountService, { type StockCountDetail, type StockCountLineDetail, type StockCountSummary } from '../services/stockCountService';
 import { useNotificationStore } from '../stores/notification';
 import { ApiErrorUtils } from '../utils/apiError';
+import { formatDate } from '../utils/dateFormat';
 import { turkishIncludes } from '../utils/turkishSearch';
 
 const notificationStore = useNotificationStore();
@@ -536,8 +537,6 @@ const submitCancel = async () => {
 };
 
 // Helpers
-const formatDate = (d: string) => new Date(d).toLocaleDateString('tr-TR');
-
 const statusClass = (s: string) => {
   if (s === 'Draft') return 'bg-yellow-100 text-yellow-800';
   if (s === 'Cancelled') return 'bg-red-100 text-red-800';

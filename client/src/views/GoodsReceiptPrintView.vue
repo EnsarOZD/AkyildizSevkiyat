@@ -151,6 +151,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import goodsReceiptService from '../services/goodsReceiptService';
 import { ApiErrorUtils } from '../utils/apiError';
+import { formatDate } from '../utils/dateFormat';
 
 const route = useRoute();
 const receipt = ref<any>(null);
@@ -158,11 +159,6 @@ const loading = ref(false);
 const error = ref('');
 
 const window = globalThis.window;
-
-const formatDate = (date: string) => {
-  if (!date) return '-';
-  return new Date(date).toLocaleDateString('tr-TR');
-};
 
 const calcAccepted = (line: any) => (line.receivedQty ?? 0) - (line.rejectedQty ?? 0);
 

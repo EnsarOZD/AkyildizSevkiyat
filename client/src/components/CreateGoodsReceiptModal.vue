@@ -142,6 +142,7 @@ import goodsReceiptService from '../services/goodsReceiptService';
 import { supplierService } from '../services/supplierService';
 import { useNotificationStore } from '../stores/notification';
 import { ApiErrorUtils } from '../utils/apiError';
+import { formatDate } from '../utils/dateFormat';
 import type { OcrInvoiceLineResult } from '../services/ocrService';
 
 const props = defineProps<{
@@ -173,11 +174,6 @@ const form = ref({
 });
 
 const errors = ref<{ waybillNo?: string; waybillDate?: string; note?: string; supplierId?: string }>({});
-
-const formatDate = (date: string) => {
-  if (!date) return '-';
-  return new Date(date).toLocaleDateString('tr-TR');
-};
 
 const formatWaybillNo = () => {
   let val = form.value.waybillNo.trim().toUpperCase();

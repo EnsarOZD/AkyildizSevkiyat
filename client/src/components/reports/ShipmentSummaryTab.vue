@@ -66,6 +66,7 @@ import { ref, onMounted } from 'vue';
 import reportService from '../../services/reportService';
 import type { ShipmentSummaryDto } from '../../services/reportService';
 import { ApiErrorUtils } from '../../utils/apiError';
+import { formatDate as fmtDate } from '../../utils/dateFormat';
 import { useNotification } from '../../composables/useNotification';
 import { exportToExcel } from '../../utils/exportExcel';
 
@@ -77,8 +78,6 @@ const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().s
 const filter = ref({ startDate: monthAgo, endDate: today });
 const summary = ref<ShipmentSummaryDto | null>(null);
 const loading = ref(false);
-
-const fmtDate = (d: string) => new Date(d).toLocaleDateString('tr-TR');
 
 const statusClass = (status: string) => {
   const map: Record<string, string> = {

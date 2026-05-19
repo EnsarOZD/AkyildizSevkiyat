@@ -310,6 +310,7 @@ import goodsReceiptService from '../services/goodsReceiptService';
 import { useNotificationStore } from '../stores/notification';
 import { useAuthStore } from '../stores/auth';
 import { ApiErrorUtils } from '../utils/apiError';
+import { formatDate } from '../utils/dateFormat';
 import StatusBadge from '../components/StatusBadge.vue';
 import EditGoodsReceiptLineModal from '../components/EditGoodsReceiptLineModal.vue';
 import AddGoodsReceiptLineModal from '../components/AddGoodsReceiptLineModal.vue';
@@ -333,11 +334,6 @@ const totalAccepted = computed(() => receipt.value?.lines?.reduce((sum: number, 
 
 const canPost = computed(() => ['Admin', 'Warehouse', 'Manager'].includes(authStore.userRole));
 const canCreateCorrection = computed(() => ['Admin', 'Manager'].includes(authStore.userRole));
-
-const formatDate = (date: string) => {
-  if (!date) return '-';
-  return new Date(date).toLocaleDateString('tr-TR');
-};
 
 const calcAccepted = (line: any) => (line.receivedQty ?? 0) - (line.rejectedQty ?? 0);
 
