@@ -142,6 +142,18 @@ This means: **never put production secret values into `appsettings.json` in the 
 
 **Operational risk:** Akyıldız uses this system in active production. Run deploys during off-hours when possible, and verify the service is healthy (`systemctl status sevkiyat-api`) before walking away.
 
+### Provider Coupling — Application Layer
+
+The Application layer references `Microsoft.EntityFrameworkCore.SqlServer` deliberately, not by accident. This is **not** a Clean Architecture violation in this codebase.
+
+**Reason:** 31 call sites across 7 query files use `EF.Functions.Collate("Turkish_CI_AS")` to power Turkish case-insensitive search (i/İ, ı/I) on major listing screens (Shipments, Orders, GlobalSearch, PurchaseOrders, Stocks, Suppliers, GoodsReceipts). `EF.Functions.Collate` is a SqlServer-provider extension with no EF Core abstraction equivalent.
+
+**Implication:** A future migration to a different EF Core provider (PostgreSQL, etc.) would require either (a) moving these queries to Infrastructure with provider-specific adapters, or (b) replacing `Collate` with in-memory Turkish normalization + `EF.Functions.Like`. Neither is currently planned.
+
+**Reference:** Commit `a1da259` made the implicit `Microsoft.Extensions.Configuration.Abstractions` transitive dependency explicit and documented this rationale.
+
+For auditors: do not propose removing the SqlServer reference from Application without first proposing how to handle these 31 Collate call sites.
+
 ### Infrastructure Details
 
 **Kestrel:** Max request body size set to 30 MB (for file/photo uploads).
