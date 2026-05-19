@@ -403,3 +403,7 @@ FodyWeavers.xsd
 # ASP.NET Core secrets — never commit real credentials
 appsettings.Development.json
 appsettings.*.local.json
+
+# Local build / debug output drops (contain bundled appsettings + DLLs)
+.debug_bin/
+_build_check/
