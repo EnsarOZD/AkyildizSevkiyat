@@ -13,6 +13,7 @@ export interface DriverShipmentDto {
   status: string;
   deliveredAt?: string;
   deliveryPhotoBase64?: string;
+  deliveryPhotoPath?: string;
   lineCount: number;
 }
 
@@ -21,21 +22,21 @@ export interface ShipmentLineDto {
   stockName: string;
   orderedQty: number;
   unit: string;
+  category: number; // StockCategory enum int value
 }
 
 export interface StopShipmentDto {
   id: number;
-  talepNo?: string;
+  externalOrderNumber?: string;
   irsaliyeNo?: string;
   status: string;
   lineCount: number;
   deliveryDate: string;
-  teslimAlacakKisiler?: string;
-  teslimAlacakTelefon?: string;
   deliveredAt?: string;
   deliveryRecipient?: string;
   deliveryNote?: string;
   deliveryPhotoBase64?: string;
+  deliveryPhotoPath?: string;
   lines: ShipmentLineDto[];
 }
 
@@ -48,6 +49,8 @@ export interface DeliveryStopDto {
   projectLongitude?: number;
   zoneName?: string;
   deliveryOrder?: number;
+  contactName?: string;
+  contactPhone?: string;
   shipments: StopShipmentDto[];
   isFullyDelivered: boolean;
   totalLineCount: number;
@@ -60,6 +63,12 @@ export interface DriverRouteDto {
   totalShipments: number;
   completedShipments: number;
   mapsRouteUrl?: string;
+  zonePreparationId?: number;
+}
+
+export interface RouteOrderItemDto {
+  projectId: number;
+  routeOrder: number;
 }
 
 const driverService = {
@@ -75,6 +84,10 @@ const driverService = {
 
   async saveProjectLocation(projectId: number, latitude: number, longitude: number): Promise<void> {
     await apiClient.patch(`/projects/${projectId}/location`, { latitude, longitude });
+  },
+
+  async reorderStops(zonePreparationId: number, items: RouteOrderItemDto[]): Promise<void> {
+    await apiClient.put('/driver/route/reorder', { zonePreparationId, items });
   },
 };
 

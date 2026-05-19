@@ -7,5 +7,6 @@ namespace Akyildiz.Sevkiyat.Application.Interfaces
         int? UserId { get; }
         UserRole? Role { get; }
         string? Email { get; }
+        string? FullName { get; }
     }
 }

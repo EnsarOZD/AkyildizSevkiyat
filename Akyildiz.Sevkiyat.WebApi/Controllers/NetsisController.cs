@@ -1,4 +1,5 @@
 using Akyildiz.Sevkiyat.Application.Netsis.Commands.BulkExportShipmentsToNetsis;
+using Akyildiz.Sevkiyat.Application.Netsis.Commands.RecoverNetsisTransfers;
 using Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportClothingShipmentToNetsis;
 using Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportPurchaseOrderToNetsis;
 using Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportShipmentToNetsis;
@@ -16,7 +17,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
 {
     [ApiController]
     [Route("api/netsis")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize]
     public class NetsisController : ControllerBase
     {
         private readonly IMediator _mediator;
@@ -31,6 +32,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         /// Önkoşul: Sevkiyat ReadyForDispatch veya AssignedToVehicle durumunda olmalı.
         /// </summary>
         [HttpPost("shipments/{id:int}/export")]
+        [Authorize(Roles = "Admin,Manager,Accounting")]
         public async Task<IActionResult> ExportShipment(int id, CancellationToken ct)
         {
             var result = await _mediator.Send(new ExportShipmentToNetsisCommand(id), ct);
@@ -64,6 +66,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         /// Birden fazla sevkiyatı toplu olarak Netsis'e "Müşteri Siparişi" olarak aktarır.
         /// </summary>
         [HttpPost("shipments/bulk-export")]
+        [Authorize(Roles = "Admin,Manager,Accounting")]
         public async Task<IActionResult> BulkExportShipments([FromBody] BulkExportBody body, CancellationToken ct)
         {
             if (body.ShipmentIds == null || body.ShipmentIds.Count == 0)
@@ -80,7 +83,10 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         /// Ek olarak, henüz aktarılmamış ama Netsis'te mevcut olan siparişleri otomatik işaretler.
         /// </summary>
         [HttpPost("shipments/verify-transfers")]
-        public IActionResult VerifyTransfers([FromServices] IServiceScopeFactory scopeFactory)
+        [Authorize(Roles = "Admin,Manager,Accounting")]
+        public IActionResult VerifyTransfers(
+            [FromBody] VerifyNetsisShipmentTransfersCommand command,
+            [FromServices] IServiceScopeFactory scopeFactory)
         {
             _ = Task.Run(async () =>
             {
@@ -89,7 +95,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
                 var logger   = scope.ServiceProvider.GetRequiredService<ILogger<NetsisController>>();
                 try
                 {
-                    await mediator.Send(new VerifyNetsisShipmentTransfersCommand(), CancellationToken.None);
+                    await mediator.Send(command, CancellationToken.None);
                 }
                 catch (Exception ex)
                 {
@@ -98,6 +104,19 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             });
 
             return Accepted(new { message = "Netsis durum kontrolü arka planda başlatıldı. Birkaç dakika içinde tamamlanacak." });
+        }
+
+        /// <summary>
+        /// Hatalı Netsis durum kontrolü nedeniyle irsaliyesi silinmiş ve durumu geri alınmış
+        /// sevkiyatları kurtarır. AssignedToVehicle / Dispatched / ReturnedToWarehouse durumundaki,
+        /// NetsisTransferredAt'ı boş olan sevkiyatlar Netsis'te aranır; bulunanlar ReadyForDispatch'e alınır.
+        /// </summary>
+        [HttpPost("shipments/recover-transfers")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> RecoverTransfers(CancellationToken ct)
+        {
+            var result = await _mediator.Send(new RecoverNetsisTransfersCommand(), ct);
+            return Ok(result);
         }
 
         /// <summary>
@@ -111,10 +130,11 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             [FromQuery] DateTime? toDate,
             [FromQuery] bool onlyDiff = false,
             [FromQuery] int? operationType = null,
+            [FromQuery] bool? mailSent = null,
             CancellationToken ct = default)
         {
             var result = await _mediator.Send(
-                new GetReconciliationQuery(fromDate, toDate, onlyDiff, operationType), ct);
+                new GetReconciliationQuery(fromDate, toDate, onlyDiff, operationType, mailSent), ct);
             return Ok(result);
         }
 
@@ -123,7 +143,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         /// Önkoşul: NetsisTransferredAt dolu olmalı.
         /// </summary>
         [HttpPost("shipments/{id:int}/fetch-irsaliye")]
-        [Authorize(Roles = "Admin,Manager,Accounting")]
+        [Authorize(Roles = "Admin,Manager,Accounting,Warehouse")]
         public async Task<IActionResult> FetchShipmentIrsaliye(int id, CancellationToken ct)
         {
             var result = await _mediator.Send(new FetchShipmentIrsaliyeCommand(id), ct);
@@ -151,6 +171,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         /// stokKodu parametresi verilmezse tüm stoklar senkronize edilir.
         /// </summary>
         [HttpPost("stock/sync")]
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> SyncStockBalance([FromQuery] string? stokKodu, CancellationToken ct)
         {
             var result = await _mediator.Send(new SyncNetsisStockBalanceCommand(stokKodu), ct);

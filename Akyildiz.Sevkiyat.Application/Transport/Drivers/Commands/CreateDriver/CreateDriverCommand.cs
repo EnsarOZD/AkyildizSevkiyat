@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Akyildiz.Sevkiyat.Application.Transport.Drivers.Commands.CreateDriver
 {
-    public record CreateDriverCommand(string FullName, string? Phone) : IRequest<int>, IRequireRoles
+    public record CreateDriverCommand(string FullName, string? Phone, int? UserId) : IRequest<int>, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles =>
             new[] { "Admin", "Manager", "Accounting" };
@@ -25,7 +25,8 @@ namespace Akyildiz.Sevkiyat.Application.Transport.Drivers.Commands.CreateDriver
             {
                 FullName = request.FullName,
                 Phone = request.Phone,
-                IsActive = true
+                IsActive = true,
+                UserId = request.UserId
             };
 
             _context.Drivers.Add(driver);

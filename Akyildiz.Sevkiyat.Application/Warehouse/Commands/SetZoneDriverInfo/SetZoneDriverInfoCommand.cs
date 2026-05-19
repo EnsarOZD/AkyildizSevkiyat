@@ -1,6 +1,5 @@
 using Akyildiz.Sevkiyat.Application.Common.Interfaces;
 using Akyildiz.Sevkiyat.Application.Interfaces;
-using Akyildiz.Sevkiyat.Application.RouteOptimization.Services;
 using Akyildiz.Sevkiyat.Application.Warehouse.Services;
 using Akyildiz.Sevkiyat.Domain.Entities;
 using Akyildiz.Sevkiyat.Domain.Enums;
@@ -33,7 +32,7 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.SetZoneDriverInfo
         public TimeOnly? DepartureTime { get; init; }
 
         public IReadOnlyList<string> AllowedRoles =>
-            new[] { "Admin", "Manager", "Driver", "Warehouse" };
+            new[] { "Admin", "Manager", "Accounting", "Driver", "Warehouse" };
     }
 
     // ── Validator ─────────────────────────────────────────────────────────────
@@ -106,6 +105,7 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.SetZoneDriverInfo
                 throw new DomainException(
                     "Sefer başlamış, atama değiştirilemez. Değişiklik için yöneticinizle iletişime geçin.");
 
+
             // ── Validate drivers exist ────────────────────────────────────────
 
             var drivers = await _context.Drivers
@@ -127,19 +127,18 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.SetZoneDriverInfo
             string driverName  = primaryDriver.FullName;
             string plateNumber = vehicle.PlateNumber;
 
-            // ── Rota optimizasyonu (non-blocking) ─────────────────────────────
+            // ── Rota sıralamasını başlat (non-blocking) ────────────────────────
 
             bool   optimizationApplied  = false;
             string? optimizationWarning = null;
             try
             {
-                optimizationApplied = await ApplyRouteOptimizationAsync(
-                    zp, vehicle, request.DepartureTime, cancellationToken);
+                optimizationApplied = await InitialiseRouteOrderAsync(zp.Id, cancellationToken);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Rota optimizasyonu başarısız, mevcut sıralama korundu.");
-                optimizationWarning = "Rota optimize edilemedi, mevcut sıralama korundu.";
+                _logger.LogWarning(ex, "Rota sıralaması başlatılamadı.");
+                optimizationWarning = "Rota sıralaması başlatılamadı, mevcut sıralama korundu.";
             }
 
             // ── ZonePreparationDrivers tablosunu güncelle ─────────────────────
@@ -170,7 +169,7 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.SetZoneDriverInfo
 
             // ── Shipments statüsü güncelle ────────────────────────────────────
 
-            var shipments = await _context.Shipments
+            var shipments = await _context.WarehouseShipments
                 .Include(s => s.Project)
                 .Where(s =>
                     s.ZonePreparationId == zp.Id &&
@@ -190,67 +189,24 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.SetZoneDriverInfo
             return new SetZoneDriverInfoResult(true, optimizationApplied, optimizationWarning);
         }
 
-        // ── Rota optimizasyonu ────────────────────────────────────────────────
+        // ── Rota sıralamasını başlat ──────────────────────────────────────────
+        // Project.DeliveryOrder'ı asla değiştirmez.
+        // ZonePreparationProject.RouteOrder null olan kayıtlara mevcut DeliveryOrder değerini kopyalar.
 
-        private async Task<bool> ApplyRouteOptimizationAsync(
-            ZonePreparation zp,
-            Vehicle vehicle,
-            TimeOnly? departureTime,
+        private async Task<bool> InitialiseRouteOrderAsync(
+            int zonePreparationId,
             CancellationToken cancellationToken)
         {
             var zpProjects = await _context.ZonePreparationProjects
                 .Include(zpp => zpp.Project)
-                .Where(zpp => zpp.ZonePreparationId == zp.Id)
+                .Where(zpp => zpp.ZonePreparationId == zonePreparationId && zpp.RouteOrder == null)
                 .ToListAsync(cancellationToken);
 
-            var realProjects = zpProjects
-                .Where(zpp => zpp.Project != null)
-                .ToList();
+            if (!zpProjects.Any())
+                return false;
 
-            if (realProjects.Count < 2)
-                return false;  // tek durak, sıralamaya gerek yok
-
-            var depot = await _context.SystemSettings
-                .FirstOrDefaultAsync(cancellationToken);
-
-            string vehicleTypeStr = vehicle.VehicleType switch
-            {
-                VehicleType.Kamyon   => "Kamyon",
-                VehicleType.Kamyonet => "Kamyonet",
-                VehicleType.Minibus  => "Minibüs",
-                _                    => "Kamyon"
-            };
-
-            var stops = realProjects.Select(zpp => new RouteOrderingService.StopInfo(
-                zpp.Project.Id.ToString(),
-                zpp.Project.Name,
-                zpp.Project.Address ?? string.Empty,
-                zpp.Project.Latitude,
-                zpp.Project.Longitude,
-                null,
-                null)).ToList();
-
-            var ordering = new RouteOrderingService();
-            var ordered  = ordering.OrderStops(
-                stops,
-                depot?.DepotLatitude,
-                depot?.DepotLongitude,
-                vehicleTypeStr,
-                false,
-                true,
-                departureTime ?? new TimeOnly(8, 0));
-
-            // Extract non-bridge stops in order → map ProjectId → DeliveryOrder
-            var orderMap = ordered.Stops
-                .Where(s => s.Code != "__BRIDGE__")
-                .Select((s, idx) => (ProjectId: int.Parse(s.Code), Order: idx + 1))
-                .ToDictionary(x => x.ProjectId, x => x.Order);
-
-            foreach (var zpp in realProjects)
-            {
-                if (orderMap.TryGetValue(zpp.Project.Id, out var order))
-                    zpp.Project.DeliveryOrder = order;
-            }
+            foreach (var zpp in zpProjects)
+                zpp.RouteOrder = zpp.Project?.DeliveryOrder ?? 999;
 
             return true;
         }

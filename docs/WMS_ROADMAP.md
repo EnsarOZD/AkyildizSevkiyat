@@ -1,331 +1,409 @@
 # Depo Yönetim Sistemi (WMS) — Yol Haritası
 
-> Oluşturulma: 2026-03-22 · Son Güncelleme: 2026-03-22
-> Durum: **W1 TAMAMLANDI · W2 TAMAMLANDI · W3+ PLANLAMA**
-> Bağlı Proje: Akyildiz Sevkiyat
+> Son Güncelleme: 2026-05-17
+> Durum: **Phase 1 TAMAMLANDI · Phase 1b (Adres Şeması & UI) TAMAMLANDI · Phase 2 PLANLAMADA**
 
 ---
 
-## Mevcut Stok Altyapısı (Tamamlananlar)
+## Genel Bakış
 
-Faz 1'de tamamlanan temel altyapı:
-- ✅ StockMaster CRUD (kod, ad, birim, kategori, fiyat, toplama tipi)
-- ✅ StockTransaction (GoodsIn, ShipmentOut, ManualAdjust, Reserve, ReleaseReserve, VehicleReturn)
-- ✅ OnHandQty / ReservedQty / AvailableQty otomatik hesaplama
-- ✅ MinStockQty eşik uyarısı
-- ✅ `WarehouseLocation` string alanı ("A-01-03" gibi metin)
-- ✅ StockCount modülü (sayım → düzeltme fişi)
-- ✅ Excel import/export
-- ✅ Netsis ve ISS-IP entegrasyon noktaları
+WMS üç katmanlı bir yapıda inşa edilmektedir:
 
-**Eksik:** WarehouseLocation yalnızca serbest metin — hiyerarşik yapı, palet takibi, lokasyon kapasitesi, transfer kaydı yok.
+| Katman | Açıklama | Durum |
+|--------|----------|-------|
+| **Temel Altyapı** | Lokasyon yapısı, StockLocation, LocationTransfer | ✅ Tamamlandı (önceki sprint) |
+| **Barkod & Toplama Gözü (Phase 1)** | Barkod entity'leri, feature flag'ler, QR, PickingFace | ✅ Tamamlandı (2026-05-15) |
+| **Adres Şeması & UI (Phase 1b)** | ContainerType, iç adres, harita, silme, toplu etiket | ✅ Tamamlandı (2026-05-17) |
+| **İş Akışları (Phase 2)** | Putaway, barkodlu toplama, lokasyon bazlı stok düşümü | 🟡 Planlamada |
 
 ---
 
-## Faz W1 — Adres / Lokasyon Yapısı ✅ TAMAMLANDI (2026-03-22)
+## Tamamlananlar
 
-### Hedef
-Depodaki fiziksel konumları hiyerarşik bir veri yapısıyla modellemek.
-Format: `Bölge – Koridor – Raf – Seviye – Göz` → örn. `A-02-03-2-01`
+### Temel Altyapı (Önceki Sprint)
 
-### Domain Entities
-
-#### `WarehouseLocation` (YENİ)
-```
-Id           int PK
-Code         string  UNIQUE  — örn. "A-02-03-2-01"
-Zone         string  — Bölge: "A", "B", "Soğuk"
-Row          string  — Koridor: "01", "02"
-Rack         string  — Raf: "03"
-Level        int     — Seviye (yükseklik): 1, 2, 3
-Slot         string  — Göz: "01"
-Description  string? — opsiyonel açıklama
-LocationType enum    — Rack | FloorStack | Receiving | Shipping | Quarantine | Staging
-MaxWeight    decimal?— kg cinsinden maksimum yük kapasitesi
-MaxPallets   int?    — kaç palet sığar
-IsActive     bool    default true
-```
-
-#### Lokasyon Tipleri
-| Tip | Açıklama |
-|-----|----------|
-| `Rack` | Klasik raflı alan |
-| `FloorStack` | Zemin istiflemesi |
-| `Receiving` | Kabul/giriş alanı — mallar buraya gelir |
-| `Shipping` | Sevkiyat/çıkış alanı — mallar buradan çıkar |
-| `Quarantine` | Hasarlı / bekleyen mallar |
-| `Staging` | Hazırlık alanı — toplama sonrası bekleme |
-
-### Application Layer (CQRS)
-
-**Commands:**
-- `CreateWarehouseLocation` — yeni lokasyon oluştur
-- `UpdateWarehouseLocation` — güncelle (tip, kapasite, aktiflik)
-- `BulkCreateWarehouseLocations` — Excel ile toplu oluştur (A-01-01-1-01'den A-05-10-3-10'a kadar)
-
-**Queries:**
-- `GetWarehouseLocations` — liste (zone filtresi, tip filtresi, sayfalama)
-- `GetLocationDetail` — lokasyon + içindeki stoklar + paletler
-
-### Frontend
-- Yeni sayfa: **Depo Adres Yönetimi** (`/warehouse/locations`)
-- Filtrelenebilir lokasyon haritası (Bölge → tablo)
-- Toplu oluşturma sihirbazı ("A bölgesinde 5 koridor, her koridorda 10 raf, 3 seviye, 5 göz oluştur")
-- Kapasite doluluk göstergesi (progress bar)
-
-### Migration
-- Mevcut `StockMaster.WarehouseLocation` string → `WarehouseLocationId int? FK` olarak değiştirilir
-- Migration sırasında mevcut string değerler manual olarak eşleştirilir
+- ✅ `WarehouseLocation` entity — kod formatı `{KoridorNo}{Taraf}-{ModulNo:D3}-{Kat:D2}` (örn. `1K-001-03`)
+- ✅ `StockLocation` — StockMasterId + WarehouseLocationId başına lokasyon bazlı miktar takibi
+- ✅ `LocationTransfer` — lokasyonlar arası hareket kaydı
+- ✅ `StockTransaction` — genel stok hareket logu (GoodsIn, ShipmentOut, ManualAdjust, vb.)
+- ✅ `StockCount` — fiziksel sayım + düzeltme fişi
+- ✅ Frontend: Depo Adresleri yönetim sayfası (toplu/tekli oluşturma)
+- ✅ Frontend: Stok Lokasyonları sayfası (lokasyon bazlı stok görüntüleme + transfer)
 
 ---
 
-## Faz W2 — Stok-Lokasyon Bağlantısı ✅ TAMAMLANDI (2026-03-22)
+### Adres Şeması & UI İyileştirmeleri — Phase 1b (2026-05-17)
 
-### Hedef
-Bir stok kalemi birden fazla fiziksel lokasyonda bulunabilsin.
-Toplama sırasında hangi lokasyondan ne kadar alınacağı bilinsin.
+#### Yeni Adres Formatı
 
-### Domain Entities
+`WarehouseLocation.BuildCode()` genişletildi. Artık üç farklı fiziksel yapıyı destekler:
 
-#### `StockLocation` (YENİ)
+| Tip | Format | Örnek |
+|-----|--------|-------|
+| **Palet** (raf veya toplama gözü) | `{K}{T}-{M:3}-{kat:2}` | `2K-001-00` |
+| **Koli** (kayar raf — A=zemin, B=orta, C=üst) | `{K}{T}-{M:3}-00-{harf}{pos:2}` | `2K-001-00-A01` |
+| **Kutu** (kol harfi + göz numarası) | `{K}{T}-{M:3}-00-{harf}{pos:2}` | `2K-020-00-B03` |
+
+Koli ve Kutu aynı kod formatını kullanır; farkı `ContainerType` alanı taşır.
+`InnerPosition` tek başına (level=null) kullanılırsa salt sayısal iç adres üretir: `-01` (şimdilik kullanılmıyor, ileride genişletilebilir).
+
+#### Yeni Enum
+
+**`ContainerType`** (`Domain/Enums/ContainerType.cs`)
 ```
-Id                int PK
-StockMasterId     int FK
-WarehouseLocationId int FK
-OnHandQty         decimal
-ReservedQty       decimal
-AvailableQty      decimal (computed)
-LastMovedAt       DateTime?
-```
-
-**Index:** UNIQUE (StockMasterId, WarehouseLocationId)
-
-#### `LocationTransfer` (YENİ — hareket kaydı)
-```
-Id                    int PK
-StockMasterId         int FK
-FromLocationId        int FK → WarehouseLocation
-ToLocationId          int FK → WarehouseLocation
-Qty                   decimal
-Note                  string?
-TransferredByUserId   int FK
-TransferredAt         DateTime
-PalletId              int? FK → Pallet (palet ile birlikte taşındıysa)
+Pallet = 0   — Palet
+Case   = 1   — Koli (kayar raf)
+Box    = 2   — Kutu (iç adresleme)
 ```
 
-### Application Layer
+#### Mevcut Entity Güncellemeleri
 
-**Commands:**
-- `TransferStock` — lokasyonlar arası stok taşı (ör. kabul alanından rafa)
-- `PutawayGoods` — GoodsReceipt sonrası malları kabul alanından belirlenen raflara yerleştir
+**`WarehouseLocation`** — 3 yeni alan
+```
+InnerLevel    string?       — Harf bazlı iç seviye (Koli: A/B/C kat, Kutu: kol)
+InnerPosition int?          — Pozisyon numarası (01–06 gibi)
+ContainerType ContainerType — Pallet / Case / Box
+```
 
-**Queries:**
-- `GetStockByLocation` — lokasyon bazlı stok durumu
-- `GetStockLocations(stockMasterId)` — bir stokun tüm lokasyonlarını listele
-- `GetTransferHistory` — lokasyon transfer geçmişi
+#### Migration
 
-### Frontend
-- StockManagement sayfasına "Lokasyonlar" sekmesi ekle
-- Lokasyon detayında stok listesi
-- Transfer formu: kaynak lokasyon → hedef lokasyon → miktar
+`WmsPhase2_ContainerTypeAndInnerAddress`
+
+#### Backend Değişiklikleri
+
+**Güncellenen endpoint'ler:**
+
+| Method | URL | Değişiklik |
+|--------|-----|-----------|
+| `POST` | `/api/warehouse-locations/picking-face` | Artık Palet, Koli, Kutu üç tipi de destekliyor; Koli/Kutu için `InnerLevels`+`PositionsPerLevel`, Palet için `KatFrom`/`KatTo` |
+| `PUT` | `/api/warehouse-locations/{id}` | `ContainerType`, `InnerLevel`, `InnerPosition` parametreleri eklendi |
+| `POST` | `/api/warehouse-locations/bulk` | `ContainerType` parametresi eklendi |
+
+**Yeni endpoint'ler:**
+
+| Method | URL | Açıklama |
+|--------|-----|----------|
+| `GET` | `/api/warehouse-locations/map` | Modül bazında depo haritası (`MapModuleDto[]`) |
+| `DELETE` | `/api/warehouse-locations/{id}` | Tekil hard delete |
+| `DELETE` | `/api/warehouse-locations/bulk` | Toplu hard delete (`List<int>` body) |
+
+**Yeni komutlar/query'ler:**
+- `DeleteWarehouseLocationCommand` — tekil silme
+- `BulkDeleteWarehouseLocationsCommand` — toplu silme
+- `GetWarehouseMapQuery` + `MapModuleDto` — modül gruplandırma (KoridorNo, Taraf, ModulNo, DominantTypeId, HasActive, AllActive, TotalLocations)
+
+#### `CreatePickingFaceCommand` — Tüm Tipler
+
+```
+Palet  → modül × kat aralığı, iç adres yok
+         Örn: KatFrom=0, KatTo=0 → 2K-001-00
+
+Koli   → modül × innerLevels × positionsPerLevel (Kutu ile aynı algoritma, ContainerType=Case)
+         Örn: innerLevels=["A","B","C"], positionsPerLevel=6 → 2K-001-00-A01 … C06
+
+Kutu   → modül × innerLevels × positionsPerLevel, ContainerType=Box
+         Örn: innerLevels=["A","B"], positionsPerLevel=8 → 2K-020-00-A01 … B08
+```
+
+#### Frontend Değişiklikleri
+
+**`WarehouseLocationsView.vue`** — kapsamlı yenileme:
+- ✅ Raflar / Toplama Gözleri sekme ayrımı (LocationType=6 filtresi)
+- ✅ Checkbox çoklu seçim + `allPageSelected` computed
+- ✅ Hızlı Aktif/Pasif toggle (satır üzerinde, modal açmadan)
+- ✅ Tekil silme + toplu silme (hard delete, confirm dialog ile)
+- ✅ Toplu etiket basma — seçili lokasyonlar için QR'ları yükleyip yazdır
+- ✅ "Toplu Oluştur" modali: ContainerType seçici (Palet/Koli)
+- ✅ "Toplama Gözü Ekle" modali: üç tip desteği
+  - Palet: kat sabit 00, modül aralığı
+  - Koli: Kat Harfleri (A, B, C) + Göz Sayısı / Kat
+  - Kutu: İç Kollar + Göz Sayısı / Kol
+- ✅ Düzenleme formuna ContainerType + InnerLevel + InnerPosition eklendi
+- ✅ Tüm form elemanlarında `dark:bg-gray-800` (dark mode dropdown tutarsızlığı giderildi)
+
+**`WarehouseMapView.vue`** — YENİ sayfa:
+- 2D depo haritası: koridor × modül ızgarası
+- Renk kodlaması: Raf=mavi, Toplama Gözü=yeşil, inaktif=soluk
+- Hücreye tıklayınca modül detay paneli
+- `GET /api/warehouse-locations/map` endpoint'ini kullanır
+
+**`router/index.ts`** — `/warehouse/map` → `WarehouseMapView` rotası eklendi
+
+**`navigation.ts`** — "Depo Haritası" nav linki eklendi
+
+**`warehouseLocationService.ts`** — yeni alanlar ve metodlar:
+- `WarehouseLocation`: `innerLevel`, `innerPosition`, `containerTypeId`
+- `CreatePickingFaceRequest`: `katFrom?`, `katTo?`, `innerLevels?`, `positionsPerLevel?`, `containerType`
+- `BulkCreateRequest`: `containerType`
+- `MapModuleDto` interface + `getMap()` metodu
+- `delete(id)` ve `bulkDelete(ids[])` metodları
+- `CONTAINER_TYPE_LABELS` sabiti
+
+#### Kodun Bulunduğu Yerler (Yeni / Güncellenen)
+
+```
+Domain/
+  Enums/ContainerType.cs                  — YENİ enum
+  Entities/WarehouseLocation.cs           — InnerLevel, InnerPosition, ContainerType; BuildCode() güncellendi
+
+Application/WarehouseLocations/
+  Commands/CreatePickingFace/             — tüm 3 tip desteği
+  Commands/DeleteWarehouseLocation/       — DeleteWarehouseLocationCommand (YENİ)
+                                            BulkDeleteWarehouseLocationsCommand (YENİ)
+  Commands/UpdateWarehouseLocation/       — ContainerType, InnerLevel, InnerPosition eklendi
+  Commands/BulkCreateWarehouseLocations/  — ContainerType eklendi
+  Queries/GetWarehouseMap/               — GetWarehouseMapQuery + MapModuleDto (YENİ)
+
+WebApi/Controllers/WarehouseLocationsController.cs
+  — DELETE /{id}, DELETE /bulk, GET /map endpoint'leri eklendi
+  — UpdateWarehouseLocationRequest: ContainerType, InnerLevel, InnerPosition
+
+Infrastructure/Migrations/
+  WmsPhase2_ContainerTypeAndInnerAddress
+
+client/src/
+  services/warehouseLocationService.ts   — interface güncellemeleri + yeni metodlar
+  views/WarehouseLocationsView.vue       — kapsamlı yenileme (bkz. yukarısı)
+  views/WarehouseMapView.vue             — YENİ
+  router/index.ts                        — /warehouse/map rotası
+  navigation.ts                          — Depo Haritası linki
+```
 
 ---
 
-## Faz W3 — Palet Yönetimi
+### Barkod & Toplama Gözü — Phase 1 (2026-05-15)
 
-### Hedef
-Palet bazlı takip: her paletin nerede olduğu, ne içerdiği, durumu.
+#### Yeni Entity'ler
 
-### Domain Entities
-
-#### `Pallet` (YENİ)
+**`StockBarcode`** — Bir ürüne ait ek barkodlar (farklı ambalaj/tedarikçi)
 ```
-Id                    int PK
-PalletCode            string UNIQUE  — otomatik üretilen (PAL-2026-0001) veya barkod
-LocationId            int? FK → WarehouseLocation
-Status                enum: Empty | Loading | Sealed | InTransit | Delivered | Damaged
-WeightKg              decimal?
-Note                  string?
-CreatedAt             DateTime
-CreatedByUserId       int FK
-ShipmentId            int? FK → Shipment (sevkiyata atandıysa)
-Lines                 1:N PalletLine
+Id, StockMasterId, Barcode (EAN13/Code128/QR), Description, CreatedAt
 ```
 
-#### `PalletLine` (YENİ)
+**`PutawayTask`** — Mal kabul sonrası oluşturulan dağıtım görevi
 ```
-Id            int PK
-PalletId      int FK
-StockMasterId int FK
-Qty           decimal
-Unit          StockUnit (enum)
-Note          string?
+Id, GoodsReceiptId, GoodsReceiptLineId, StockMasterId,
+TotalQty, DistributedQty, RemainingQty (computed),
+Status (Pending/PartiallyDistributed/Completed),
+CreatedAt, CompletedAt
+Lines: ICollection<PutawayLine>
 ```
 
-#### Palet Durumları
-| Durum | Açıklama |
-|-------|----------|
-| `Empty` | Boş palet |
-| `Loading` | Dolduruluyor |
-| `Sealed` | Kapatıldı, sevkiyata hazır |
-| `InTransit` | Araçta / yolda |
-| `Delivered` | Teslim edildi |
-| `Damaged` | Hasarlı, karantinada |
+**`PutawayLine`** — Bir PutawayTask içinde tek lokasyon satırı
+```
+Id, PutawayTaskId, WarehouseLocationId, Qty, CreatedAt, CreatedByUserId
+```
 
-### Application Layer
+#### Mevcut Entity Güncellemeleri
 
-**Commands:**
-- `CreatePallet` — yeni palet oluştur (boş veya lokasyonla)
-- `AddStockToPallet` — palete stok ekle
-- `RemoveStockFromPallet` — paletten stok çıkar
-- `SealPallet` — paleti kapat (sevkiyata hazır)
-- `AssignPalletToShipment` — sevkiyata bağla
-- `MovePallet` — paleti farklı lokasyona taşı (tüm içerik birlikte)
-- `DamagePallet` — hasarlı işaretle + karantina lokasyonuna taşı
+**`WarehouseLocation`** — 3 yeni alan + 1 yeni tip
+```
+Alan         string?  — Açıklama alanı (⚠️ Phase 1b'den itibaren PickingFace kod üretiminde kullanılmıyor; sadece bilgi amaçlı korundu)
+QrCode       string?  — Rafa yapıştırılan QR değeri (katsız: "1K-001")
+TotalFloors  int?     — Raf toplam kat sayısı (terminal kat seçim listesi için)
+```
+`LocationType` enum'una `PickingFace = 6` eklendi.
 
-**Queries:**
-- `GetPallets` — liste (durum, lokasyon, sevkiyat filtresi)
-- `GetPalletDetail` — palet + içerik + hareket geçmişi
-- `GetPalletsByShipment` — sevkiyata ait paletler
+**`StockMaster`** — 2 yeni alan
+```
+Barcode              string?   — Birincil tedarikçi barkodu
+DefaultPickingFaceId int? FK   — Varsayılan toplama gözü
+```
 
-### Frontend
-- Yeni sayfa: **Palet Yönetimi** (`/warehouse/pallets`)
-- Kart görünümü: palet kodu, lokasyon, durum, içerik özeti, ağırlık
-- Palet detay modalı: içerik listesi + hareket geçmişi
-- QR kod üretme (PDF yazdırma için)
-- Sevkiyat bazlı palet görünümü (sevkiyat detay sayfasına eklenti)
+**`SystemSettings`** — 3 WMS feature flag (hepsi varsayılan false)
+```
+WmsPutawayEnabled         bool  — Mal kabul → lokasyon dağıtım akışı
+WmsLocationPickingEnabled bool  — Lokasyon bazlı picking + StockLocation düşümü
+WmsBarcodePickingEnabled  bool  — Toplama sırasında barkod tarama zorunluluğu
+```
+
+#### Migration
+`20260514224602_WmsPhase1_BarcodeAndPutaway` — Local'e uygulandı, production'a uygulanacak.
+
+#### Backend Endpoints (Yeni)
+
+| Method | URL | Açıklama |
+|--------|-----|----------|
+| GET | `/api/system-settings/wms` | WMS flag'lerini getir |
+| PUT | `/api/system-settings/wms` | WMS flag'lerini kaydet |
+| POST | `/api/warehouse-locations/picking-face` | Toplama gözü toplu oluştur |
+| GET | `/api/warehouse-locations/{id}/qr` | Lokasyon QR görüntüsü üret |
+
+#### Frontend (Yeni/Güncellenen)
+
+- ✅ **Ayarlar → Depo Yönetimi** sekmesi — 3 WMS toggle switch
+- ✅ **Depo Adresleri** sayfası tamamen güncellendi:
+  - "Raflar / Toplama Gözleri" sekme seçimi (Phase 1b'de kapsamlı yenilendi)
+  - Her lokasyon için QR yazdırma (browser print, 60×80mm etiket)
+  - Raf düzenleme: QrCode ve TotalFloors alanları
+- ✅ **Stok Yönetimi** → stok formu: Birincil Barkod alanı eklendi
+
+#### Kodun Bulunduğu Yerler
+
+```
+Domain/Entities/
+  PutawayTask.cs           — PutawayTask + PutawayLine + PutawayTaskStatus enum
+  StockBarcode.cs          — StockBarcode entity
+  WarehouseLocation.cs     — Alan, QrCode, TotalFloors + BuildPickingFaceCode() (⚠️ eski format — Phase 1b'de değiştirildi)
+  StockMaster.cs           — Barcode, DefaultPickingFaceId
+  SystemSettings.cs        — WmsPutawayEnabled, WmsLocationPickingEnabled, WmsBarcodePickingEnabled
+
+Application/SystemSettings/
+  Queries/GetWmsSettingsQuery.cs
+  Commands/SaveWmsSettingsCommand.cs
+
+Application/WarehouseLocations/
+  Commands/CreatePickingFace/CreatePickingFaceCommand.cs
+  Queries/GenerateLocationQr/GenerateLocationQrQuery.cs
+
+Application/Stocks/
+  Queries/GetStocks/GetStocksQuery.cs     — StockDto'ya Barcode eklendi
+  Commands/UpdateStock/UpdateStockCommand.cs — Barcode param eklendi
+
+Infrastructure/Persistence/SevkiyatDbContext.cs
+  — StockBarcodes, PutawayTasks, PutawayLines DbSet'leri
+  — WarehouseLocation, StockMaster OnModelCreating config'leri
+
+client/src/
+  services/systemSettingsService.ts  — WmsSettingsDto + getWmsSettings/saveWmsSettings
+  services/warehouseLocationService.ts — alan,qrCode,totalFloors + createPickingFace/getQr
+  services/stockService.ts           — barcode alanı eklendi
+  views/WarehouseLocationsView.vue   — Raflar/PickingFace sekmeleri, QR modal
+  views/SettingsView.vue             — WMS toggle'ları (Depo Yönetimi sekmesi)
+  views/StockManagementView.vue      — Birincil Barkod input alanı
+```
 
 ---
 
-## Faz W4 — Süreç İyileştirmeleri
+## Phase 2 — İş Akışları (Sıradaki)
 
-### W4-01 · Putaway Süreci (Mal Kabul → Rafa Yerleştirme)
+### Ön Koşullar
+
+Phase 2'ye başlamadan önce şunlar yapılmış olmalı:
+1. ✅ Toplama gözleri tanımlandı (WarehouseLocations → PickingFace tipi)
+2. ⬜ Stok lokasyonlarına ilk yükleme yapıldı (StockLocations ekranı üzerinden)
+3. ⬜ Ürünlere barkod girildi (Stok yönetimi → Birincil Barkod)
+4. ⬜ Production deploy tamamlandı (migration + kod)
+
+---
+
+### 2A · Putaway İş Akışı (`WmsPutawayEnabled`)
+
+**Tetikleyici:** Mal kabul onaylandığında (`GoodsReceipt` status → Posted)
 
 **Akış:**
-1. GoodsReceipt oluşturulur → mallar otomatik `Receiving` lokasyonuna düşer
-2. Depo personeli "Putaway Görevi" alır
-3. Her satır için hedef lokasyon seçilir
-4. `PutawayGoods` komutu çalışır → StockLocation güncellenir + LocationTransfer kaydı oluşur
+1. Her GoodsReceiptLine için otomatik `PutawayTask` oluşturulur (status: Pending)
+2. Depocu terminal ekranında "Bekleyen Dağıtımlar" listesini görür
+3. Her görev için: ürünü tara → hedef lokasyonu tara/seç → miktar gir
+4. `PutawayLine` oluşturulur, `DistributedQty` artırılır
+5. `TotalQty` dolduğunda task status → Completed, `StockLocation.OnHandQty` güncellenir
 
-### W4-02 · Toplama Rotası Optimizasyonu (Picking Route)
-
-Sevkiyat hazırlanırken toplama listesi, lokasyonlara göre sıralanır:
-`Zone ASC, Row ASC, Rack ASC, Level ASC` → depo personeli en kısa yolu gider.
-
-- ShipmentLine'lara `PickLocationId FK → WarehouseLocation` eklenir
-- Toplama listesi basılabilir PDF olarak çıktı alınabilir
-
-### W4-03 · Döngüsel Sayım (Cycle Count)
-
-Tam sayım yerine belirli bölge/raf sayımı:
-- `StockCount` entity'sine `CountScope` enum eklenir: `Full | Zone | Rack | Location`
-- Seçilen lokasyondaki stoklar için mini sayım açılır
-- Günde X lokasyon sayılacak şekilde otomatik görev oluşturulabilir
-
-### W4-04 · Min Stok Otomasyonu
-
-- `MinStockQty` zaten var → şu an yalnızca dashboard uyarısı
-- Eklenti: **otomatik satın alma talebi önerisi** — stok minimum altına düşünce `PurchaseOrderSuggestion` kaydı oluştur
-- Muhasebe kullanıcısına bildirim gönder
-
-### W4-05 · Stok Dondurma / Hold
-
-Kalite kontrol veya bekleyen mallar için:
-```
-StockHold entity:
-  Id, StockMasterId, LocationId, HeldQty, Reason, HeldByUserId,
-  HeldAt, ReleasedAt, ReleasedByUserId, Status(Active|Released)
-```
+**Yapılacaklar:**
+- Backend: `GoodsReceiptPostedEvent` handler → `PutawayTask` oluşturma
+- Backend: `DistributePutawayCommand` — line ekle, miktar güncelle
+- Backend: `GetPendingPutawayTasksQuery` — terminale görev listesi
+- Frontend: `PutawayView.vue` — handheld-uyumlu dağıtım ekranı
 
 ---
 
-## Faz W5 — Barkod & Mobil
+### 2B · Barkodlu Toplama (`WmsBarcodePickingEnabled`)
 
-### W5-01 · Barkod Alanları
-- `StockMaster.Barcode` string? — EAN-13 / QR
-- `Pallet.PalletCode` zaten var (QR oluşturulabilir)
-- `WarehouseLocation.Code` → QR basılır rafa yapıştırılır
+**Tetikleyici:** Micro veya Macro picking akışında, flag aktifse
 
-### W5-02 · Tarayıcı Kamera ile Barkod Okuma
-- `vue-qrcode-reader` veya `html5-qrcode` kütüphanesi
-- Stok arama modalında "Barkod Tara" butonu
-- Palet taşıma formunda "Kaynak Palet Tara" → "Hedef Lokasyon Tara"
+**Akış (mevcut flow üzerine eklenti):**
+1. Toplama listesi açılır (mevcut davranış)
+2. Her ürün için: barkod taranır → sistem doğrular
+3. Yanlış ürün → hata sesi (`useSoundFeedback.error()`) + kırmızı uyarı
+4. Doğru ürün → onaylanır, miktar girilir
+5. Tamamlanınca → `useSoundFeedback.complete()`
 
-### W5-03 · Mobil Ambar Görünümü
-- Mevcut Driver modülü pattern'ı baz alınır
-- Yeni layout: `WarehouseLayout.vue`
-- Sayfalar:
-  - Toplama görevi listesi
-  - Palet tarama & taşıma
-  - Stok sayım (mobil)
-  - Mal kabul
+**Yapılacaklar:**
+- Backend: `ValidateBarcodeForShipmentLineQuery` — barkod + sevkiyat satırı eşleşme kontrolü
+- Frontend: Picking modal'a barkod input alanı eklenir (DataWedge keyboard input)
+- Frontend: Barkod doğrulama state machine (scanning → validating → confirmed/error)
+
+**Not:** DataWedge (Zebra TC15) barkodu klavye girişi olarak gönderir, özel SDK gerekmez.
 
 ---
 
-## Öncelik Matrisi
+### 2C · Lokasyon Bazlı Toplama (`WmsLocationPickingEnabled`)
 
-| Faz | Başlık | Öncelik | Karmaşıklık | Süre (tahmini) |
-|-----|--------|---------|-------------|----------------|
-| W1 | Adres / Lokasyon Yapısı | ✅ Tamamlandı | — | — |
-| W2 | Stok-Lokasyon Bağlantısı | ✅ Tamamlandı | — | — |
-| W3 | Palet Yönetimi | 🟡 Orta | Yüksek | 4-5 gün |
-| W4-01 | Putaway Süreci | 🟡 Orta | Orta | 2-3 gün |
-| W4-02 | Toplama Rotası | 🟢 Düşük | Düşük | 1-2 gün |
-| W4-03 | Döngüsel Sayım | 🟢 Düşük | Orta | 2-3 gün |
-| W4-04 | Min Stok Otomasyonu | 🟡 Orta | Düşük | 1-2 gün |
-| W4-05 | Stok Dondurma | 🟢 Düşük | Düşük | 1-2 gün |
-| W5 | Barkod & Mobil | 🟢 Düşük | Yüksek | 5-7 gün |
+**Tetikleyici:** Picking sırasında, flag aktifse
 
-**Toplam: ~23-33 iş günü (tam WMS)**
-**MVP (W1 + W2): ~7-9 iş günü**
+**Akış:**
+1. Toplama listesinde her ürün için sistem lokasyon önerir:
+   - Önce: `StockMaster.DefaultPickingFaceId` (atanmışsa)
+   - Sonra: `StockLocation` → PickingFace tipi → en çok stoku olan
+   - Son çare: Rack lokasyonu
+2. Depocu önerilen lokasyonu tara veya manuel değiştirir
+3. Ürün toplandıktan sonra `StockLocation.OnHandQty` düşülür (sadece StockMaster değil)
+4. Toplama gözü stoku sıfıra düşerse → uyarı
 
----
-
-## Teknik Kararlar ve Notlar
-
-### WarehouseLocation Kodu Formatı
-Öneri: `{Zone}-{Row}-{Rack}-{Level}-{Slot}`
-Örnek: `A-02-03-2-01`
-- Zone: harf (A-Z)
-- Row/Rack/Slot: 2 haneli padded integer (01-99)
-- Level: 1 haneli integer (1-5)
-
-### Mevcut StockMaster.WarehouseLocation Migration Stratejisi
-1. Yeni `WarehouseLocations` tablosu oluştur
-2. `StockMasters` tablosuna `WarehouseLocationId int? FK` ekle
-3. Mevcut `WarehouseLocation` string değerlerini `Code` kolonuyla eşleştir
-4. Eşleşme sağlanamayanlar `NULL` bırakılır (veri kaybı yok)
-5. Eski string kolonu silinmez, bir migration sonraki sürümde kaldırılır
-
-### Multi-Location vs Single-Location
-Şu an StockMaster başına tek lokasyon var.
-Multi-location (W2) ekleme kararı verilirse:
-- `StockMaster.OnHandQty` = `SUM(StockLocation.OnHandQty)` olur (hesaplanan)
-- Tek lokasyon kullanmak isteyenler için "varsayılan lokasyon" kavramı korunur
-
-### Palet QR Kodu
-- Backend: `QRCoder` NuGet paketi ile PNG üret → Base64 döndür
-- Frontend: `<img :src="qrBase64" />` ile göster + yazdır
-- Format: `https://sevkiyat.akyildiz.com/pallets/{id}` veya sadece `PAL-2026-0001`
+**Yapılacaklar:**
+- Backend: `SuggestPickingLocationQuery` — lokasyon öneri algoritması
+- Backend: `ConfirmPickingFromLocationCommand` — StockLocation düşümü
+- Backend: Gap fix — `StockMaster.OnHandQty ↔ SUM(StockLocation.OnHandQty)` senkronizasyonu
+- Frontend: Picking'e lokasyon önerisi paneli eklenir
 
 ---
 
-## Bağımlılıklar
+### 2D · Raf → Toplama Gözü Transfer Ekranı
 
-- W2 → W1'e bağımlı (lokasyon olmadan stok-lokasyon olamaz)
-- W3 → W1'e bağımlı (palet bir lokasyonda olur)
-- W4-01 → W1 + W2'ye bağımlı
-- W4-02 → W1'e bağımlı (lokasyon olmadan sıralama olamaz)
-- W5-02 → W1 + W3'e bağımlı
+**Bağımsız iş akışı — flag gerektirmez**
+
+Depocunun raf → toplama gözüne ürün aktarmasını kayıt altına alır.
+
+**Akış:**
+1. Kaynak adresi tara (raf QR)
+2. Kat seç (terminal dropdown, TotalFloors'a göre)
+3. Hedef toplama gözünü tara
+4. Miktarı gir (veya tüm paleti)
+5. `LocationTransfer` kaydı oluşur, `StockLocation` güncellenir
+
+**Yapılacaklar:**
+- Frontend: Yeni sayfa veya modal `LocationTransferView.vue` (handheld-uyumlu)
+- Backend: Mevcut `TransferStock` command'ı yeterli — sadece frontend gerekiyor
 
 ---
 
-## Sonuç
+### 2E · Toplama Gözü Doluluk Uyarısı
 
-Sisteme en değeri katan ilk adımlar:
+Bir toplama gözündeki stok tanımlanan bir eşiğin altına düştüğünde bildirim:
+- `StockLocation.OnHandQty < eşik` → SSE bildirimi + notification kaydı
+- Eşik: `StockMaster.MinStockQty` veya `StockLocation`'a özel alan (ileride)
 
-1. **W1 (Lokasyon yapısı)** — mevcut `WarehouseLocation` stringini gerçek bir entity'ye dönüştür
-2. **W2 (Stok-lokasyon)** — aynı stokun farklı lokasyonlarda takibi + transfer kaydı
-3. **W3 (Palet)** — toplama ve sevkiyatta palet bazlı iş akışı
+---
 
-Bu üç faz tamamlandığında sistem **tam teşekküllü bir WMS** olur.
+## Phase 2 Öncelik Matrisi
+
+| Görev | Flag | Öncelik | Karmaşıklık | Bağımlılık |
+|-------|------|---------|-------------|-----------|
+| Production deploy | — | 🔴 Kritik | Düşük | Phase 1 tamamı |
+| 2D · Raf → Toplama gözü transfer ekranı | Yok | 🔴 Yüksek | Düşük | Lokasyon verisi |
+| 2A · Putaway iş akışı | WmsPutawayEnabled | 🟡 Orta | Orta | 2D |
+| 2B · Barkodlu toplama | WmsBarcodePickingEnabled | 🟡 Orta | Düşük | Barkod girişi |
+| 2E · Doluluk uyarısı | WmsLocationPickingEnabled | 🟡 Orta | Düşük | 2C |
+| 2C · Lokasyon bazlı toplama | WmsLocationPickingEnabled | 🟢 İleride | Yüksek | 2A + 2D |
+
+---
+
+## Bilinen Gap'ler (İzleme)
+
+| Gap | Öncelik | Not |
+|-----|---------|-----|
+| `StockMaster.OnHandQty ↔ SUM(StockLocation.OnHandQty)` uyumsuzluğu | Yüksek | Picking zone'dan düşüm StockMaster'ı günceller ama StockLocation'ı güncellemiyor |
+| `DefaultPickingFaceId` frontend atama ekranı yok | Orta | Stok kartından varsayılan toplama gözü seçilemiyor henüz |
+| Depo Haritası'nda `WarehouseMapView` — modül detayı basit | Düşük | Tıklayınca lokasyon listesi açılmıyor, sadece özet gösteriyor |
+| Mevcut lokasyonların `ContainerType` alanı boş | Orta | Phase 1 öncesi oluşturulan lokasyonlarda `ContainerType=0 (Pallet)` varsayılan, doğrulama yapılmadı |
+| Lot/Batch/Expiry (FEFO) takibi | Düşük | Gıda ürünleri için kritik, ama ayrı bir büyük çalışma gerektirir |
+| Döngüsel sayım (cycle count) | Düşük | Şu an sadece tam sayım var |
+| Replenishment otomasyonu | Düşük | `MinStockQty`/`ReorderPoint` var ama otomatik PO önerisi yok |
+
+---
+
+## Cihaz Notu
+
+- **RT112 tablet** → Müdür kullanımı (depo yönetim ekranları, raporlar)
+- **TC15 handheld terminal** → Depo personeli + şoförler
+  - DataWedge: barkodu klavye girişi olarak gönderir → PWA ile native app gerekmez
+  - Tüm WMS akışları PWA üzerinden çalışır, ayrı native uygulama gerekmez

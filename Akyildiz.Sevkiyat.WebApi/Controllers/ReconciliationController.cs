@@ -1,3 +1,4 @@
+using Akyildiz.Sevkiyat.Application.Interfaces;
 using Akyildiz.Sevkiyat.Application.Reconciliation.Commands.AcknowledgeReconciliationIssue;
 using Akyildiz.Sevkiyat.Application.Reconciliation.Commands.RunReconciliationChecks;
 using Akyildiz.Sevkiyat.Application.Reconciliation.Queries.CanShipmentProceed;
@@ -6,6 +7,7 @@ using Akyildiz.Sevkiyat.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Akyildiz.Sevkiyat.WebApi.Controllers
 {
@@ -15,10 +17,23 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
     public class ReconciliationController : ControllerBase
     {
         private readonly IMediator _mediator;
+        private readonly IApplicationDbContext _context;
 
-        public ReconciliationController(IMediator mediator)
+        public ReconciliationController(IMediator mediator, IApplicationDbContext context)
         {
             _mediator = mediator;
+            _context = context;
+        }
+
+        /// <summary>
+        /// Toplam açık mutabakat sorunlarının sayısını döner. Sidebar badge için.
+        /// </summary>
+        [HttpGet("open-count")]
+        public async Task<IActionResult> GetOpenCount(CancellationToken ct)
+        {
+            var count = await _context.ReconciliationIssues
+                .CountAsync(i => i.Status == ReconciliationStatus.Open, ct);
+            return Ok(new { count });
         }
 
         /// <summary>

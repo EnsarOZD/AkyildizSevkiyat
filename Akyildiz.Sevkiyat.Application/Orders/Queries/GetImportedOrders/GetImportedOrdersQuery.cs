@@ -66,14 +66,16 @@ namespace Akyildiz.Sevkiyat.Application.Orders.Queries.GetImportedOrders
 
             if (request.Tab == "Passive")
             {
-                query = query.Where(o => !o.IsActive && !o.IsTransferred);
+                query = query.Where(o => !o.IsActive
+                    && !_context.Shipments.Any(s => s.IssOrderId == o.Id && s.Status != ShipmentStatus.Cancelled));
             }
             else
             {
-                // Exclude orders already converted to a shipment OR whose shipment was sent to Netsis
-                query = query.Where(o => o.IsActive && !o.IsTransferred
-                    && !_context.Shipments.Any(s => s.IssOrderId == o.Id && s.NetsisTransferredAt != null));
-                
+                // Exclude orders already transferred to a shipment, or with any active (non-cancelled) shipment
+                query = query.Where(o => o.IsActive
+                    && !o.IsTransferred
+                    && !_context.Shipments.Any(s => s.IssOrderId == o.Id && s.Status != ShipmentStatus.Cancelled));
+
                 if (request.Tab == "NeedsMapping")
                 {
                     query = query.Where(o => o.ImportStatus == ImportStatus.NeedsMapping);
@@ -114,7 +116,7 @@ namespace Akyildiz.Sevkiyat.Application.Orders.Queries.GetImportedOrders
                 }
                 else if (request.TalepNoStatus == "NonZero")
                 {
-                    query = query.Where(o => o.TalepNo != "0");
+                    query = query.Where(o => o.TalepNo == null || o.TalepNo != "0");
                 }
             }
 

@@ -12,6 +12,7 @@ export interface GoodsReceipt {
 
 export interface GoodsReceiptLine {
   id: string;
+  purchaseOrderLineId?: string;
   stockMasterId: number;
   stockNameSnapshot?: string;
   unitSnapshot: string;
@@ -99,6 +100,18 @@ const goodsReceiptService = {
 
   async removeLine(id: string, lineId: string): Promise<void> {
     await apiClient.delete(`/goods-receipts/${id}/lines/${lineId}`);
+  },
+
+  async batchUpdateLines(goodsReceiptId: string, lines: {
+    lineId: string;
+    receivedQty: number;
+    rejectedQty: number;
+    rejectReason?: string;
+  }[]): Promise<void> {
+    await apiClient.put(`/goods-receipts/${goodsReceiptId}/lines`, {
+      goodsReceiptId,
+      lines
+    });
   },
 
   async createCorrection(id: string): Promise<{ id: string }> {

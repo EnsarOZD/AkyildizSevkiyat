@@ -11,6 +11,14 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            // AddShipmentOperationTypeFromStock migration had an empty Up() — add the missing column here
+            migrationBuilder.Sql(@"
+                IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE Name = N'OperationType' AND Object_ID = Object_ID(N'Projects'))
+                BEGIN
+                    ALTER TABLE Projects ADD OperationType int NOT NULL DEFAULT 0
+                END
+            ");
+
             migrationBuilder.AddColumn<int>(
                 name: "CargoProvider",
                 table: "Shipments",
@@ -43,6 +51,13 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.Sql(@"
+                IF EXISTS (SELECT 1 FROM sys.columns WHERE Name = N'OperationType' AND Object_ID = Object_ID(N'Projects'))
+                BEGIN
+                    ALTER TABLE Projects DROP COLUMN OperationType
+                END
+            ");
+
             migrationBuilder.DropColumn(
                 name: "CargoProvider",
                 table: "Shipments");

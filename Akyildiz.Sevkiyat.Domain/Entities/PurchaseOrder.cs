@@ -24,10 +24,19 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
         public DateTime? NetsisTransferredAt { get; set; } // İdempotency: dolu ise yeniden aktarma
         public string? Note { get; set; }
 
+        public DateTime? EmailSentAt { get; private set; }
+        public string? EmailSentTo { get; private set; }
+
         public ICollection<PurchaseOrderLine> Lines { get; set; } = new List<PurchaseOrderLine>();
 
         [NotMapped]
         public bool IsEditable => Status == PurchaseOrderStatus.Draft;
+
+        public void MarkEmailSent(string? sentTo = null)
+        {
+            EmailSentAt = DateTime.UtcNow;
+            EmailSentTo = sentTo;
+        }
     }
 
     public class PurchaseOrderLine : AuditableEntity

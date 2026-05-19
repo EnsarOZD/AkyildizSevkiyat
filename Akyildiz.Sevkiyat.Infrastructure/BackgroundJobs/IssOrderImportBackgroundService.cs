@@ -17,16 +17,19 @@ public class IssOrderImportBackgroundService : BackgroundService
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<IssOrderImportBackgroundService> _logger;
     private readonly IssImportOptions _options;
+    private readonly BackgroundServiceStatusTracker _tracker;
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
     public IssOrderImportBackgroundService(
         IServiceScopeFactory scopeFactory,
         ILogger<IssOrderImportBackgroundService> logger,
-        IOptions<IssImportOptions> options)
+        IOptions<IssImportOptions> options,
+        BackgroundServiceStatusTracker tracker)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
         _options = options.Value;
+        _tracker = tracker;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -78,6 +81,7 @@ public class IssOrderImportBackgroundService : BackgroundService
             _logger.LogInformation(
                 "ISS-IP otomatik import tamamlandı. Toplam: {Total}, Eklenen: {Added}, Atlanan: {Skipped}, Eşleştirme Bekleyen: {NeedsMapping}, Hatalı: {Errors}, BatchId: {BatchId}",
                 result.TotalFromSource, result.Added, result.Skipped, result.NeedsMapping, result.Errors, result.BatchId);
+            _tracker.Record("iss-import", BackgroundServiceRunResult.Success);
         }
         catch (OperationCanceledException)
         {
@@ -86,6 +90,7 @@ public class IssOrderImportBackgroundService : BackgroundService
         catch (Exception ex)
         {
             _logger.LogError(ex, "ISS-IP otomatik import sırasında beklenmeyen hata oluştu.");
+            _tracker.Record("iss-import", BackgroundServiceRunResult.Failure, ex.Message);
         }
     }
 }

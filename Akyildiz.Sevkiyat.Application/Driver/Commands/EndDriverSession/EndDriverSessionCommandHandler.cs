@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Akyildiz.Sevkiyat.Application.Common.Interfaces;
 using Akyildiz.Sevkiyat.Application.Interfaces;
 using Akyildiz.Sevkiyat.Domain.Enums;
 using Akyildiz.Sevkiyat.Domain.Exceptions;
@@ -11,13 +12,16 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Commands.EndDriverSession
     {
         private readonly IApplicationDbContext _context;
         private readonly ICurrentUserService _currentUser;
+        private readonly IPhotoStorageService _photos;
 
         public EndDriverSessionCommandHandler(
             IApplicationDbContext context,
-            ICurrentUserService currentUser)
+            ICurrentUserService currentUser,
+            IPhotoStorageService photos)
         {
             _context = context;
             _currentUser = currentUser;
+            _photos = photos;
         }
 
         public async Task<EndDriverSessionResult> Handle(
@@ -46,8 +50,13 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Commands.EndDriverSession
                 throw new DomainException(
                     "Farklı araç QR'ı okuttunuz. Seferi başlattığınız aracın QR'ını okutun.");
 
-            // 5. Session'ı kapat
-            session.Close(command.Latitude, command.Longitude);
+            // 5. Kadran fotoğrafı varsa kaydet
+            string? odometerPath = null;
+            if (!string.IsNullOrWhiteSpace(command.EndOdometerPhotoBase64))
+                odometerPath = await _photos.SaveAsync(command.EndOdometerPhotoBase64, "odometer", cancellationToken);
+
+            // 6. Session'ı kapat
+            session.Close(command.Latitude, command.Longitude, odometerPath, command.EndOdometerKm);
             await _context.SaveChangesAsync(cancellationToken);
 
             return new EndDriverSessionResult(session.Id, session.TotalDurationMinutes ?? 0);

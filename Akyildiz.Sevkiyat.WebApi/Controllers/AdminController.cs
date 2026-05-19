@@ -1,4 +1,5 @@
 using Akyildiz.Sevkiyat.Application.Admin.Commands.ForceCloseDriverSession;
+using Akyildiz.Sevkiyat.Application.Admin.Queries.GetActiveSessionsWithShipments;
 using Akyildiz.Sevkiyat.Application.Admin.Queries.GetDriverSessions;
 using Akyildiz.Sevkiyat.Domain.Enums;
 using MediatR;
@@ -27,6 +28,13 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         {
             await _mediator.Send(new ForceCloseDriverSessionCommand(id, request.Notes), ct);
             return NoContent();
+        }
+
+        [HttpGet("active-operations")]
+        [Authorize(Roles = "Admin,Manager,Accounting")]
+        public async Task<ActionResult<List<ActiveSessionWithShipmentsDto>>> GetActiveOperations(CancellationToken ct)
+        {
+            return Ok(await _mediator.Send(new GetActiveSessionsWithShipmentsQuery(), ct));
         }
 
         [HttpGet("driver-sessions")]

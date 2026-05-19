@@ -261,10 +261,31 @@
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Yeniden Sipariş Noktası</label>
                         <input v-model.number="form.reorderPoint" type="number" min="0" step="1" inputmode="numeric" placeholder="Ör: 20" class="w-full border p-2 rounded dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100" />
                       </div>
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Birim Ağırlık (kg)</label>
+                        <input v-model.number="form.weightKg" type="number" min="0" step="0.001" inputmode="decimal" placeholder="Ör: 1.5" class="w-full border p-2 rounded dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100" />
+                        <p class="text-xs text-gray-400 mt-0.5">Tonaj hesabı için kullanılır. Boş bırakılabilir.</p>
+                      </div>
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Gıda Toplama Sırası</label>
+                        <input v-model.number="form.pickingOrder" type="number" min="0" step="1" inputmode="numeric" placeholder="Ör: 5" class="w-full border p-2 rounded dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100" />
+                        <p class="text-xs text-gray-400 mt-0.5">Gıda toplama modalında sıralama için kullanılır. Düşük değer önce gelir.</p>
+                      </div>
                       <div class="col-span-2">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Depo Lokasyonu</label>
                         <input v-model="form.warehouseLocation" type="text" placeholder="Ör: A-Raf-3" class="w-full border p-2 rounded dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100" />
                       </div>
+                    </div>
+                  </div>
+
+                  <!-- Barkod -->
+                  <div class="border-t dark:border-gray-700 pt-4 mt-2">
+                    <p class="text-xs text-gray-400 dark:text-gray-600 uppercase font-semibold mb-3">Barkod</p>
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Birincil Barkod</label>
+                      <input v-model="form.barcode" type="text" placeholder="EAN13 / Code128 / QR değeri"
+                        class="w-full border p-2 rounded dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 font-mono" />
+                      <p class="text-xs text-gray-400 mt-1">Tedarikçi barkodunu buraya girin. Birden fazla barkod için stok kaydı oluşturulduktan sonra barkod yönetimini kullanın.</p>
                     </div>
                   </div>
 
@@ -502,7 +523,7 @@ const isEditing = ref(false);
 
 // N tuşu → yeni stok ekle
 useKeyboardShortcut('n', () => { if (!showModal.value) { isEditing.value = false; showModal.value = true; } });
-const form = ref<any>({ id: 0, stockCode: '', stockName: '', unit: 0, unitPrice: null, taxRate: 20, pickingType: 0, category: null, brand: '', minStockQty: null, reorderPoint: null, warehouseLocation: '', netsisStockCode: '' });
+const form = ref<any>({ id: 0, stockCode: '', stockName: '', unit: 0, unitPrice: null, taxRate: 20, pickingType: 0, category: null, brand: '', minStockQty: null, reorderPoint: null, warehouseLocation: '', netsisStockCode: '', weightKg: null, pickingOrder: 0, barcode: '' });
 
 const openModal = (stock?: Stock) => {
     if (stock) {
@@ -513,10 +534,11 @@ const openModal = (stock?: Stock) => {
             category: stock.categoryId || 0,
             unit: stock.unitId || 0,
             reorderPoint: stock.reorderPoint ?? null,
+            pickingOrder: stock.pickingOrder ?? 0,
         };
     } else {
         isEditing.value = false;
-        form.value = { id: 0, stockCode: '', stockName: '', unit: 0, unitPrice: null, taxRate: 20, pickingType: 0, category: null, brand: '', minStockQty: null, reorderPoint: null, warehouseLocation: '', netsisStockCode: '' };
+        form.value = { id: 0, stockCode: '', stockName: '', unit: 0, unitPrice: null, taxRate: 20, pickingType: 0, category: null, brand: '', minStockQty: null, reorderPoint: null, warehouseLocation: '', netsisStockCode: '', weightKg: null, pickingOrder: 0, barcode: '' };
     }
     showModal.value = true;
 };

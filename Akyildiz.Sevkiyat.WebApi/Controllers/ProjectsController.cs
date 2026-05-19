@@ -13,6 +13,8 @@ using Akyildiz.Sevkiyat.Application.Projects.Commands.BulkUpdateDeliveryOrders;
 using Akyildiz.Sevkiyat.Application.Projects.Commands.UpdateProjectDeliveryWindow;
 using Akyildiz.Sevkiyat.Application.Projects.Commands.ToggleProjectActive;
 using Akyildiz.Sevkiyat.Application.Projects.Queries.ValidateProjectCoordinates;
+using Akyildiz.Sevkiyat.Application.Projects.Commands.UpdateProjectContact;
+using Akyildiz.Sevkiyat.Application.Projects.Queries.GetProjectContacts;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -51,6 +53,8 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         }
 
         [HttpPost("import-mappings")]
+        [RequestSizeLimit(20 * 1024 * 1024)]   // 20 MB
+        [RequestFormLimits(MultipartBodyLengthLimit = 20 * 1024 * 1024)]
         public async Task<IActionResult> ImportMappings(IFormFile file)
         {
             if (file == null || file.Length == 0) return BadRequest("Dosya seçilmedi.");
@@ -115,11 +119,11 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         [HttpPatch("{id}/location")]
         public async Task<IActionResult> UpdateLocation(int id, [FromBody] UpdateLocationBody body)
         {
-            await _mediator.Send(new UpdateProjectLocationCommand(id, body.Latitude, body.Longitude));
+            await _mediator.Send(new UpdateProjectLocationCommand(id, body.Latitude, body.Longitude, body.CityName, body.DistrictName));
             return NoContent();
         }
 
-        public record UpdateLocationBody(double? Latitude, double? Longitude);
+        public record UpdateLocationBody(double? Latitude, double? Longitude, string? CityName = null, string? DistrictName = null);
 
         [HttpPost("validate-coordinates")]
         public async Task<IActionResult> ValidateCoordinates([FromBody] ValidateCoordinatesBody body)
@@ -166,5 +170,21 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             await _mediator.Send(command);
             return NoContent();
         }
+
+        [HttpGet("contacts")]
+        public async Task<IActionResult> GetContacts()
+        {
+            var result = await _mediator.Send(new GetProjectContactsQuery());
+            return Ok(result);
+        }
+
+        [HttpPatch("{id}/contact")]
+        public async Task<IActionResult> UpdateContact(int id, [FromBody] UpdateContactBody body)
+        {
+            await _mediator.Send(new UpdateProjectContactCommand(id, body.ContactName, body.ContactPhone));
+            return NoContent();
+        }
+
+        public record UpdateContactBody(string? ContactName, string? ContactPhone);
     }
 }

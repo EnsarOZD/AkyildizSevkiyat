@@ -50,23 +50,23 @@
             <!-- Form -->
             <form @submit.prevent="handleLogin" class="space-y-5">
 
-              <!-- Email -->
+              <!-- Username -->
               <div>
                 <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                  E-posta
+                  Kullanıcı Adı
                 </label>
                 <div class="relative">
                   <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                     <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                   </div>
                   <input
-                    v-model="email"
-                    type="email"
+                    v-model="username"
+                    type="text"
                     required
-                    autocomplete="email"
-                    placeholder="ornek@akyildiz.com"
+                    autocomplete="username"
+                    placeholder="kullaniciadi"
                     class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-orange-500 focus:border-transparent focus:bg-white focus:outline-none transition-all"
                   />
                 </div>
@@ -102,6 +102,19 @@
                     </svg>
                   </button>
                 </div>
+              </div>
+
+              <!-- Remember Me -->
+              <div class="flex items-center">
+                <input
+                  id="rememberMe"
+                  v-model="rememberMe"
+                  type="checkbox"
+                  class="h-4 w-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500 cursor-pointer"
+                />
+                <label for="rememberMe" class="ml-2 text-sm text-gray-600 cursor-pointer select-none">
+                  Beni hatırla
+                </label>
               </div>
 
               <!-- Error -->
@@ -160,8 +173,9 @@ import { useAuthStore } from '../stores/auth';
 import { useRouter } from 'vue-router';
 import { ApiErrorUtils } from '../utils/apiError';
 
-const email = ref('');
+const username = ref('');
 const password = ref('');
+const rememberMe = ref(false);
 const error = ref('');
 const loading = ref(false);
 const showPassword = ref(false);
@@ -173,7 +187,7 @@ const handleLogin = async () => {
   loading.value = true;
   error.value = '';
   try {
-    await authStore.login(email.value, password.value);
+    await authStore.login(username.value, password.value, rememberMe.value);
     
     if (authStore.userRole === 'Driver') {
       router.push('/driver');

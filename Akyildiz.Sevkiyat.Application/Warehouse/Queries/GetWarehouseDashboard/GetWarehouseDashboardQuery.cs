@@ -35,7 +35,14 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetWarehouseDashboard
         bool IrsaliyeFetched,
         List<DashboardProjectDto> Projects,
         int OpenErrorCount,
-        int OpenWarningCount
+        int OpenWarningCount,
+        bool IsOutOfCity,
+        string? MacroLockedByUserName,
+        DateTime? MacroLockedAt,
+        /// <summary>Gıda macro kalemlerin toplam ağırlığı (kg). Status 4-5 için hesaplanır, WeightKg girilmemişse null.</summary>
+        decimal? FoodTotalWeightKg,
+        /// <summary>Gıda macro kalemlerin toplanan ağırlığı (kg). PickedQty * WeightKg toplamı.</summary>
+        decimal? FoodPickedWeightKg
     );
 
     public record DashboardProjectDto(
@@ -45,7 +52,14 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetWarehouseDashboard
         string ProjectName,
         bool IsMicroReady,
         DateTime? MicroReadyAt,
-        bool IsAddedLater
+        bool IsAddedLater,
+        string? PreparedByUserName,
+        string? PickingLockedByUserName,
+        DateTime? PickingLockedAt,
+        /// <summary>Bu projenin zone'undaki aktif sevkiyat ID'si. Depo teslim için kullanılır.</summary>
+        int? ShipmentId,
+        /// <summary>Bu projenin ait olduğu ZonePreparation.Id (birleştirilmiş görünümde proje bazlı işlem için gerekli).</summary>
+        int ZonePreparationId
     );
 
     public record GetWarehouseDashboardQuery : IRequest<List<DashboardZoneDto>>;
@@ -73,14 +87,59 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetWarehouseDashboard
             // 2. Load reconciliation issue counts for all relevant zone preps in one query
             var prepIds = existingPreps.Select(p => p.Id).ToList();
 
-            var shipmentZoneMap = await _context.Shipments
+            var shipmentZoneMap = await _context.WarehouseShipments
                 .Where(s => s.ZonePreparationId != null && prepIds.Contains(s.ZonePreparationId.Value)
                          && s.Status != ShipmentStatus.Cancelled
                          && s.Status != ShipmentStatus.Passive)
-                .Select(s => new { s.Id, ZonePreparationId = s.ZonePreparationId!.Value })
+                .Select(s => new { s.Id, ZonePreparationId = s.ZonePreparationId!.Value, s.ProjectId })
                 .ToListAsync(cancellationToken);
 
             var shipmentIds = shipmentZoneMap.Select(s => s.Id).ToList();
+
+            // Proje bazında sevkiyat ID haritası: (ZonePreparationId, ProjectId) → ShipmentId
+            var shipmentByZoneProject = shipmentZoneMap
+                .GroupBy(s => (s.ZonePreparationId, s.ProjectId))
+                .ToDictionary(g => g.Key, g => g.First().Id);
+
+            // Gıda + macro kalemlerin toplam ağırlığı (sadece status 4-5 zone'lar için)
+            var foodWeightZoneIds = existingPreps
+                .Where(p => p.Status == ZonePreparationStatus.GidaHazirlik ||
+                            p.Status == ZonePreparationStatus.ReadyForDriverInfo)
+                .Select(p => p.Id)
+                .ToList();
+
+            var foodWeightByZone       = new Dictionary<int, decimal>();
+            var foodPickedWeightByZone = new Dictionary<int, decimal>();
+            if (foodWeightZoneIds.Any())
+            {
+                var foodWeightData = await _context.ShipmentLines
+                    .Where(sl =>
+                        sl.Shipment.ZonePreparationId != null &&
+                        foodWeightZoneIds.Contains(sl.Shipment.ZonePreparationId.Value) &&
+                        sl.Shipment.Status != ShipmentStatus.Cancelled &&
+                        sl.Shipment.Status != ShipmentStatus.Passive &&
+                        sl.StockMaster != null &&
+                        sl.StockMaster.Category == StockCategory.Gida &&
+                        sl.StockMaster.PickingType == PickingType.Macro &&
+                        sl.StockMaster.WeightKg != null &&
+                        sl.OrderedQty > 0)
+                    .Select(sl => new
+                    {
+                        ZonePreparationId = sl.Shipment.ZonePreparationId!.Value,
+                        WeightKg = sl.StockMaster!.WeightKg!.Value,
+                        sl.OrderedQty,
+                        PickedQty = sl.DeliveredQty,
+                    })
+                    .ToListAsync(cancellationToken);
+
+                foodWeightByZone = foodWeightData
+                    .GroupBy(x => x.ZonePreparationId)
+                    .ToDictionary(g => g.Key, g => g.Sum(x => x.WeightKg * x.OrderedQty));
+
+                foodPickedWeightByZone = foodWeightData
+                    .GroupBy(x => x.ZonePreparationId)
+                    .ToDictionary(g => g.Key, g => g.Sum(x => x.WeightKg * x.PickedQty));
+            }
 
             var errorsByZone  = new Dictionary<int, int>();
             var warnsByZone   = new Dictionary<int, int>();
@@ -122,6 +181,9 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetWarehouseDashboard
                 {
                     string label = prep.BatchNo == 1 ? "Ana Toplama" : $"Geç Gelenler (Batch {prep.BatchNo})";
 
+                    var foodWeight       = foodWeightByZone.TryGetValue(prep.Id, out var fw) ? fw : (decimal?)null;
+                    var foodPickedWeight = foodPickedWeightByZone.TryGetValue(prep.Id, out var fpw) ? fpw : (decimal?)null;
+
                     result.Add(new DashboardZoneDto(
                         prep.Id,
                         prep.ZoneId,
@@ -140,10 +202,20 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetWarehouseDashboard
                             p.Project?.Name ?? "Unknown Project",
                             p.IsMicroReady,
                             p.MicroReadyAt,
-                            p.IsAddedLater
+                            p.IsAddedLater,
+                            p.PreparedByUserName,
+                            p.PickingLockedByUserName,
+                            p.PickingLockedAt,
+                            shipmentByZoneProject.TryGetValue((prep.Id, p.ProjectId), out var sid) ? sid : (int?)null,
+                            prep.Id
                         )).ToList(),
                         errorsByZone.GetValueOrDefault(prep.Id, 0),
-                        warnsByZone.GetValueOrDefault(prep.Id, 0)
+                        warnsByZone.GetValueOrDefault(prep.Id, 0),
+                        prep.Zone?.IsOutOfCity ?? false,
+                        prep.MacroLockedByUserName,
+                        prep.MacroLockedAt,
+                        foodWeight,
+                        foodPickedWeight
                     ));
                 }
             }

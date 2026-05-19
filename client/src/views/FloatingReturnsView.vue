@@ -141,7 +141,7 @@
             </button>
           </div>
           <template v-if="!useManualStock">
-            <StockCombobox placeholder="Stok kodu veya adı ara..." @select="onStockSelect" />
+            <StockCombobox :operationType="0" placeholder="Stok kodu veya adı ara..." @select="onStockSelect" />
             <div v-if="createForm.stockCodeFree" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
               Seçili: <span class="font-medium text-gray-700 dark:text-gray-200">{{ createForm.stockCodeFree }} — {{ createForm.stockNameFree }}</span>
             </div>

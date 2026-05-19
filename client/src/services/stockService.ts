@@ -20,6 +20,9 @@ export interface Stock {
     reservedQty?: number;
     netsisStockCode?: string | null;
     isActive?: boolean;
+    weightKg?: number | null;
+    pickingOrder?: number;
+    barcode?: string | null;
 }
 
 export interface PaginatedResponse<T> {
@@ -39,6 +42,7 @@ export interface StockQueryParams {
     pickingTypeId?: number | null;
     unitId?: number | null;
     isActive?: boolean | null;
+    excludeCategoryId?: number | null;
 }
 
 export interface StockCreateRequest {
@@ -53,10 +57,14 @@ export interface StockCreateRequest {
     minStockQty?: number | null;
     warehouseLocation?: string;
     netsisStockCode?: string | null;
+    weightKg?: number | null;
+    pickingOrder?: number;
+    barcode?: string | null;
 }
 
 export interface StockUpdateRequest extends Partial<StockCreateRequest> {
     id: number;
+    barcode?: string | null;
 }
 
 export interface ImportStocksResult {

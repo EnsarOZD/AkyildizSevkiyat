@@ -164,6 +164,11 @@ namespace Akyildiz.Sevkiyat.Infrastructure.ExternalServices.Netsis
 
             var rawResp = await resp.Content.ReadAsStringAsync(cancellationToken);
 
+            _logger.LogInformation(
+                "CreateSiparis [{FatIrsNo}] HTTP {Status} yanıt: {Raw}",
+                fatIrsNo, (int)resp.StatusCode,
+                rawResp.Length > 600 ? rawResp[..600] + "…" : rawResp);
+
             if (!resp.IsSuccessStatusCode)
             {
                 _tokenCache.Invalidate();
@@ -171,23 +176,34 @@ namespace Akyildiz.Sevkiyat.Infrastructure.ExternalServices.Netsis
                     $"Netsis CreateSiparis hatası ({resp.StatusCode}): {rawResp}");
             }
 
+            // Boş ya da null yanıt → Netsis siparişi oluşturmadı, hata fırlat
+            if (string.IsNullOrWhiteSpace(rawResp) || rawResp.Trim() == "null")
+                throw new HttpRequestException(
+                    $"Netsis CreateSiparis: boş yanıt alındı — sipariş kaydedilmedi. Belge No: {fatIrsNo}");
+
             // Netsis her zaman HTTP 200 döndürür; başarı IsSuccessful alanındadır
             NetsisApiResponse? apiResp = null;
             try { apiResp = System.Text.Json.JsonSerializer.Deserialize<NetsisApiResponse>(rawResp); } catch { }
+
+            // Yanıt parse edilemedi (JSON değil → HTML hata sayfası olabilir)
+            if (apiResp == null)
+                throw new HttpRequestException(
+                    $"Netsis CreateSiparis: yanıt JSON olarak okunamadı. Belge No: {fatIrsNo}. Ham yanıt: " +
+                    (rawResp.Length > 300 ? rawResp[..300] : rawResp));
 
             if (apiResp is { IsSuccessful: false })
             {
                 // Sipariş Netsis'te zaten mevcutsa (önceki aktarımda DB kaydı başarısız olmuş olabilir),
                 // hata fırlatmak yerine başarılı say — belge no zaten biliniyor.
                 var errorDesc = apiResp.ErrorDesc ?? string.Empty;
+                // Sadece mesaj içeriğine göre "zaten mevcut" tespiti yapılır.
+                // ErrorCode == "101" Netsis'in genel hata kodu olup stok kodu hatası,
+                // geçersiz kalem bilgisi vb. durumlar için de döner — tek başına güvenilir değil.
                 var isAlreadyExists =
-                    apiResp.ErrorCode == "101"                                            || // Netsis "already exists" kodu
-                    errorDesc.Contains("kaydedilmiş",  StringComparison.OrdinalIgnoreCase) ||
-                    errorDesc.Contains("önceden",      StringComparison.OrdinalIgnoreCase) ||
-                    errorDesc.Contains("mevcut",       StringComparison.OrdinalIgnoreCase) ||
-                    errorDesc.Contains("duplicate",    StringComparison.OrdinalIgnoreCase) ||
-                    errorDesc.Contains("zaten",        StringComparison.OrdinalIgnoreCase) ||
-                    errorDesc.Contains("var olan",     StringComparison.OrdinalIgnoreCase);
+                    (errorDesc.Contains("kaydedilmiş", StringComparison.OrdinalIgnoreCase) && errorDesc.Contains("nolu evrak", StringComparison.OrdinalIgnoreCase)) ||
+                    (errorDesc.Contains("zaten",       StringComparison.OrdinalIgnoreCase) && errorDesc.Contains("mevcut",     StringComparison.OrdinalIgnoreCase)) ||
+                    (errorDesc.Contains("önceden",     StringComparison.OrdinalIgnoreCase) && errorDesc.Contains("kayıt",      StringComparison.OrdinalIgnoreCase)) ||
+                    errorDesc.Contains("duplicate",    StringComparison.OrdinalIgnoreCase);
 
                 if (isAlreadyExists)
                 {
@@ -260,7 +276,7 @@ namespace Akyildiz.Sevkiyat.Infrastructure.ExternalServices.Netsis
                     DEPO_KODU     = depoKodu,
                     STra_GCMIK    = s.Miktar,
                     STra_BF       = 0,
-                    STra_KDV      = 0,
+                    STra_KDV      = s.KdvOrani,
                     STra_testar   = teslimStr,
                     Stra_KosTar   = FormatDate(request.SiparisDate),
                     Stra_FiyatTar = FormatDate(request.SiparisDate),
@@ -514,35 +530,63 @@ namespace Akyildiz.Sevkiyat.Infrastructure.ExternalServices.Netsis
 
         /// <summary>
         /// GET /api/v2/ItemSlips/ftSSip;{FATIRS_NO}; ile tek bir siparişin Netsis'te var olup olmadığını kontrol eder.
-        /// CariKod bilinmediğinden boş bırakılır.
+        /// 401 alınırsa token yenilenerek bir kez daha denenir.
         /// </summary>
-        private async Task<bool> SiparisExistsInNetsisAsync(string fatIrsNo, CancellationToken ct)
+        private async Task<(bool Exists, string RawBody)> SiparisExistsInNetsisAsync(string fatIrsNo, CancellationToken ct)
         {
             var url = $"{_opt.IrsaliyePath}/ftSSip;{fatIrsNo};";
             try
             {
                 using var resp = await _http.GetAsync(url, ct);
-                if (!resp.IsSuccessStatusCode) return false;
 
-                var body = await resp.Content.ReadAsStringAsync(ct);
-                if (string.IsNullOrWhiteSpace(body) || body == "null") return false;
-
-                var trimmed = body.TrimStart();
-
-                // {"IsSuccessful":false,...} → sipariş yok veya hata
-                if (trimmed.StartsWith('{') && trimmed.Contains("\"IsSuccessful\""))
+                // Token süresi dolmuşsa yenile ve bir kez daha dene
+                if (resp.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
-                    var apiResp = System.Text.Json.JsonSerializer.Deserialize<NetsisApiResponse>(body);
-                    return apiResp?.IsSuccessful == true;
+                    _logger.LogWarning("SiparisExists [{FatIrsNo}]: 401 — token yenileniyor.", fatIrsNo);
+                    _tokenCache.Invalidate();
+                    var newToken = await EnsureTokenAsync(ct);
+                    SetAuthHeader(newToken);
+
+                    using var retryResp = await _http.GetAsync(url, ct);
+                    return await ParseSiparisExistsResponseAsync(fatIrsNo, retryResp, ct);
                 }
 
-                // Dizi veya nesne dönmüşse → sipariş var
-                return trimmed.StartsWith('[') || trimmed.StartsWith('{');
+                return await ParseSiparisExistsResponseAsync(fatIrsNo, resp, ct);
             }
-            catch
+            catch (Exception ex)
             {
-                return false;
+                _logger.LogWarning("SiparisExists [{FatIrsNo}]: exception — {Msg}", fatIrsNo, ex.Message);
+                return (false, $"Exception: {ex.Message}");
             }
+        }
+
+        private static async Task<(bool Exists, string RawBody)> ParseSiparisExistsResponseAsync(
+            string fatIrsNo, HttpResponseMessage resp, CancellationToken ct)
+        {
+            if (!resp.IsSuccessStatusCode)
+                return (false, $"HTTP {(int)resp.StatusCode}");
+
+            var body = await resp.Content.ReadAsStringAsync(ct);
+            if (string.IsNullOrWhiteSpace(body) || body == "null") return (false, body ?? "null");
+
+            var trimmed = body.TrimStart();
+
+            // {"IsSuccessful":false,...} → sipariş yok veya hata
+            if (trimmed.StartsWith('{') && trimmed.Contains("\"IsSuccessful\""))
+            {
+                var apiResp = System.Text.Json.JsonSerializer.Deserialize<NetsisApiResponse>(body);
+                return (apiResp?.IsSuccessful == true, body.Length > 300 ? body[..300] : body);
+            }
+
+            // Boş dizi [] → sipariş yok
+            if (trimmed.StartsWith('['))
+            {
+                var nonEmpty = trimmed.Length > 2 && trimmed.TrimEnd() != "[]";
+                return (nonEmpty, body.Length > 300 ? body[..300] : body);
+            }
+
+            // Nesne dönmüşse → sipariş var
+            return (trimmed.StartsWith('{'), body.Length > 300 ? body[..300] : body);
         }
 
         public async Task<(IReadOnlySet<string> Found, string? Error)> CheckOrdersExistInNetsisAsync(
@@ -558,27 +602,44 @@ namespace Akyildiz.Sevkiyat.Infrastructure.ExternalServices.Netsis
                 var token = await EnsureTokenAsync(cancellationToken);
                 SetAuthHeader(token);
             }
+            catch (TaskCanceledException)
+            {
+                return (found, $"Netsis oturum isteği zaman aşımına uğradı ({_opt.TimeoutSeconds}s). Netsis sunucusu yanıt vermedi.");
+            }
             catch (Exception ex)
             {
                 return (found, $"Netsis oturum açılamadı: {ex.Message}");
             }
+
+            // İlk örnek URL'yi logla — format doğrulaması için
+            if (orderList.Count > 0)
+                _logger.LogInformation(
+                    "CheckOrdersExistInNetsis: İlk örnek → rawNo={Raw} fatIrsNo={Fat} url={Url}",
+                    orderList[0], FormatFatIrsNo(orderList[0]),
+                    $"{_opt.IrsaliyePath}/ftSSip;{FormatFatIrsNo(orderList[0])};");
 
             // 10'lu paralel gruplar — Netsis'i aşırı yüklememek için
             const int Concurrency = 10;
             using var semaphore = new SemaphoreSlim(Concurrency, Concurrency);
             var foundLock = new object();
 
+            var sampleLogCount = 0;
             var tasks = orderList.Select(async rawNo =>
             {
                 await semaphore.WaitAsync(cancellationToken);
                 try
                 {
                     var fatIrsNo = FormatFatIrsNo(rawNo);
-                    var exists   = await SiparisExistsInNetsisAsync(fatIrsNo, cancellationToken);
+                    var (exists, rawBody) = await SiparisExistsInNetsisAsync(fatIrsNo, cancellationToken);
+
+                    // İlk 3 sorgunun yanıtını bilgi seviyesinde logla — format doğrulaması için
+                    if (Interlocked.Increment(ref sampleLogCount) <= 3)
+                        _logger.LogInformation(
+                            "CheckOrdersExistInNetsis örnek [{N}]: rawNo={Raw} fatIrsNo={Fat} → exists={Exists} body={Body}",
+                            sampleLogCount, rawNo, fatIrsNo, exists, rawBody);
+
                     if (exists)
-                    {
                         lock (foundLock) found.Add(rawNo);
-                    }
                 }
                 finally
                 {
@@ -587,6 +648,10 @@ namespace Akyildiz.Sevkiyat.Infrastructure.ExternalServices.Netsis
             });
 
             await Task.WhenAll(tasks);
+
+            _logger.LogInformation(
+                "CheckOrdersExistInNetsis: {Checked} sorgulandı, {Found} Netsis'te bulundu.",
+                orderList.Count, found.Count);
 
             return (found, null);
         }
@@ -619,9 +684,18 @@ namespace Akyildiz.Sevkiyat.Infrastructure.ExternalServices.Netsis
                 await semaphore.WaitAsync(cancellationToken);
                 try
                 {
-                    // FormatFatIrsNo uygula: "202604110281" → "000202604110281"
                     var fatIrsNo = FormatFatIrsNo(s.NetsisOrderNo);
-                    var detail   = await TryGetSiparisAsync(fatIrsNo, cancellationToken);
+                    NetsisSiparisGetDto? detail;
+                    try
+                    {
+                        detail = await TryGetSiparisAsync(fatIrsNo, cancellationToken);
+                    }
+                    catch (OperationCanceledException) { throw; }
+                    catch
+                    {
+                        // Ağ/parse hatası → durum belirlenemiyor, "missing" sayma; atlıyoruz.
+                        return;
+                    }
 
                     if (detail == null)
                     {
@@ -660,11 +734,13 @@ namespace Akyildiz.Sevkiyat.Infrastructure.ExternalServices.Netsis
             try
             {
                 using var resp = await _http.GetAsync(url, ct);
-                if (!resp.IsSuccessStatusCode) return null;
 
                 var body = await resp.Content.ReadAsStringAsync(ct);
-                _logger.LogDebug("TryGetSiparis ({FatIrsNo}): {Body}",
-                    fatIrsNo, body.Length > 300 ? body[..300] + "..." : body);
+                _logger.LogInformation("TryGetSiparis ({FatIrsNo}) HTTP {Status}: {Body}",
+                    fatIrsNo, (int)resp.StatusCode,
+                    body.Length > 400 ? body[..400] + "..." : body);
+
+                if (!resp.IsSuccessStatusCode) return null;
 
                 if (string.IsNullOrWhiteSpace(body) || body == "null") return null;
 
@@ -678,7 +754,6 @@ namespace Akyildiz.Sevkiyat.Infrastructure.ExternalServices.Netsis
 
                 if (trimmed.StartsWith('['))
                 {
-                    // Dizi dönmüşse ilk elemanı al
                     var list = System.Text.Json.JsonSerializer.Deserialize<List<NetsisSiparisGetDto>>(body);
                     return list?.FirstOrDefault();
                 }
@@ -690,14 +765,15 @@ namespace Akyildiz.Sevkiyat.Infrastructure.ExternalServices.Netsis
             }
             catch (OperationCanceledException)
             {
-                // Timeout veya iptal — "bulunamadı" değil, bilinmiyor sayılmalı.
-                // Rethrow ile çağıran taraf hata alır, NetsisTransferredAt sıfırlanmaz.
+                // İptal — "bulunamadı" değil, bilinmiyor. Rethrow ile NetsisTransferredAt sıfırlanmaz.
                 throw;
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "TryGetSiparis ({FatIrsNo}) exception", fatIrsNo);
-                return null;
+                // Ağ hatası veya parse hatası → bilinmiyor, "bulunamadı" OLMAZ.
+                // Rethrow ederek çağıranın bu sevkiyatı "missing" saymamasını sağla.
+                _logger.LogWarning(ex, "TryGetSiparis ({FatIrsNo}) hatası — aktarım durumu sıfırlanmayacak", fatIrsNo);
+                throw;
             }
         }
 
@@ -723,6 +799,79 @@ namespace Akyildiz.Sevkiyat.Infrastructure.ExternalServices.Netsis
                 return trimmed.StartsWith('[') || trimmed.StartsWith('{');
             }
             catch { return false; }
+        }
+
+        public async Task<IReadOnlyDictionary<string, decimal>> GetStockKdvRatesAsync(
+            IEnumerable<string> netsisStokKodlari,
+            CancellationToken cancellationToken = default)
+        {
+            var result = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
+            var codes  = netsisStokKodlari
+                .Where(c => !string.IsNullOrWhiteSpace(c))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (codes.Count == 0) return result;
+
+            var token = await EnsureTokenAsync(cancellationToken);
+            SetAuthHeader(token);
+
+            var inList = string.Join(",", codes.Select(c => $"'{c.Replace("'", "''")}'"));
+            var tsql   = $"SELECT STOK_KODU, STK_KDV FROM TBLSTKMAS WHERE STOK_KODU IN ({inList})";
+            var url    = $"{_opt.StokBakiyePath}?tsql={HttpUtility.UrlEncode(tsql)}";
+
+            try
+            {
+                using var resp = await _http.GetAsync(url, cancellationToken);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning("GetStockKdvRates: HTTP {Status}", (int)resp.StatusCode);
+                    return result;
+                }
+
+                var body = await resp.Content.ReadAsStringAsync(cancellationToken);
+                var queryResp = System.Text.Json.JsonSerializer.Deserialize<NetsisQueryResponse>(body);
+
+                if (queryResp is not { IsSuccessful: true })
+                {
+                    _logger.LogWarning("GetStockKdvRates: [{Code}] {Desc}", queryResp?.ErrorCode, queryResp?.ErrorDesc);
+                    return result;
+                }
+
+                foreach (var row in queryResp.Data)
+                {
+                    string? stokKodu = null;
+                    decimal kdv      = 0;
+
+                    foreach (var kv in row)
+                    {
+                        if (kv.Key.Equals("STOK_KODU", StringComparison.OrdinalIgnoreCase) &&
+                            kv.Value.ValueKind == System.Text.Json.JsonValueKind.String)
+                        {
+                            stokKodu = kv.Value.GetString()?.Trim();
+                        }
+                        else if (kv.Key.Equals("STK_KDV", StringComparison.OrdinalIgnoreCase) &&
+                                 kv.Value.ValueKind == System.Text.Json.JsonValueKind.Number)
+                        {
+                            kdv = kv.Value.GetDecimal();
+                        }
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(stokKodu))
+                        result[stokKodu] = kdv;
+                }
+
+                _logger.LogInformation(
+                    "GetStockKdvRates: {Count} stok kodu sorgulandı, {Found} KDV oranı döndü.",
+                    codes.Count, result.Count);
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "GetStockKdvRates: sorgu başarısız — fallback uygulanacak.");
+            }
+
+            return result;
         }
 
         public async Task<IReadOnlyList<NetsisStockBalanceDto>> GetStockBalancesAsync(

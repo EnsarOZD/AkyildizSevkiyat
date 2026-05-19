@@ -2,11 +2,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Akyildiz.Sevkiyat.Application.Common.Interfaces;
 using Akyildiz.Sevkiyat.Application.Interfaces;
-using Akyildiz.Sevkiyat.Application.Reconciliation.Services;
+using Akyildiz.Sevkiyat.Application.Warehouse.Services;
 using Akyildiz.Sevkiyat.Domain.Entities;
 using Akyildiz.Sevkiyat.Domain.Enums;
 using Akyildiz.Sevkiyat.Domain.Exceptions;
+using System.Collections.Generic;
 
 namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.MarkShipmentDelivered
 {
@@ -14,8 +16,10 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.MarkShipmentDelivered
         int ShipmentId,
         string? DeliveryNote = null,
         string? DeliveryRecipient = null,
-        string? DeliveryPhotoBase64 = null,
-        string? OverrideNote = null
+        List<string>? DeliveryPhotosBase64 = null,
+        string? OverrideNote = null,
+        double? DeliveryLatitude = null,
+        double? DeliveryLongitude = null
     ) : IRequest;
 
     public sealed class MarkShipmentDeliveredCommandHandler
@@ -23,23 +27,23 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.MarkShipmentDelivered
     {
         private readonly IApplicationDbContext _context;
         private readonly ICurrentUserService _currentUserService;
-        private readonly ReconciliationGuard _guard;
+        private readonly IPhotoStorageService _photos;
+        private readonly ZoneAutoCloseService _zoneAutoClose;
 
         public MarkShipmentDeliveredCommandHandler(
             IApplicationDbContext context,
             ICurrentUserService currentUserService,
-            ReconciliationGuard guard)
+            IPhotoStorageService photos,
+            ZoneAutoCloseService zoneAutoClose)
         {
             _context = context;
             _currentUserService = currentUserService;
-            _guard = guard;
+            _photos = photos;
+            _zoneAutoClose = zoneAutoClose;
         }
 
         public async Task Handle(MarkShipmentDeliveredCommand request, CancellationToken cancellationToken)
         {
-            // ── Enforcement: Picking tamamlanmadan teslim edilemez ──────────────
-            await _guard.ThrowIfPickingIncompleteAsync(request.ShipmentId, cancellationToken);
-
             var shipment = await _context.Shipments
                 .Include(s => s.Lines)
                 .FirstOrDefaultAsync(s => s.Id == request.ShipmentId, cancellationToken);
@@ -54,9 +58,13 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.MarkShipmentDelivered
             }
 
             // 2. FIX — Explicit Status Guard
-            if (shipment.Status != ShipmentStatus.Dispatched && shipment.Status != ShipmentStatus.AssignedToVehicle)
+            bool isClothingReadyForDispatch = shipment.OperationType == Domain.Enums.OperationType.Clothing
+                                           && shipment.Status == ShipmentStatus.ReadyForDispatch;
+            if (shipment.Status != ShipmentStatus.Dispatched
+                && shipment.Status != ShipmentStatus.AssignedToVehicle
+                && !isClothingReadyForDispatch)
             {
-                throw new DomainException("Yalnızca 'Yolda' veya 'Araçta' durumundaki sevkiyatlar teslim edilebilir.");
+                throw new DomainException("Yalnızca 'Yolda', 'Araçta' veya kıyafet operasyonunda 'Sevke Hazır' durumundaki sevkiyatlar teslim edilebilir.");
             }
 
             // 5. FIX — Delivery Proof (MINIMUM)
@@ -106,10 +114,29 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.MarkShipmentDelivered
                 DateTime.UtcNow,
                 request.DeliveryRecipient!,
                 request.DeliveryNote,
-                request.DeliveryPhotoBase64,
+                null,
                 _currentUserService.UserId,
                 _currentUserService.Role?.ToString(),
-                overrideNoteToSave);
+                overrideNoteToSave,
+                null,
+                request.DeliveryLatitude,
+                request.DeliveryLongitude);
+
+            // Save delivery photos (up to 5) to dedicated table
+            var photos = request.DeliveryPhotosBase64?.Where(p => !string.IsNullOrWhiteSpace(p)).Take(5).ToList()
+                         ?? new List<string>();
+            for (int i = 0; i < photos.Count; i++)
+            {
+                var path = await _photos.SaveDeliveryPhotoAsync(
+                    photos[i], shipment.Id, shipment.IrsaliyeNo, i + 1, cancellationToken);
+                _context.ShipmentDeliveryPhotos.Add(new ShipmentDeliveryPhoto
+                {
+                    ShipmentId = shipment.Id,
+                    PhotoPath  = path,
+                    PhotoIndex = i + 1,
+                    TakenAt    = DateTime.UtcNow,
+                });
+            }
 
             string? statusReason = isOverride ? $"Teslim kaydı yetkili override ile işlendi. Not: {overrideNoteToSave}" : null;
             shipment.ChangeStatus(ShipmentStatus.Delivered, _currentUserService.UserId, statusReason);
@@ -157,6 +184,13 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.MarkShipmentDelivered
             {
                 throw new ConflictException(
                     "Stok, aynı anda başka bir işlem tarafından güncellendi. Lütfen tekrar deneyin.");
+            }
+
+            // Tüm sevkiyatlar final duruma geçtiyse zone'u otomatik kapat
+            if (shipment.ZonePreparationId.HasValue)
+            {
+                await _zoneAutoClose.TryAutoCloseAsync(shipment.ZonePreparationId.Value, cancellationToken);
+                await _context.SaveChangesAsync(cancellationToken);
             }
         }
     }

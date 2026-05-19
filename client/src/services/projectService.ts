@@ -4,6 +4,7 @@ export interface Zone {
   id: number;
   name: string;
   order: number;
+  isOutOfCity: boolean;
   description?: string;
 }
 
@@ -17,6 +18,8 @@ export interface ProjectCoordinateValidationDto {
   geocodedLat?: number;
   geocodedLng?: number;
   distanceKm?: number;
+  cityName?: string | null;
+  districtName?: string | null;
   status: 'Compatible' | 'Suspicious' | 'Incompatible' | 'NoAddress' | 'NoCoordinate';
 }
 
@@ -67,12 +70,12 @@ const projectService = {
     await apiClient.patch(`/projects/${projectId}/zone`, { zoneId });
   },
 
-  async createZone(data: { name: string; order: number }): Promise<Zone> {
+  async createZone(data: { name: string; order: number; isOutOfCity: boolean }): Promise<Zone> {
     const response = await apiClient.post<Zone>('/zones', data);
     return response.data;
   },
 
-  async updateZone(id: number, data: { id: number; name: string; order: number }): Promise<void> {
+  async updateZone(id: number, data: { id: number; name: string; order: number; isOutOfCity: boolean }): Promise<void> {
     await apiClient.put(`/zones/${id}`, data);
   },
 
@@ -84,8 +87,8 @@ const projectService = {
     await apiClient.patch(`/projects/${projectId}/netsis-cari-kodu`, { netsisCariKodu, netsisTeslimCariKodu });
   },
 
-  async syncProjects(params: { forceAll: boolean } = { forceAll: false }): Promise<{ count: number }> {
-    const response = await apiClient.post('/projects/sync', params);
+  async syncProjects(params: { forceAll: boolean } = { forceAll: false }, config?: { timeout?: number }): Promise<{ count: number }> {
+    const response = await apiClient.post('/projects/sync', params, config);
     return response.data;
   },
 
@@ -133,12 +136,21 @@ const projectService = {
     return response.data;
   },
 
-  async updateLocation(id: number, lat: number | null, lng: number | null): Promise<void> {
-    await apiClient.patch(`/projects/${id}/location`, { latitude: lat, longitude: lng });
+  async updateLocation(id: number, lat: number | null, lng: number | null, cityName?: string | null, districtName?: string | null): Promise<void> {
+    await apiClient.patch(`/projects/${id}/location`, { latitude: lat, longitude: lng, cityName, districtName });
   },
 
   async resetLocation(id: number): Promise<void> {
     await apiClient.patch(`/projects/${id}/location`, { latitude: null, longitude: null });
+  },
+
+  async getContacts(): Promise<any[]> {
+    const response = await apiClient.get('/projects/contacts');
+    return response.data;
+  },
+
+  async updateContact(projectId: number, contactName: string | null, contactPhone: string | null): Promise<void> {
+    await apiClient.patch(`/projects/${projectId}/contact`, { contactName, contactPhone });
   },
 };
 

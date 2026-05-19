@@ -22,29 +22,19 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.UpdateShipmentLine
         {
             var line = await _context.ShipmentLines
                 .Include(l => l.Shipment)
+                    .ThenInclude(s => s.IssOrder)
                 .FirstOrDefaultAsync(l => l.Id == request.ShipmentLineId, cancellationToken);
-            
+
             if (line == null) throw new NotFoundException("ShipmentLine", request.ShipmentLineId);
 
-            // Allow updates only if Shipment is NOT yet Dispatched
-            // Actually, Warehouse can edit during Preparation (Picking).
-            // Once "ReadyForDispatch", it should be locked? 
-            // Let's allow edit if status < ReadyForDispatch or if user is Admin.
-            // For now, trust the validation in frontend + simple check.
-            
-            if (line.Shipment.Status == Domain.Enums.ShipmentStatus.Delivered || 
+            if (line.Shipment.Status == Domain.Enums.ShipmentStatus.Delivered ||
                 line.Shipment.Status == Domain.Enums.ShipmentStatus.Cancelled)
             {
                throw new DomainException("Tamamlanmış veya iptal edilmiş sevkiyatta değişiklik yapılamaz.");
             }
 
-            // Update Qty
-            // Update Qty
-            // line.OrderedQty = request.NewQty; // OLD: Updating OrderedQty
-            
-            // NEW: Update DeliveredQty
             line.SetDeliveredQty(request.NewQty, "Depo Düzenlemesi", "Micro Toplama Ekranından Güncellendi");
-            
+
             string historyDesc = $"Stok Satırı Güncellendi: Teslim Miktarı {request.NewQty} olarak ayarlandı.";
 
             // Update Stock if requested
@@ -59,18 +49,23 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.UpdateShipmentLine
                 }
             }
 
-            // Log to History
-            var history = new Domain.Entities.ShipmentHistory
+            // Netsis'e aktarılmış ama teslim edilmemiş bir sevkiyatta değişiklik yapıldıysa
+            // aktarım sıfırlanır; sevkiyat tekrar "Netsis'e Aktar" butonuyla gönderilebilir.
+            if (line.Shipment.NetsisTransferredAt.HasValue)
+            {
+                line.Shipment.RevertNetsisTransfer();
+                historyDesc += " Satır değişikliği nedeniyle Netsis aktarımı sıfırlandı — sevkiyat yeniden aktarılabilir.";
+            }
+
+            _context.ShipmentHistories.Add(new Domain.Entities.ShipmentHistory
             {
                 ShipmentId = line.ShipmentId,
                 OldStatus = line.Shipment.Status,
                 NewStatus = line.Shipment.Status,
                 ChangedAt = DateTime.UtcNow,
-                ChangedByUserId = null, 
+                ChangedByUserId = null,
                 Description = historyDesc
-            };
-            
-            _context.ShipmentHistories.Add(history);
+            });
 
             await _context.SaveChangesAsync(cancellationToken);
         }

@@ -37,6 +37,15 @@ namespace Akyildiz.Sevkiyat.Application.Interfaces
             CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Netsis stok kartlarından KDV oranlarını okur.
+        /// Anahtar: NetsisStokKodu (büyük/küçük harf duyarsız), Değer: KDV yüzdesi (0, 1, 10, 20 vb.).
+        /// Sorgu başarısız olursa boş sözlük döner — çağıran fallback uygulamalıdır.
+        /// </summary>
+        Task<IReadOnlyDictionary<string, decimal>> GetStockKdvRatesAsync(
+            IEnumerable<string> netsisStokKodlari,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Daha önce Netsis'e aktarılmış sevkiyatların sipariş numaralarını kontrol eder.
         /// Missing  → Netsis'te hiç bulunamayan (silinmiş) → NetsisTransferredAt sıfırlanmalı.
         /// Foreign  → Netsis'te var ama EKACK1 ≠ bizim ShipmentId'miz (başka sistem aktarmış).

@@ -30,6 +30,7 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
         public ZonePreparation? ZonePreparation { get; set; }
 
         public ICollection<ShipmentHistory> Histories { get; private set; } = new List<ShipmentHistory>();
+        public ICollection<ShipmentDeliveryPhoto> DeliveryPhotos { get; private set; } = new List<ShipmentDeliveryPhoto>();
 
         // Driver Info
         public string? AssignedDriverName { get; private set; }
@@ -48,6 +49,9 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
         public string? DeliveryNote { get; private set; }
         public string? DeliveryRecipient { get; private set; }
         public string? DeliveryPhotoBase64 { get; private set; }
+        public string? DeliveryPhotoPath { get; private set; }
+        public double? DeliveryLatitude { get; private set; }
+        public double? DeliveryLongitude { get; private set; }
 
         // Delivery Audit
         public int? DeliveredByUserId { get; private set; }
@@ -62,9 +66,29 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
         public DateTime? DispatchedAt { get; private set; }
         public string? DispatchConfirmedByName { get; private set; }
 
+        // Missing-items mail tracking
+        public DateTime? MissingItemsMailSentAt { get; private set; }
+        public void MarkMissingItemsMailSent() => MissingItemsMailSentAt = DateTime.UtcNow;
+
         // Cargo dispatch
         public CargoProvider? CargoProvider { get; private set; }
         public string? CargoTrackingNumber { get; private set; }
+
+        // Yurtici Kargo entegrasyon alanları
+        public string? YkCargoKey { get; private set; }
+        public string? YkInvoiceKey { get; private set; }
+        public int? YkJobId { get; private set; }
+        public string? YkBarcode { get; private set; }
+        public string? YkOperationStatus { get; private set; }
+        public string? YkOperationMessage { get; private set; }
+        public string? YkErrorCode { get; private set; }
+        public string? YkErrorMessage { get; private set; }
+        public DateTime? YkLastQueryAt { get; private set; }
+
+        // Freight (nakliye) dispatch
+        public string? FreightCarrierName { get; private set; }
+        public string? FreightCarrierPlate { get; private set; }
+        public string? FreightCarrierPhone { get; private set; }
 
         // Operasyon tipi — sevkiyat oluşturulurken stok kategorilerine göre otomatik belirlenir
         public OperationType OperationType { get; set; } = OperationType.Catering;
@@ -139,6 +163,7 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
         private bool IsSkipTransition(ShipmentStatus current, ShipmentStatus next)
         {
             if (current == ShipmentStatus.Created && next == ShipmentStatus.Picking) return true;
+            if (current == ShipmentStatus.Created && next == ShipmentStatus.ReadyForDispatch) return true; // Kıyafet: depo adımları atlanır
             if (current == ShipmentStatus.AssignedToWarehouse && next == ShipmentStatus.ReadyForDispatch) return true;
             return false;
         }
@@ -176,13 +201,16 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
 
         public void UpdateDeliveryDate(DateTime newDate)
         {
-            if (Status != ShipmentStatus.Created)
-                throw new DomainException("Only 'Created' (Draft) shipments can be edited.");
+            if (Status != ShipmentStatus.Created && Status != ShipmentStatus.ReadyForDispatch)
+                throw new DomainException("Sevkiyat düzenlenemez. Yalnızca 'Taslak' veya 'Sevke Hazır' durumundaki sevkiyatlar düzenlenebilir.");
 
             DeliveryDate = newDate;
-            // Clear stale zone preparation link so sync can re-assign for the new date
-            ZonePreparationId = null;
-            ZonePreparation = null;
+            // Only clear zone link for draft shipments; ReadyForDispatch stays in its zone
+            if (Status == ShipmentStatus.Created)
+            {
+                ZonePreparationId = null;
+                ZonePreparation = null;
+            }
         }
 
         public void SetIrsaliyeInfo(string? irsaliyeNo, DateOnly? irsaliyeDate)
@@ -205,6 +233,12 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
             NetsisTransferredAt = null;
             IrsaliyeNo          = null;
             IrsaliyeDate        = null;
+
+            if (IssOrder != null)
+            {
+                IssOrder.NetsisOrderNumber = null;
+                IssOrder.IsTransferred = false;
+            }
         }
 
         /// <summary>
@@ -233,15 +267,36 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
         }
 
         public void RecordDelivery(DateTime deliveredAt, string recipient, string? note,
-            string? photoBase64, int? deliveredByUserId, string? deliveredByRole, string? overrideNote)
+            string? photoBase64, int? deliveredByUserId, string? deliveredByRole, string? overrideNote,
+            string? photoPath = null, double? latitude = null, double? longitude = null)
         {
             DeliveredAt = deliveredAt;
             DeliveryRecipient = recipient;
             DeliveryNote = note;
-            DeliveryPhotoBase64 = photoBase64;
             DeliveredByUserId = deliveredByUserId;
             DeliveredByRole = deliveredByRole;
             DeliveryOverrideNote = overrideNote;
+            DeliveryLatitude = latitude;
+            DeliveryLongitude = longitude;
+
+            if (photoPath != null)
+                DeliveryPhotoPath = photoPath;
+            else
+                DeliveryPhotoBase64 = photoBase64;
+        }
+
+        public void ClearDeliveryProof()
+        {
+            DeliveredAt          = null;
+            DeliveryRecipient    = null;
+            DeliveryNote         = null;
+            DeliveryPhotoBase64  = null;
+            DeliveryPhotoPath    = null;
+            DeliveryLatitude     = null;
+            DeliveryLongitude    = null;
+            DeliveredByUserId    = null;
+            DeliveredByRole      = null;
+            DeliveryOverrideNote = null;
         }
 
         public void RecordVehicleReturn(DateTime returnedAt, string? returnNote)
@@ -272,6 +327,44 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
             DispatchedAt = DateTime.UtcNow;
         }
 
+        public void SetYkCargoInfo(
+            string cargoKey,
+            string? invoiceKey,
+            int? jobId,
+            string? barcode,
+            string? operationStatus,
+            string? operationMessage,
+            string? errorCode,
+            string? errorMessage)
+        {
+            YkCargoKey          = cargoKey;
+            YkInvoiceKey        = invoiceKey;
+            YkJobId             = jobId;
+            if (!string.IsNullOrWhiteSpace(barcode))
+                YkBarcode = barcode;
+            YkOperationStatus   = operationStatus;
+            YkOperationMessage  = operationMessage;
+            YkErrorCode         = errorCode;
+            YkErrorMessage      = errorMessage;
+        }
+
+        public void UpdateYkStatus(string? statusCode, string? statusMessage, string? barcode = null)
+        {
+            YkOperationStatus  = statusCode;
+            YkOperationMessage = statusMessage;
+            YkLastQueryAt      = DateTime.UtcNow;
+            if (!string.IsNullOrWhiteSpace(barcode) && string.IsNullOrWhiteSpace(YkBarcode))
+                YkBarcode = barcode;
+        }
+
+        public void SetFreightDispatch(string carrierName, string? carrierPlate, string? carrierPhone = null)
+        {
+            FreightCarrierName  = carrierName;
+            FreightCarrierPlate = carrierPlate;
+            FreightCarrierPhone = carrierPhone;
+            DispatchedAt        = DateTime.UtcNow;
+        }
+
         private void ValidateTransition(ShipmentStatus newStatus)
         {
             bool isValid = false;
@@ -280,7 +373,8 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
             {
                 case ShipmentStatus.Created:
                     isValid = newStatus == ShipmentStatus.AssignedToWarehouse
-                           || newStatus == ShipmentStatus.Picking // Allow Skip
+                           || newStatus == ShipmentStatus.Picking         // Allow Skip
+                           || newStatus == ShipmentStatus.ReadyForDispatch // Allow Skip (Kıyafet)
                            || newStatus == ShipmentStatus.Cancelled
                            || newStatus == ShipmentStatus.Passive;
                     break;
@@ -300,25 +394,35 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
                            || newStatus == ShipmentStatus.Created; // Allow Revert
                     break;
                 case ShipmentStatus.ReadyForDispatch:
-                    isValid = newStatus == ShipmentStatus.AssignedToVehicle || newStatus == ShipmentStatus.Cancelled;
+                    isValid = newStatus == ShipmentStatus.AssignedToVehicle
+                           || newStatus == ShipmentStatus.Dispatched // Nakliye/Kargo için ara adımı atla
+                           || newStatus == ShipmentStatus.Delivered  // Depo teslim — araç atamadan teslim
+                           || newStatus == ShipmentStatus.Picking    // admin gıda hazırlık geri al
+                           || newStatus == ShipmentStatus.Cancelled
+                           || newStatus == ShipmentStatus.Created;   // admin taslağa çek
                     break;
                 case ShipmentStatus.AssignedToVehicle:
                     isValid = newStatus == ShipmentStatus.Dispatched
                            || newStatus == ShipmentStatus.Delivered
                            || newStatus == ShipmentStatus.ReturnedToWarehouse
-                           || newStatus == ShipmentStatus.Cancelled;
+                           || newStatus == ShipmentStatus.Cancelled
+                           || newStatus == ShipmentStatus.ReadyForDispatch; // admin araç geri al
                     break;
                 case ShipmentStatus.Dispatched:
                     isValid = newStatus == ShipmentStatus.Delivered
                            || newStatus == ShipmentStatus.ReturnedToWarehouse
-                           || newStatus == ShipmentStatus.Cancelled;
+                           || newStatus == ShipmentStatus.Cancelled
+                           || newStatus == ShipmentStatus.ReadyForDispatch // admin geri al
+                           || newStatus == ShipmentStatus.Created;         // admin taslağa çek
                     break;
                 case ShipmentStatus.Delivered:
                     isValid = newStatus == ShipmentStatus.ReturnedToWarehouse // kısmi iade sonrası
-                           || newStatus == ShipmentStatus.Created;             // admin sıfırlama
+                           || newStatus == ShipmentStatus.Created             // admin sıfırlama
+                           || newStatus == ShipmentStatus.ReadyForDispatch;   // admin teslim geri al
                     break;
                 case ShipmentStatus.ReturnedToWarehouse:
-                    isValid = newStatus == ShipmentStatus.Created; // admin sıfırlama
+                    isValid = newStatus == ShipmentStatus.Created          // admin sıfırlama
+                           || newStatus == ShipmentStatus.ReadyForDispatch; // admin kurtarma
                     break;
                 case ShipmentStatus.Cancelled:
                     isValid = newStatus == ShipmentStatus.Created; // admin sıfırlama

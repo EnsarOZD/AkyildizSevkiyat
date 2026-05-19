@@ -62,7 +62,7 @@
         </button>
 
         <button
-          v-if="shipment.status === 'Created'"
+          v-if="shipment.status === 'Created' || shipment.status === 'ReadyForDispatch'"
           v-role="['Admin', 'Accounting']"
           @click="$emit('openEdit')"
           class="w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition text-sm font-medium"
@@ -129,6 +129,14 @@
           class="w-full border border-red-400 text-red-600 dark:text-red-400 py-2 px-4 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition text-sm font-medium"
         >Taslağa Geri Al / İptal</button>
 
+        <!-- Admin: Teslim Geri Al -->
+        <button
+          v-if="['Delivered', 'Dispatched'].includes(shipment.status)"
+          v-role="['Admin']"
+          @click="$emit('openRevertDelivered')"
+          class="w-full border border-orange-400 text-orange-600 dark:text-orange-400 py-2 px-4 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-900/20 transition text-sm font-medium"
+        >↩ Sevke Hazıra Geri Al</button>
+
         <!-- Admin Sıfırla -->
         <button
           v-if="['ReturnedToWarehouse', 'Delivered', 'Cancelled'].includes(shipment.status)"
@@ -177,6 +185,7 @@ defineEmits<{
   openDelivery: []
   openVehicleReturn: []
   openRevert: []
+  openRevertDelivered: []
   openAdminReset: []
 }>()
 </script>

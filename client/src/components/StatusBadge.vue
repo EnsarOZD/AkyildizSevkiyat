@@ -9,8 +9,8 @@ import { computed } from 'vue';
 
 type ShipmentStatus =
   | 'Created' | 'AssignedToWarehouse' | 'Picking'
-  | 'ReadyForDispatch' | 'AssignedToVehicle' | 'Delivered'
-  | 'ReturnedToWarehouse' | 'Cancelled' | 'Passive';
+  | 'ReadyForDispatch' | 'AssignedToVehicle' | 'Dispatched'
+  | 'Delivered' | 'ReturnedToWarehouse' | 'Cancelled' | 'Passive';
 
 type PurchaseOrderStatus =
   | 'Draft' | 'Approved' | 'PartiallyReceived' | 'FullyReceived' | 'Closed' | 'Cancelled';
@@ -28,7 +28,8 @@ const SHIPMENT_MAP: Record<ShipmentStatus, StatusConfig> = {
   AssignedToWarehouse: { label: 'Depoda',          classes: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400' },
   Picking:             { label: 'Toplanıyor',      classes: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400' },
   ReadyForDispatch:    { label: 'Sevke Hazır',     classes: 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 transition-all' },
-  AssignedToVehicle:   { label: 'Yolda',           classes: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-400' },
+  AssignedToVehicle:   { label: 'Araçta',          classes: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-400' },
+  Dispatched:          { label: 'Yolda',           classes: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400' },
   Delivered:           { label: 'Teslim Edildi',   classes: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' },
   ReturnedToWarehouse: { label: 'İade',            classes: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400' },
   Cancelled:           { label: 'İptal',           classes: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' },

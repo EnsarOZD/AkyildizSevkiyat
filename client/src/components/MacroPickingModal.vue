@@ -34,15 +34,17 @@
         </div>
 
         <div v-else class="pb-24">
-          <div v-for="(groupItems, groupName) in groupedItems" :key="groupName" class="mb-2">
+          <div v-for="group in categorizedItems" :key="group.category" class="mb-2">
             <!-- Group Header -->
-            <h4 class="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-bold uppercase tracking-wider text-[10px] border-t dark:border-gray-600 border-b sticky top-0 z-10">
-              {{ groupName }}
+            <h4 class="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-bold uppercase tracking-wider text-[10px] border-t dark:border-gray-600 border-b sticky top-0 z-10 flex items-center justify-between">
+              <span>{{ group.category }}</span>
+              <span class="font-normal text-gray-400 dark:text-gray-500 normal-case">{{ group.completedItems.length }}/{{ group.pendingItems.length + group.completedItems.length }}</span>
             </h4>
 
             <div class="divide-y divide-gray-100 dark:divide-gray-700">
+              <!-- Pending items -->
               <div
-                v-for="item in groupItems"
+                v-for="item in group.pendingItems"
                 :key="item.stockCode"
                 class="transition-all duration-200"
                 :class="[
@@ -74,6 +76,7 @@
                       <span class="text-orange-600 dark:text-orange-400 font-bold">{{ item.projectCount }} proje</span>
                       <span v-if="itemState(item).isDirty && !itemState(item).isSaved" class="ml-1 text-blue-500 font-bold">· değişti</span>
                       <span v-if="itemState(item).isSaved" class="ml-1 text-green-600 font-bold">· kaydedildi</span>
+                      <span v-if="item.localPickedQty > item.totalOrderedQty" class="ml-1 text-orange-600 font-bold">⚠ Sipariş üstü</span>
                     </div>
                   </div>
 
@@ -81,6 +84,7 @@
                   <div class="flex flex-col items-end gap-1 flex-shrink-0">
                     <div class="flex items-baseline gap-1"
                       :class="
+                        item.localPickedQty > item.totalOrderedQty ? 'text-orange-500 dark:text-orange-400' :
                         itemState(item).isFull    ? 'text-green-600 dark:text-green-400' :
                         itemState(item).isPartial ? 'text-blue-600 dark:text-blue-400'   :
                                                     'text-gray-300 dark:text-gray-600'
@@ -91,11 +95,11 @@
                     <div class="flex items-center gap-1 mt-1" @click.stop>
                       <button
                         @click="changeQty(item, -1)"
-                        class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 active:bg-gray-200 dark:active:bg-gray-700 font-bold text-lg touch-manipulation"
+                        class="w-12 h-12 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 active:bg-gray-200 dark:active:bg-gray-700 font-bold text-2xl touch-manipulation"
                       >−</button>
                       <button
                         @click="changeQty(item, 1)"
-                        class="w-8 h-8 flex items-center justify-center rounded-full bg-orange-50 dark:bg-orange-900/20 text-orange-600 active:bg-orange-100 font-bold text-lg touch-manipulation border border-orange-200 dark:border-orange-800 shadow-sm"
+                        class="w-12 h-12 flex items-center justify-center rounded-xl bg-orange-50 dark:bg-orange-900/20 text-orange-600 active:bg-orange-100 font-bold text-2xl touch-manipulation border border-orange-200 dark:border-orange-800 shadow-sm"
                       >+</button>
                     </div>
                   </div>
@@ -115,10 +119,10 @@
                       />
                     </div>
                     <div class="flex gap-2">
-                      <button @click.stop="item.localPickedQty = 0" class="flex-1 h-10 bg-white dark:bg-gray-900 border border-red-200 text-red-500 rounded font-bold text-xs hover:bg-red-50 shadow-sm">
+                      <button @click.stop="item.localPickedQty = 0; sound.error()" class="flex-1 h-12 bg-white dark:bg-gray-900 border border-red-200 text-red-500 rounded-lg font-bold text-sm active:bg-red-50 shadow-sm touch-manipulation">
                         SIFIRLA
                       </button>
-                      <button @click.stop="item.localPickedQty = item.totalOrderedQty" class="flex-1 h-10 bg-white dark:bg-gray-900 border border-green-200 text-green-600 rounded font-bold text-xs hover:bg-green-50 shadow-sm">
+                      <button @click.stop="item.localPickedQty = item.totalOrderedQty; sound.success()" class="flex-1 h-12 bg-white dark:bg-gray-900 border border-green-200 text-green-600 rounded-lg font-bold text-sm active:bg-green-50 shadow-sm touch-manipulation">
                         HEPSİ
                       </button>
                     </div>
@@ -127,8 +131,11 @@
                   <!-- Difference Reason (when qty != ordered) -->
                   <div v-if="item.localPickedQty !== item.totalOrderedQty" class="mt-3">
                     <label class="block text-[10px] font-bold text-orange-500 uppercase tracking-wider mb-1">
-                      Fark Nedeni <span class="text-red-500">*</span>
-                      <span class="text-gray-400 font-normal normal-case">(Miktar sipariş miktarından farklı)</span>
+                      Fark Nedeni
+                      <span v-if="item.localPickedQty < item.totalOrderedQty" class="text-red-500">*</span>
+                      <span class="text-gray-400 font-normal normal-case">
+                        {{ item.localPickedQty > item.totalOrderedQty ? '(Fazla toplama — opsiyonel)' : '(Miktar sipariş miktarından farklı)' }}
+                      </span>
                     </label>
                     <input type="text"
                            v-model="item.differenceReason"
@@ -149,6 +156,65 @@
                   </button>
                 </div>
 
+              </div>
+
+              <!-- Completed items (sunk to bottom, muted) -->
+              <div
+                v-for="item in group.completedItems"
+                :key="item.stockCode + '-done'"
+                class="opacity-60 transition-all duration-200 bg-green-50 dark:bg-green-900/20"
+                :class="expandedStock === item.stockCode ? 'ring-2 ring-inset ring-orange-300 dark:ring-orange-700 !opacity-100' : ''"
+              >
+                <div @click="toggleExpand(item)" class="p-3 flex justify-between items-start cursor-pointer active:bg-gray-50 dark:active:bg-gray-800 select-none">
+                  <div class="flex-1 pr-2 min-w-0">
+                    <div class="flex items-center gap-1.5 mb-0.5">
+                      <span class="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                        </svg>
+                      </span>
+                      <span class="text-[10px] font-bold text-gray-400 dark:text-gray-600 font-mono truncate">{{ item.stockCode }}</span>
+                    </div>
+                    <div class="text-sm font-semibold text-green-800 dark:text-green-300 leading-tight mb-1">{{ item.stockName }}</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">
+                      {{ item.unit }} · <span class="text-orange-600 dark:text-orange-400 font-bold">{{ item.projectCount }} proje</span>
+                      <span v-if="item.localPickedQty > item.totalOrderedQty" class="ml-1 text-orange-600 font-bold">⚠ Sipariş üstü</span>
+                    </div>
+                  </div>
+                  <div class="flex flex-col items-end gap-1 flex-shrink-0">
+                    <div class="flex items-baseline gap-1 text-green-600 dark:text-green-400">
+                      <span class="text-2xl font-bold tracking-tight">{{ item.localPickedQty }}</span>
+                      <span class="text-xs font-medium text-gray-400 dark:text-gray-600">/ {{ item.totalOrderedQty }}</span>
+                    </div>
+                    <div class="flex items-center gap-1 mt-1" @click.stop>
+                      <button @click="changeQty(item, -1)" class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 active:bg-gray-200 dark:active:bg-gray-700 font-bold text-lg touch-manipulation">−</button>
+                      <button @click="changeQty(item, 1)" class="w-8 h-8 flex items-center justify-center rounded-full bg-orange-50 dark:bg-orange-900/20 text-orange-600 active:bg-orange-100 font-bold text-lg touch-manipulation border border-orange-200 dark:border-orange-800 shadow-sm">+</button>
+                    </div>
+                  </div>
+                </div>
+                <div v-if="expandedStock === item.stockCode" class="bg-orange-50 dark:bg-gray-800 px-3 pb-3 pt-0 border-t border-dashed border-orange-200 dark:border-orange-900 animate-fade-in-down">
+                  <div class="pt-3 grid grid-cols-2 gap-3 items-end">
+                    <div>
+                      <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Manuel Miktar</label>
+                      <input type="number" v-model.number="item.localPickedQty" @input="clampQty(item)" class="w-full h-10 border border-orange-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 rounded px-3 font-bold text-lg text-center focus:ring-2 focus:ring-orange-500 outline-none" @click.stop />
+                    </div>
+                    <div class="flex gap-2">
+                      <button @click.stop="item.localPickedQty = 0" class="flex-1 h-10 bg-white dark:bg-gray-900 border border-red-200 text-red-500 rounded font-bold text-xs hover:bg-red-50 shadow-sm">SIFIRLA</button>
+                      <button @click.stop="item.localPickedQty = item.totalOrderedQty" class="flex-1 h-10 bg-white dark:bg-gray-900 border border-green-200 text-green-600 rounded font-bold text-xs hover:bg-green-50 shadow-sm">HEPSİ</button>
+                    </div>
+                  </div>
+                  <div v-if="item.localPickedQty !== item.totalOrderedQty" class="mt-3">
+                    <label class="block text-[10px] font-bold text-orange-500 uppercase tracking-wider mb-1">Fark Nedeni
+                      <span v-if="item.localPickedQty < item.totalOrderedQty" class="text-red-500">*</span>
+                    </label>
+                    <input type="text" v-model="item.differenceReason" placeholder="Neden farklı? (ör: Stokta yok, Fazla geldi...)" class="w-full h-10 border rounded px-3 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none" :class="item.differenceReason ? 'border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100' : 'border-orange-300 bg-orange-50 dark:bg-orange-950 dark:border-orange-700'" @click.stop>
+                  </div>
+                  <div class="mt-3">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Stok Değişimi (Opsiyonel)</label>
+                    <StockCombobox v-model="item.localStockId" :placeholder="'Değişmeyecek (' + item.stockName + ')'" class="text-sm" />
+                  </div>
+                  <button @click.stop="expandedStock = null" class="mt-3 w-full py-1.5 bg-white dark:bg-gray-900 text-gray-500 font-bold rounded border border-gray-200 dark:border-gray-700 text-sm">Kapat</button>
+                </div>
               </div>
             </div>
           </div>
@@ -239,6 +305,7 @@ import { ref, computed, onMounted } from 'vue';
 import warehouseService from '../services/warehouseService';
 import { ApiErrorUtils } from '../utils/apiError';
 import { useNotificationStore } from '../stores/notification';
+import { useSoundFeedback } from '../composables/useSoundFeedback';
 import StockCombobox from './StockCombobox.vue';
 import MacroAllocationModal from './MacroAllocationModal.vue';
 
@@ -263,6 +330,7 @@ interface MacroItem {
 
 const props = defineProps<{ zonePreparationId: number }>();
 const emit  = defineEmits(['close', 'completed']);
+const sound = useSoundFeedback();
 
 const notify = useNotificationStore();
 
@@ -285,15 +353,25 @@ const currentShortageItem = computed(() =>
   shortageQueue.value[shortageQueueIndex.value] ?? null
 );
 
-// ── Grouped items ──────────────────────────────────────────────────────────
-const groupedItems = computed(() => {
-  const groups: Record<string, MacroItem[]> = {};
-  items.value.forEach(item => {
+// ── Grouped items (pending first, completed at bottom within each category) ─
+interface MacroCategoryGroup {
+  category: string;
+  pendingItems: MacroItem[];
+  completedItems: MacroItem[];
+}
+
+const categorizedItems = computed((): MacroCategoryGroup[] => {
+  const map = new Map<string, MacroItem[]>();
+  for (const item of items.value) {
     const cat = (item.category?.trim() || 'DİĞER').toUpperCase();
-    if (!groups[cat]) groups[cat] = [];
-    groups[cat].push(item);
+    if (!map.has(cat)) map.set(cat, []);
+    map.get(cat)!.push(item);
+  }
+  return Array.from(map.entries()).map(([category, catItems]) => {
+    const completed = catItems.filter(i => i.localPickedQty >= i.totalOrderedQty && i.localPickedQty > 0);
+    const pending = catItems.filter(i => !(i.localPickedQty >= i.totalOrderedQty && i.localPickedQty > 0));
+    return { category, pendingItems: pending, completedItems: completed };
   });
-  return groups;
 });
 
 // ── Per-item derived state ─────────────────────────────────────────────────
@@ -345,10 +423,13 @@ function toggleExpand(item: MacroItem) {
 function changeQty(item: MacroItem, delta: number) {
   const next = item.localPickedQty + delta;
   item.localPickedQty = Math.max(0, next);
+  if (delta > 0) sound.success();
+  else navigator.vibrate?.(15);
 }
 
 function clampQty(item: MacroItem) {
   if (item.localPickedQty < 0) item.localPickedQty = 0;
+  navigator.vibrate?.(15);
 }
 
 // ── Save all dirty items ───────────────────────────────────────────────────
@@ -364,12 +445,13 @@ async function saveAll() {
     i.localStockId != null
   );
   const missingReason = directSaveItems.filter(i =>
-    i.localPickedQty !== i.totalOrderedQty && !i.differenceReason.trim()
+    i.localPickedQty < i.totalOrderedQty && !i.differenceReason.trim()
   );
 
   if (missingReason.length > 0) {
     // Expand the first offending item
     expandedStock.value = missingReason[0]?.stockCode ?? null;
+    sound.error();
     notify.add(`${missingReason.length} kalem için fark nedeni girilmeli.`, 'error');
     return;
   }
@@ -423,9 +505,10 @@ async function saveAll() {
       shortageQueueIndex.value = 0;
     } else {
       const total = fullItems.length + zeroItems.length;
-      if (total > 0) notify.add(`${total} kalem kaydedildi.`, 'success');
+      if (total > 0) { sound.success(); notify.add(`${total} kalem kaydedildi.`, 'success'); }
     }
   } catch (e: any) {
+    sound.error();
     notify.add(ApiErrorUtils.getErrorMessage(e) || 'Kaydetme sırasında hata oluştu.', 'error');
   } finally {
     isSaving.value = false;
@@ -446,6 +529,7 @@ function onShortageSaved() {
     // Queue done
     shortageQueue.value      = [];
     shortageQueueIndex.value = 0;
+    sound.success();
     notify.add('Tüm eksik dağıtımlar kaydedildi.', 'success');
   }
 }
@@ -465,13 +549,25 @@ async function markCompleted() {
     return;
   }
 
-  await doComplete(false, undefined);
+  try {
+    await doComplete(false, undefined);
+  } catch (e: any) {
+    sound.error();
+    notify.add(ApiErrorUtils.getErrorMessage(e) || 'İşlem başarısız.', 'error');
+    isCompleting.value = false;
+  }
 }
 
 async function confirmForceComplete() {
   if (!forceReason.value.trim()) return;
   showForceDialog.value = false;
-  await doComplete(true, forceReason.value.trim());
+  try {
+    await doComplete(true, forceReason.value.trim());
+  } catch (e: any) {
+    sound.error();
+    notify.add(ApiErrorUtils.getErrorMessage(e) || 'İşlem başarısız.', 'error');
+    isCompleting.value = false;
+  }
 }
 
 async function doComplete(forceComplete: boolean, forceReasonText: string | undefined) {
@@ -488,16 +584,21 @@ async function doComplete(forceComplete: boolean, forceReasonText: string | unde
       msg += ` ${result.unfilledMacroLineCount} kalem toplanmadan tamamlandı.`;
     }
     notify.add(msg, result.unfilledMacroLineCount > 0 ? 'warning' : 'success');
+    sound.complete();
     emit('completed');
     emit('close');
   } catch (e: any) {
+    sound.error();
     notify.add(ApiErrorUtils.getErrorMessage(e) || 'İşlem başarısız.', 'error');
   } finally {
     isCompleting.value = false;
   }
 }
 
-onMounted(fetchItems);
+onMounted(() => {
+  sound.newAssignment();
+  fetchItems();
+});
 </script>
 
 <style scoped>

@@ -1,8 +1,11 @@
 using Akyildiz.Sevkiyat.Application.Shipments.Commands;
+using Akyildiz.Sevkiyat.Application.Shipments.Commands.BulkDispatchAsCargo;
+using Akyildiz.Sevkiyat.Application.Shipments.Commands.BulkDispatchAsFreight;
 using Akyildiz.Sevkiyat.Application.Shipments.Commands.CreateShipment;
 using Akyildiz.Sevkiyat.Application.Shipments.Queries;
 using Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipmentsByDate;
 using Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipments;
+using Akyildiz.Sevkiyat.Application.Shipments.Queries.GetYkCargoReport;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
@@ -10,6 +13,7 @@ using Akyildiz.Sevkiyat.Application.Shipments.Commands.UpdateShipmentLineDeliver
 using Akyildiz.Sevkiyat.WebApi.Controllers.Models;
 using Akyildiz.Sevkiyat.Application.Shipments.Commands.MarkShipmentPreparing;
 using Akyildiz.Sevkiyat.Application.Shipments.Commands.MarkShipmentDelivered;
+using Akyildiz.Sevkiyat.Application.Shipments.Commands.BulkMarkDelivered;
 using Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipmentDetail;
 using Akyildiz.Sevkiyat.Application.Shipments.Commands.AssignToWarehouse;
 using Akyildiz.Sevkiyat.Application.Shipments.Commands.StartPicking;
@@ -23,6 +27,11 @@ using Akyildiz.Sevkiyat.Application.Shipments.Commands.UpdateIrsaliyeNo;
 using Akyildiz.Sevkiyat.Application.Shipments.Commands.RecordVehicleReturn;
 using Akyildiz.Sevkiyat.Application.Shipments.Commands.LogShipmentPrint;
 using Akyildiz.Sevkiyat.Application.Shipments.Commands.AdminResetShipment;
+using Akyildiz.Sevkiyat.Application.Shipments.Commands.DeleteDraftShipment;
+using Akyildiz.Sevkiyat.Application.Shipments.Commands.RevertDelivered;
+using Akyildiz.Sevkiyat.Application.Shipments.Commands.LogMissingItemsMail;
+using Akyildiz.Sevkiyat.Application.Shipments.Commands.SendComparisonEmail;
+using Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipmentComparisonReport;
 using Microsoft.AspNetCore.Authorization;
 
 namespace Akyildiz.Sevkiyat.WebApi.Controllers
@@ -57,6 +66,21 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
 
         [HttpGet]
         public async Task<IActionResult> GetShipments([FromQuery] GetShipmentsQuery query)
+        {
+            var result = await _mediator.Send(query);
+            return Ok(result);
+        }
+
+        [HttpGet("comparison-report")]
+        [Authorize(Roles = "Admin,Manager,Accounting")]
+        public async Task<IActionResult> GetComparisonReport([FromQuery] GetShipmentComparisonReportQuery query)
+        {
+            var result = await _mediator.Send(query);
+            return Ok(result);
+        }
+
+        [HttpGet("yk-cargo-report")]
+        public async Task<IActionResult> GetYkCargoReport([FromQuery] GetYkCargoReportQuery query)
         {
             var result = await _mediator.Send(query);
             return Ok(result);
@@ -123,8 +147,16 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         [Authorize(Roles = "Admin,Manager,Accounting,Driver")]
         public async Task<IActionResult> MarkDelivered(int id, [FromBody] MarkDeliveredRequest? request)
         {
-            await _mediator.Send(new MarkShipmentDeliveredCommand(id, request?.DeliveryNote, request?.DeliveryRecipient, request?.DeliveryPhotoBase64, request?.OverrideNote));
+            await _mediator.Send(new MarkShipmentDeliveredCommand(id, request?.DeliveryNote, request?.DeliveryRecipient, request?.DeliveryPhotosBase64, request?.OverrideNote, request?.DeliveryLatitude, request?.DeliveryLongitude));
             return NoContent();
+        }
+
+        [HttpPost("bulk-mark-delivered")]
+        [Authorize(Roles = "Admin,Manager,Accounting")]
+        public async Task<IActionResult> BulkMarkDelivered([FromBody] BulkMarkShipmentsDeliveredCommand command)
+        {
+            var result = await _mediator.Send(command);
+            return Ok(result);
         }
 
         [HttpPost("update-line")]
@@ -160,6 +192,14 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         public async Task<IActionResult> RevertToDraft(int id, [FromBody] RevertToDraftRequest request)
         {
             await _mediator.Send(new Akyildiz.Sevkiyat.Application.Shipments.Commands.RevertToDraft.RevertToDraftCommand(id, request.Reason));
+            return NoContent();
+        }
+
+        [HttpDelete("{id:int}/draft")]
+        [Authorize(Roles = "Admin,Manager,Accounting")]
+        public async Task<IActionResult> DeleteDraft(int id)
+        {
+            await _mediator.Send(new DeleteDraftShipmentCommand(id));
             return NoContent();
         }
 
@@ -205,6 +245,33 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             return Ok(result);
         }
 
+        [HttpPost("bulk-dispatch-cargo")]
+        [Authorize(Roles = "Admin,Manager,Accounting")]
+        public async Task<IActionResult> BulkDispatchAsCargo([FromBody] BulkDispatchAsCargoRequest request)
+        {
+            var result = await _mediator.Send(new BulkDispatchShipmentsAsCargoCommand
+            {
+                ShipmentIds = request.ShipmentIds,
+                CargoProvider = (Domain.Enums.CargoProvider)request.CargoProvider,
+                CargoTrackingNumber = request.CargoTrackingNumber,
+            });
+            return Ok(result);
+        }
+
+        [HttpPost("bulk-dispatch-freight")]
+        [Authorize(Roles = "Admin,Manager,Accounting")]
+        public async Task<IActionResult> BulkDispatchAsFreight([FromBody] BulkDispatchAsFreightRequest request)
+        {
+            var result = await _mediator.Send(new BulkDispatchShipmentsAsFreightCommand
+            {
+                ShipmentIds  = request.ShipmentIds,
+                CarrierName  = request.CarrierName,
+                CarrierPlate = request.CarrierPlate,
+                CarrierPhone = request.CarrierPhone,
+            });
+            return Ok(result);
+        }
+
         [HttpPost("{id:int}/log-print")]
         [Authorize(Roles = "Admin,Manager,Warehouse,Accounting")]
         public async Task<IActionResult> LogPrint(int id)
@@ -221,7 +288,32 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             return NoContent();
         }
 
+        [HttpPost("{id:int}/log-missing-mail")]
+        [Authorize(Roles = "Admin,Manager,Accounting")]
+        public async Task<IActionResult> LogMissingMail(int id)
+        {
+            await _mediator.Send(new LogMissingItemsMailCommand(id));
+            return NoContent();
+        }
+
+        [HttpPost("{id:int}/send-comparison-email")]
+        [Authorize(Roles = "Admin,Manager,Accounting,Dispatcher")]
+        public async Task<IActionResult> SendComparisonEmail(int id, [FromBody] SendComparisonEmailRequest? request = null)
+        {
+            var sentTo = await _mediator.Send(new SendComparisonEmailCommand(id, request?.CcEmails));
+            return Ok(new { sentTo });
+        }
+
+        [HttpPost("{id:int}/revert-delivered")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> RevertDelivered(int id, [FromBody] RevertDeliveredRequest request)
+        {
+            await _mediator.Send(new RevertDeliveredCommand(id, request.Reason));
+            return NoContent();
+        }
+
         [HttpPost("{id:int}/record-vehicle-return")]
+
         [Authorize(Roles = "Admin,Manager,Accounting,Warehouse,Driver")]
         public async Task<IActionResult> RecordVehicleReturn(int id, [FromBody] RecordVehicleReturnRequest request)
         {
@@ -232,4 +324,6 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             return NoContent();
         }
     }
+
+    public record SendComparisonEmailRequest(List<string>? CcEmails);
 }

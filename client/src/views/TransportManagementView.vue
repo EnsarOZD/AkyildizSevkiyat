@@ -141,7 +141,11 @@
     <!-- Vehicle Modal -->
     <BaseModal :show="showVehicleModal" :title="editingVehicle ? 'Araç Düzenle' : 'Yeni Araç Ekle'" maxWidth="sm" @close="showVehicleModal = false">
       <div class="space-y-4">
-        <BaseInput v-model="vehicleForm.plateNumber" label="Plaka" class="uppercase" />
+        <BaseInput
+          :model-value="vehicleForm.plateNumber"
+          @update:model-value="vehicleForm.plateNumber = ($event ?? '').toUpperCase()"
+          label="Plaka"
+        />
         <BaseSelect v-model.number="vehicleForm.vehicleType" label="Araç Tipi">
           <option :value="0">Kamyon</option>
           <option :value="1">Kamyonet</option>
@@ -440,12 +444,13 @@ const openQrModal = async (vehicle: any) => {
     qrImageLoading.value = true;
     showQrModal.value = true;
     try {
-        const res = await apiClient.post<{ qrCode: string; qrImageBase64: string }>(
-            `/vehicles/${vehicle.id}/generate-qr`
+        const res = await apiClient.get<{ qrCode: string; qrImageBase64: string }>(
+            `/vehicles/${vehicle.id}/qr-image`
         );
         qrImageBase64.value = res.data.qrImageBase64;
     } catch(e) {
         notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'QR yüklenemedi.', 'error');
+        showQrModal.value = false;
     } finally {
         qrImageLoading.value = false;
     }

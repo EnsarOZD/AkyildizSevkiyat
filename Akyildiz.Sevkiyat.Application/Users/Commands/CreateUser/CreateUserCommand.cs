@@ -15,7 +15,8 @@ namespace Akyildiz.Sevkiyat.Application.Users.Commands.CreateUser
         string FirstName,
         string LastName,
         string Password,
-        UserRole Role
+        UserRole Role,
+        string? Username = null
     ) : IRequest<int>, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles =>
@@ -30,6 +31,7 @@ namespace Akyildiz.Sevkiyat.Application.Users.Commands.CreateUser
             RuleFor(x => x.FirstName).NotEmpty().MaximumLength(100);
             RuleFor(x => x.LastName).NotEmpty().MaximumLength(100);
             RuleFor(x => x.Password).MustBeValidPassword();
+            RuleFor(x => x.Username).MaximumLength(100).When(x => x.Username != null);
         }
     }
 
@@ -52,9 +54,17 @@ namespace Akyildiz.Sevkiyat.Application.Users.Commands.CreateUser
             if (emailExists)
                 throw new ConflictException($"'{request.Email}' e-posta adresi zaten kullanılıyor.");
 
+            var username = string.IsNullOrWhiteSpace(request.Username) ? request.Email : request.Username;
+
+            var usernameExists = await _context.Users
+                .AnyAsync(u => u.Username == username, cancellationToken);
+
+            if (usernameExists)
+                throw new ConflictException($"'{username}' kullanıcı adı zaten kullanılıyor.");
+
             var hash = _passwordHasher.CreateHash(request.Password, out string salt);
 
-            var user = User.Create(request.Email, request.FirstName, request.LastName, hash, salt, request.Role);
+            var user = User.Create(request.Email, request.FirstName, request.LastName, hash, salt, request.Role, username);
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync(cancellationToken);

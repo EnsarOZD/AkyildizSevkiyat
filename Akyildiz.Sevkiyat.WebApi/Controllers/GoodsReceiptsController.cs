@@ -7,6 +7,7 @@ using Akyildiz.Sevkiyat.Application.GoodsReceipts.Commands.CreateCorrectionGoods
 using Akyildiz.Sevkiyat.Application.GoodsReceipts.Queries.GetGoodsReceiptDetail;
 using Akyildiz.Sevkiyat.Application.GoodsReceipts.Queries.GetGoodsReceipts;
 using Akyildiz.Sevkiyat.Application.GoodsReceipts.Commands.UpdateGoodsReceiptLine;
+using Akyildiz.Sevkiyat.Application.GoodsReceipts.Commands.BatchUpdateLines;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -65,7 +66,17 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         public async Task<IActionResult> UpdateLine(Guid id, Guid lineId, UpdateGoodsReceiptLineCommand command)
         {
             if (id != command.GoodsReceiptId || lineId != command.LineId) return BadRequest("ID mismatch");
-            
+
+            await _mediator.Send(command);
+            return Ok();
+        }
+
+        [Authorize(Roles = "Admin,Warehouse,Manager,Accounting")]
+        [HttpPut("{id}/lines")]
+        public async Task<IActionResult> BatchUpdateLines(Guid id, BatchUpdateGoodsReceiptLinesCommand command)
+        {
+            if (id != command.GoodsReceiptId) return BadRequest("ID mismatch");
+
             await _mediator.Send(command);
             return Ok();
         }

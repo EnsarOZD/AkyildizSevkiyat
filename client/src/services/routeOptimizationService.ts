@@ -39,6 +39,8 @@ export interface RouteStopDto {
   address: string | null;
   estimatedDistanceFromPrevious: number | null;
   estimatedDurationFromPrevious: number | null;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export interface TimeWindowWarningDto {
@@ -57,6 +59,8 @@ export interface RouteOptimizationResultDto {
   excludedProjects: string[];
   bridgeNotice: string | null;
   timeWindowWarnings?: TimeWindowWarningDto[] | null;
+  startLatitude?: number | null;
+  startLongitude?: number | null;
 }
 
 const routeOptimizationService = {

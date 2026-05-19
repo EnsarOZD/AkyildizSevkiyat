@@ -22,6 +22,8 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Persistence.Configurations
                 .HasForeignKey(x => x.SupplierId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            builder.Property(x => x.EmailSentTo).HasMaxLength(500);
+
             builder.HasMany(x => x.Lines)
                 .WithOne(x => x.PurchaseOrder)
                 .HasForeignKey(x => x.PurchaseOrderId)

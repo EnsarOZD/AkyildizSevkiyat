@@ -17,7 +17,7 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
                 ?? throw new InvalidOperationException("GoogleMaps:ApiKey yapılandırması eksik.");
         }
 
-        public async Task<(double Lat, double Lng)?> GeocodeAsync(string address, CancellationToken cancellationToken = default)
+        public async Task<GeocodedLocation?> GeocodeAsync(string address, CancellationToken cancellationToken = default)
         {
             var normalized = NormalizeAddress(address);
             var url = "https://maps.googleapis.com/maps/api/geocode/json" +
@@ -31,19 +31,40 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
 
             using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
             var root = doc.RootElement;
-            var status = root.GetProperty("status").GetString();
 
-            if (status != "OK") return null;
+            if (root.GetProperty("status").GetString() != "OK") return null;
 
-            var location = root
-                .GetProperty("results")[0]
-                .GetProperty("geometry")
-                .GetProperty("location");
+            var result = root.GetProperty("results")[0];
 
-            return (location.GetProperty("lat").GetDouble(), location.GetProperty("lng").GetDouble());
+            var location = result.GetProperty("geometry").GetProperty("location");
+            var lat = location.GetProperty("lat").GetDouble();
+            var lng = location.GetProperty("lng").GetDouble();
+
+            string? cityName     = null;
+            string? districtName = null;
+
+            if (result.TryGetProperty("address_components", out var components))
+            {
+                foreach (var comp in components.EnumerateArray())
+                {
+                    var longName = comp.GetProperty("long_name").GetString();
+                    var types    = comp.GetProperty("types").EnumerateArray()
+                                       .Select(t => t.GetString())
+                                       .ToList();
+
+                    // İl: administrative_area_level_1
+                    if (types.Contains("administrative_area_level_1") && cityName == null)
+                        cityName = longName;
+
+                    // İlçe: administrative_area_level_2 (Türkiye'de ilçe düzeyi)
+                    if (types.Contains("administrative_area_level_2") && districtName == null)
+                        districtName = longName;
+                }
+            }
+
+            return new GeocodedLocation(lat, lng, cityName, districtName);
         }
 
-        // Aynı normalizasyon mantığı: GeocodingTool ve GoogleMapsRouteOptimizationService
         private static string NormalizeAddress(string address) =>
             Regex.Replace(
                 address

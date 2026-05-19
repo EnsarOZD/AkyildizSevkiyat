@@ -20,12 +20,20 @@ using Akyildiz.Sevkiyat.Infrastructure.Email;
 using Akyildiz.Sevkiyat.Application.Settings;
 using Akyildiz.Sevkiyat.Infrastructure.ExternalServices.IssIp;
 using Akyildiz.Sevkiyat.Infrastructure.ExternalServices.Netsis;
+using Akyildiz.Sevkiyat.Infrastructure.ExternalServices.YurtiKargo;
 using Akyildiz.Sevkiyat.Infrastructure.Persistence.Seeding;
 using Akyildiz.Sevkiyat.Infrastructure.BackgroundJobs;
+using Akyildiz.Sevkiyat.Infrastructure.Notifications;
 using Akyildiz.Sevkiyat.Infrastructure.Services;
 using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Excel/dosya yükleme için Kestrel istek boyutu limitini artır (default 30MB)
+builder.WebHost.ConfigureKestrel(opts =>
+{
+    opts.Limits.MaxRequestBodySize = 30 * 1024 * 1024; // 30 MB
+});
 
 // ✅ JWT Claim mapping'ini temizle (sub -> nameidentifier dönüşümünü engeller)
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
@@ -34,6 +42,10 @@ builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        // Serialize all DateTime as UTC (Z-suffix) so browsers in any timezone display correctly.
+        // EF Core returns DateTime from SQL Server with DateTimeKind.Unspecified which would lose the Z.
+        options.JsonSerializerOptions.Converters.Add(new Akyildiz.Sevkiyat.WebApi.Infrastructure.DateTimeUtcJsonConverter());
+        options.JsonSerializerOptions.Converters.Add(new Akyildiz.Sevkiyat.WebApi.Infrastructure.NullableDateTimeUtcJsonConverter());
     });
 
 // CORS Policy
@@ -50,7 +62,8 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins(allowedOrigins)
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials(); // Required for HttpOnly cookie auth (#1)
     });
 });
 
@@ -128,6 +141,30 @@ builder.Services.AddHttpClient<
     return handler;
 });
 
+// Configure YurtiKargo Options
+builder.Services.AddOptions<YurtiKargoOptions>()
+    .Bind(builder.Configuration.GetSection("YurtiKargo"));
+
+builder.Services.AddHttpClient<
+    Akyildiz.Sevkiyat.Application.Interfaces.IYurtiKargoClient,
+    YurtiKargoClient>((sp, http) =>
+{
+    var opt = sp.GetRequiredService<IOptions<YurtiKargoOptions>>().Value;
+    http.BaseAddress = new Uri(opt.BaseUrl);
+    http.Timeout     = TimeSpan.FromSeconds(opt.TimeoutSeconds);
+})
+.ConfigurePrimaryHttpMessageHandler(sp =>
+{
+    var opt     = sp.GetRequiredService<IOptions<YurtiKargoOptions>>().Value;
+    var handler = new HttpClientHandler();
+    if (!string.IsNullOrEmpty(opt.ProxyUrl))
+    {
+        handler.Proxy    = new System.Net.WebProxy(opt.ProxyUrl);
+        handler.UseProxy = true;
+    }
+    return handler;
+});
+
 // Configure Jwt Options
 builder.Services.AddOptions<JwtOptions>()
     .Bind(builder.Configuration.GetSection("Jwt"))
@@ -139,6 +176,10 @@ builder.Services.AddOptions<SmtpOptions>()
     .Bind(builder.Configuration.GetSection("Smtp"))
     .ValidateDataAnnotations()
     .ValidateOnStart();
+
+// SmtpEmailOptions — application layer'ın from-address bilgilerine erişimi için
+builder.Services.Configure<Akyildiz.Sevkiyat.Application.PurchaseOrders.Commands.SendPurchaseOrderEmail.SmtpEmailOptions>(
+    builder.Configuration.GetSection("Smtp"));
 
 builder.Services.AddScoped<IEmailService, SmtpEmailService>();
 
@@ -164,6 +205,12 @@ builder.Services.AddHttpClient<GoogleGeocodingService>(client =>
 builder.Services.AddScoped<Akyildiz.Sevkiyat.Application.Common.Interfaces.IIssOrderImportOrchestrator, IssOrderImportOrchestrator>();
 builder.Services.Configure<IssImportOptions>(builder.Configuration.GetSection("IssImport"));
 builder.Services.AddHostedService<IssOrderImportBackgroundService>();
+builder.Services.Configure<YkSyncOptions>(builder.Configuration.GetSection("YurtiKargo"));
+builder.Services.AddHostedService<YkStatusSyncBackgroundService>();
+builder.Services.Configure<NetsisIrsaliyeSyncOptions>(builder.Configuration.GetSection("NetsisIrsaliyeSync"));
+builder.Services.AddHostedService<NetsisIrsaliyeSyncBackgroundService>();
+builder.Services.Configure<ReconciliationSummaryEmailOptions>(builder.Configuration.GetSection("Reconciliation:SummaryEmail"));
+builder.Services.AddHostedService<ReconciliationSummaryEmailBackgroundService>();
 
 // Reconciliation enforcement
 builder.Services.AddScoped<Akyildiz.Sevkiyat.Application.Reconciliation.Services.ReconciliationGuard>();
@@ -174,6 +221,9 @@ builder.Services.AddScoped<Akyildiz.Sevkiyat.Application.Interfaces.IStockCountE
 // Pre-dispatch enforcement
 builder.Services.AddScoped<Akyildiz.Sevkiyat.Application.Warehouse.Services.PreDispatchGuard>();
 builder.Services.AddScoped<Akyildiz.Sevkiyat.Application.Warehouse.Services.ZoneAutoCloseService>();
+
+// Photo storage
+builder.Services.AddScoped<Akyildiz.Sevkiyat.Application.Common.Interfaces.IPhotoStorageService, Akyildiz.Sevkiyat.Infrastructure.Services.FilePhotoStorageService>();
 
 // Configure SeedData Options
 builder.Services.AddOptions<SeedDataOptions>()
@@ -202,6 +252,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
         options.Events = new JwtBearerEvents
         {
+            // #1: Read JWT from HttpOnly cookie first, fall back to Authorization header
+            OnMessageReceived = context =>
+            {
+                if (context.Request.Cookies.TryGetValue("sevkiyat_jwt", out var cookieToken)
+                    && !string.IsNullOrEmpty(cookieToken))
+                {
+                    context.Token = cookieToken;
+                }
+                return Task.CompletedTask;
+            },
             OnChallenge = async context =>
             {
                 context.HandleResponse();
@@ -232,15 +292,22 @@ builder.Services.AddAuthorization(options =>
         .Build();
 });
 
-// Rate Limiting — Login endpoint'ini brute-force'a karşı koru
+// Login brute-force koruma (sıfırlanabilir, admin yönetilebilir)
+builder.Services.AddSingleton<Akyildiz.Sevkiyat.WebApi.Services.ILoginAttemptTracker>(
+    new Akyildiz.Sevkiyat.WebApi.Services.LoginAttemptTracker(maxAttempts: 5, windowMinutes: 5));
+
+// #4: Background service health tracking
+builder.Services.AddSingleton<BackgroundServiceStatusTracker>();
+
+// Notification system
+builder.Services.AddSingleton<SseChannelManager>();
+builder.Services.AddOptions<VapidOptions>()
+    .Bind(builder.Configuration.GetSection("Vapid"));
+builder.Services.AddScoped<Akyildiz.Sevkiyat.Application.Interfaces.INotificationService, NotificationService>();
+
+// Rate Limiting (#9: refresh endpoint + route-optimization)
 builder.Services.AddRateLimiter(rateLimiter =>
 {
-    rateLimiter.AddFixedWindowLimiter("login", options =>
-    {
-        options.PermitLimit = 5;
-        options.Window = TimeSpan.FromMinutes(15);
-        options.QueueLimit = 0;
-    });
     rateLimiter.AddFixedWindowLimiter("optimize", opt =>
     {
         opt.PermitLimit = 5;
@@ -248,11 +315,20 @@ builder.Services.AddRateLimiter(rateLimiter =>
         opt.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
         opt.QueueLimit = 0;
     });
+    // #9: Refresh token endpoint — 10 req/min per IP
+    rateLimiter.AddSlidingWindowLimiter("auth-refresh", opt =>
+    {
+        opt.PermitLimit = 10;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.SegmentsPerWindow = 2;
+        opt.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 0;
+    });
     rateLimiter.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     rateLimiter.OnRejected = async (context, _) =>
     {
         context.HttpContext.Response.ContentType = "application/json";
-        var payload = new { type = "rate_limit_exceeded", message = "Çok fazla giriş denemesi yapıldı. 15 dakika sonra tekrar deneyin." };
+        var payload = new { type = "rate_limit_exceeded", message = "Çok fazla istek gönderildi. Lütfen bekleyin." };
         await context.HttpContext.Response.WriteAsync(
             System.Text.Json.JsonSerializer.Serialize(payload,
                 new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }));
@@ -297,6 +373,9 @@ var sensitiveConfigs = new Dictionary<string, string?>
     { "Netsis:Sifre",        app.Services.GetRequiredService<IOptions<NetsisOptions>>().Value.Sifre },
     { "Netsis:FirmaKodu",    app.Services.GetRequiredService<IOptions<NetsisOptions>>().Value.FirmaKodu },
     { "Netsis:SubeKodu",     app.Services.GetRequiredService<IOptions<NetsisOptions>>().Value.SubeKodu },
+    { "YurtiKargo:BaseUrl",    app.Services.GetRequiredService<IOptions<YurtiKargoOptions>>().Value.BaseUrl },
+    { "YurtiKargo:WsUserName", app.Services.GetRequiredService<IOptions<YurtiKargoOptions>>().Value.WsUserName },
+    { "YurtiKargo:WsPassword", app.Services.GetRequiredService<IOptions<YurtiKargoOptions>>().Value.WsPassword },
 };
 
 foreach (var config in sensitiveConfigs)
@@ -310,6 +389,29 @@ foreach (var config in sensitiveConfigs)
 // ---------------------------------------
 
 app.UseHttpsRedirection();
+
+// #3: HTTP Security Headers
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append("X-Frame-Options", "DENY");
+    context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Append("X-XSS-Protection", "0"); // Deprecated — CSP handles this in modern browsers
+    context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
+    context.Response.Headers.Append("Permissions-Policy", "geolocation=(self), camera=(self), microphone=()");
+    context.Response.Headers.Append("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+    await next();
+});
+
+// Serve uploaded photos as static files from /photos/...
+var photoBasePath = builder.Configuration["PhotoStorage:BasePath"]
+    ?? Path.Combine(Directory.GetCurrentDirectory(), "photos");
+if (!Directory.Exists(photoBasePath))
+    Directory.CreateDirectory(photoBasePath);
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(photoBasePath),
+    RequestPath = "/photos"
+});
 
 // ✅ CORS (MapControllers'dan önce)
 app.UseCors("AllowVueApp");

@@ -4,8 +4,41 @@ using MediatR;
 
 namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.UpdateShipmentDetails
 {
-    public record ShipmentLineUpdateDto(int? LineId, string StockCode, string StockName, decimal OrderedQty, StockUnit Unit);
-    public record UpdateShipmentDetailsCommand(int ShipmentId, DateTime DeliveryDate, List<ShipmentLineUpdateDto> Lines) : IRequest<Unit>;
+    public class ShipmentLineUpdateDto
+    {
+        public int? LineId { get; set; }
+        public string StockCode { get; set; } = string.Empty;
+        public string StockName { get; set; } = string.Empty;
+        public decimal OrderedQty { get; set; }
+        public StockUnit Unit { get; set; }
+
+        public ShipmentLineUpdateDto() { }
+
+        public ShipmentLineUpdateDto(int? lineId, string stockCode, string stockName, decimal orderedQty, StockUnit unit)
+        {
+            LineId = lineId;
+            StockCode = stockCode;
+            StockName = stockName;
+            OrderedQty = orderedQty;
+            Unit = unit;
+        }
+    }
+
+    public class UpdateShipmentDetailsCommand : IRequest<Unit>
+    {
+        public int ShipmentId { get; set; }
+        public DateTime DeliveryDate { get; set; }
+        public List<ShipmentLineUpdateDto> Lines { get; set; } = new();
+
+        public UpdateShipmentDetailsCommand() { }
+
+        public UpdateShipmentDetailsCommand(int shipmentId, DateTime deliveryDate, List<ShipmentLineUpdateDto> lines)
+        {
+            ShipmentId = shipmentId;
+            DeliveryDate = deliveryDate;
+            Lines = lines;
+        }
+    }
 
     public class UpdateShipmentDetailsCommandValidator : AbstractValidator<UpdateShipmentDetailsCommand>
     {
@@ -17,9 +50,7 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.UpdateShipmentDetails
                 .GreaterThan(0).WithMessage("Geçerli bir sevkiyat ID'si girilmelidir.");
 
             RuleFor(x => x.DeliveryDate)
-                .NotEmpty().WithMessage("Teslimat tarihi boş olamaz.")
-                .GreaterThanOrEqualTo(DateTime.UtcNow.Date)
-                    .WithMessage("Teslimat tarihi bugün veya sonrası olmalıdır.");
+                .NotEmpty().WithMessage("Teslimat tarihi boş olamaz.");
 
             RuleFor(x => x.Lines)
                 .NotNull().WithMessage("Satır listesi boş olamaz.")
@@ -28,7 +59,7 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.UpdateShipmentDetails
             RuleForEach(x => x.Lines).ChildRules(line =>
             {
                 line.RuleFor(l => l.LineId)
-                    .GreaterThan(0).When(l => l.LineId.HasValue)
+                    .GreaterThan(0).When(l => l.LineId.HasValue && l.LineId.Value != 0)
                     .WithMessage("Satır ID'si 0'dan büyük olmalıdır.");
 
                 line.RuleFor(l => l.StockCode)

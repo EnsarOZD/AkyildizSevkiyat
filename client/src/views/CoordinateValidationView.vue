@@ -453,7 +453,7 @@ const applySelectedGeocodedCoords = async () => {
   let successCount = 0;
   for (const { id, v } of targets) {
     try {
-      await projectService.updateLocation(id, v!.geocodedLat!, v!.geocodedLng!);
+      await projectService.updateLocation(id, v!.geocodedLat!, v!.geocodedLng!, v!.cityName, v!.districtName);
       const idx = allProjects.value.findIndex(x => x.id === id);
       if (idx !== -1) {
         allProjects.value[idx] = { ...(allProjects.value[idx] as Project), latitude: v!.geocodedLat!, longitude: v!.geocodedLng! };
@@ -472,7 +472,7 @@ const applyGeocodedCoords = async (p: Project) => {
   const v = getValidation(p.id);
   if (!v?.geocodedLat || !v?.geocodedLng) return;
   try {
-    await projectService.updateLocation(p.id, v.geocodedLat, v.geocodedLng);
+    await projectService.updateLocation(p.id, v.geocodedLat, v.geocodedLng, v.cityName, v.districtName);
     // Yerel state güncelle
     const idx = allProjects.value.findIndex(x => x.id === p.id);
     if (idx !== -1) {
@@ -526,7 +526,7 @@ const startBulkGeocode = async () => {
         // Geocoded koordinat varsa otomatik kaydet
         if (r.geocodedLat && r.geocodedLng) {
           try {
-            await projectService.updateLocation(r.projectId, r.geocodedLat, r.geocodedLng);
+            await projectService.updateLocation(r.projectId, r.geocodedLat, r.geocodedLng, r.cityName, r.districtName);
             const idx = allProjects.value.findIndex(x => x.id === r.projectId);
             if (idx !== -1) {
               allProjects.value[idx] = { ...(allProjects.value[idx] as Project), latitude: r.geocodedLat, longitude: r.geocodedLng } as Project;

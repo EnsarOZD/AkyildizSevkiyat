@@ -58,6 +58,7 @@
         </label>
         <input
           v-model="form.waybillNo"
+          @blur="formatWaybillNo"
           type="text"
           class="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
           placeholder="İrsaliye numarası giriniz..."
@@ -176,6 +177,19 @@ const errors = ref<{ waybillNo?: string; waybillDate?: string; note?: string; su
 const formatDate = (date: string) => {
   if (!date) return '-';
   return new Date(date).toLocaleDateString('tr-TR');
+};
+
+const formatWaybillNo = () => {
+  let val = form.value.waybillNo.trim().toUpperCase();
+  // Örn: AKI20261 -> AKI202600000001 (15 hane)
+  if (val.length > 7 && /^[A-Z]{3}\d{4}/.test(val)) {
+    const prefix = val.substring(0, 7);
+    const suffix = val.substring(7);
+    if (/^\d+$/.test(suffix) && val.length < 16) {
+        val = prefix + suffix.padStart(9, '0');
+    }
+  }
+  form.value.waybillNo = val;
 };
 
 const fetchSuppliers = async () => {

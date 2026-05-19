@@ -13,9 +13,9 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Persistence.Seeding
             {
                 var users = new List<User>
                 {
-                    CreateUser("Admin", "User", "admin@akyildiz.com", UserRole.Admin, passwordHasher, adminPassword),
-                    CreateUser("Fatma", "Yılmaz", "accounting@akyildiz.com", UserRole.Accounting, passwordHasher, adminPassword),
-                    CreateUser("Mehmet", "Depo", "warehouse@akyildiz.com", UserRole.Warehouse, passwordHasher, adminPassword)
+                    CreateUser("Admin", "User", "admin@akyildiz.com", UserRole.Admin, passwordHasher, adminPassword, "admin"),
+                    CreateUser("Fatma", "Yılmaz", "accounting@akyildiz.com", UserRole.Accounting, passwordHasher, adminPassword, "muhasebe"),
+                    CreateUser("Mehmet", "Depo", "warehouse@akyildiz.com", UserRole.Warehouse, passwordHasher, adminPassword, "depo")
                 };
 
                 context.Users.AddRange(users);
@@ -23,11 +23,11 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Persistence.Seeding
             }
         }
 
-        private static User CreateUser(string firstName, string lastName, string email, UserRole role, IPasswordHasher passwordHasher, string password)
+        private static User CreateUser(string firstName, string lastName, string email, UserRole role, IPasswordHasher passwordHasher, string password, string? username = null)
         {
             var hash = passwordHasher.CreateHash(password, out string salt);
-            
-            return User.Create(email, firstName, lastName, hash, salt, role);
+
+            return User.Create(email, firstName, lastName, hash, salt, role, username);
         }
     }
 }

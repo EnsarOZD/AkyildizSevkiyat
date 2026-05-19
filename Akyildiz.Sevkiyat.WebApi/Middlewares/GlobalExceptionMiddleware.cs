@@ -48,60 +48,67 @@ namespace Akyildiz.Sevkiyat.WebApi.Middlewares
                         field = e.PropertyName,
                         message = e.ErrorMessage
                     });
-                    _logger.LogWarning(exception, "Validation error occurred");
+                    SafeLog(LogLevel.Warning, exception, "Validation error occurred");
                     break;
 
                 case DomainException domainException:
                     code = StatusCodes.Status400BadRequest;
                     type = "business_rule_violation";
                     message = domainException.Message;
-                    _logger.LogWarning(exception, "Domain/Business error occurred");
+                    SafeLog(LogLevel.Warning, exception, "Domain/Business error occurred");
                     break;
 
                 case NotFoundException notFoundException:
                     code = StatusCodes.Status404NotFound;
                     type = "not_found";
                     message = notFoundException.Message;
-                    _logger.LogWarning(exception, "Resource not found");
+                    SafeLog(LogLevel.Warning, exception, "Resource not found");
                     break;
 
                 case ConflictException conflictException:
                     code = StatusCodes.Status409Conflict;
                     type = "conflict";
                     message = conflictException.Message;
-                    _logger.LogWarning(exception, "Conflict occurred");
+                    SafeLog(LogLevel.Warning, exception, "Conflict occurred");
                     break;
 
                 case DbUpdateConcurrencyException:
                     code = StatusCodes.Status409Conflict;
                     type = "concurrency_conflict";
                     message = "Bu kayıt başka bir kullanıcı tarafından değiştirildi. Sayfayı yenileyip tekrar deneyin.";
-                    _logger.LogWarning(exception, "Optimistic concurrency conflict occurred");
+                    SafeLog(LogLevel.Warning, exception, "Optimistic concurrency conflict occurred");
                     break;
 
                 case UnauthorizedException unauthorizedException:
                     code = StatusCodes.Status401Unauthorized;
                     type = "unauthorized";
                     message = unauthorizedException.Message;
-                    _logger.LogWarning(exception, "Unauthorized access attempt");
+                    SafeLog(LogLevel.Warning, exception, "Unauthorized access attempt");
                     break;
 
                 case ForbiddenException forbiddenException:
                     code = StatusCodes.Status403Forbidden;
                     type = "forbidden";
                     message = forbiddenException.Message;
-                    _logger.LogWarning(exception, "Forbidden action attempt");
+                    SafeLog(LogLevel.Warning, exception, "Forbidden action attempt");
                     break;
 
                 case HttpRequestException httpEx:
                     code = StatusCodes.Status502BadGateway;
                     type = "external_service_error";
                     message = $"Harici servis hatası: {httpEx.Message}";
-                    _logger.LogError(exception, "External HTTP service error");
+                    SafeLog(LogLevel.Error, exception, "External HTTP service error");
+                    break;
+
+                case OperationCanceledException when !context.RequestAborted.IsCancellationRequested:
+                    code = StatusCodes.Status504GatewayTimeout;
+                    type = "external_service_timeout";
+                    message = "Harici servise bağlantı zaman aşımına uğradı. Netsis sunucusuna erişilemiyor olabilir.";
+                    SafeLog(LogLevel.Error, exception, "External service timeout (Netsis unreachable?)");
                     break;
 
                 default:
-                    _logger.LogError(exception, "Unhandled exception occurred. TraceId={TraceId}", context.TraceIdentifier);
+                    SafeLog(LogLevel.Error, exception, $"Unhandled exception occurred. TraceId={context.TraceIdentifier}");
                     message = "Beklenmeyen bir hata oluştu.";
                     break;
             }
@@ -124,6 +131,25 @@ namespace Akyildiz.Sevkiyat.WebApi.Middlewares
             });
 
             await context.Response.WriteAsync(result);
+        }
+
+        // Linux'ta bazı native stack frame'leri BadImageFormatException fırlatabilir;
+        // loglama başarısız olsa bile HTTP yanıtının dönmesini garanti altına alır.
+        private void SafeLog(LogLevel level, Exception exception, string messageTemplate)
+        {
+            try
+            {
+                _logger.Log(level, exception, messageTemplate);
+            }
+            catch
+            {
+                try
+                {
+                    _logger.Log(level, "{Message} | {ExceptionType}: {ExceptionMessage}",
+                        messageTemplate, exception.GetType().Name, exception.Message);
+                }
+                catch { /* loglama tamamen başarısız, yanıtı engelleme */ }
+            }
         }
 }
 }

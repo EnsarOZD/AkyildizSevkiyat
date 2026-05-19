@@ -144,6 +144,7 @@ import { MapIcon, MapPinIcon, Bars3Icon, CheckIcon } from '@heroicons/vue/24/out
 import projectService, { type Zone } from '../services/projectService';
 import { ApiErrorUtils } from '../utils/apiError';
 import { useNotificationStore } from '../stores/notification';
+import { useSoundFeedback } from '../composables/useSoundFeedback';
 import BaseButton from '../components/BaseButton.vue';
 
 interface ProjectItem {
@@ -157,6 +158,7 @@ interface ProjectItem {
 }
 
 const notify = useNotificationStore();
+const sound = useSoundFeedback();
 
 const error = ref<string | null>(null);
 const zones = ref<Zone[]>([]);
@@ -283,8 +285,10 @@ async function saveOrder() {
     }
 
     notify.add('Sıralama kaydedildi.', 'success');
+    sound.success();
   } catch (e: any) {
     notify.add(ApiErrorUtils.getErrorMessage(e) || 'Kaydedilemedi.', 'error');
+    sound.error();
   } finally {
     saving.value = false;
   }

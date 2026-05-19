@@ -125,6 +125,42 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
                 longitude = loc.GetProperty("lng").GetDouble()
             });
         }
+
+        // GET /api/system-settings/wms
+        [HttpGet("wms")]
+        [Authorize(Roles = "Admin,Manager")]
+        public async Task<IActionResult> GetWmsSettings(CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetWmsSettingsQuery(), ct);
+            return Ok(result);
+        }
+
+        // PUT /api/system-settings/wms
+        [HttpPut("wms")]
+        [Authorize(Roles = "Admin,Manager")]
+        public async Task<IActionResult> SaveWmsSettings([FromBody] SaveWmsSettingsCommand command, CancellationToken ct)
+        {
+            var result = await _mediator.Send(command, ct);
+            return Ok(result);
+        }
+
+        // GET /api/system-settings/email
+        [HttpGet("email")]
+        [Authorize(Roles = "Admin,Manager")]
+        public async Task<IActionResult> GetEmailSettings(CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetEmailSettingsQuery(), ct);
+            return Ok(result);
+        }
+
+        // PUT /api/system-settings/email
+        [HttpPut("email")]
+        [Authorize(Roles = "Admin,Manager")]
+        public async Task<IActionResult> SaveEmailSettings([FromBody] SaveEmailSettingsCommand command, CancellationToken ct)
+        {
+            var result = await _mediator.Send(command, ct);
+            return Ok(result);
+        }
     }
 
     public record UpdatePoCounterRequest(int LastValue);

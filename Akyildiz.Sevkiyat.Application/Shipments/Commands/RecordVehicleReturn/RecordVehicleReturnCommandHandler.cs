@@ -1,4 +1,5 @@
 using Akyildiz.Sevkiyat.Application.Interfaces;
+using Akyildiz.Sevkiyat.Application.Warehouse.Services;
 using Akyildiz.Sevkiyat.Domain.Entities;
 using Akyildiz.Sevkiyat.Domain.Enums;
 using Akyildiz.Sevkiyat.Domain.Exceptions;
@@ -11,11 +12,16 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.RecordVehicleReturn
     {
         private readonly IApplicationDbContext _context;
         private readonly ICurrentUserService _currentUserService;
+        private readonly ZoneAutoCloseService _zoneAutoClose;
 
-        public RecordVehicleReturnCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+        public RecordVehicleReturnCommandHandler(
+            IApplicationDbContext context,
+            ICurrentUserService currentUserService,
+            ZoneAutoCloseService zoneAutoClose)
         {
             _context = context;
             _currentUserService = currentUserService;
+            _zoneAutoClose = zoneAutoClose;
         }
 
         public async Task<Unit> Handle(RecordVehicleReturnCommand request, CancellationToken cancellationToken)
@@ -160,6 +166,12 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.RecordVehicleReturn
             }
 
             await _context.SaveChangesAsync(cancellationToken);
+
+            if (shipment.ZonePreparationId.HasValue)
+            {
+                await _zoneAutoClose.TryAutoCloseAsync(shipment.ZonePreparationId.Value, cancellationToken);
+                await _context.SaveChangesAsync(cancellationToken);
+            }
 
             return Unit.Value;
         }

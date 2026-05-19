@@ -113,6 +113,14 @@
               <span class="text-gray-500 w-28 flex-shrink-0">Talep No:</span>
               <span class="font-medium break-words">{{ shipment.talepNo }}</span>
             </div>
+            <div v-if="shipment.talepTuru" class="flex gap-2">
+              <span class="text-gray-500 w-28 flex-shrink-0">Talep Türü:</span>
+              <span class="font-medium break-words">{{ shipment.talepTuru }}</span>
+            </div>
+            <div v-if="shipment.institutionCode" class="flex gap-2">
+              <span class="text-gray-500 w-28 flex-shrink-0">Kurum Bilgisi:</span>
+              <span class="font-medium break-words">{{ shipment.institutionCode }}</span>
+            </div>
             <div v-if="shipment.aciklama" class="flex gap-2">
               <span class="text-gray-500 w-28 flex-shrink-0">Açıklama:</span>
               <span class="font-medium break-words">{{ shipment.aciklama }}</span>

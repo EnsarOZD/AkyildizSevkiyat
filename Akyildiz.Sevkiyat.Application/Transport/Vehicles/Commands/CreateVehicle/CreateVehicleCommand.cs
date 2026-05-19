@@ -28,7 +28,7 @@ namespace Akyildiz.Sevkiyat.Application.Transport.Vehicles.Commands.CreateVehicl
         {
             var vehicle = new Vehicle
             {
-                PlateNumber = request.PlateNumber,
+                PlateNumber = request.PlateNumber.Trim().ToUpperInvariant(),
                 Capacity    = request.Capacity,
                 VehicleType = request.VehicleType,
                 Description = request.Description,

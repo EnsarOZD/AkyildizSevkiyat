@@ -9,6 +9,8 @@ namespace Akyildiz.Sevkiyat.Application.Interfaces
         DbSet<IssOrder> IssOrders { get; }
         DbSet<IssOrderLine> IssOrderLines { get; }
         DbSet<Shipment> Shipments { get; }
+        /// <summary>Kıyafet operasyonlarını hariç tutar — tüm depo pipeline handler'ları bunu kullanır.</summary>
+        IQueryable<Shipment> WarehouseShipments { get; }
         DbSet<ShipmentLine> ShipmentLines { get; }
         DbSet<User> Users { get; }
         DbSet<ShipmentHistory> ShipmentHistories { get; }
@@ -50,10 +52,32 @@ namespace Akyildiz.Sevkiyat.Application.Interfaces
         // Print Audit
         DbSet<ShipmentPrintLog> ShipmentPrintLogs { get; }
 
+        // Delivery Photos
+        DbSet<ShipmentDeliveryPhoto> ShipmentDeliveryPhotos { get; }
+
+        // Stok Tüketim / Zai
+        DbSet<StockConsumption> StockConsumptions { get; }
+
         // WMS Module
         DbSet<WarehouseLocation> WarehouseLocations { get; }
         DbSet<StockLocation> StockLocations { get; }
         DbSet<LocationTransfer> LocationTransfers { get; }
+
+        // External Email Contacts
+        DbSet<ExternalEmailContact> ExternalEmailContacts { get; }
+
+        // Vehicle Return Tracking
+        DbSet<VehicleReturn> VehicleReturns { get; }
+        DbSet<VehicleReturnLine> VehicleReturnLines { get; }
+
+        // Notifications
+        DbSet<Domain.Entities.Notification> Notifications { get; }
+        DbSet<Domain.Entities.PushSubscription> PushSubscriptions { get; }
+
+        // Print Queue
+        DbSet<Domain.Entities.PrintAgent> PrintAgents { get; }
+        DbSet<Domain.Entities.PrinterConfig> PrinterConfigs { get; }
+        DbSet<Domain.Entities.PrintJob> PrintJobs { get; }
 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }

@@ -42,48 +42,31 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Commands.MapStock
             }
 
             // 2. Re-evaluate Affected Orders
-            // Find orders containing this external stock code that are currently NeedsMapping
-            // Note: This is an expensive query if we don't handle it carefully.
-            // IssOrder -> Lines.
-            
-            // We need to find orders that contain THIS stock code.
-            // And check if they are now Ready (meaning ALL lines are now mapped/ignored).
-            // Wait, "Ignored" keeps it NeedsMapping. So only "Mapped" can fix it.
-            
-            if (mapping.MatchStatus == MatchStatus.Mapped)
+            // Hem Mapped hem Ignored durumları siparişi Ready'e taşıyabilir.
+            // Tüm satırları Mapped veya Ignored olan NeedsMapping siparişler Ready'e geçer.
+            if (mapping.MatchStatus == MatchStatus.Mapped || mapping.MatchStatus == MatchStatus.Ignored)
             {
                 var affectedOrders = await _context.IssOrders
                     .Include(o => o.Lines)
-                    .Where(o => o.ImportStatus == ImportStatus.NeedsMapping && 
+                    .Where(o => o.ImportStatus == ImportStatus.NeedsMapping &&
                                 o.Lines.Any(l => l.StockCode == mapping.ExternalStockCode))
                     .ToListAsync(cancellationToken);
 
                 foreach (var order in affectedOrders)
                 {
-                    // Check if ALL lines are now mapped
-                     bool isReady = true;
-                     var orderStockCodes = order.Lines.Select(l => l.StockCode).Distinct().ToList();
-                     
-                     // We need to check the status of ALL lines
-                     // We can fetch all mappings for this order
-                     var orderMappings = await _context.StockMappings
-                         .Where(m => orderStockCodes.Contains(m.ExternalStockCode) && m.ExternalSystem == "ISS-IP")
-                         .ToListAsync(cancellationToken);
-                     
-                     foreach (var lineCode in orderStockCodes)
-                     {
-                         var lineMapping = orderMappings.FirstOrDefault(m => m.ExternalStockCode == lineCode);
-                         if (lineMapping == null || lineMapping.MatchStatus != MatchStatus.Mapped)
-                         {
-                             isReady = false;
-                             break;
-                         }
-                     }
+                    var orderStockCodes = order.Lines.Select(l => l.StockCode).Distinct().ToList();
+                    var orderMappings = await _context.StockMappings
+                        .Where(m => orderStockCodes.Contains(m.ExternalStockCode) && m.ExternalSystem == "ISS-IP")
+                        .ToListAsync(cancellationToken);
 
-                     if (isReady)
-                     {
-                         order.ImportStatus = ImportStatus.Ready;
-                     }
+                    bool isReady = orderStockCodes.All(code =>
+                    {
+                        var m = orderMappings.FirstOrDefault(x => x.ExternalStockCode == code);
+                        return m != null && (m.MatchStatus == MatchStatus.Mapped || m.MatchStatus == MatchStatus.Ignored);
+                    });
+
+                    if (isReady)
+                        order.ImportStatus = ImportStatus.Ready;
                 }
             }
 

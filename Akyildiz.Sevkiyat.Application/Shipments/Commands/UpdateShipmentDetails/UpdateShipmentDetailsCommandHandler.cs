@@ -29,9 +29,9 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.UpdateShipmentDetails
                 throw new NotFoundException("Shipment", request.ShipmentId);
 
             // 3. Status Check (Critical)
-            if (shipment.Status != ShipmentStatus.Created)
+            if (shipment.Status != ShipmentStatus.Created && shipment.Status != ShipmentStatus.ReadyForDispatch)
             {
-                throw new DomainException("Cannot edit shipment. Only 'Created' (Draft) shipments can be edited.");
+                throw new DomainException("Sevkiyat düzenlenemez. Yalnızca 'Taslak' veya 'Sevke Hazır' durumundaki sevkiyatlar düzenlenebilir.");
             }
 
             // 4. Update Header
@@ -92,7 +92,8 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.UpdateShipmentDetails
                     var newLine = ShipmentLine.Create(null, null, lineDto.StockCode ?? "", lineDto.StockName ?? "", lineDto.Unit, lineDto.OrderedQty);
                     if (stockMaster != null)
                         newLine.UpdateStockInfo(lineDto.StockCode ?? "", lineDto.StockName ?? "", lineDto.Unit, stockMaster.Id);
-                    _context.ShipmentLines.Add(newLine);
+                    
+                    shipment.Lines.Add(newLine);
                 }
             }
 

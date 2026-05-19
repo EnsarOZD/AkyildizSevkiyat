@@ -6,8 +6,9 @@ namespace Akyildiz.Sevkiyat.Domain.Enums
         MicroPicking = 1,
         MicroReady = 2,
         MacroPicking = 3,
-        ReadyForDriverInfo = 4,
-        ReadyForTransfer = 5,
-        Dispatched = 6        // Yükleme onaylandı, araç yola çıktı
+        GidaHazirlik = 4,       // Gıda ürünleri toplu hazırlık aşaması (aynı zone'un tüm batch'leri birleşir)
+        ReadyForDriverInfo = 5, // İrsaliye bekliyor / şoför ataması
+        ReadyForTransfer = 6,   // Araca atandı, yüklemeye hazır
+        Dispatched = 7          // Yükleme onaylandı, araç yola çıktı
     }
 }

@@ -27,6 +27,33 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
         public DateTime? StartedAt { get; set; }
         public int? StartedByUserId { get; set; }
 
+        // Macro picking lock — prevents two users doing macro for the same zone simultaneously
+        public int? MacroLockedByUserId { get; set; }
+        public string? MacroLockedByUserName { get; set; }
+        public DateTime? MacroLockedAt { get; set; }
+
+        private static readonly TimeSpan MacroLockExpiry = TimeSpan.FromMinutes(60);
+
+        public bool IsMacroLocked(int requestingUserId) =>
+            MacroLockedByUserId.HasValue &&
+            MacroLockedByUserId.Value != requestingUserId &&
+            MacroLockedAt.HasValue &&
+            DateTime.UtcNow - MacroLockedAt.Value < MacroLockExpiry;
+
+        public void AcquireMacroLock(int userId, string userName)
+        {
+            MacroLockedByUserId   = userId;
+            MacroLockedByUserName = userName;
+            MacroLockedAt         = DateTime.UtcNow;
+        }
+
+        public void ReleaseMacroLock()
+        {
+            MacroLockedByUserId   = null;
+            MacroLockedByUserName = null;
+            MacroLockedAt         = null;
+        }
+
         // Navigation Properties
         public Zone Zone { get; set; } = null!;
         public ICollection<ZonePreparationProject> Projects { get; set; } = new List<ZonePreparationProject>();

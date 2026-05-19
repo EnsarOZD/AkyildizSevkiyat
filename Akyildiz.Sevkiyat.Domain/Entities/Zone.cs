@@ -7,6 +7,7 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
         public int Id { get; set; }
         public required string Name { get; set; }
         public int Order { get; set; } // Picking route order
+        public bool IsOutOfCity { get; set; } = false;
         
         public ICollection<Project> Projects { get; set; } = new List<Project>();
     }

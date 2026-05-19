@@ -6,7 +6,9 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Commands.StartDriverSession
         string QrCode,
         double Latitude,
         double Longitude,
-        string? DeviceFingerprint = null
+        string? DeviceFingerprint = null,
+        string? StartOdometerPhotoBase64 = null,
+        int? StartOdometerKm = null
     ) : IRequest<StartDriverSessionResult>;
 
     public record StartDriverSessionResult(

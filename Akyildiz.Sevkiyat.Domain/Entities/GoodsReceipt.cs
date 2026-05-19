@@ -25,6 +25,9 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
 
         public ICollection<GoodsReceiptLine> Lines { get; set; } = new List<GoodsReceiptLine>();
 
+        // EF Core optimistic concurrency token
+        public byte[] RowVersion { get; set; } = null!;
+
         [NotMapped]
         public bool IsEditable => Status == GoodsReceiptStatus.Draft;
     }

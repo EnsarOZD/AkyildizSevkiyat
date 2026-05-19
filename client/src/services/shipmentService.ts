@@ -9,6 +9,8 @@ export interface Shipment {
   isActive: boolean;
   projectNameSnapshot: string;
   totalQuantity: number;
+  talepTuru?: string;
+  institutionCode?: string;
 }
 
 export interface PaginatedResponse<T> {
@@ -38,6 +40,13 @@ export interface IssOrderQueryParams {
   talepNoStatus?: string;
 }
 
+export interface DeliveryPhoto {
+  id: number;
+  photoUrl: string;
+  photoIndex: number;
+  takenAt: string;
+}
+
 export interface ShipmentPrintLog {
   id: number;
   printedAt: string;
@@ -60,16 +69,30 @@ export interface ShipmentDetail extends Shipment {
   deliveryNote?: string;
   deliveryRecipient?: string;
   deliveryPhotoBase64?: string;
+  deliveryPhotoPath?: string;
+  deliveryPhotos?: DeliveryPhoto[];
   returnedAt?: string;
   returnNote?: string;
   externalOrderNumber?: string;
   talepNo?: string;
+  talepTuru?: string;
+  institutionCode?: string;
   teslimAlacakKisiler?: string;
   teslimAlacakTelefon?: string;
   yoneticiMail?: string;
   aciklama?: string;
   zoneId?: number;
   zoneName?: string;
+  zonePreparationId?: number;
+  ykCargoKey?: string | null;
+  ykInvoiceKey?: string | null;
+  ykJobId?: number | null;
+  ykBarcode?: string | null;
+  ykOperationStatus?: string | null;
+  ykOperationMessage?: string | null;
+  ykErrorCode?: string | null;
+  ykErrorMessage?: string | null;
+  ykLastQueryAt?: string | null;
 }
 
 export interface ShipmentLine {
@@ -129,6 +152,16 @@ export interface BulkAssignVehicleRequest {
 }
 
 export interface BulkAssignVehicleResult {
+  successCount: number;
+  errors: string[];
+}
+
+export interface BulkDispatchResult {
+  successCount: number;
+  errors: string[];
+}
+
+export interface BulkMarkDeliveredResult {
   successCount: number;
   errors: string[];
 }
@@ -194,8 +227,25 @@ const shipmentService = {
     await apiClient.post(`/shipments/${id}/revert-to-draft`, request);
   },
 
+  async deleteDraft(id: number): Promise<void> {
+    await apiClient.delete(`/shipments/${id}/draft`);
+  },
+
   async adminReset(id: number, reason: string): Promise<void> {
     await apiClient.post(`/shipments/${id}/admin-reset`, { reason });
+  },
+
+  async revertDelivered(id: number, reason: string): Promise<void> {
+    await apiClient.post(`/shipments/${id}/revert-delivered`, { reason });
+  },
+
+  async logMissingMail(id: number): Promise<void> {
+    await apiClient.post(`/shipments/${id}/log-missing-mail`);
+  },
+
+  async sendComparisonEmail(id: number, ccEmails?: string[]): Promise<{ sentTo: string }> {
+    const response = await apiClient.post(`/shipments/${id}/send-comparison-email`, { ccEmails: ccEmails ?? [] });
+    return response.data;
   },
 
   async assignVehicle(id: number, request: VehicleAssignmentRequest): Promise<AssignVehicleResult> {
@@ -214,8 +264,8 @@ const shipmentService = {
     await apiClient.put(`/shipments/${id}/quantities`, request);
   },
 
-  async markDelivered(id: number, deliveryNote?: string, deliveryRecipient?: string, deliveryPhotoBase64?: string, overrideNote?: string): Promise<void> {
-    await apiClient.post(`/shipments/${id}/mark-delivered`, { deliveryNote, deliveryRecipient, deliveryPhotoBase64, overrideNote });
+  async markDelivered(id: number, deliveryNote?: string, deliveryRecipient?: string, deliveryPhotosBase64?: string[], overrideNote?: string, deliveryLatitude?: number, deliveryLongitude?: number): Promise<void> {
+    await apiClient.post(`/shipments/${id}/mark-delivered`, { deliveryNote, deliveryRecipient, deliveryPhotosBase64, overrideNote, deliveryLatitude, deliveryLongitude });
   },
 
   async updateIrsaliye(id: number, irsaliyeNo: string, irsaliyeDate: string): Promise<void> {
@@ -228,6 +278,21 @@ const shipmentService = {
 
   async bulkAssignVehicle(request: BulkAssignVehicleRequest): Promise<BulkAssignVehicleResult> {
     const response = await apiClient.post('/shipments/bulk-assign-vehicle', request);
+    return response.data;
+  },
+
+  async bulkMarkDelivered(shipmentIds: number[], deliveryRecipient: string, overrideNote: string): Promise<BulkMarkDeliveredResult> {
+    const response = await apiClient.post('/shipments/bulk-mark-delivered', { shipmentIds, deliveryRecipient, overrideNote });
+    return response.data;
+  },
+
+  async bulkDispatchAsCargo(shipmentIds: number[], cargoProvider: number, cargoTrackingNumber?: string): Promise<BulkDispatchResult> {
+    const response = await apiClient.post('/shipments/bulk-dispatch-cargo', { shipmentIds, cargoProvider, cargoTrackingNumber });
+    return response.data;
+  },
+
+  async bulkDispatchAsFreight(shipmentIds: number[], carrierName: string, carrierPlate?: string, carrierPhone?: string): Promise<BulkDispatchResult> {
+    const response = await apiClient.post('/shipments/bulk-dispatch-freight', { shipmentIds, carrierName, carrierPlate, carrierPhone });
     return response.data;
   },
 
@@ -314,8 +379,18 @@ const shipmentService = {
     return response.data;
   },
 
-  async checkNetsisTransfers(): Promise<{ checked: number; markedAsTransferred: number; resetToActive: number; error?: string }> {
-    const response = await apiClient.post('/issorders/check-netsis-transfers');
+  async checkNetsisTransfers(options?: { fromDate?: string; toDate?: string; checkTransferred?: boolean }): Promise<{ checked: number; markedAsTransferred: number; resetToActive: number; netsisDeletedCount: number; totalPending: number; error?: string }> {
+    const body = {
+      fromDate: options?.fromDate ? new Date(options.fromDate).toISOString() : undefined,
+      toDate: options?.toDate ? new Date(options.toDate).toISOString() : undefined,
+      checkTransferred: options?.checkTransferred ?? false,
+    };
+    const response = await apiClient.post('/issorders/check-netsis-transfers', body, { timeout: 0 });
+    return response.data;
+  },
+
+  async checkSingleOrderNetsis(orderNumber: string): Promise<{ found: boolean; wasTransferred: boolean; existsInNetsis: boolean; reverted: boolean; message: string; externalOrderNumber?: string }> {
+    const response = await apiClient.post('/issorders/check-single-order-netsis', { orderNumber }, { timeout: 0 });
     return response.data;
   },
 
@@ -378,8 +453,13 @@ const shipmentService = {
     return response.data;
   },
 
-  async verifyNetsisTransfers(): Promise<{ message: string }> {
-    const response = await apiClient.post('/netsis/shipments/verify-transfers');
+  async verifyNetsisTransfers(filters?: any): Promise<{ message: string }> {
+    const response = await apiClient.post('/netsis/shipments/verify-transfers', filters || {});
+    return response.data;
+  },
+
+  async recoverNetsisTransfers(): Promise<{ checked: number; recovered: number; notFound: number; error?: string }> {
+    const response = await apiClient.post('/netsis/shipments/recover-transfers', {}, { timeout: 0 });
     return response.data;
   },
 

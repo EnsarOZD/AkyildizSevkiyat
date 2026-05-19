@@ -1,3 +1,4 @@
+using Akyildiz.Sevkiyat.Application.External.Netsis.Dtos;
 using Akyildiz.Sevkiyat.Application.Interfaces;
 using Akyildiz.Sevkiyat.Domain.Entities;
 using Akyildiz.Sevkiyat.Domain.Enums;
@@ -14,17 +15,26 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.VerifyNetsisShipmentTran
     ///   ve sevkiyat ReturnedToWarehouse'a alınır.
     /// - Diğer durumlarda NetsisTransferredAt sıfırlanır; sevkiyat tekrar "Netsis'e Aktar" ile gönderilebilir.
     /// </summary>
-    public record VerifyNetsisShipmentTransfersCommand : IRequest<VerifyNetsisShipmentTransfersResult>;
+    public record VerifyNetsisShipmentTransfersCommand : IRequest<VerifyNetsisShipmentTransfersResult>
+    {
+        public DateTime? StartDate { get; init; }
+        public DateTime? EndDate { get; init; }
+        public int? ZoneId { get; init; }
+        public ShipmentStatus? Status { get; init; }
+        public string? Statuses { get; init; }
+        public string? Search { get; init; }
+    }
 
     public class VerifyNetsisShipmentTransfersResult
     {
-        public int Checked          { get; set; }
-        public int Reset            { get; set; }   // Netsis'te hiç bulunamayan → sıfırlanan
-        public int AutoReturnCreated { get; set; }  // Delivered + silinmiş irsaliye → otomatik iade + stok girişi
-        public int StillOk          { get; set; }   // Netsis'te bizim aktarımımız olarak mevcut
-        public int Foreign          { get; set; }   // Netsis'te var ama başka sistem aktarmış — dokunulmadı
-        public int AutoDetected     { get; set; }   // Aktarılmamış ama Netsis'te bulundu → otomatik işaretlendi
-        public string? Error        { get; set; }
+        public int Checked           { get; set; }
+        public int Reset             { get; set; }   // Netsis'te hiç bulunamayan → sıfırlanan
+        public int AutoReturnCreated { get; set; }   // Delivered + silinmiş irsaliye → otomatik iade + stok girişi
+        public int StillOk           { get; set; }   // Netsis'te bizim aktarımımız olarak mevcut
+        public int Foreign           { get; set; }   // Netsis'te var ama başka sistem aktarmış — dokunulmadı
+        public int AutoDetected      { get; set; }   // Aktarılmamış ama Netsis'te bulundu → otomatik işaretlendi
+        public int IrsaliyesSynced   { get; set; }   // StillOk içinden IrsaliyeNo güncellenenler
+        public string? Error         { get; set; }
     }
 
     public class VerifyNetsisShipmentTransfersCommandHandler
@@ -48,21 +58,42 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.VerifyNetsisShipmentTran
             VerifyNetsisShipmentTransfersCommand request,
             CancellationToken cancellationToken)
         {
-            // Netsis'e aktarılmış tüm aktif sevkiyatları kontrol et (Delivered dahil)
-            var verifyStatuses = new[]
-            {
-                ShipmentStatus.ReadyForDispatch,
-                ShipmentStatus.AssignedToVehicle,
-                ShipmentStatus.Dispatched,
-                ShipmentStatus.Delivered,
-            };
-
-            var shipmentSummaries = await _context.Shipments
+            var query = _context.Shipments
+                .Include(s => s.Project)
                 .Include(s => s.IssOrder)
-                .Where(s => s.NetsisTransferredAt.HasValue
-                         && verifyStatuses.Contains(s.Status)
-                         && s.IssOrder != null
-                         && s.IssOrder.NetsisOrderNumber != null)
+                .Where(s => s.IssOrder != null);
+
+            if (request.StartDate.HasValue)
+                query = query.Where(s => s.DeliveryDate.Date >= request.StartDate.Value.Date);
+            if (request.EndDate.HasValue)
+                query = query.Where(s => s.DeliveryDate.Date <= request.EndDate.Value.Date);
+            if (request.ZoneId.HasValue)
+                query = query.Where(s => s.Project.ZoneId == request.ZoneId.Value);
+
+            if (request.Status.HasValue)
+            {
+                query = query.Where(s => s.Status == request.Status.Value);
+            }
+            else if (!string.IsNullOrEmpty(request.Statuses))
+            {
+                var statuses = request.Statuses.Split(',').Select(x => Enum.Parse<ShipmentStatus>(x)).ToList();
+                query = query.Where(s => statuses.Contains(s.Status));
+            }
+
+            if (!string.IsNullOrEmpty(request.Search))
+            {
+                var search = request.Search.ToLower();
+                query = query.Where(s =>
+                    s.Project.Code.ToLower().Contains(search) ||
+                    s.Project.Name.ToLower().Contains(search) ||
+                    (s.IssOrder!.ExternalOrderNumber != null && s.IssOrder.ExternalOrderNumber.ToLower().Contains(search)) ||
+                    (s.IssOrder!.TalepNo != null && s.IssOrder.TalepNo.ToLower().Contains(search)) ||
+                    (s.IrsaliyeNo != null && s.IrsaliyeNo.ToLower().Contains(search)) ||
+                    s.Id.ToString() == search);
+            }
+
+            var shipmentSummaries = await query
+                .Where(s => s.NetsisTransferredAt.HasValue && s.IssOrder!.NetsisOrderNumber != null)
                 .Select(s => new
                 {
                     s.Id,
@@ -74,7 +105,7 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.VerifyNetsisShipmentTran
             if (!shipmentSummaries.Any())
             {
                 var emptyResult = new VerifyNetsisShipmentTransfersResult();
-                emptyResult.AutoDetected = await DetectAlreadyInNetsisAsync(cancellationToken);
+                emptyResult.AutoDetected = await DetectAlreadyInNetsisAsync(query, cancellationToken);
                 return emptyResult;
             }
 
@@ -221,12 +252,75 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.VerifyNetsisShipmentTran
                 result.StillOk = shipmentSummaries.Count - foreign.Count;
             }
 
-            result.AutoDetected = await DetectAlreadyInNetsisAsync(cancellationToken);
+            // StillOk sevkiyatlarda IrsaliyeNo boşsa Netsis'ten çek.
+            // Sipariş numarası (NetsisOrderNumber) ile irsaliye numarası farklı tablolarda — GetIrsaliyelerAsync
+            // TBLSTHAR'dan gerçek FISNO'yu (irsaliye no) döndürür.
+            var stillOkIds = shipmentSummaries
+                .Where(s => !missing.Contains(s.NetsisOrderNumber, StringComparer.OrdinalIgnoreCase)
+                         && !foreign.Contains(s.NetsisOrderNumber, StringComparer.OrdinalIgnoreCase))
+                .Select(s => s.Id)
+                .ToHashSet();
+            result.IrsaliyesSynced = await SyncMissingIrsaliyeAsync(stillOkIds, cancellationToken);
+
+            result.AutoDetected = await DetectAlreadyInNetsisAsync(query, cancellationToken);
 
             return result;
         }
 
-        private async Task<int> DetectAlreadyInNetsisAsync(CancellationToken cancellationToken)
+        private async Task<int> SyncMissingIrsaliyeAsync(
+            IReadOnlySet<int> stillOkIds,
+            CancellationToken cancellationToken)
+        {
+            if (!stillOkIds.Any()) return 0;
+
+            var needIrsaliye = await _context.Shipments
+                .Include(s => s.IssOrder)
+                .Where(s => stillOkIds.Contains(s.Id)
+                         && s.IrsaliyeNo == null
+                         && s.IssOrder != null
+                         && s.IssOrder.NetsisOrderNumber != null)
+                .ToListAsync(cancellationToken);
+
+            if (!needIrsaliye.Any()) return 0;
+
+            _logger.LogInformation(
+                "VerifyNetsisTransfers: {Count} StillOk sevkiyatta IrsaliyeNo eksik, Netsis'ten çekiliyor.",
+                needIrsaliye.Count);
+
+            int synced = 0;
+            foreach (var shipment in needIrsaliye)
+            {
+                try
+                {
+                    var irsaliyeler = await _netsis.GetIrsaliyelerAsync(
+                        new NetsisIrsaliyeQuery { SiparisNo = shipment.IssOrder!.NetsisOrderNumber },
+                        cancellationToken);
+
+                    if (irsaliyeler?.Any() == true)
+                    {
+                        var ilk = irsaliyeler.First();
+                        shipment.SetIrsaliyeInfo(ilk.IrsaliyeNo, ilk.IrsaliyeTarihi);
+                        _logger.LogInformation(
+                            "VerifyNetsisTransfers: Sevkiyat #{Id} → IrsaliyeNo={No} güncellendi.",
+                            shipment.Id, ilk.IrsaliyeNo);
+                        synced++;
+                    }
+                }
+                catch (OperationCanceledException) { throw; }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex,
+                        "VerifyNetsisTransfers: Sevkiyat #{Id} irsaliye çekimi başarısız — atlanıyor.", shipment.Id);
+                }
+            }
+
+            if (synced > 0)
+                await _context.SaveChangesAsync(cancellationToken);
+
+            return synced;
+        }
+
+        private async Task<int> DetectAlreadyInNetsisAsync(IQueryable<Shipment> baseQuery, CancellationToken cancellationToken)
         {
             var exportableStatuses = new[]
             {
@@ -234,8 +328,7 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.VerifyNetsisShipmentTran
                 ShipmentStatus.AssignedToVehicle,
             };
 
-            var candidates = await _context.Shipments
-                .Include(s => s.IssOrder)
+            var candidates = await baseQuery
                 .Where(s => !s.NetsisTransferredAt.HasValue
                          && exportableStatuses.Contains(s.Status)
                          && s.IssOrder != null

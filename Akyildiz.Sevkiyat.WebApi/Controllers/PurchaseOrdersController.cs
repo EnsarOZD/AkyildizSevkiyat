@@ -5,10 +5,13 @@ using Akyildiz.Sevkiyat.Application.PurchaseOrders.Commands.ClosePurchaseOrder;
 using Akyildiz.Sevkiyat.Application.PurchaseOrders.Commands.CreatePurchaseOrder;
 using Akyildiz.Sevkiyat.Application.PurchaseOrders.Commands.UpdatePurchaseOrder;
 using Akyildiz.Sevkiyat.Application.PurchaseOrders.Commands.UpdatePurchaseOrderLine;
+using Akyildiz.Sevkiyat.Application.PurchaseOrders.Commands.MarkEmailSent;
+using Akyildiz.Sevkiyat.Application.PurchaseOrders.Commands.SendPurchaseOrderEmail;
 using Akyildiz.Sevkiyat.Application.PurchaseOrders.Commands.RemovePurchaseOrderLine;
 using Akyildiz.Sevkiyat.Application.PurchaseOrders.Queries.GetPurchaseOrderDetail;
 using Akyildiz.Sevkiyat.Application.PurchaseOrders.Queries.GetPurchaseOrders;
 using Akyildiz.Sevkiyat.Application.PurchaseOrders.Queries.GetReceivablePurchaseOrders;
+using Akyildiz.Sevkiyat.Application.PurchaseOrders.Queries.GetReceivableMaterials;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,7 +19,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace Akyildiz.Sevkiyat.WebApi.Controllers
 {
-    [Authorize(Roles = "Admin,Accounting,Manager")]
+    [Authorize(Roles = "Admin,Accounting,Manager,Warehouse")]
     [ApiController]
     [Route("api/purchase-orders")]
     public class PurchaseOrdersController : ControllerBase
@@ -42,6 +45,13 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             return Ok(result);
         }
 
+        [HttpGet("receivable-materials")]
+        public async Task<IActionResult> GetReceivableMaterials([FromQuery] GetReceivableMaterialsQuery query)
+        {
+            var result = await _mediator.Send(query);
+            return Ok(result);
+        }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetDetail(Guid id)
         {
@@ -49,6 +59,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             return Ok(result);
         }
 
+        [Authorize(Roles = "Admin,Accounting,Manager,Warehouse")]
         [HttpPost]
         public async Task<IActionResult> Create(CreatePurchaseOrderCommand command)
         {
@@ -56,6 +67,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             return CreatedAtAction(nameof(GetDetail), new { id }, id);
         }
 
+        [Authorize(Roles = "Admin,Accounting,Manager,Warehouse")]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(Guid id, UpdatePurchaseOrderCommand command)
         {
@@ -65,6 +77,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             return Ok();
         }
 
+        [Authorize(Roles = "Admin,Accounting,Manager,Warehouse")]
         [HttpPost("{id}/lines")]
         public async Task<IActionResult> AddLine(Guid id, AddPurchaseOrderLineCommand command)
         {
@@ -74,6 +87,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             return Ok(lineId);
         }
 
+        [Authorize(Roles = "Admin,Accounting,Manager,Warehouse")]
         [HttpPut("{id}/lines/{lineId}")]
         public async Task<IActionResult> UpdateLine(Guid id, Guid lineId, UpdatePurchaseOrderLineCommand command)
         {
@@ -83,6 +97,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             return Ok();
         }
 
+        [Authorize(Roles = "Admin,Accounting,Manager,Warehouse")]
         [HttpDelete("{id}/lines/{lineId}")]
         public async Task<IActionResult> RemoveLine(Guid id, Guid lineId)
         {
@@ -90,6 +105,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             return Ok();
         }
 
+        [Authorize(Roles = "Admin,Accounting,Manager")]
         [HttpPost("{id}/approve")]
         public async Task<IActionResult> Approve(Guid id)
         {
@@ -97,6 +113,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             return Ok();
         }
 
+        [Authorize(Roles = "Admin,Accounting,Manager")]
         [HttpPost("{id}/close")]
         public async Task<IActionResult> Close(Guid id)
         {
@@ -104,11 +121,31 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             return Ok();
         }
 
+        [Authorize(Roles = "Admin,Accounting,Manager")]
         [HttpPost("{id}/cancel")]
         public async Task<IActionResult> Cancel(Guid id)
         {
             await _mediator.Send(new CancelPurchaseOrderCommand { Id = id });
             return Ok();
         }
+
+        [Authorize(Roles = "Admin,Accounting,Manager")]
+        [HttpPost("{id}/mark-email-sent")]
+        public async Task<IActionResult> MarkEmailSent(Guid id, [FromBody] MarkEmailSentRequest? body)
+        {
+            await _mediator.Send(new MarkEmailSentCommand { Id = id, SentTo = body?.SentTo });
+            return Ok();
+        }
+
+        [Authorize(Roles = "Admin,Accounting,Manager")]
+        [HttpPost("{id}/send-email")]
+        public async Task<IActionResult> SendEmail(Guid id, [FromBody] SendEmailRequest body)
+        {
+            var sentTo = await _mediator.Send(new SendPurchaseOrderEmailCommand(id, body.PdfBase64));
+            return Ok(new { sentTo });
+        }
     }
+
+    public record SendEmailRequest(string? PdfBase64);
+    public record MarkEmailSentRequest(string? SentTo);
 }

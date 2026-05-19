@@ -202,6 +202,10 @@ const onStockSelect = (line: LineItem, stock: any) => {
         line.stockMasterId = stock.id || stock.Id;
         line.stockName = stock.stockName || stock.StockName;
         line.unit = stock.unit || stock.Unit || 'Adet';
+        const isLastLine = form.lines[form.lines.length - 1]?.tempId === line.tempId;
+        if (isLastLine) {
+            addLine();
+        }
     } else {
         line.stockMasterId = 0;
         line.unit = '';

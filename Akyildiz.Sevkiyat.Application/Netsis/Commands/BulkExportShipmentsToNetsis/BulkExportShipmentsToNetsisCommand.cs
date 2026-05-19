@@ -44,6 +44,17 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.BulkExportShipmentsToNet
                 .Where(s => request.ShipmentIds.Contains(s.Id))
                 .ToListAsync(cancellationToken);
 
+            // Tüm sevkiyatların Netsis stok kodlarını toplu çek — döngüde tekrar sorgu yapmamak için
+            var allNetsisKodlari = shipments
+                .SelectMany(s => s.Lines)
+                .Select(l => l.StockMaster?.NetsisStockCode)
+                .Where(c => !string.IsNullOrWhiteSpace(c))
+                .Select(c => c!)
+                .Distinct()
+                .ToList();
+
+            var kdvMap = await _netsisClient.GetStockKdvRatesAsync(allNetsisKodlari, cancellationToken);
+
             int exported = 0, skipped = 0;
             var errors = new List<string>();
 
@@ -119,7 +130,10 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.BulkExportShipmentsToNet
                             Miktar      = l.DeliveredQty,
                             Birim       = l.Unit.ToString(),
                             BirimFiyati = l.IssOrderLine?.BirimFiyati ?? 0,
-                            KdvOrani    = l.IssOrderLine?.KDVOrani    ?? 0,
+                            KdvOrani    = l.StockMaster?.NetsisStockCode != null &&
+                                          kdvMap.TryGetValue(l.StockMaster.NetsisStockCode, out var nKdv)
+                                              ? nKdv
+                                              : (decimal)(int)(l.StockMaster?.TaxRate ?? 0),
                         }).ToList();
 
                     var siparisRequest = new NetsisSiparisRequest

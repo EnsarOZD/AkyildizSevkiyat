@@ -1,5 +1,11 @@
 import apiClient from './apiClient';
 
+export interface EmailSettingsDto {
+  procurementEmailCc: string | null;
+  dispatchEmailCc: string | null;
+  dispatchEmailEnabled: boolean;
+}
+
 export interface PoCounterDto {
   id: number;
   year: number;
@@ -14,6 +20,12 @@ export interface DepotSettingsDto {
   depotAddress: string | null;
   depotLatitude: number | null;
   depotLongitude: number | null;
+}
+
+export interface WmsSettingsDto {
+  wmsPutawayEnabled: boolean;
+  wmsLocationPickingEnabled: boolean;
+  wmsBarcodePickingEnabled: boolean;
 }
 
 const systemSettingsService = {
@@ -39,6 +51,26 @@ const systemSettingsService = {
 
   async updatePoCounter(id: number, lastValue: number): Promise<PoCounterDto> {
     const response = await apiClient.put<PoCounterDto>(`/system-settings/po-counter/${id}`, { lastValue });
+    return response.data;
+  },
+
+  async getEmailSettings(): Promise<EmailSettingsDto> {
+    const response = await apiClient.get<EmailSettingsDto>('/system-settings/email');
+    return response.data;
+  },
+
+  async saveEmailSettings(data: EmailSettingsDto): Promise<EmailSettingsDto> {
+    const response = await apiClient.put<EmailSettingsDto>('/system-settings/email', data);
+    return response.data;
+  },
+
+  async getWmsSettings(): Promise<WmsSettingsDto> {
+    const response = await apiClient.get<WmsSettingsDto>('/system-settings/wms');
+    return response.data;
+  },
+
+  async saveWmsSettings(data: WmsSettingsDto): Promise<WmsSettingsDto> {
+    const response = await apiClient.put<WmsSettingsDto>('/system-settings/wms', data);
     return response.data;
   },
 

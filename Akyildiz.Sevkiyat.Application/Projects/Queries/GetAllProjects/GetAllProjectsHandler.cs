@@ -31,14 +31,14 @@ namespace Akyildiz.Sevkiyat.Application.Projects.Queries
                     p.Name.ToLower().Contains(s));
             }
 
-            var projected = query.Select(p => new ProjectDto(
+            var projected = query.OrderBy(p => p.Name).Select(p => new ProjectDto(
                 p.Id, p.Code, p.Name, p.Region, p.IsActive,
                 p.ZoneId, p.Zone != null ? p.Zone.Name : null,
                 p.NetsisCariKodu, p.DeliveryOrder,
                 p.Latitude, p.Longitude, p.Address,
                 p.DeliveryWindowStart, p.DeliveryWindowEnd,
                 p.NetsisTeslimCariKodu
-            )).OrderBy(p => p.Code);
+            ));
 
             return await PaginatedList<ProjectDto>.CreateAsync(projected, request.PageNumber, request.PageSize);
         }

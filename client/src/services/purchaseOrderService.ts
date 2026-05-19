@@ -9,6 +9,8 @@ export interface PurchaseOrder {
   supplierNameSnapshot: string;
   status: string;
   lineCount: number;
+  emailSentAt?: string;
+  emailSentTo?: string;
 }
 
 export interface PurchaseOrderQueryParams {
@@ -18,6 +20,9 @@ export interface PurchaseOrderQueryParams {
   searchTerm?: string;
   fromDate?: string;
   toDate?: string;
+  emailSent?: boolean;
+  stockName?: string;
+  hidePassive?: boolean;
   pageNumber?: number;
   pageSize?: number;
 }
@@ -90,6 +95,15 @@ const purchaseOrderService = {
     await apiClient.post(`/purchase-orders/${id}/close`);
   },
 
+  async markEmailSent(id: string, sentTo?: string): Promise<void> {
+    await apiClient.post(`/purchase-orders/${id}/mark-email-sent`, { sentTo: sentTo || null });
+  },
+
+  async sendEmail(id: string, pdfBase64?: string): Promise<{ sentTo: string }> {
+    const response = await apiClient.post(`/purchase-orders/${id}/send-email`, { pdfBase64: pdfBase64 ?? null });
+    return response.data;
+  },
+
   async update(id: string, data: { orderDate?: string; expectedDeliveryDate?: string; note?: string }): Promise<void> {
     await apiClient.put(`/purchase-orders/${id}`, data);
   },
@@ -108,6 +122,13 @@ const purchaseOrderService = {
 
   async removeLine(id: string, lineId: string): Promise<void> {
     await apiClient.delete(`/purchase-orders/${id}/lines/${lineId}`);
+  },
+
+  async getReceivableMaterials(searchTerm?: string): Promise<any[]> {
+    const response = await apiClient.get('/purchase-orders/receivable-materials', {
+      params: searchTerm ? { searchTerm } : undefined
+    });
+    return response.data || [];
   },
 
   async exportToNetsis(id: string): Promise<{ netsisPONo: string; message: string }> {

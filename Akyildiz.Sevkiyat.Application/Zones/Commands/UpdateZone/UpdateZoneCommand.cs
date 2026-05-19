@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Akyildiz.Sevkiyat.Application.Zones.Commands.UpdateZone
 {
-    public record UpdateZoneCommand(int Id, string Name, int Order) : IRequest<Unit>;
+    public record UpdateZoneCommand(int Id, string Name, int Order, bool IsOutOfCity) : IRequest<Unit>;
 
     public class UpdateZoneCommandHandler : IRequestHandler<UpdateZoneCommand, Unit>
     {
@@ -28,6 +28,7 @@ namespace Akyildiz.Sevkiyat.Application.Zones.Commands.UpdateZone
 
             entity.Name = request.Name;
             entity.Order = request.Order;
+            entity.IsOutOfCity = request.IsOutOfCity;
 
             await _context.SaveChangesAsync(cancellationToken);
 

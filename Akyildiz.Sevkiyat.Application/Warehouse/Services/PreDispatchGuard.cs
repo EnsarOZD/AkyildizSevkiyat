@@ -31,7 +31,7 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Services
         /// </summary>
         public async Task ThrowIfShipmentsNotReadyAsync(int zonePreparationId, CancellationToken ct)
         {
-            var notReady = await _context.Shipments
+            var notReady = await _context.WarehouseShipments
                 .Where(s => s.ZonePreparationId == zonePreparationId
                          && s.Status != ShipmentStatus.Cancelled
                          && s.Status != ShipmentStatus.Passive
@@ -57,7 +57,7 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Services
         /// </summary>
         public async Task ThrowIfZoneHasOpenErrorsAsync(int zonePreparationId, CancellationToken ct)
         {
-            var shipmentIds = await _context.Shipments
+            var shipmentIds = await _context.WarehouseShipments
                 .Where(s => s.ZonePreparationId == zonePreparationId
                          && s.Status != ShipmentStatus.Cancelled
                          && s.Status != ShipmentStatus.Passive)
@@ -90,7 +90,7 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Services
         /// </summary>
         public async Task<PreDispatchSummaryDto> GetSummaryAsync(int zonePreparationId, CancellationToken ct)
         {
-            var shipments = await _context.Shipments
+            var shipments = await _context.WarehouseShipments
                 .Where(s => s.ZonePreparationId == zonePreparationId
                          && s.Status != ShipmentStatus.Cancelled
                          && s.Status != ShipmentStatus.Passive

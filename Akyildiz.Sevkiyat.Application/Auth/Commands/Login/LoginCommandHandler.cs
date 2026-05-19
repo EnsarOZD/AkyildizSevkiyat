@@ -14,6 +14,7 @@ namespace Akyildiz.Sevkiyat.Application.Auth.Commands.Login
         private readonly IPasswordHasher _passwordHasher;
         private readonly ITokenService _tokenService;
         private readonly int _refreshTokenExpiryHours;
+        private readonly int _rememberMeExpiryHours;
 
         public LoginCommandHandler(
             IApplicationDbContext context,
@@ -25,12 +26,13 @@ namespace Akyildiz.Sevkiyat.Application.Auth.Commands.Login
             _passwordHasher = passwordHasher;
             _tokenService = tokenService;
             _refreshTokenExpiryHours = int.TryParse(configuration["Jwt:RefreshTokenExpiryHours"], out var h) ? h : 8;
+            _rememberMeExpiryHours = int.TryParse(configuration["Jwt:RememberMeExpiryHours"], out var r) ? r : 168;
         }
 
         public async Task<LoginResponse> Handle(LoginCommand request, CancellationToken cancellationToken)
         {
             var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Email == request.Email, cancellationToken);
+                .FirstOrDefaultAsync(u => u.Username == request.Username || u.Email == request.Username, cancellationToken);
 
             if (user == null)
                 throw new UnauthorizedException("Kullanıcı adı veya şifre hatalı.");
@@ -47,12 +49,13 @@ namespace Akyildiz.Sevkiyat.Application.Auth.Commands.Login
             var rawRefreshToken = GenerateRawToken();
             var tokenHash = HashToken(rawRefreshToken);
 
+            var expiryHours = request.RememberMe ? _rememberMeExpiryHours : _refreshTokenExpiryHours;
             _context.RefreshTokens.Add(new RefreshTokenEntity
             {
                 Id = Guid.NewGuid(),
                 UserId = user.Id,
                 TokenHash = tokenHash,
-                ExpiresAt = DateTime.UtcNow.AddHours(_refreshTokenExpiryHours),
+                ExpiresAt = DateTime.UtcNow.AddHours(expiryHours),
                 CreatedAt = DateTime.UtcNow
             });
 
@@ -66,6 +69,7 @@ namespace Akyildiz.Sevkiyat.Application.Auth.Commands.Login
                 {
                     Id = user.Id,
                     Email = user.Email,
+                    Username = user.Username,
                     FirstName = user.FirstName,
                     LastName = user.LastName,
                     Role = user.Role.ToString()

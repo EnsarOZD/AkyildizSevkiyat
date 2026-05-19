@@ -1,4 +1,5 @@
 using Akyildiz.Sevkiyat.Application.Vehicles.Commands.GenerateVehicleQrCode;
+using Akyildiz.Sevkiyat.Application.Vehicles.Queries.GetVehicleQrImage;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -22,6 +23,14 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         public async Task<IActionResult> GenerateQr(int vehicleId, CancellationToken ct)
         {
             var result = await _mediator.Send(new GenerateVehicleQrCodeCommand(vehicleId), ct);
+            return Ok(result);
+        }
+
+        [HttpGet("{vehicleId:int}/qr-image")]
+        [Authorize(Roles = "Admin,Manager,Accounting,Warehouse")]
+        public async Task<IActionResult> GetQrImage(int vehicleId, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetVehicleQrImageQuery(vehicleId), ct);
             return Ok(result);
         }
     }

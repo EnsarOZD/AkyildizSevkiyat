@@ -21,7 +21,7 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.MarkProjectMicroReady
     ) : IRequest<MarkProjectMicroReadyResult>, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles =>
-            new[] { "Admin", "Manager", "Warehouse", "Driver" };
+            new[] { "Admin", "Manager", "Accounting", "Warehouse", "Driver" };
     }
 
     public class MarkProjectMicroReadyResult
@@ -109,6 +109,8 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.MarkProjectMicroReady
             // 1. Mark as Ready
             projectPrep.IsMicroReady = true;
             projectPrep.MicroReadyAt = DateTime.UtcNow;
+            projectPrep.PreparedByUserName = _currentUserService.FullName;
+            projectPrep.ReleaseLock();
 
             // 2. Check Parent Status Transition
             // If parent status is lower than MicroReady (e.g. Draft or MicroPicking), we might update it.
@@ -147,8 +149,8 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.MarkProjectMicroReady
             }
 
             // Sync Shipment Status for this Project
-            var shipments = await _context.Shipments
-                .Where(s => s.ProjectId == projectPrep.ProjectId && 
+            var shipments = await _context.WarehouseShipments
+                .Where(s => s.ProjectId == projectPrep.ProjectId &&
                             s.ZonePreparationId == projectPrep.ZonePreparationId && // Added Filter
                             s.Status < targetStatus && 
                             s.Status != ShipmentStatus.Created && 

@@ -13,6 +13,9 @@ namespace Akyildiz.Sevkiyat.Application.PurchaseOrders.Queries.GetPurchaseOrders
         public string? SupplierName { get; set; }
         public DateOnly? StartData { get; set; }
         public DateOnly? EndDate { get; set; }
+        public bool? EmailSent { get; set; }
+        public string? StockName { get; set; }
+        public bool HidePassive { get; set; } = false;
         // Pagination
         public int PageNumber { get; set; } = 1;
         public int PageSize { get; set; } = 20;
@@ -30,6 +33,8 @@ namespace Akyildiz.Sevkiyat.Application.PurchaseOrders.Queries.GetPurchaseOrders
         public int StatusValue { get; set; }
         public string? Note { get; set; }
         public int LineCount { get; set; }
+        public DateTime? EmailSentAt { get; set; }
+        public string? EmailSentTo { get; set; }
     }
 
     public class GetPurchaseOrdersQueryHandler : IRequestHandler<GetPurchaseOrdersQuery, PaginatedList<PurchaseOrderDto>>
@@ -57,6 +62,22 @@ namespace Akyildiz.Sevkiyat.Application.PurchaseOrders.Queries.GetPurchaseOrders
             if (request.EndDate.HasValue)
                 query = query.Where(x => x.OrderDate <= request.EndDate.Value);
 
+            if (request.EmailSent.HasValue)
+            {
+                if (request.EmailSent.Value)
+                    query = query.Where(x => x.EmailSentAt != null);
+                else
+                    query = query.Where(x => x.EmailSentAt == null);
+            }
+
+            if (!string.IsNullOrEmpty(request.StockName))
+                query = query.Where(x => x.Lines.Any(l =>
+                    EF.Functions.Collate(l.StockMaster.StockName, "Turkish_CI_AS")
+                        .Contains(EF.Functions.Collate(request.StockName, "Turkish_CI_AS"))));
+
+            if (request.HidePassive && !request.Status.HasValue)
+                query = query.Where(x => x.Status != PurchaseOrderStatus.Closed && x.Status != PurchaseOrderStatus.Cancelled);
+
             var projected = query
                 .OrderByDescending(x => x.OrderDate)
                 .Select(x => new PurchaseOrderDto
@@ -70,7 +91,9 @@ namespace Akyildiz.Sevkiyat.Application.PurchaseOrders.Queries.GetPurchaseOrders
                     Status = x.Status.ToString(),
                     StatusValue = (int)x.Status,
                     Note = x.Note,
-                    LineCount = x.Lines.Count
+                    LineCount = x.Lines.Count,
+                    EmailSentAt = x.EmailSentAt,
+                    EmailSentTo = x.EmailSentTo
                 });
 
             return await PaginatedList<PurchaseOrderDto>.CreateAsync(projected, request.PageNumber, request.PageSize);

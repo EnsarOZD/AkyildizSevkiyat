@@ -16,7 +16,8 @@ namespace Akyildiz.Sevkiyat.Application.Transport.Vehicles.Queries.GetVehicles
         VehicleType VehicleType,
         string VehicleTypeName,
         string? Description,
-        bool IsActive);
+        bool IsActive,
+        string? QrCode);
 
     public record GetVehiclesQuery : IRequest<List<VehicleDto>>;
 
@@ -37,7 +38,8 @@ namespace Akyildiz.Sevkiyat.Application.Transport.Vehicles.Queries.GetVehicles
                     v.VehicleType == VehicleType.Kamyon   ? "Kamyon"   :
                     v.VehicleType == VehicleType.Kamyonet ? "Kamyonet" : "Minibüs",
                     v.Description,
-                    v.IsActive))
+                    v.IsActive,
+                    v.QrCode))
                 .ToListAsync(cancellationToken);
         }
     }

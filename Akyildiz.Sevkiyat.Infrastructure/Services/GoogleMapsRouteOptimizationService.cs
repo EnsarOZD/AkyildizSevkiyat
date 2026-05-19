@@ -213,9 +213,11 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
                 return new RouteOptimizationResultDto(
                     new List<RouteStopDto>
                     {
-                        new(1, validStops[0].Code, validStops[0].Name, validStops[0].Address, null, null)
+                        new(1, validStops[0].Code, validStops[0].Name, validStops[0].Address, null, null,
+                            validStops[0].Latitude, validStops[0].Longitude)
                     },
-                    0, 0, excludedProjects, bridgeNotice);
+                    0, 0, excludedProjects, bridgeNotice,
+                    null, startLat, startLon);
             }
 
             // ── DÜZELTME 1&2: Destination = last real stop (ReturnToStart=false)
@@ -394,7 +396,8 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
 
             // Stop 1: origin project (legacy, no incoming leg)
             if (!useNewOrdering && originIsProject)
-                stops.Add(new RouteStopDto(stopOrder++, validStops[0].Code, validStops[0].Name, validStops[0].Address, null, null));
+                stops.Add(new RouteStopDto(stopOrder++, validStops[0].Code, validStops[0].Name, validStops[0].Address, null, null,
+                    validStops[0].Latitude, validStops[0].Longitude));
 
             // Via waypoints don't create leg boundaries — track legIndex separately
             int legIndex = 0;
@@ -411,7 +414,8 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
 
                 stops.Add(new RouteStopDto(stopOrder++, pair.Code, pair.Name, pair.Address,
                     legDist.HasValue ? legDist / 1000.0 : null,
-                    legDur.HasValue ? legDur / 60.0 : null));
+                    legDur.HasValue ? legDur / 60.0 : null,
+                    pair.Latitude, pair.Longitude));
                 legIndex++;
             }
 
@@ -423,7 +427,8 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
                 double? legDur = legIndex < legs.Count ? GetLegDurationSeconds(legs[legIndex]) : null;
                 stops.Add(new RouteStopDto(stopOrder++, destinationStop.Code, destinationStop.Name, destinationStop.Address,
                     legDist.HasValue ? legDist / 1000.0 : null,
-                    legDur.HasValue ? legDur / 60.0 : null));
+                    legDur.HasValue ? legDur / 60.0 : null,
+                    destinationStop.Latitude, destinationStop.Longitude));
             }
 
             // Total distance/duration:
@@ -444,7 +449,9 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
                 finalDurMin,
                 excludedProjects,
                 bridgeNotice,
-                timeWindowWarnings.Count > 0 ? timeWindowWarnings : null);
+                timeWindowWarnings.Count > 0 ? timeWindowWarnings : null,
+                startLat,
+                startLon);
             } // end using (doc)
         }
 

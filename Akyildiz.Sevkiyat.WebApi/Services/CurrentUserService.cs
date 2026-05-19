@@ -44,5 +44,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Services
         }
 
         public string? Email => _httpContextAccessor.HttpContext?.User?.FindFirstValue(JwtRegisteredClaimNames.Email);
+
+        public string? FullName => _httpContextAccessor.HttpContext?.User?.FindFirstValue(JwtRegisteredClaimNames.Name);
     }
 }

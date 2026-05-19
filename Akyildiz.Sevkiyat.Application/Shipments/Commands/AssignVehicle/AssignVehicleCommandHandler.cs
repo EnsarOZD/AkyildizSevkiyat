@@ -55,10 +55,7 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.AssignVehicle
                 throw new DomainException("Seçilen araç aktif değil.");
 
             shipment.SetDriverInfo(driver.FullName, vehicle.PlateNumber, driver.Id);
-            shipment.ChangeStatus(ShipmentStatus.AssignedToVehicle, _currentUserService.UserId);
-
-            // V1 WORKAROUND: İlk versiyonda şöför paneli olmadığı için, araç ataması yapıldığında direkt 'Delivered' (Teslim) yapıyoruz.
-            shipment.ChangeStatus(ShipmentStatus.Delivered, _currentUserService.UserId, "V1 Otomatik Teslimat (Şöför paneli kullanımı olmadığı için.)");
+            shipment.ChangeStatus(ShipmentStatus.Dispatched, _currentUserService.UserId);
 
             await _context.SaveChangesAsync(cancellationToken);
 

@@ -1,5 +1,6 @@
 using Akyildiz.Sevkiyat.Application.Driver.Commands.EndDriverSession;
 using Akyildiz.Sevkiyat.Application.Driver.Commands.StartDriverSession;
+using Akyildiz.Sevkiyat.Application.Driver.Commands.UpdateRouteOrder;
 using Akyildiz.Sevkiyat.Application.Driver.Queries.GetActiveDriverSession;
 using Akyildiz.Sevkiyat.Application.Driver.Queries.GetDriverRoute;
 using Akyildiz.Sevkiyat.Application.Driver.Queries.GetDriverShipments;
@@ -66,6 +67,19 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             CancellationToken cancellationToken)
         {
             return Ok(await _mediator.Send(new GetActiveDriverSessionQuery(), cancellationToken));
+        }
+
+        /// <summary>
+        /// Şoför rota sıralamasını günceller (ZonePreparationProject.RouteOrder).
+        /// Project.DeliveryOrder'ı etkilemez.
+        /// </summary>
+        [HttpPut("route/reorder")]
+        public async Task<IActionResult> ReorderRoute(
+            [FromBody] UpdateDriverRouteOrderCommand command,
+            CancellationToken cancellationToken)
+        {
+            await _mediator.Send(command, cancellationToken);
+            return NoContent();
         }
     }
 }

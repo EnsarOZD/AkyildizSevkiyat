@@ -22,6 +22,11 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
         public string? Notes { get; private set; }
         public string? ClosedByUserId { get; private set; }
 
+        public string? StartOdometerPhotoPath { get; private set; }
+        public string? EndOdometerPhotoPath { get; private set; }
+        public int? StartOdometerKm { get; private set; }
+        public int? EndOdometerKm { get; private set; }
+
         // Navigation
         public Driver Driver { get; private set; } = null!;
         public Vehicle Vehicle { get; private set; } = null!;
@@ -31,7 +36,9 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
 
         public static DriverSession Create(
             int driverId, int vehicleId, int? zonePreparationId,
-            double latitude, double longitude, string? deviceFingerprint)
+            double latitude, double longitude, string? deviceFingerprint,
+            string? startOdometerPhotoPath = null,
+            int? startOdometerKm = null)
         {
             return new DriverSession
             {
@@ -43,11 +50,13 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
                 StartLatitude = latitude,
                 StartLongitude = longitude,
                 Status = DriverSessionStatus.Open,
-                DeviceFingerprint = deviceFingerprint
+                DeviceFingerprint = deviceFingerprint,
+                StartOdometerPhotoPath = startOdometerPhotoPath,
+                StartOdometerKm = startOdometerKm,
             };
         }
 
-        public void Close(double latitude, double longitude)
+        public void Close(double latitude, double longitude, string? endOdometerPhotoPath = null, int? endOdometerKm = null)
         {
             if (Status != DriverSessionStatus.Open)
                 throw new DomainException("Sadece açık session kapatılabilir.");
@@ -56,6 +65,8 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
             EndLongitude = longitude;
             TotalDurationMinutes = (int)(EndTime.Value - StartTime).TotalMinutes;
             Status = DriverSessionStatus.Closed;
+            EndOdometerPhotoPath = endOdometerPhotoPath;
+            EndOdometerKm = endOdometerKm;
         }
 
         public void ForceClose(string adminUserId, string? notes = null)

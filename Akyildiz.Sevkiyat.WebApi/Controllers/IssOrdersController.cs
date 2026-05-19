@@ -1,6 +1,7 @@
 using Akyildiz.Sevkiyat.Application.Common.Interfaces;
 using Akyildiz.Sevkiyat.Application.Orders.Commands.CheckNetsisTransfers;
 using Akyildiz.Sevkiyat.Application.Orders.Commands.CheckOrderMappingStatus;
+using Akyildiz.Sevkiyat.Application.Orders.Commands.CheckSingleOrderNetsis;
 using Akyildiz.Sevkiyat.Application.Orders.Commands.ImportIssOrders;
 using Akyildiz.Sevkiyat.Application.Orders.Commands.StartImportBatch;
 using Akyildiz.Sevkiyat.Application.Orders.Commands.BulkDeactivateIssOrders;
@@ -134,10 +135,27 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
 
         [HttpPost("check-netsis-transfers")]
         [Authorize(Roles = "Admin,Accounting,Manager")]
-        public async Task<IActionResult> CheckNetsisTransfers()
+        public async Task<IActionResult> CheckNetsisTransfers([FromBody] CheckNetsisTransfersRequest? body)
         {
-            var result = await _mediator.Send(new CheckNetsisTransfersCommand());
+            var command = new CheckNetsisTransfersCommand
+            {
+                FromDate         = body?.FromDate,
+                ToDate           = body?.ToDate,
+                CheckTransferred = body?.CheckTransferred ?? false,
+            };
+            var result = await _mediator.Send(command);
+            return Ok(result);
+        }
+
+        [HttpPost("check-single-order-netsis")]
+        [Authorize(Roles = "Admin,Accounting,Manager")]
+        public async Task<IActionResult> CheckSingleOrderNetsis([FromBody] CheckSingleOrderRequest body)
+        {
+            var result = await _mediator.Send(new CheckSingleOrderNetsisCommand(body.OrderNumber));
             return Ok(result);
         }
     }
+
+    public record CheckNetsisTransfersRequest(DateTime? FromDate, DateTime? ToDate, bool CheckTransferred = false);
+    public record CheckSingleOrderRequest(string OrderNumber);
 }

@@ -9,8 +9,8 @@ using System.Threading.Tasks;
 
 namespace Akyildiz.Sevkiyat.Application.Transport.Drivers.Queries.GetDrivers
 {
-    public record DriverDto(int Id, string FullName, string? Phone, bool IsActive);
-    
+    public record DriverDto(int Id, string FullName, string? Phone, bool IsActive, int? UserId);
+
     public record GetDriversQuery : IRequest<List<DriverDto>>;
 
     public class GetDriversQueryHandler : IRequestHandler<GetDriversQuery, List<DriverDto>>
@@ -22,7 +22,7 @@ namespace Akyildiz.Sevkiyat.Application.Transport.Drivers.Queries.GetDrivers
         {
             return await _context.Drivers
                 .OrderBy(d => d.FullName)
-                .Select(d => new DriverDto(d.Id, d.FullName, d.Phone, d.IsActive))
+                .Select(d => new DriverDto(d.Id, d.FullName, d.Phone, d.IsActive, d.UserId))
                 .ToListAsync(cancellationToken);
         }
     }

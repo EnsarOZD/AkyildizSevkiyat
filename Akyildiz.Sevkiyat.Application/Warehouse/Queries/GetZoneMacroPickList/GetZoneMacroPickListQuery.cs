@@ -19,8 +19,9 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetZoneMacroPickList
         decimal TotalOrderedQty,
         decimal TotalPickedQty,
         int ProjectCount,
-        bool IsCompleted, 
-        string? Category
+        bool IsCompleted,
+        string? Category,
+        int PickingOrder
     );
 
     public record GetZoneMacroPickListQuery(int ZonePreparationId) : IRequest<List<MacroPickItemDto>>;
@@ -44,6 +45,7 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetZoneMacroPickList
             public string StockName { get; set; } = string.Empty;
             public string Unit { get; set; } = string.Empty;
             public string? Category { get; set; }
+            public int PickingOrder { get; set; }
             public int? LocalStockId { get; set; }
             public string OriginalStockCode { get; set; } = string.Empty;
             public string ProjectName { get; set; } = string.Empty;
@@ -71,79 +73,101 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetZoneMacroPickList
                     sl.Shipment.Status != ShipmentStatus.Cancelled &&
                     sl.Shipment.Status != ShipmentStatus.Passive
                 )
-                .Select(sl => new 
+                .Select(sl => new
                 {
-                   sl.Id,
-                   sl.OrderedQty,
-                   sl.DeliveredQty,
-                   StockCode = sl.IssOrderLine != null ? sl.IssOrderLine.StockCode : sl.StockCode,
-                   sl.StockName,
-                   sl.Unit,
-                   sl.Shipment.ProjectId,
-                   ProjectName = sl.Shipment.Project.Name,
-                   sl.StockMasterId,
-                   PickingType = sl.StockMaster != null ? (PickingType?)sl.StockMaster.PickingType : null
+                    sl.Id,
+                    sl.OrderedQty,
+                    sl.DeliveredQty,
+                    // ISS kodu sadece doğrudan StockMaster bağlantısı yoksa kullan
+                    ExternalStockCode = sl.IssOrderLine != null ? sl.IssOrderLine.StockCode : sl.StockCode,
+                    sl.StockCode,
+                    sl.StockName,
+                    sl.Unit,
+                    sl.Shipment.ProjectId,
+                    ProjectName = sl.Shipment.Project.Name,
+                    sl.StockMasterId,
+                    PickingType    = sl.StockMaster != null ? (PickingType?)sl.StockMaster.PickingType : null,
+                    LocalStockCode = sl.StockMaster != null ? sl.StockMaster.StockCode : null,
+                    LocalStockName = sl.StockMaster != null ? sl.StockMaster.StockName : null,
+                    LocalUnit      = sl.StockMaster != null ? sl.StockMaster.Unit.ToString() : null,
+                    LocalCategory  = sl.StockMaster != null ? sl.StockMaster.Category.ToString() : null,
+                    LocalPickingOrder = sl.StockMaster != null ? sl.StockMaster.PickingOrder : 0,
                 })
                 .ToListAsync(cancellationToken);
 
-            // Fetch Mappings
-            var externalCodes = lines.Select(l => l.StockCode).Where(x => x != null).Distinct().ToList();
+            // Fetch Mappings — sadece doğrudan StockMaster bağlantısı olmayan kalemler için
+            var needsMappingCodes = lines
+                .Where(l => !l.StockMasterId.HasValue)
+                .Select(l => l.ExternalStockCode)
+                .Where(x => x != null)
+                .Distinct()
+                .ToList();
+
             var mappings = await _context.StockMappings
                 .Include(m => m.LocalStock)
                 .AsNoTracking()
-                .Where(m => externalCodes.Contains(m.ExternalStockCode))
+                .Where(m => needsMappingCodes.Contains(m.ExternalStockCode))
                 .ToListAsync(cancellationToken);
 
-            // Prepare Aggregation List
             var rawItems = new List<MacroRawItem>();
 
-            foreach(var line in lines)
+            foreach (var line in lines)
             {
-                // Safety check for stockcode
-                if (string.IsNullOrEmpty(line.StockCode)) continue; 
+                if (string.IsNullOrEmpty(line.ExternalStockCode) && string.IsNullOrEmpty(line.StockCode)) continue;
 
-                var mapping = mappings.FirstOrDefault(m => m.ExternalStockCode.Equals(line.StockCode, System.StringComparison.OrdinalIgnoreCase));
-                
                 bool isMacro = false;
-                
-                if (line.StockMasterId.HasValue && line.PickingType.HasValue)
+                string finalStockCode = line.StockCode;
+                string finalStockName = line.StockName;
+                string finalUnit = line.Unit.ToString();
+                string? category = null;
+                int? localStockId = line.StockMasterId;
+
+                int pickingOrder = 0;
+
+                if (line.StockMasterId.HasValue)
                 {
+                    // Doğrudan StockMaster bağlantısı: her zaman öncelikli
                     if (line.PickingType == PickingType.Macro) isMacro = true;
+                    finalStockCode = line.LocalStockCode ?? line.StockCode;
+                    finalStockName = line.LocalStockName ?? line.StockName;
+                    finalUnit      = line.LocalUnit ?? line.Unit.ToString();
+                    category       = line.LocalCategory;
+                    pickingOrder   = line.LocalPickingOrder;
                 }
-                else if (mapping != null && mapping.LocalStock != null)
+                else
                 {
-                    if (mapping.LocalStock.PickingType == PickingType.Macro) isMacro = true;
-                }
+                    var mapping = mappings.FirstOrDefault(m =>
+                        m.ExternalStockCode.Equals(line.ExternalStockCode, System.StringComparison.OrdinalIgnoreCase));
 
-                if (isMacro)
-                {
-                    string finalStockCode = line.StockCode;
-                    string finalStockName = line.StockName;
-                    string finalUnit = line.Unit.ToString();
-                    string? category = null;
-                    int? localStockId = line.StockMasterId;
-
-                    if (mapping != null && mapping.LocalStock != null)
+                    if (mapping?.LocalStock != null)
                     {
+                        if (mapping.LocalStock.PickingType == PickingType.Macro) isMacro = true;
                         finalStockCode = mapping.LocalStock.StockCode;
                         finalStockName = mapping.LocalStock.StockName;
-                        finalUnit = mapping.LocalStock.Unit.ToString(); 
-                        category = mapping.LocalStock.Category.ToString();
-                        localStockId = mapping.LocalStock.Id;
+                        finalUnit      = mapping.LocalStock.Unit.ToString();
+                        category       = mapping.LocalStock.Category.ToString();
+                        pickingOrder   = mapping.LocalStock.PickingOrder;
+                        localStockId   = mapping.LocalStock.Id;
                     }
+                }
 
-                    rawItems.Add(new MacroRawItem {
-                        LineId = line.Id,
-                        ProjectId = line.ProjectId,
-                        OrderedQty = line.OrderedQty,
-                        PickedQty = line.DeliveredQty,
-                        StockCode = finalStockCode,
-                        StockName = finalStockName,
-                        Unit = finalUnit,
-                        Category = category,
-                        LocalStockId = localStockId,
-                        OriginalStockCode = line.StockCode,
-                        ProjectName = line.ProjectName
+                // Gıda ürünleri GidaHazirlik aşamasında ayrı toplanır — macro listesine dahil etme
+                if (isMacro && category != StockCategory.Gida.ToString())
+                {
+                    rawItems.Add(new MacroRawItem
+                    {
+                        LineId            = line.Id,
+                        ProjectId         = line.ProjectId,
+                        OrderedQty        = line.OrderedQty,
+                        PickedQty         = line.DeliveredQty,
+                        StockCode         = finalStockCode,
+                        StockName         = finalStockName,
+                        Unit              = finalUnit,
+                        Category          = category,
+                        PickingOrder      = pickingOrder,
+                        LocalStockId      = localStockId,
+                        OriginalStockCode = line.ExternalStockCode,
+                        ProjectName       = line.ProjectName
                     });
                 }
             }
@@ -159,9 +183,10 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetZoneMacroPickList
                     g.Sum(x => x.PickedQty),
                     g.Select(x => x.ProjectId).Distinct().Count(),
                     g.Sum(x => x.PickedQty) >= g.Sum(x => x.OrderedQty),
-                    g.First().Category
+                    g.First().Category,
+                    g.First().PickingOrder
                 ))
-                .OrderBy(r => r.Category).ThenBy(r => r.StockName)
+                .OrderBy(r => r.Category).ThenBy(r => r.PickingOrder).ThenBy(r => r.StockName)
                 .ToList();
 
 

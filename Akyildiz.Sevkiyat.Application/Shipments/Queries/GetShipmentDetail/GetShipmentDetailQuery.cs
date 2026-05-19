@@ -18,8 +18,9 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipmentDetail
         public string ProjectCode { get; set; } = string.Empty;
         public string ProjectName { get; set; } = string.Empty;
         public string? ProjectAddress { get; set; }
-        public int? ZoneId { get; set; } // Added
-        public string? ZoneName { get; set; } // Added
+        public int? ZoneId { get; set; }
+        public string? ZoneName { get; set; }
+        public int? ZonePreparationId { get; set; }
         public string Status { get; set; } = string.Empty;
         public DateTime DeliveryDate { get; set; }
         public string? DriverName { get; set; }
@@ -34,11 +35,16 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipmentDetail
         public DateTime? DeliveredAt { get; set; }
         public string? DeliveryNote { get; set; }
         public string? DeliveryRecipient { get; set; }
+        // Legacy single-photo fields (kept for backward-compat with pre-multiPhoto deliveries)
         public string? DeliveryPhotoBase64 { get; set; }
+        public string? DeliveryPhotoPath { get; set; }
+        public List<DeliveryPhotoDto> DeliveryPhotos { get; set; } = new();
 
         // New Info Fields
         public string? ExternalOrderNumber { get; set; }
         public string? TalepNo { get; set; }
+        public string? TalepTuru { get; set; }
+        public string? InstitutionCode { get; set; }
         public string? TeslimAlacakKisiler { get; set; }
         public string? TeslimAlacakTelefon { get; set; }
         public string? YoneticiMail { get; set; }
@@ -46,9 +52,28 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipmentDetail
         public string OperationType { get; set; } = "Catering";
         public int OperationTypeValue { get; set; } = 0;
 
+        // Yurtici Kargo
+        public string? YkCargoKey { get; set; }
+        public string? YkInvoiceKey { get; set; }
+        public int? YkJobId { get; set; }
+        public string? YkBarcode { get; set; }
+        public string? YkOperationStatus { get; set; }
+        public string? YkOperationMessage { get; set; }
+        public string? YkErrorCode { get; set; }
+        public string? YkErrorMessage { get; set; }
+        public DateTime? YkLastQueryAt { get; set; }
+
         public List<ShipmentLineDetailDto> Lines { get; set; } = new();
         public List<ShipmentHistoryDto> History { get; set; } = new();
         public List<ShipmentPrintLogDto> PrintLogs { get; set; } = new();
+    }
+
+    public class DeliveryPhotoDto
+    {
+        public int Id { get; set; }
+        public string PhotoUrl { get; set; } = string.Empty;
+        public int PhotoIndex { get; set; }
+        public DateTime TakenAt { get; set; }
     }
 
     public class ShipmentLineDetailDto
@@ -63,6 +88,7 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipmentDetail
         
         public string LocalStockCode { get; set; } = string.Empty; // Added
         public string? Unit { get; set; } // Added
+        public int UnitValue { get; set; } // Added for enum mapping
         public decimal? StockQty { get; set; } // Added (Placeholder)
         
         public string? ZoneName { get; set; }

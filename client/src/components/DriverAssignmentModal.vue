@@ -145,7 +145,7 @@ import { ApiErrorUtils } from '../utils/apiError';
 import { useNotificationStore } from '../stores/notification';
 
 const props = defineProps<{
-  zonePreparationId: number;
+  zonePreparationIds: number[];
 }>();
 
 const emit = defineEmits(['close', 'completed']);
@@ -197,14 +197,41 @@ const onDriverCheckChange = (driverId: number) => {
 onMounted(async () => {
   summaryLoading.value = true;
   try {
-    const [dList, vList, s] = await Promise.all([
+    const summaryRequests = props.zonePreparationIds.map(id =>
+      warehouseService.getPreDispatchSummary(id)
+    );
+    const [dList, vList, ...summaries] = await Promise.all([
       transportService.getDrivers(),
       transportService.getVehicles(),
-      warehouseService.getPreDispatchSummary(props.zonePreparationId)
+      ...summaryRequests,
     ]);
     drivers.value = dList.filter((d: any) => d.isActive);
     vehicles.value = vList.filter((v: any) => v.isActive);
-    summary.value = s;
+    // Merge summaries: combine blockers/warnings, canProceed = all must pass
+    if (summaries.length === 1) {
+      summary.value = summaries[0] as PreDispatchSummaryDto;
+    } else {
+      const all = summaries as PreDispatchSummaryDto[];
+      summary.value = {
+        zonePreparationId: props.zonePreparationIds[0] ?? 0,
+        totalShipments: all.reduce((a, s) => a + s.totalShipments, 0),
+        readyShipments: all.reduce((a, s) => a + s.readyShipments, 0),
+        notReadyShipments: all.reduce((a, s) => a + s.notReadyShipments, 0),
+        netsisTransferredCount: all.reduce((a, s) => a + s.netsisTransferredCount, 0),
+        netsisFailedCount: all.reduce((a, s) => a + s.netsisFailedCount, 0),
+        zeroPickedLineCount: all.reduce((a, s) => a + s.zeroPickedLineCount, 0),
+        unmappedLineCount: all.reduce((a, s) => a + s.unmappedLineCount, 0),
+        diffReasonLineCount: all.reduce((a, s) => a + s.diffReasonLineCount, 0),
+        overPickedLineCount: all.reduce((a, s) => a + s.overPickedLineCount, 0),
+        hasForceCompleteShipments: all.some(s => s.hasForceCompleteShipments),
+        forceCompleteShipmentIds: all.flatMap(s => s.forceCompleteShipmentIds),
+        openErrorCount: all.reduce((a, s) => a + s.openErrorCount, 0),
+        openWarningCount: all.reduce((a, s) => a + s.openWarningCount, 0),
+        blockers: [...new Set(all.flatMap(s => s.blockers))],
+        warnings: [...new Set(all.flatMap(s => s.warnings))],
+        canProceed: all.every(s => s.canProceed),
+      };
+    }
   } catch (e) {
     notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Veriler yüklenemedi.', 'error');
   } finally {
@@ -218,16 +245,22 @@ const save = async () => {
 
   isSaving.value = true;
   try {
-    const result = await warehouseService.setDriverInfo({
-      ZonePreparationId: props.zonePreparationId,
-      DriverIds:         selectedDriverIds.value,
-      VehicleId:         selectedVehicleId.value!,
-      DepartureTime:     departureTime.value || null,
-    });
+    const results = await Promise.all(
+      props.zonePreparationIds.map(id =>
+        warehouseService.setDriverInfo({
+          ZonePreparationId: id,
+          DriverIds:         selectedDriverIds.value,
+          VehicleId:         selectedVehicleId.value!,
+          DepartureTime:     departureTime.value || null,
+        })
+      )
+    );
 
-    if (result?.optimizationWarning) {
-      notificationStore.add(result.optimizationWarning, 'warning');
-    } else if (result?.optimizationApplied) {
+    const anyWarning = results.find(r => r?.optimizationWarning);
+    const anyOptimized = results.find(r => r?.optimizationApplied);
+    if (anyWarning) {
+      notificationStore.add(anyWarning.optimizationWarning ?? '', 'warning');
+    } else if (anyOptimized) {
       notificationStore.add('Sürücü ve araç atandı. Rota optimize edildi.', 'success');
     } else {
       notificationStore.add('Sürücü ve araç atandı.', 'success');

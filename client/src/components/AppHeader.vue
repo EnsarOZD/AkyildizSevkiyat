@@ -43,6 +43,9 @@
       >
         <MagnifyingGlassIcon class="h-4 w-4" aria-hidden="true" />
       </button>
+      <!-- Notification bell -->
+      <NotificationBell />
+
       <!-- Dark mode toggle -->
       <button
         @click="themeStore.toggle()"
@@ -83,6 +86,7 @@ import { Bars3Icon, ChevronRightIcon, ArrowRightOnRectangleIcon, SunIcon, MoonIc
 import { useAuthStore } from '../stores/auth';
 import { useThemeStore } from '../stores/theme';
 import HeaderWidget from './HeaderWidget.vue';
+import NotificationBell from './NotificationBell.vue';
 
 defineEmits(['toggleSidebar', 'openSearch']);
 

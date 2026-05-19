@@ -84,18 +84,18 @@
           </button>
         </div>
 
-        <!-- Contact from first shipment -->
-        <div v-if="firstShipment?.teslimAlacakKisiler" class="flex items-center gap-2">
+        <!-- Contact (ISS data, falls back to project defaults) -->
+        <div v-if="stop.contactName" class="flex items-center gap-2">
           <UserIcon class="w-4 h-4 text-gray-400 flex-shrink-0" aria-hidden="true" />
-          <span class="text-sm text-gray-700 dark:text-gray-300">{{ firstShipment.teslimAlacakKisiler }}</span>
+          <span class="text-sm text-gray-700 dark:text-gray-300">{{ stop.contactName }}</span>
         </div>
-        <div v-if="firstShipment?.teslimAlacakTelefon" class="flex items-center gap-2">
+        <div v-if="stop.contactPhone" class="flex items-center gap-2">
           <PhoneIcon class="w-4 h-4 text-gray-400 flex-shrink-0" aria-hidden="true" />
           <a
-            :href="`tel:${firstShipment.teslimAlacakTelefon}`"
+            :href="`tel:${stop.contactPhone}`"
             class="text-sm text-blue-600 dark:text-blue-400 hover:underline"
           >
-            {{ firstShipment.teslimAlacakTelefon }}
+            {{ stop.contactPhone }}
           </a>
         </div>
       </div>
@@ -133,7 +133,7 @@
             />
             <div>
               <p class="font-medium text-sm text-gray-900 dark:text-white">
-                {{ shipment.talepNo || ('#' + shipment.id) }}
+                {{ shipment.externalOrderNumber || ('#' + shipment.id) }}
               </p>
               <p v-if="shipment.irsaliyeNo" class="text-xs text-gray-400">İrsaliye: {{ shipment.irsaliyeNo }}</p>
             </div>
@@ -162,11 +162,11 @@
           <p v-if="shipment.deliveryNote" class="text-sm text-gray-700 dark:text-gray-300">
             <span class="text-gray-400">Not: </span>{{ shipment.deliveryNote }}
           </p>
-          <div v-if="shipment.deliveryPhotoBase64">
+          <div v-if="getPhotoUrl(shipment.deliveryPhotoPath, shipment.deliveryPhotoBase64)">
             <img
-              :src="`data:image/jpeg;base64,${shipment.deliveryPhotoBase64}`"
+              :src="getPhotoUrl(shipment.deliveryPhotoPath, shipment.deliveryPhotoBase64)!"
               class="w-full max-h-40 object-cover rounded-lg cursor-pointer"
-              @click="lightboxSrc = `data:image/jpeg;base64,${shipment.deliveryPhotoBase64}`"
+              @click="lightboxSrc = getPhotoUrl(shipment.deliveryPhotoPath, shipment.deliveryPhotoBase64)"
             />
           </div>
         </div>
@@ -181,32 +181,42 @@
             <div class="px-3 py-2 bg-gray-50 dark:bg-gray-800 text-xs font-medium text-gray-500 dark:text-gray-400">
               Kalemler ({{ shipment.lines.length }})
             </div>
-            <div
-              v-for="line in shipment.lines"
-              :key="line.stockCode"
-              class="flex justify-between px-3 py-2 border-t border-gray-100 dark:border-gray-700 text-sm"
-            >
-              <span class="text-gray-700 dark:text-gray-300">{{ line.stockName }}</span>
-              <span class="text-gray-500 dark:text-gray-400 font-medium ml-2 whitespace-nowrap">{{ line.orderedQty }} {{ line.unit }}</span>
-            </div>
+            <template v-for="group in groupedLines(shipment.lines)" :key="group.label">
+              <div class="px-3 py-1 bg-gray-100 dark:bg-gray-700/60 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide border-t border-gray-200 dark:border-gray-600">
+                {{ group.label }}
+              </div>
+              <div
+                v-for="line in group.lines"
+                :key="line.stockCode"
+                class="flex justify-between px-3 py-2 border-t border-gray-100 dark:border-gray-700 text-sm"
+              >
+                <span class="text-gray-700 dark:text-gray-300">{{ line.stockName }}</span>
+                <span class="text-gray-500 dark:text-gray-400 font-medium ml-2 whitespace-nowrap">{{ line.orderedQty }} {{ line.unit }}</span>
+              </div>
+            </template>
           </div>
         </div>
 
         <!-- Expanded: Action Buttons (Pending/Dispatched) -->
         <div v-if="expandedIds.has(shipment.id) && shipment.status !== 'Delivered' && shipment.status !== 'ReturnedToWarehouse'" class="px-4 pb-4 space-y-3 border-t border-gray-100 dark:border-white/10 pt-3">
-          <!-- Kalem listesi -->
+          <!-- Kalem listesi (kategoriye ve isme göre sıralı) -->
           <div v-if="shipment.lines?.length" class="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
             <div class="px-3 py-2 bg-gray-50 dark:bg-gray-800 text-xs font-medium text-gray-500 dark:text-gray-400">
               Kalemler ({{ shipment.lines.length }})
             </div>
-            <div
-              v-for="line in shipment.lines"
-              :key="line.stockCode"
-              class="flex justify-between px-3 py-2 border-t border-gray-100 dark:border-gray-700 text-sm"
-            >
-              <span class="text-gray-900 dark:text-gray-100">{{ line.stockName }}</span>
-              <span class="text-gray-500 dark:text-gray-400 font-medium ml-2 whitespace-nowrap">{{ line.orderedQty }} {{ line.unit }}</span>
-            </div>
+            <template v-for="group in groupedLines(shipment.lines)" :key="group.label">
+              <div class="px-3 py-1 bg-gray-100 dark:bg-gray-700/60 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide border-t border-gray-200 dark:border-gray-600">
+                {{ group.label }}
+              </div>
+              <div
+                v-for="line in group.lines"
+                :key="line.stockCode"
+                class="flex justify-between px-3 py-2 border-t border-gray-100 dark:border-gray-700 text-sm"
+              >
+                <span class="text-gray-900 dark:text-gray-100">{{ line.stockName }}</span>
+                <span class="text-gray-500 dark:text-gray-400 font-medium ml-2 whitespace-nowrap">{{ line.orderedQty }} {{ line.unit }}</span>
+              </div>
+            </template>
           </div>
           <div class="flex gap-3">
             <button
@@ -280,7 +290,7 @@
           <!-- Photo -->
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Fotoğraf <span class="text-gray-400 font-normal">(isteğe bağlı)</span>
+              Teslim Fotoğrafı <span class="text-red-500">*</span>
             </label>
             <div v-if="bulkForm.photoPreview" class="mb-2 relative">
               <img
@@ -326,7 +336,7 @@
             </button>
             <button
               @click="markAllDelivered"
-              :disabled="bulkSubmitting || !bulkForm.deliveryRecipient.trim()"
+              :disabled="bulkSubmitting || !bulkForm.deliveryRecipient.trim() || !bulkForm.photoBase64"
               class="flex-2 flex-1 py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
             >
               <span v-if="bulkSubmitting" class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
@@ -359,7 +369,7 @@
           <div>
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Kısmi / Tam İade</h3>
             <p v-if="returnShipmentInfo" class="text-xs text-gray-400 mt-0.5">
-              {{ returnShipmentInfo.talepNo || ('#' + returnShipmentInfo.id) }}
+              {{ returnShipmentInfo.externalOrderNumber || ('#' + returnShipmentInfo.id) }}
             </p>
           </div>
           <button @click="closeReturnModal" class="p-2 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10">
@@ -504,10 +514,11 @@ import {
   ArrowUturnLeftIcon,
   ClipboardDocumentListIcon,
 } from '@heroicons/vue/24/outline';
-import driverService, { type DeliveryStopDto, type StopShipmentDto } from '../services/driverService';
+import driverService, { type DeliveryStopDto, type StopShipmentDto, type ShipmentLineDto } from '../services/driverService';
 import shipmentService from '../services/shipmentService';
 import { useNotificationStore } from '../stores/notification';
 import { useAuthStore } from '../stores/auth';
+import { getPhotoUrl } from '../utils/photoUrl';
 
 interface ShipmentForm {
   deliveryRecipient: string;
@@ -543,7 +554,6 @@ const bulkForm = reactive<ShipmentForm>({
   photoCompressing: false,
 });
 
-const firstShipment = computed(() => stop.value?.shipments[0]);
 const pendingShipments = computed(() =>
   stop.value?.shipments.filter(s => s.status !== 'Delivered' && s.status !== 'ReturnedToWarehouse') ?? []
 );
@@ -658,6 +668,10 @@ async function markAllDelivered() {
     notify.add('Lütfen teslim alan kişi bilgisini giriniz.', 'warning');
     return;
   }
+  if (!bulkForm.photoBase64) {
+    notify.add('Teslim fotoğrafı zorunludur.', 'warning');
+    return;
+  }
   bulkSubmitting.value = true;
   try {
     for (const shipment of pendingShipments.value) {
@@ -665,7 +679,7 @@ async function markAllDelivered() {
         shipment.id,
         bulkForm.deliveryNote || undefined,
         bulkForm.deliveryRecipient || undefined,
-        bulkForm.photoBase64 || undefined,
+        bulkForm.photoBase64 ? [bulkForm.photoBase64] : undefined,
       );
     }
     notify.add(`${pendingShipments.value.length} irsaliye teslim edildi.`, 'success');
@@ -782,6 +796,34 @@ async function submitReturn() {
   } finally {
     returnSubmitting.value = false;
   }
+}
+
+// Kategori label mapping — backend StockCategory enum değerleriyle eşleşir
+const CATEGORY_LABELS: Record<number, string> = {
+  1: 'Gıda',
+  2: 'Sarf',
+  3: 'Kıyafet',
+  4: 'Temizlik',
+  5: 'Kırtasiye',
+  99: 'Diğer',
+};
+
+// Kategoriye ve isme göre sıralı gruplar — sıralama backend ile aynı (Sarf→Gıda→Kıyafet→diğer)
+function groupedLines(lines: ShipmentLineDto[]) {
+  const order: Record<number, number> = { 2: 1, 1: 2, 3: 3 };
+  const getOrder = (cat: number) => order[cat] ?? 4;
+  const sorted = [...lines].sort((a, b) => {
+    const od = getOrder(a.category) - getOrder(b.category);
+    return od !== 0 ? od : a.stockName.localeCompare(b.stockName, 'tr');
+  });
+  const groups: { label: string; lines: ShipmentLineDto[] }[] = [];
+  for (const line of sorted) {
+    const label = CATEGORY_LABELS[line.category] ?? 'Diğer';
+    const last = groups[groups.length - 1];
+    if (last?.label === label) last.lines.push(line);
+    else groups.push({ label, lines: [line] });
+  }
+  return groups;
 }
 
 onMounted(load);

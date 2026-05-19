@@ -28,6 +28,8 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Persistence
         public DbSet<IssOrder> IssOrders { get; set; } = null!;
         public DbSet<IssOrderLine> IssOrderLines { get; set; } = null!;
         public DbSet<Shipment> Shipments { get; set; } = null!;
+        public IQueryable<Shipment> WarehouseShipments =>
+            Shipments.Where(s => s.OperationType != OperationType.Clothing);
         public DbSet<ShipmentLine> ShipmentLines { get; set; } = null!;
         public DbSet<User> Users { get; set; } = null!;
         public DbSet<ShipmentHistory> ShipmentHistories { get; set; } = null!;
@@ -60,6 +62,11 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Persistence
         public DbSet<StockLocation> StockLocations { get; set; } = null!;
         public DbSet<LocationTransfer> LocationTransfers { get; set; } = null!;
 
+        // WMS — Barkod ve Putaway
+        public DbSet<StockBarcode> StockBarcodes { get; set; } = null!;
+        public DbSet<PutawayTask> PutawayTasks { get; set; } = null!;
+        public DbSet<PutawayLine> PutawayLines { get; set; } = null!;
+
         // Import Audit
         public DbSet<ImportBatch> ImportBatches { get; set; } = null!;
         public DbSet<ImportBatchOrder> ImportBatchOrders { get; set; } = null!;
@@ -75,6 +82,28 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Persistence
 
         // Print Audit
         public DbSet<ShipmentPrintLog> ShipmentPrintLogs { get; set; } = null!;
+
+        // Stok Tüketim / Zai
+        public DbSet<StockConsumption> StockConsumptions { get; set; } = null!;
+
+        // External Email Contacts
+        public DbSet<ExternalEmailContact> ExternalEmailContacts { get; set; } = null!;
+
+        // Vehicle Return Tracking
+        public DbSet<VehicleReturn> VehicleReturns { get; set; } = null!;
+        public DbSet<VehicleReturnLine> VehicleReturnLines { get; set; } = null!;
+
+        // Notifications
+        public DbSet<Notification> Notifications { get; set; } = null!;
+        public DbSet<PushSubscription> PushSubscriptions { get; set; } = null!;
+
+        // Print Queue
+        public DbSet<PrintAgent> PrintAgents { get; set; } = null!;
+        public DbSet<PrinterConfig> PrinterConfigs { get; set; } = null!;
+        public DbSet<PrintJob> PrintJobs { get; set; } = null!;
+
+        // Delivery Photos
+        public DbSet<ShipmentDeliveryPhoto> ShipmentDeliveryPhotos { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -182,9 +211,21 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Persistence
                 entity.Property(s => s.RowVersion).IsRowVersion();
 
                 entity.HasOne(s => s.ZonePreparation)
-                .WithMany() // Or Add collection to ZonePreparation if needed
+                .WithMany()
                 .HasForeignKey(s => s.ZonePreparationId)
                 .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // Delivery Photos
+            modelBuilder.Entity<ShipmentDeliveryPhoto>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.PhotoPath).HasMaxLength(500).IsRequired();
+                entity.HasIndex(e => e.ShipmentId);
+                entity.HasOne(e => e.Shipment)
+                    .WithMany(s => s.DeliveryPhotos)
+                    .HasForeignKey(e => e.ShipmentId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             // ZonePreparationProject Configuration
@@ -399,12 +440,76 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Persistence
             {
                 entity.HasKey(e => e.Id);
                 entity.HasIndex(e => e.Code).IsUnique();
-                entity.Property(e => e.Code).HasMaxLength(20);
+                entity.Property(e => e.Code).HasMaxLength(30);
                 entity.Property(e => e.Taraf).HasMaxLength(1);
                 entity.Property(e => e.Description).HasMaxLength(200);
                 entity.Property(e => e.MaxWeightKg).HasColumnType("decimal(10,2)");
                 entity.Property(e => e.LocationType).HasColumnType("int");
                 entity.HasIndex(e => new { e.KoridorNo, e.Taraf, e.ModulNo, e.Kat });
+                entity.Property(e => e.Alan).HasMaxLength(100);
+                entity.Property(e => e.QrCode).HasMaxLength(50);
+                entity.HasIndex(e => e.QrCode);
+            });
+
+            // WMS: StockMaster — DefaultPickingFace ilişkisi
+            modelBuilder.Entity<StockMaster>(entity =>
+            {
+                entity.HasOne(e => e.DefaultPickingFace)
+                    .WithMany()
+                    .HasForeignKey(e => e.DefaultPickingFaceId)
+                    .OnDelete(DeleteBehavior.SetNull);
+                entity.Property(e => e.Barcode).HasMaxLength(100);
+                entity.HasIndex(e => e.Barcode);
+            });
+
+            // WMS: StockBarcode
+            modelBuilder.Entity<StockBarcode>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => e.Barcode);
+                entity.Property(e => e.Barcode).HasMaxLength(100).IsRequired();
+                entity.Property(e => e.Description).HasMaxLength(200);
+                entity.HasOne(e => e.StockMaster)
+                    .WithMany()
+                    .HasForeignKey(e => e.StockMasterId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // WMS: PutawayTask
+            modelBuilder.Entity<PutawayTask>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.TotalQty).HasColumnType("decimal(18,4)");
+                entity.Property(e => e.DistributedQty).HasColumnType("decimal(18,4)").HasDefaultValue(0m);
+                entity.Ignore(e => e.RemainingQty);
+                entity.HasOne(e => e.GoodsReceipt)
+                    .WithMany()
+                    .HasForeignKey(e => e.GoodsReceiptId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(e => e.GoodsReceiptLine)
+                    .WithMany()
+                    .HasForeignKey(e => e.GoodsReceiptLineId)
+                    .OnDelete(DeleteBehavior.NoAction);
+                entity.HasOne(e => e.StockMaster)
+                    .WithMany()
+                    .HasForeignKey(e => e.StockMasterId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                entity.HasIndex(e => new { e.GoodsReceiptId, e.Status });
+            });
+
+            // WMS: PutawayLine
+            modelBuilder.Entity<PutawayLine>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Qty).HasColumnType("decimal(18,4)");
+                entity.HasOne(e => e.PutawayTask)
+                    .WithMany(t => t.Lines)
+                    .HasForeignKey(e => e.PutawayTaskId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(e => e.WarehouseLocation)
+                    .WithMany()
+                    .HasForeignKey(e => e.WarehouseLocationId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             // ReconciliationIssue
@@ -473,6 +578,10 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Persistence
                 entity.HasIndex(e => new { e.DriverId, e.Status });
                 entity.HasIndex(e => new { e.VehicleId, e.Status });
                 entity.HasIndex(e => e.StartTime);
+                entity.HasIndex(e => e.DriverId)
+                    .IsUnique()
+                    .HasDatabaseName("IX_DriverSessions_Driver_OneOpen")
+                    .HasFilter("[Status] = 0");
             });
 
             // ZonePreparationDriver
@@ -547,6 +656,9 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Persistence
                    .WithMany()
                    .HasForeignKey(e => e.PurchaseOrderId)
                    .OnDelete(DeleteBehavior.SetNull);
+
+               // Optimistic concurrency
+               entity.Property(e => e.RowVersion).IsRowVersion();
             });
 
             modelBuilder.Entity<PurchaseOrderLine>(entity =>
@@ -591,6 +703,50 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Persistence
             {
                 entity.Property(e => e.DeliveryWindowStart).HasColumnType("time");
                 entity.Property(e => e.DeliveryWindowEnd).HasColumnType("time");
+            });
+
+            // StockConsumption
+            modelBuilder.Entity<StockConsumption>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.StockCodeSnapshot).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.StockNameSnapshot).IsRequired().HasMaxLength(300);
+                entity.Property(e => e.Quantity).HasColumnType("decimal(18,4)");
+                entity.Property(e => e.SalePrice).HasColumnType("decimal(18,4)");
+                entity.Property(e => e.Reason).HasMaxLength(500);
+                entity.Property(e => e.RecipientName).HasMaxLength(200);
+                entity.Property(e => e.Note).HasMaxLength(500);
+
+                entity.HasOne(e => e.StockMaster)
+                    .WithMany()
+                    .HasForeignKey(e => e.StockMasterId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(e => e.Date);
+                entity.HasIndex(e => e.Type);
+            });
+
+            // ---- Notifications ----
+            modelBuilder.Entity<Notification>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Title).HasMaxLength(200);
+                entity.Property(e => e.Body).HasMaxLength(500);
+                entity.Property(e => e.Url).HasMaxLength(500);
+                entity.Property(e => e.EventType).HasMaxLength(100);
+                entity.HasIndex(e => new { e.UserId, e.IsRead });
+                entity.HasIndex(e => e.CreatedAt);
+                entity.HasOne(e => e.User).WithMany().HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<PushSubscription>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => e.Endpoint).IsUnique();
+                entity.HasIndex(e => e.UserId);
+                entity.HasOne(e => e.User).WithMany().HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
         }
 

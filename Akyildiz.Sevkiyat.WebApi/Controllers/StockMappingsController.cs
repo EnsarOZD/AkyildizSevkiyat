@@ -1,6 +1,7 @@
 using Akyildiz.Sevkiyat.Application.Stocks.Commands.AutoMatchStockMappings;
 using Akyildiz.Sevkiyat.Application.Stocks.Commands.ImportStockMappings;
 using Akyildiz.Sevkiyat.Application.Stocks.Commands.MapStock;
+using Akyildiz.Sevkiyat.Application.Stocks.Queries.GetAllStockMappings;
 using Akyildiz.Sevkiyat.Application.Stocks.Queries.GetUnmappedStocks;
 using Akyildiz.Sevkiyat.Application.Stocks.Queries.ExportUnmappedStocks;
 using MediatR;
@@ -20,6 +21,23 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         public StockMappingsController(ISender mediator)
         {
             _mediator = mediator;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAll(
+            [FromQuery] string? statusFilter,
+            [FromQuery] string? search,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 50)
+        {
+            var result = await _mediator.Send(new GetAllStockMappingsQuery
+            {
+                StatusFilter = statusFilter,
+                Search       = search,
+                PageNumber   = pageNumber,
+                PageSize     = pageSize,
+            });
+            return Ok(result);
         }
 
         [HttpGet("unmapped")]

@@ -86,13 +86,14 @@ import { ApiErrorUtils } from '../utils/apiError';
 import { useNotificationStore } from '../stores/notification';
 
 const props = defineProps<{
-    zonePreparationId: number;
+    zonePreparationId?: number;
     lines: { id: number; projectId: number; projectName: string; orderedQty: number; allocatedQty?: number }[];
     targetPickedTotal: number;
     orderedTotal: number;
     stockName?: string;
     queueIndex?: number;
     queueTotal?: number;
+    onSave?: (allocations: { shipmentLineId: number; deliveredQty: number }[], reason: string) => Promise<void>;
 }>();
 
 const emit = defineEmits(['close', 'saved']);
@@ -136,15 +137,22 @@ const currentAllocated = computed(() => {
 const saveAllocation = async () => {
     if (currentAllocated.value !== props.targetPickedTotal) return;
 
+    const allocations = localLines.value.map(l => ({
+        shipmentLineId: l.id,
+        deliveredQty: l.allocatedQty
+    }));
+    const reason = differenceReason.value.trim();
+
     try {
-        await warehouseService.allocateMacroShortage({
-            zonePreparationId: props.zonePreparationId,
-            allocations: localLines.value.map(l => ({
-                shipmentLineId: l.id,
-                deliveredQty: l.allocatedQty
-            })),
-            differenceReason: differenceReason.value.trim()
-        });
+        if (props.onSave) {
+            await props.onSave(allocations, reason);
+        } else {
+            await warehouseService.allocateMacroShortage({
+                zonePreparationId: props.zonePreparationId!,
+                allocations,
+                differenceReason: reason
+            });
+        }
         notificationStore.add('Dağıtım kaydedildi.', 'success');
         emit('saved');
         emit('close');

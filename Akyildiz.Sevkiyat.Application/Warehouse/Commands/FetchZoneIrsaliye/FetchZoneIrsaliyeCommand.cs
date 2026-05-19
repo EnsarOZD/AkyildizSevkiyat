@@ -11,7 +11,7 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.FetchZoneIrsaliye
     public record FetchZoneIrsaliyeCommand(int ZonePreparationId) : IRequest<FetchZoneIrsaliyeResult>, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles =>
-            new[] { "Admin", "Manager", "Warehouse", "Driver" };
+            new[] { "Admin", "Manager", "Accounting", "Warehouse", "Driver" };
     }
 
     public record FetchZoneIrsaliyeResult(int Fetched, int Skipped, List<string> Errors, List<string> Warnings);
@@ -36,7 +36,7 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.FetchZoneIrsaliye
             if (zp.Status != ZonePreparationStatus.ReadyForDriverInfo)
                 throw new DomainException("İrsaliye çekimi yalnızca 'Sevke Hazır' aşamasındaki hazırlıklar için yapılabilir.");
 
-            var shipments = await _context.Shipments
+            var shipments = await _context.WarehouseShipments
                 .Include(s => s.Project)
                 .Include(s => s.IssOrder)
                 .Where(s =>

@@ -19,7 +19,10 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Commands.UpdateStock
         Akyildiz.Sevkiyat.Domain.Enums.PickingType PickingType,
         decimal? MinStockQty,
         string? WarehouseLocation,
-        string? NetsisStockCode = null
+        string? NetsisStockCode = null,
+        decimal? WeightKg = null,
+        int PickingOrder = 0,
+        string? Barcode = null
     ) : IRequest, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles =>
@@ -56,6 +59,9 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Commands.UpdateStock
             entity.NetsisStockCode = string.IsNullOrWhiteSpace(request.NetsisStockCode)
                 ? null
                 : request.NetsisStockCode.Trim();
+            entity.WeightKg = request.WeightKg;
+            entity.PickingOrder = request.PickingOrder;
+            entity.Barcode = string.IsNullOrWhiteSpace(request.Barcode) ? null : request.Barcode.Trim();
 
             await _context.SaveChangesAsync(cancellationToken);
         }

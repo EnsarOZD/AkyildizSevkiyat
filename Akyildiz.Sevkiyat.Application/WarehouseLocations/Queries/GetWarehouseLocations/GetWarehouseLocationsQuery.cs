@@ -26,7 +26,13 @@ namespace Akyildiz.Sevkiyat.Application.WarehouseLocations.Queries.GetWarehouseL
         string?  Description,
         decimal? MaxWeightKg,
         int?     MaxPallets,
-        bool     IsActive
+        bool     IsActive,
+        string?  Alan,
+        string?  QrCode,
+        int?     TotalFloors,
+        string?  InnerLevel,
+        int?     InnerPosition,
+        int      ContainerTypeId
     );
 
     public record GetWarehouseLocationsResult(
@@ -85,7 +91,13 @@ namespace Akyildiz.Sevkiyat.Application.WarehouseLocations.Queries.GetWarehouseL
                     l.Description,
                     l.MaxWeightKg,
                     l.MaxPallets,
-                    l.IsActive
+                    l.IsActive,
+                    l.Alan,
+                    l.QrCode,
+                    l.TotalFloors,
+                    l.InnerLevel,
+                    l.InnerPosition,
+                    (int)l.ContainerType
                 ))
                 .ToListAsync(cancellationToken);
 

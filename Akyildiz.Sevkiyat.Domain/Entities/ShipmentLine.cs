@@ -104,6 +104,17 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
         }
 
         /// <summary>
+        /// Toplama ilerlemesini taslak olarak kaydeder — gerekçe zorunluluğu uygulanmaz.
+        /// Finalizasyon SetDeliveredQty ile yapılır.
+        /// </summary>
+        public void SavePickingProgress(decimal qty)
+        {
+            if (qty < 0)
+                throw new DomainException("Toplama miktarı negatif olamaz.");
+            DeliveredQty = qty;
+        }
+
+        /// <summary>
         /// Picking verilerini sıfırlar. RevertToDraft senaryosunda çağrılır —
         /// bir sonraki picking turunda kirli veri kalmaması için.
         /// </summary>

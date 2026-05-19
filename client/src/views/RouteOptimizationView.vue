@@ -315,10 +315,11 @@
 
     <!-- ────────────────────────────── STEP 3: Route Result ────────────────────────────── -->
     <div v-if="step === 3 && optimizationResult" class="space-y-4">
+
       <!-- Summary cards -->
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div class="bg-white dark:bg-gray-900 rounded-lg shadow p-3 text-center">
-          <div class="text-2xl font-bold text-indigo-600">{{ optimizationResult.optimizedStops.length }}</div>
+          <div class="text-2xl font-bold text-indigo-600">{{ manualStops.length }}</div>
           <div class="text-xs text-gray-500 mt-1">Durak</div>
         </div>
         <div class="bg-white dark:bg-gray-900 rounded-lg shadow p-3 text-center">
@@ -337,11 +338,9 @@
         </div>
       </div>
 
-      <!-- Bridge crossing notice -->
-      <div
-        v-if="optimizationResult.bridgeNotice"
-        class="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-600 rounded-lg p-3 flex items-center gap-3"
-      >
+      <!-- Bridge + time window notices -->
+      <div v-if="optimizationResult.bridgeNotice"
+        class="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-600 rounded-lg p-3 flex items-center gap-3">
         <svg class="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M3 12h18M3 12c0-4.418 4.03-8 9-8s9 3.582 9 8M3 12c0 4.418 4.03 8 9 8s9-3.582 9-8M9 12v4m6-4v4" />
         </svg>
@@ -351,8 +350,8 @@
         </div>
       </div>
 
-      <!-- Zaman Penceresi Uyarıları -->
-      <div v-if="optimizationResult?.timeWindowWarnings?.length" class="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg">
+      <div v-if="optimizationResult?.timeWindowWarnings?.length"
+        class="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg">
         <p class="text-sm font-semibold text-amber-800 dark:text-amber-400 mb-2">
           ⚠️ {{ optimizationResult.timeWindowWarnings.length }} proje için teslimat penceresi aşılabilir
         </p>
@@ -363,11 +362,8 @@
         </div>
       </div>
 
-      <!-- Excluded projects warning -->
-      <div
-        v-if="optimizationResult.excludedProjects.length > 0"
-        class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-3 flex items-start gap-2"
-      >
+      <div v-if="optimizationResult.excludedProjects.length > 0"
+        class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-3 flex items-start gap-2">
         <ExclamationTriangleIcon class="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
         <div class="text-sm text-amber-700 dark:text-amber-300">
           <span class="font-medium">Adres tanımsız:</span>
@@ -375,57 +371,130 @@
         </div>
       </div>
 
-      <!-- Route stops -->
-      <div class="bg-white dark:bg-gray-900 rounded-lg shadow overflow-hidden">
-        <div class="px-4 py-3 border-b dark:border-gray-700 flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Optimize Edilmiş Rota</h2>
-            <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300">
-              {{ vehicleTypes.find(v => v.value === vehicleType)?.label ?? vehicleType }}
-            </span>
-          </div>
-          <button @click="step = 2" class="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
-            ← Geri
-          </button>
-        </div>
-        <ol class="divide-y divide-gray-100 dark:divide-gray-800">
-          <li
-            v-for="stop in optimizationResult.optimizedStops"
-            :key="stop.order"
-            class="flex items-start gap-4 px-4 py-3"
-          >
-            <div class="flex-shrink-0 w-7 h-7 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 flex items-center justify-center text-xs font-bold">
-              {{ stop.order }}
-            </div>
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2 flex-wrap">
-                <span class="text-xs font-mono bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded">{{ stop.projectCode }}</span>
-                <span v-if="stop.projectName !== stop.projectCode" class="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{{ stop.projectName }}</span>
-              </div>
-              <div class="text-xs text-gray-400 mt-0.5 truncate">{{ stop.address || 'Adres tanımlı değil' }}</div>
-            </div>
-            <div v-if="stop.estimatedDistanceFromPrevious != null" class="flex-shrink-0 text-right">
-              <div class="text-xs font-medium text-gray-600 dark:text-gray-400">{{ formatDistance(stop.estimatedDistanceFromPrevious) }}</div>
-              <div class="text-xs text-gray-400">{{ formatDuration(stop.estimatedDurationFromPrevious ?? 0) }}</div>
-            </div>
-          </li>
-        </ol>
+      <!-- Mobile tab toggle -->
+      <div class="flex lg:hidden rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 text-sm">
+        <button
+          @click="mapView = 'list'"
+          class="flex-1 py-2 font-medium transition-colors"
+          :class="mapView === 'list' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400'"
+        >Liste</button>
+        <button
+          @click="mapView = 'map'"
+          class="flex-1 py-2 font-medium transition-colors"
+          :class="mapView === 'map' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400'"
+        >Harita</button>
+      </div>
 
-        <div class="px-4 py-3 border-t dark:border-gray-700 flex justify-end gap-3">
-          <button
-            @click="copyToClipboard"
-            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex items-center gap-2"
-          >
-            <ClipboardDocumentIcon class="w-4 h-4" />
-            Kopyala
-          </button>
-          <button
-            @click="resetWizard"
-            class="px-4 py-2 text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
-          >
-            Yeni Rota
-          </button>
+      <!-- Split panel -->
+      <div class="flex flex-col lg:flex-row gap-4" style="min-height:520px">
+
+        <!-- ── List panel ── -->
+        <div
+          class="bg-white dark:bg-gray-900 rounded-xl shadow border border-gray-200 dark:border-gray-700 flex flex-col lg:w-96 flex-shrink-0"
+          :class="mapView === 'map' ? 'hidden lg:flex' : 'flex'"
+        >
+          <div class="px-4 py-3 border-b dark:border-gray-700 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Optimize Edilmiş Rota</h2>
+              <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300">
+                {{ vehicleTypes.find(v => v.value === vehicleType)?.label ?? vehicleType }}
+              </span>
+            </div>
+            <button @click="step = 2" class="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+              ← Geri
+            </button>
+          </div>
+
+          <p class="px-4 pt-2 text-xs text-gray-400 dark:text-gray-500">
+            Sırayı değiştirmek için satırı sürükleyin.
+          </p>
+
+          <!-- Draggable stop list -->
+          <ol class="flex-1 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800">
+            <li
+              v-for="(stop, idx) in manualStops"
+              :key="stop.projectCode"
+              draggable="true"
+              @dragstart="onDragStart(idx)"
+              @dragover.prevent="onDragOver(idx)"
+              @drop.prevent="onDrop(idx)"
+              @dragend="onDragEnd"
+              class="flex items-start gap-3 px-4 py-3 cursor-grab active:cursor-grabbing select-none transition-colors"
+              :class="[
+                dragOverIndex === idx ? 'bg-indigo-50 dark:bg-indigo-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800',
+                dragIndexRef === idx ? 'opacity-40' : '',
+              ]"
+            >
+              <!-- Drag handle -->
+              <div class="flex-shrink-0 mt-1 text-gray-300 dark:text-gray-600">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 16 16">
+                  <circle cx="5" cy="4" r="1.2" fill="currentColor"/>
+                  <circle cx="11" cy="4" r="1.2" fill="currentColor"/>
+                  <circle cx="5" cy="8" r="1.2" fill="currentColor"/>
+                  <circle cx="11" cy="8" r="1.2" fill="currentColor"/>
+                  <circle cx="5" cy="12" r="1.2" fill="currentColor"/>
+                  <circle cx="11" cy="12" r="1.2" fill="currentColor"/>
+                </svg>
+              </div>
+              <!-- Number badge -->
+              <div class="flex-shrink-0 w-7 h-7 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 flex items-center justify-center text-xs font-bold">
+                {{ idx + 1 }}
+              </div>
+              <!-- Content -->
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-xs font-mono bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded">{{ stop.projectCode }}</span>
+                  <span v-if="stop.projectName !== stop.projectCode" class="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{{ stop.projectName }}</span>
+                </div>
+                <div class="text-xs text-gray-400 mt-0.5 truncate">{{ stop.address || 'Adres tanımlı değil' }}</div>
+              </div>
+              <div v-if="stop.estimatedDistanceFromPrevious != null" class="flex-shrink-0 text-right">
+                <div class="text-xs font-medium text-gray-600 dark:text-gray-400">{{ formatDistance(stop.estimatedDistanceFromPrevious) }}</div>
+                <div class="text-xs text-gray-400">{{ formatDuration(stop.estimatedDurationFromPrevious ?? 0) }}</div>
+              </div>
+            </li>
+          </ol>
+
+          <!-- Action buttons -->
+          <div class="px-4 py-3 border-t dark:border-gray-700 flex flex-wrap gap-2">
+            <button
+              @click="openInGoogleMaps"
+              class="px-3 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors flex items-center gap-1.5"
+            >
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+              </svg>
+              Google Maps'te Aç
+            </button>
+            <button
+              @click="copyToClipboard"
+              class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex items-center gap-1.5"
+            >
+              <ClipboardDocumentIcon class="w-4 h-4" />
+              Kopyala
+            </button>
+            <button
+              @click="resetWizard"
+              class="px-3 py-2 text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+            >
+              Yeni Rota
+            </button>
+          </div>
         </div>
+
+        <!-- ── Map panel ── -->
+        <div
+          class="flex-1 rounded-xl overflow-hidden shadow border border-gray-200 dark:border-gray-700"
+          :class="mapView === 'list' ? 'hidden lg:block' : 'block'"
+          style="min-height:480px"
+        >
+          <RouteOptimizationMapPanel
+            :stops="manualStops"
+            :start-latitude="optimizationResult.startLatitude"
+            :start-longitude="optimizationResult.startLongitude"
+          />
+        </div>
+
       </div>
     </div>
 
@@ -443,6 +512,7 @@ import {
 import routeOptimizationService, {
   type ProjectSyncComparisonDto,
   type RouteOptimizationResultDto,
+  type RouteStopDto,
   type SyncApprovalRequestDto,
 } from '../services/routeOptimizationService';
 import projectService from '../services/projectService';
@@ -450,6 +520,7 @@ import { useNotificationStore } from '../stores/notification';
 import { ApiErrorUtils } from '../utils/apiError';
 import { turkishIncludes } from '../utils/turkishSearch';
 import systemSettingsService from '../services/systemSettingsService';
+import RouteOptimizationMapPanel from '../components/RouteOptimizationMapPanel.vue';
 
 // ── State ────────────────────────────────────────────────────────────────────
 const stepDefs = [
@@ -506,6 +577,13 @@ const syncing = ref(false);
 
 const optimizationResult = ref<RouteOptimizationResultDto | null>(null);
 const optimizing = ref(false);
+
+// Step 3 — map + drag state
+const mapView = ref<'list' | 'map'>('list');
+const manualStops = ref<RouteStopDto[]>([]);
+let dragIndex = -1;
+const dragIndexRef = ref(-1);
+const dragOverIndex = ref(-1);
 
 // ── Computed ─────────────────────────────────────────────────────────────────
 const filteredProjects = computed(() => {
@@ -699,6 +777,8 @@ async function runOptimization() {
       returnToStart: returnToStart.value,
       departureTime: departureTime.value ? `${departureTime.value}:00` : null,
     });
+    manualStops.value = [...(optimizationResult.value?.optimizedStops ?? [])];
+    mapView.value = 'list';
     step.value = 3;
   } catch (err) {
     notificationStore.add(ApiErrorUtils.getErrorMessage(err) || 'Rota optimizasyonu başarısız.', 'error');
@@ -707,12 +787,71 @@ async function runOptimization() {
   }
 }
 
+// ── Drag-to-reorder ───────────────────────────────────────────────────────────
+function onDragStart(idx: number) {
+  dragIndex = idx;
+  dragIndexRef.value = idx;
+}
+
+function onDragOver(idx: number) {
+  dragOverIndex.value = idx;
+}
+
+function onDrop(targetIdx: number) {
+  if (dragIndex === -1 || dragIndex === targetIdx) return;
+  const arr = [...manualStops.value];
+  const moved = arr.splice(dragIndex, 1)[0];
+  if (!moved) return;
+  arr.splice(targetIdx, 0, moved);
+  // Renumber orders to match new positions
+  manualStops.value = arr.map((s, i) => ({ ...s, order: i + 1 }));
+}
+
+function onDragEnd() {
+  dragIndex = -1;
+  dragIndexRef.value = -1;
+  dragOverIndex.value = -1;
+}
+
+// ── Google Maps URL ───────────────────────────────────────────────────────────
+function openInGoogleMaps() {
+  const stops = manualStops.value;
+  if (stops.length === 0) return;
+
+  const result = optimizationResult.value;
+  const hasStartCoords = result?.startLatitude != null && result?.startLongitude != null;
+
+  const pointStr = (lat: number | null | undefined, lng: number | null | undefined, addr: string | null | undefined): string => {
+    if (lat != null && lng != null) return `${lat},${lng}`;
+    return encodeURIComponent(addr ?? '');
+  };
+
+  const firstStop = stops[0]!;
+  const lastStop = stops[stops.length - 1]!;
+
+  const origin = hasStartCoords
+    ? `${result!.startLatitude},${result!.startLongitude}`
+    : pointStr(firstStop.latitude, firstStop.longitude, firstStop.address);
+
+  const destination = pointStr(lastStop.latitude, lastStop.longitude, lastStop.address);
+
+  const waypoints = stops.slice(0, -1).map(s =>
+    pointStr(s.latitude, s.longitude, s.address)
+  ).join('|');
+
+  let url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=driving`;
+  if (waypoints) url += `&waypoints=${waypoints}`;
+
+  window.open(url, '_blank', 'noopener');
+}
+
 function resetWizard() {
   step.value = 1;
   selectedCodes.value = new Set();
   comparisonResults.value = [];
   syncApprovals.value = new Map();
   optimizationResult.value = null;
+  manualStops.value = [];
   vehicleType.value = 'Kamyon';
   forceBridgeCrossing.value = true;
 }

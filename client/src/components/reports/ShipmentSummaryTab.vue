@@ -87,6 +87,7 @@ const statusClass = (status: string) => {
     Picking: 'bg-blue-100 text-blue-800',
     ReadyForDispatch: 'bg-purple-100 text-purple-800',
     AssignedToVehicle: 'bg-indigo-100 text-indigo-800',
+    Dispatched: 'bg-orange-100 text-orange-800',
     Delivered: 'bg-green-100 text-green-800',
     Cancelled: 'bg-red-100 text-red-800',
     Passive: 'bg-gray-100 text-gray-500',

@@ -1,7 +1,7 @@
 <template>
   <div class="bg-white dark:bg-gray-900 rounded-lg shadow p-4">
     <div class="flex justify-between items-center mb-4">
-      <h2 class="text-lg font-semibold">Eşleştirme Bekleyen Stoklar</h2>
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Eşleştirme Bekleyen Stoklar</h2>
     <div class="flex flex-wrap gap-2">
       <!-- Download Template Button -->
       <button @click="downloadTemplate" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm flex items-center gap-1">

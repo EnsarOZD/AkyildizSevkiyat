@@ -6,6 +6,8 @@ using Akyildiz.Sevkiyat.Application.Reports.Queries.GetShipmentPerformance;
 using Akyildiz.Sevkiyat.Application.Reports.Queries.GetStockStatusReport;
 using Akyildiz.Sevkiyat.Application.Reports.Queries.GetReturnsReport;
 using Akyildiz.Sevkiyat.Application.Reports.Queries.GetMaterialPurchaseReport;
+using Akyildiz.Sevkiyat.Application.Reports.Queries.GetStockMovements;
+using Akyildiz.Sevkiyat.Application.Reports.Queries.GetWarehouseStockDistribution;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -107,6 +109,33 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             if (startDate == default) startDate = DateTime.Today.AddDays(-30);
             if (endDate == default)   endDate   = DateTime.Today;
             var result = await _mediator.Send(new GetReturnsReportQuery(startDate, endDate, zoneId));
+            return Ok(result);
+        }
+
+        [HttpGet("stock-movements")]
+        [Authorize(Roles = "Admin,Accounting,Manager,Warehouse")]
+        public async Task<ActionResult<GetStockMovementsResult>> GetStockMovements(
+            [FromQuery] DateTime startDate,
+            [FromQuery] DateTime endDate,
+            [FromQuery] string?  stockSearch = null,
+            [FromQuery] int?     type        = null,
+            [FromQuery] int      page        = 1,
+            [FromQuery] int      pageSize    = 50,
+            CancellationToken ct = default)
+        {
+            if (startDate == default) startDate = DateTime.Today.AddDays(-30);
+            if (endDate   == default) endDate   = DateTime.Today;
+            var result = await _mediator.Send(
+                new GetStockMovementsQuery(startDate, endDate, stockSearch, type, page, pageSize), ct);
+            return Ok(result);
+        }
+
+        [HttpGet("warehouse-stock-distribution")]
+        [Authorize(Roles = "Admin,Accounting,Manager,Warehouse")]
+        public async Task<ActionResult<WarehouseStockDistributionDto>> GetWarehouseStockDistribution(
+            CancellationToken ct = default)
+        {
+            var result = await _mediator.Send(new GetWarehouseStockDistributionQuery(), ct);
             return Ok(result);
         }
 

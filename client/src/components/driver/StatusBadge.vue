@@ -11,6 +11,7 @@ const props = defineProps<{ status: string }>();
 
 const map: Record<string, { label: string; cls: string }> = {
   AssignedToVehicle: { label: 'Araçta',       cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' },
+  Dispatched:        { label: 'Yolda',         cls: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300' },
   Delivered:         { label: 'Teslim Edildi', cls: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' },
 };
 

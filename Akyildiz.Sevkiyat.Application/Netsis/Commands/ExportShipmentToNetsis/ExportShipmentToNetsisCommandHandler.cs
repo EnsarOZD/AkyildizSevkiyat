@@ -1,6 +1,7 @@
 using Akyildiz.Sevkiyat.Application.External.Netsis.Dtos;
 using Akyildiz.Sevkiyat.Application.Interfaces;
 using Akyildiz.Sevkiyat.Application.Reconciliation.Services;
+using Akyildiz.Sevkiyat.Application.Warehouse.Commands.SyncWarehouseDashboard;
 using Akyildiz.Sevkiyat.Domain.Enums;
 using Akyildiz.Sevkiyat.Domain.Exceptions;
 using MediatR;
@@ -15,6 +16,7 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportShipmentToNetsis
         private readonly INetsisClient _netsisClient;
         private readonly ICurrentUserService _currentUserService;
         private readonly ReconciliationGuard _guard;
+        private readonly ISender _mediator;
         private readonly ILogger<ExportShipmentToNetsisCommandHandler> _logger;
 
         public ExportShipmentToNetsisCommandHandler(
@@ -22,12 +24,14 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportShipmentToNetsis
             INetsisClient netsisClient,
             ICurrentUserService currentUserService,
             ReconciliationGuard guard,
+            ISender mediator,
             ILogger<ExportShipmentToNetsisCommandHandler> logger)
         {
             _context = context;
             _netsisClient = netsisClient;
             _currentUserService = currentUserService;
             _guard = guard;
+            _mediator = mediator;
             _logger = logger;
         }
 
@@ -43,17 +47,20 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportShipmentToNetsis
                 .FirstOrDefaultAsync(s => s.Id == request.ShipmentId, cancellationToken)
                 ?? throw new NotFoundException("Shipment", request.ShipmentId);
 
-            // Aktarım için geçerli durumlar: ReadyForDispatch veya sonrası (teslim edilmemiş)
-            var exportableStatuses = new[]
-            {
-                ShipmentStatus.ReadyForDispatch,
-                ShipmentStatus.AssignedToVehicle,
-            };
+            // Kıyafet operasyonları depo adımlarını atladığından Created durumundan da aktarılabilir.
+            var exportableStatuses = shipment.OperationType == OperationType.Clothing
+                ? new[] { ShipmentStatus.Created, ShipmentStatus.ReadyForDispatch, ShipmentStatus.AssignedToVehicle }
+                : new[] { ShipmentStatus.ReadyForDispatch, ShipmentStatus.AssignedToVehicle };
 
             if (!exportableStatuses.Contains(shipment.Status))
+            {
+                var required = shipment.OperationType == OperationType.Clothing
+                    ? "Created, ReadyForDispatch veya AssignedToVehicle"
+                    : "ReadyForDispatch veya AssignedToVehicle";
                 throw new DomainException(
                     $"Sevkiyat Netsis'e aktarılabilir durumda değil. Mevcut durum: {shipment.Status}. " +
-                    $"Gerekli durum: ReadyForDispatch veya AssignedToVehicle.");
+                    $"Gerekli durum: {required}.");
+            }
 
             // ── Enforcement: Open Error sorunları varsa aktarımı engelle ──────────
             await _guard.ThrowIfOpenErrorIssuesAsync(request.ShipmentId, cancellationToken);
@@ -74,7 +81,17 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportShipmentToNetsis
                 "Sevkiyat #{ShipmentId} Netsis'e aktarılıyor. Proje: {ProjectName}, CariKod: {CariKod}",
                 shipment.Id, shipment.Project.Name, shipment.Project.NetsisCariKodu);
 
-            var (siparisRequest, exportWarnings) = BuildSiparisRequest(shipment);
+            // Netsis'ten stok KDV oranlarını çek; başarısız olursa boş dict (fallback: local TaxRate)
+            var netsisKodlari = shipment.Lines
+                .Select(l => l.StockMaster?.NetsisStockCode)
+                .Where(c => !string.IsNullOrWhiteSpace(c))
+                .Select(c => c!)
+                .Distinct()
+                .ToList();
+
+            var kdvMap = await _netsisClient.GetStockKdvRatesAsync(netsisKodlari, cancellationToken);
+
+            var (siparisRequest, exportWarnings) = BuildSiparisRequest(shipment, kdvMap);
 
             // NetsisOrderNumber dolu ama NetsisTransferredAt boşsa → önceki denemede Netsis'e
             // gönderilmiş ama DB kaydı başarısız olmuş olabilir. Duplike önlemek için
@@ -101,18 +118,38 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportShipmentToNetsis
             // Aktarım bilgilerini kaydet
             shipment.MarkNetsisTransferred(DateTime.UtcNow);
 
-            // Audit kaydı — sevkiyat zaman çizelgesinde görünür
-            _context.ShipmentHistories.Add(new Domain.Entities.ShipmentHistory
+            var deliveryDate = shipment.DeliveryDate;
+
+            // Kıyafet: Created → ReadyForDispatch (depo adımları yok)
+            if (shipment.OperationType == OperationType.Clothing && shipment.Status == ShipmentStatus.Created)
             {
-                ShipmentId      = shipment.Id,
-                OldStatus       = shipment.Status,
-                NewStatus       = shipment.Status,
-                ChangedAt       = DateTime.UtcNow,
-                ChangedByUserId = _currentUserService.UserId,
-                Description     = $"Netsis'e aktarıldı. Belge No: {shipment.IssOrder.NetsisOrderNumber}",
-            });
+                shipment.ChangeStatus(
+                    ShipmentStatus.ReadyForDispatch,
+                    _currentUserService.UserId,
+                    "Kıyafet operasyonu — Netsis aktarımı sonrası otomatik ilerleme");
+            }
+            else
+            {
+                // Catering/manual: sadece audit kaydı, durum değişmez
+                _context.ShipmentHistories.Add(new Domain.Entities.ShipmentHistory
+                {
+                    ShipmentId      = shipment.Id,
+                    OldStatus       = shipment.Status,
+                    NewStatus       = shipment.Status,
+                    ChangedAt       = DateTime.UtcNow,
+                    ChangedByUserId = _currentUserService.UserId,
+                    Description     = $"Netsis'e aktarıldı. Belge No: {shipment.IssOrder.NetsisOrderNumber}",
+                });
+            }
 
             await _context.SaveChangesAsync(cancellationToken);
+
+            // Kıyafet: eğer bu sevkiyat bir zone prep'e bağlıysa, sync çalıştırarak hemen temizle
+            if (shipment.OperationType == OperationType.Clothing)
+            {
+                try { await _mediator.Send(new SyncWarehouseDashboardCommand(deliveryDate), cancellationToken); }
+                catch (Exception ex) { _logger.LogWarning(ex, "Kıyafet sync temizleme başarısız (non-blocking)."); }
+            }
 
             // İrsaliye otomatik çekme kaldırıldı: Netsis siparişi kabul ettikten hemen sonra
             // irsaliye oluşturulmadığından, sorgu yanlış veri (sipariş no) döndürebilir.
@@ -128,7 +165,9 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportShipmentToNetsis
             return null;
         }
 
-        private static (NetsisSiparisRequest Request, List<string> Warnings) BuildSiparisRequest(Domain.Entities.Shipment shipment)
+        private static (NetsisSiparisRequest Request, List<string> Warnings) BuildSiparisRequest(
+            Domain.Entities.Shipment shipment,
+            IReadOnlyDictionary<string, decimal> kdvMap)
         {
             var warnings = new List<string>();
 
@@ -169,7 +208,11 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportShipmentToNetsis
                     Miktar      = l.DeliveredQty,
                     Birim       = l.Unit.ToString(),
                     BirimFiyati = l.IssOrderLine?.BirimFiyati ?? 0,
-                    KdvOrani    = l.IssOrderLine?.KDVOrani    ?? 0,
+                    // Önce Netsis stok kartındaki KDV, yoksa local StockMaster TaxRate
+                    KdvOrani    = l.StockMaster?.NetsisStockCode != null &&
+                                  kdvMap.TryGetValue(l.StockMaster.NetsisStockCode, out var nKdv)
+                                      ? nKdv
+                                      : (decimal)(int)(l.StockMaster?.TaxRate ?? 0),
                 })
                 .ToList();
 
@@ -178,6 +221,7 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportShipmentToNetsis
                 BelgeNo      = belgeNo ?? string.Empty,
                 CariKodu     = shipment.Project.NetsisCariKodu!,
                 ProjeKodu    = shipment.Project.NetsisTeslimCariKodu ?? shipment.Project.Code ?? string.Empty,
+                DepoKodu     = shipment.OperationType == Domain.Enums.OperationType.Clothing ? "2" : null,
                 TeslimTarihi = shipment.DeliveryDate,
                 // EKACK alanları
                 SiparisId                     = shipment.Id.ToString(),

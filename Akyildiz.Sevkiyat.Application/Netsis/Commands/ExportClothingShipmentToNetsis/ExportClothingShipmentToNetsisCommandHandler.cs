@@ -70,16 +70,28 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportClothingShipmentTo
                 shipment.TalepNo,
                 shipment.IssOrder?.TalepNo);
 
+            var netsisKodlari = shipment.Lines
+                .Select(l => l.StockMaster?.NetsisStockCode)
+                .Where(c => !string.IsNullOrWhiteSpace(c))
+                .Select(c => c!)
+                .Distinct()
+                .ToList();
+
+            var kdvMap = await _netsisClient.GetStockKdvRatesAsync(netsisKodlari, cancellationToken);
+
             // Kıyafet operasyonunda ISS orijinal miktarı kullanılır
             var lines = shipment.Lines
                 .Select((l, idx) => new NetsisSiparisLine
                 {
                     SatirNo     = idx + 1,
                     StokKodu    = l.StockMaster!.NetsisStockCode!,
-                    Miktar      = l.IssOrderLine?.OrderedQty ?? l.OrderedQty,
+                    Miktar      = l.OrderedQty,
                     Birim       = l.Unit.ToString(),
                     BirimFiyati = l.IssOrderLine?.BirimFiyati ?? 0,
-                    KdvOrani    = l.IssOrderLine?.KDVOrani    ?? 0,
+                    KdvOrani    = l.StockMaster?.NetsisStockCode != null &&
+                                  kdvMap.TryGetValue(l.StockMaster.NetsisStockCode, out var nKdv)
+                                      ? nKdv
+                                      : (decimal)(int)(l.StockMaster?.TaxRate ?? 0),
                 })
                 .ToList();
 
@@ -88,6 +100,7 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportClothingShipmentTo
                 BelgeNo      = belgeNo ?? string.Empty,
                 CariKodu     = shipment.Project.NetsisCariKodu!,
                 ProjeKodu    = shipment.Project.NetsisTeslimCariKodu ?? shipment.Project.Code ?? string.Empty,
+                DepoKodu     = "2",
                 TeslimTarihi = shipment.DeliveryDate,
                 SiparisId                     = shipment.Id.ToString(),
                 KurumKodu                     = shipment.Project.InstitutionCode,

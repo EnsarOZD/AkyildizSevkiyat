@@ -3,9 +3,6 @@ import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'a
 import { ApiError, isApiErrorResponse } from '../utils/apiError';
 import { useAuthStore } from '../stores/auth';
 
-/**
- * Global event names for API events
- */
 export const API_EVENTS = {
     UNAUTHORIZED: 'api:unauthorized',
     FORBIDDEN: 'api:forbidden',
@@ -15,27 +12,19 @@ export const API_EVENTS = {
 const apiClient: AxiosInstance = axios.create({
     baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
     timeout: 30000,
-    headers: {
-        'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
+    withCredentials: true, // #1: Send HttpOnly cookies with every request
 });
 
-/**
- * Request Interceptor: Inject Auth Token
- */
+// #1: Request interceptor — no longer injects Bearer token (cookie handles auth).
+// Kept for Postman/non-browser clients that may still pass a Bearer header externally.
 apiClient.interceptors.request.use(
-    (config: InternalAxiosRequestConfig) => {
-        const token = localStorage.getItem('token');
-        if (token && config.headers) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
+    (config: InternalAxiosRequestConfig) => config,
     (error) => Promise.reject(error)
 );
 
 /**
- * Concurrent refresh queue — paralel 401'lerde tek refresh yapılmasını garantiler.
+ * Concurrent refresh queue — parallel 401s wait for a single refresh call.
  */
 let isRefreshing = false;
 let failedQueue: Array<{ resolve: () => void; reject: (err: unknown) => void }> = [];
@@ -45,9 +34,6 @@ function processQueue(error: unknown) {
     failedQueue = [];
 }
 
-/**
- * Response Interceptor: Normalize Errors and Handle Global Catch
- */
 apiClient.interceptors.response.use(
     (response: AxiosResponse) => response,
     async (error: AxiosError) => {
@@ -68,30 +54,24 @@ apiClient.interceptors.response.use(
             if (status === 401) {
                 const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-                // Refresh endpoint'inin kendisi 401 aldıysa → sonsuz döngü önle, direkt logout
+                // Refresh endpoint 401 → infinite loop guard
                 if (originalRequest?.url?.includes('/auth/refresh')) {
                     processQueue(normalizedError);
                     window.dispatchEvent(new CustomEvent(API_EVENTS.UNAUTHORIZED));
                     return Promise.reject(normalizedError);
                 }
 
-                // Başka bir refresh zaten devam ediyorsa → queue'ya ekle, bekle
+                // Another refresh in-flight → queue this request
                 if (isRefreshing) {
                     return new Promise((resolve, reject) => {
                         failedQueue.push({
-                            resolve: () => {
-                                const token = localStorage.getItem('token');
-                                if (originalRequest.headers && token) {
-                                    originalRequest.headers['Authorization'] = `Bearer ${token}`;
-                                }
-                                resolve(apiClient(originalRequest));
-                            },
-                            reject
+                            // #1: Cookie is updated by server response — just retry
+                            resolve: () => resolve(apiClient(originalRequest)),
+                            reject,
                         });
                     });
                 }
 
-                // İlk 401: refresh başlat
                 if (!originalRequest._retry) {
                     originalRequest._retry = true;
                     isRefreshing = true;
@@ -103,9 +83,7 @@ apiClient.interceptors.response.use(
 
                     if (success) {
                         processQueue(null);
-                        if (originalRequest.headers) {
-                            originalRequest.headers['Authorization'] = `Bearer ${store.token}`;
-                        }
+                        // #1: New cookie set by server — retry without manual header injection
                         return apiClient(originalRequest);
                     } else {
                         processQueue(normalizedError);

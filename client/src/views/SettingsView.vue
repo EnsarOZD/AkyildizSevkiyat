@@ -322,7 +322,7 @@
 
       <div class="flex justify-end">
         <button
-          @click="zone_showModal = true; zone_isEdit = false; zone_form = { name: '', order: 0 }"
+          @click="zone_showModal = true; zone_isEdit = false; zone_form = { name: '', isOutOfCity: false }"
           class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
         >
           + Yeni Bölge
@@ -334,14 +334,12 @@
           <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead class="bg-gray-50 dark:bg-gray-800">
               <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sıra</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Bölge Adı</th>
                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">İşlemler</th>
               </tr>
             </thead>
             <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
               <tr v-for="zone in zone_zones" :key="zone.id" class="hover:bg-gray-50 dark:hover:bg-gray-800">
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{{ zone.order }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{{ zone.name }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button @click="zone_openEdit(zone)" class="text-indigo-600 hover:text-indigo-900 mr-4">Düzenle</button>
@@ -369,12 +367,11 @@
             <input v-model="zone_form.name" type="text" placeholder="Örn: A Koridoru"
               class="block w-full border border-gray-300 dark:border-gray-700 rounded-input px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 focus:outline-none dark:bg-gray-800 dark:text-gray-100 text-sm" />
           </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sıralama</label>
-            <input v-model.number="zone_form.order" type="number"
-              class="block w-full border border-gray-300 dark:border-gray-700 rounded-input px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 focus:outline-none dark:bg-gray-800 dark:text-gray-100 text-sm" />
-            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Toplama rotasında hangi sırada gidileceğini belirler (Küçükten büyüğe).</p>
-          </div>
+          <label class="flex items-center gap-3 cursor-pointer select-none">
+            <input type="checkbox" v-model="zone_form.isOutOfCity" class="w-4 h-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500" />
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Şehir Dışı Bölge</span>
+            <span class="text-xs text-gray-400 dark:text-gray-500">(Micro/Macro yerine tek toplu hazırlık)</span>
+          </label>
         </div>
         <template #footer>
           <button @click="zone_showModal = false" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">İptal</button>
@@ -574,6 +571,546 @@
       </div>
     </div>
 
+    <!-- ===== TAB: E-posta Ayarları ===== -->
+    <div v-show="activeTab === 'email'" class="space-y-4">
+      <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-6 max-w-2xl">
+
+        <div class="pb-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 class="text-base font-semibold text-gray-800 dark:text-gray-200">E-posta CC Adresleri</h2>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Sistematik olarak gönderilen e-postalara CC olarak eklenecek adresleri tanımlayın. Birden fazla adres için virgülle ayırın.
+          </p>
+        </div>
+
+        <!-- Satınalma CC -->
+        <div class="space-y-2">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Satınalma Siparişi CC Adresleri
+            <span class="ml-1 text-xs text-gray-400 font-normal">(procurement@)</span>
+          </label>
+          <textarea
+            v-model="email_form.procurementEmailCc"
+            rows="3"
+            placeholder="ornek@sirket.com, baska@sirket.com"
+            class="block w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+          ></textarea>
+          <p class="text-xs text-gray-400 dark:text-gray-500">
+            Tedarikçiye gönderilen satınalma sipariş e-postalarına bu adresler CC olarak eklenir.
+          </p>
+        </div>
+
+        <!-- Sevkiyat / Eksik Bildirim CC -->
+        <div class="space-y-2">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Sevkiyat Bildirim CC Adresleri
+            <span class="ml-1 text-xs text-gray-400 font-normal">(dispatch@)</span>
+          </label>
+          <textarea
+            v-model="email_form.dispatchEmailCc"
+            rows="3"
+            placeholder="ornek@sirket.com, baska@sirket.com"
+            class="block w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+          ></textarea>
+          <p class="text-xs text-gray-400 dark:text-gray-500">
+            Eksik ürün ve kısmi gönderim bildirim e-postalarına bu adresler CC olarak eklenir.
+          </p>
+        </div>
+
+        <!-- Şoför Atama E-posta Aktif/Pasif -->
+        <div class="flex items-center justify-between py-3 border-t border-gray-100 dark:border-gray-700">
+          <div>
+            <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Şoför Atama Bildirimi</p>
+            <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+              Şoföre atama yapıldığında yönetici mail adreslerine otomatik e-posta gönderilsin.
+            </p>
+          </div>
+          <button
+            type="button"
+            @click="email_form.dispatchEmailEnabled = !email_form.dispatchEmailEnabled"
+            :class="email_form.dispatchEmailEnabled
+              ? 'bg-indigo-600'
+              : 'bg-gray-200 dark:bg-gray-700'"
+            class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            :aria-checked="email_form.dispatchEmailEnabled"
+            role="switch"
+          >
+            <span
+              :class="email_form.dispatchEmailEnabled ? 'translate-x-5' : 'translate-x-0'"
+              class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200"
+            />
+          </button>
+        </div>
+
+        <div v-if="email_error" class="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded text-red-700 dark:text-red-300 text-sm">
+          {{ email_error }}
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button
+            @click="email_save"
+            :disabled="email_saving"
+            class="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 font-medium flex items-center gap-2"
+          >
+            <svg v-if="email_saving" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+            </svg>
+            <span>{{ email_saving ? 'Kaydediliyor...' : 'Kaydet' }}</span>
+          </button>
+          <span v-if="email_savedMsg" class="text-sm text-green-600 dark:text-green-400 font-medium">✓ {{ email_savedMsg }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TAB: Depo Yönetimi (WMS) ===== -->
+    <div v-show="activeTab === 'wms'" class="space-y-4">
+      <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-6 max-w-2xl">
+
+        <div class="pb-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 class="text-base font-semibold text-gray-800 dark:text-gray-200">Depo Yönetimi (WMS) Ayarları</h2>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Bu ayarlar kapalıyken mevcut depo akışı değişmez. Barkod ve lokasyon özelliklerini hazır olduğunuzda etkinleştirin.
+          </p>
+        </div>
+
+        <!-- Putaway Toggle -->
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex-1">
+            <p class="text-sm font-medium text-gray-800 dark:text-gray-200">Mal Kabul Dağıtımı (Putaway)</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              Mal kabul onaylandıktan sonra ürünleri raf ve toplama gözlerine dağıtma ekranını etkinleştirir.
+            </p>
+          </div>
+          <button
+            @click="wms_form.wmsPutawayEnabled = !wms_form.wmsPutawayEnabled"
+            :class="[
+              wms_form.wmsPutawayEnabled
+                ? 'bg-indigo-600'
+                : 'bg-gray-200 dark:bg-gray-700',
+              'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'
+            ]"
+            role="switch"
+            :aria-checked="wms_form.wmsPutawayEnabled"
+          >
+            <span
+              :class="[
+                wms_form.wmsPutawayEnabled ? 'translate-x-5' : 'translate-x-0',
+                'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200'
+              ]"
+            ></span>
+          </button>
+        </div>
+
+        <!-- Location Picking Toggle -->
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex-1">
+            <p class="text-sm font-medium text-gray-800 dark:text-gray-200">Lokasyon Bazlı Toplama</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              Picking sırasında sistem raf/toplama gözü önerisi yapar ve stok düşümü lokasyon bazında gerçekleşir.
+              Kapalıyken yalnızca ürün bazında düşüm yapılır (mevcut davranış).
+            </p>
+          </div>
+          <button
+            @click="wms_form.wmsLocationPickingEnabled = !wms_form.wmsLocationPickingEnabled"
+            :class="[
+              wms_form.wmsLocationPickingEnabled
+                ? 'bg-indigo-600'
+                : 'bg-gray-200 dark:bg-gray-700',
+              'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'
+            ]"
+            role="switch"
+            :aria-checked="wms_form.wmsLocationPickingEnabled"
+          >
+            <span
+              :class="[
+                wms_form.wmsLocationPickingEnabled ? 'translate-x-5' : 'translate-x-0',
+                'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200'
+              ]"
+            ></span>
+          </button>
+        </div>
+
+        <!-- Barcode Picking Toggle -->
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex-1">
+            <p class="text-sm font-medium text-gray-800 dark:text-gray-200">Barkodlu Toplama</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              Ürün toplarken barkod tarama zorunlu olur. Kapalıyken manuel miktar girişiyle toplama yapılabilir (mevcut davranış).
+            </p>
+          </div>
+          <button
+            @click="wms_form.wmsBarcodePickingEnabled = !wms_form.wmsBarcodePickingEnabled"
+            :class="[
+              wms_form.wmsBarcodePickingEnabled
+                ? 'bg-indigo-600'
+                : 'bg-gray-200 dark:bg-gray-700',
+              'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'
+            ]"
+            role="switch"
+            :aria-checked="wms_form.wmsBarcodePickingEnabled"
+          >
+            <span
+              :class="[
+                wms_form.wmsBarcodePickingEnabled ? 'translate-x-5' : 'translate-x-0',
+                'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200'
+              ]"
+            ></span>
+          </button>
+        </div>
+
+        <div v-if="wms_error" class="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded text-red-700 dark:text-red-300 text-sm">
+          {{ wms_error }}
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button
+            @click="wms_save"
+            :disabled="wms_saving"
+            class="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 font-medium flex items-center gap-2"
+          >
+            <svg v-if="wms_saving" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+            </svg>
+            <span>{{ wms_saving ? 'Kaydediliyor...' : 'Kaydet' }}</span>
+          </button>
+          <span v-if="wms_savedMsg" class="text-sm text-green-600 dark:text-green-400 font-medium">✓ {{ wms_savedMsg }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TAB: Güvenlik ===== -->
+    <div v-show="activeTab === 'security'" class="space-y-4">
+      <div class="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Giriş Kilitleri</h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">5 başarısız girişten sonra IP adresi 5 dakika kilitlenir. Sahadaki kullanıcılar için kilidi buradan kaldırabilirsiniz.</p>
+          </div>
+          <button @click="loadLoginBlocks" :disabled="securityLoading"
+            class="text-sm text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 underline">
+            Yenile
+          </button>
+        </div>
+
+        <div v-if="securityLoading" class="text-sm text-gray-500">Yükleniyor...</div>
+
+        <div v-else-if="blockedIps.length === 0"
+          class="text-center py-10 text-gray-400 dark:text-gray-600 text-sm">
+          Şu anda kilitli IP adresi yok.
+        </div>
+
+        <div v-else class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 text-xs uppercase">
+                <th class="py-2 px-3 text-left">IP Adresi</th>
+                <th class="py-2 px-3 text-left">Deneme</th>
+                <th class="py-2 px-3 text-left">Kilit Bitiş</th>
+                <th class="py-2 px-3 text-left"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="block in blockedIps" :key="block.ip"
+                class="border-b border-gray-100 dark:border-gray-800">
+                <td class="py-3 px-3 font-mono text-gray-800 dark:text-gray-200">{{ block.ip }}</td>
+                <td class="py-3 px-3 text-red-600 dark:text-red-400 font-semibold">{{ block.attempts }}</td>
+                <td class="py-3 px-3 text-gray-600 dark:text-gray-400">{{ formatBlockedUntil(block.blockedUntil) }}</td>
+                <td class="py-3 px-3">
+                  <button @click="resetLoginBlock(block.ip)" :disabled="securityResetting === block.ip"
+                    class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs disabled:opacity-50">
+                    {{ securityResetting === block.ip ? '...' : 'Kilidi Kaldır' }}
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TAB: Yazıcı Yönetimi ===== -->
+    <div v-show="activeTab === 'printers'" class="space-y-6">
+
+      <!-- Agent'lar -->
+      <div class="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Bağlı Agent'lar</h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Depo bilgisayarlarında çalışan yerel baskı servisleri.</p>
+          </div>
+          <button @click="loadPrinters" class="text-sm text-indigo-600 dark:text-indigo-400 underline">Yenile</button>
+        </div>
+        <div v-if="printer_loading" class="text-sm text-gray-400 py-4">Yükleniyor...</div>
+        <div v-else-if="printer_agents.length === 0"
+          class="text-center py-8 text-sm text-gray-400 dark:text-gray-600">
+          Henüz bağlı agent yok. AkyildizKargoEtiket servisini depo bilgisayarında başlatın.
+        </div>
+        <div v-else class="space-y-3">
+          <div v-for="agent in printer_agents" :key="agent.id"
+            class="flex items-start justify-between p-4 rounded-lg border"
+            :class="agent.isOnline
+              ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20'
+              : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50'">
+            <div class="flex items-center gap-3">
+              <span class="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                :class="agent.isOnline ? 'bg-green-500' : 'bg-gray-400'"></span>
+              <div>
+                <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ agent.displayName }}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">{{ agent.machineName }}</p>
+                <div v-if="agent.installedPrinters?.length" class="mt-1 flex flex-wrap gap-1">
+                  <span v-for="p in agent.installedPrinters" :key="p"
+                    class="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded">
+                    {{ p }}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="text-right flex-shrink-0 ml-4 text-xs text-gray-500 dark:text-gray-400">
+              <span :class="agent.isOnline ? 'text-green-600 dark:text-green-400 font-semibold' : ''">
+                {{ agent.isOnline ? 'Çevrimiçi' : 'Çevrimdışı' }}
+              </span>
+              <p class="mt-1">Son: {{ formatRunAt(agent.lastSeenAt) }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Yazıcı Konfigürasyonları -->
+      <div class="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Yazıcı Konfigürasyonları</h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Hangi etiket tipinin hangi yazıcıdan çıkacağını tanımlayın.</p>
+          </div>
+          <button @click="openPrinterModal()"
+            class="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-colors">
+            + Yazıcı Ekle
+          </button>
+        </div>
+        <div v-if="printer_configs.length === 0"
+          class="text-center py-8 text-sm text-gray-400 dark:text-gray-600">
+          Henüz tanımlı yazıcı yok.
+        </div>
+        <div v-else class="space-y-3">
+          <div v-for="cfg in printer_configs" :key="cfg.id"
+            class="flex items-center justify-between p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+            <div class="flex items-center gap-3">
+              <div class="p-2 rounded-lg"
+                :class="cfg.labelType === 0 ? 'bg-blue-50 dark:bg-blue-900/30' : 'bg-amber-50 dark:bg-amber-900/30'">
+                <svg class="w-5 h-5" :class="cfg.labelType === 0 ? 'text-blue-600' : 'text-amber-600'"
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ cfg.name }}</p>
+                  <span v-if="cfg.isDefault"
+                    class="text-xs bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded">
+                    Varsayılan
+                  </span>
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                  {{ cfg.labelTypeName }} · {{ cfg.windowsPrinterName }}
+                </p>
+                <p class="text-xs mt-0.5"
+                  :class="cfg.agentOnline ? 'text-green-600 dark:text-green-400' : 'text-gray-400'">
+                  {{ cfg.agentDisplayName ?? 'Agent atanmadı' }}
+                  <span v-if="cfg.agentDisplayName">
+                    ({{ cfg.agentOnline ? 'çevrimiçi' : 'çevrimdışı' }})
+                  </span>
+                </p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button @click="testPrint(cfg.id)"
+                class="px-2 py-1 text-xs font-semibold text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-800">
+                Test
+              </button>
+              <button @click="openPrinterModal(cfg)"
+                class="px-2 py-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 border border-indigo-300 dark:border-indigo-700 rounded hover:bg-indigo-50 dark:hover:bg-indigo-900/30">
+                Düzenle
+              </button>
+              <button @click="deletePrinterConfig(cfg.id)"
+                class="px-2 py-1 text-xs font-semibold text-red-600 dark:text-red-400 border border-red-300 dark:border-red-700 rounded hover:bg-red-50 dark:hover:bg-red-900/30">
+                Sil
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Son Baskılar -->
+      <div class="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Son Baskılar</h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Son 20 baskı işi ve sonuçları.</p>
+          </div>
+          <button @click="loadPrintJobs" class="text-sm text-indigo-600 dark:text-indigo-400 underline">Yenile</button>
+        </div>
+        <div v-if="print_jobs_loading" class="text-sm text-gray-400 py-4">Yükleniyor...</div>
+        <div v-else-if="print_jobs.length === 0" class="text-center py-6 text-sm text-gray-400 dark:text-gray-600">
+          Henüz baskı kaydı yok.
+        </div>
+        <div v-else class="overflow-x-auto">
+          <table class="w-full text-xs">
+            <thead>
+              <tr class="text-left text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                <th class="pb-2 pr-3">#</th>
+                <th class="pb-2 pr-3">Yazıcı</th>
+                <th class="pb-2 pr-3">Durum</th>
+                <th class="pb-2 pr-3">Hata</th>
+                <th class="pb-2">Zaman</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+              <tr v-for="job in print_jobs" :key="job.id" class="py-1">
+                <td class="py-1.5 pr-3 text-gray-400">{{ job.id }}</td>
+                <td class="py-1.5 pr-3 text-gray-700 dark:text-gray-300">{{ job.printerName }}</td>
+                <td class="py-1.5 pr-3">
+                  <span class="px-1.5 py-0.5 rounded text-xs font-semibold"
+                    :class="{
+                      'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400': job.status === 0,
+                      'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400': job.status === 1,
+                      'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400': job.status === 2,
+                      'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400': job.status === 3,
+                    }">
+                    {{ ['Bekliyor','Yazdırılıyor','Tamamlandı','Hata'][job.status] ?? job.statusName }}
+                  </span>
+                </td>
+                <td class="py-1.5 pr-3 text-red-600 dark:text-red-400 max-w-xs truncate" :title="job.errorMessage ?? ''">
+                  {{ job.errorMessage ?? '' }}
+                </td>
+                <td class="py-1.5 text-gray-400 whitespace-nowrap">{{ formatRunAt(job.createdAt) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Yazıcı Modal -->
+      <BaseModal :show="showPrinterModal" :title="printerModalEdit ? 'Yazıcı Düzenle' : 'Yazıcı Ekle'"
+        @close="showPrinterModal = false">
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ad</label>
+            <input v-model="printerForm.name" type="text" placeholder="ör. Kargo Etiketi Yazıcısı"
+              class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Etiket Tipi</label>
+            <select v-model="printerForm.labelType"
+              class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100">
+              <option :value="0">Kargo Etiketi</option>
+              <option :value="1">Koli Etiketi</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Agent</label>
+            <select v-model="printerForm.agentId"
+              class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100">
+              <option :value="null">Agent seçin</option>
+              <option v-for="a in printer_agents" :key="a.id" :value="a.id">
+                {{ a.displayName }} ({{ a.machineName }})
+              </option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Windows Yazıcı Adı</label>
+            <div v-if="selectedAgentPrinters.length > 0">
+              <select v-model="printerForm.windowsPrinterName"
+                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100">
+                <option value="">Yazıcı seçin</option>
+                <option v-for="p in selectedAgentPrinters" :key="p" :value="p">{{ p }}</option>
+              </select>
+            </div>
+            <input v-else v-model="printerForm.windowsPrinterName" type="text"
+              placeholder="ör. ZDesigner LP 2844"
+              class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100" />
+            <p class="text-xs text-gray-400 mt-1">Agent çevrimiçiyse kurulu yazıcıları otomatik listelenir.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <input id="isDefault" v-model="printerForm.isDefault" type="checkbox"
+              class="rounded border-gray-300 text-indigo-600" />
+            <label for="isDefault" class="text-sm text-gray-700 dark:text-gray-300">
+              Bu etiket tipi için varsayılan yazıcı
+            </label>
+          </div>
+        </div>
+        <template #footer>
+          <button @click="showPrinterModal = false"
+            class="px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200">
+            İptal
+          </button>
+          <button @click="savePrinterConfig" :disabled="printer_saving"
+            class="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg disabled:opacity-50">
+            {{ printer_saving ? 'Kaydediliyor...' : 'Kaydet' }}
+          </button>
+        </template>
+      </BaseModal>
+
+    </div>
+
+    <!-- ===== TAB: Sistem Sağlığı (Admin) ===== -->
+    <div v-show="activeTab === 'system'" class="space-y-4">
+      <div class="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Arkaplan Servisleri</h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Her servisin son çalışma zamanı ve sonucu. Uygulama başladıktan sonra ilk çalışmaya kadar kayıt görünmez.</p>
+          </div>
+          <button @click="loadSystemHealth" :disabled="system_loading"
+            class="text-sm text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 underline disabled:opacity-50">
+            Yenile
+          </button>
+        </div>
+
+        <div v-if="system_loading" class="text-sm text-gray-500 dark:text-gray-400">Yükleniyor...</div>
+
+        <div v-else-if="system_error" class="p-3 bg-red-900/30 border border-red-700 rounded-lg text-red-400 text-sm">
+          {{ system_error }}
+        </div>
+
+        <div v-else-if="system_services.length === 0"
+          class="text-center py-10 text-gray-400 dark:text-gray-600 text-sm">
+          Henüz çalışma kaydı yok. Servisler periyodik aralıkta çalıştıktan sonra burada görünür.
+        </div>
+
+        <div v-else class="space-y-3">
+          <div v-for="svc in system_services" :key="svc.name"
+            class="flex items-start justify-between p-4 rounded-lg border"
+            :class="svc.result === 'Success'
+              ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20'
+              : 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20'">
+            <div class="flex items-center gap-3">
+              <span class="w-2.5 h-2.5 rounded-full flex-shrink-0 mt-0.5"
+                :class="svc.result === 'Success' ? 'bg-green-500' : 'bg-red-500'"></span>
+              <div>
+                <p class="text-sm font-medium text-gray-800 dark:text-gray-200">
+                  {{ serviceLabels[svc.name] ?? svc.name }}
+                </p>
+                <p v-if="svc.errorMessage" class="text-xs text-red-600 dark:text-red-400 mt-0.5 font-mono">
+                  {{ svc.errorMessage }}
+                </p>
+              </div>
+            </div>
+            <div class="text-right flex-shrink-0 ml-4">
+              <span class="text-xs font-semibold px-2 py-0.5 rounded-full"
+                :class="svc.result === 'Success'
+                  ? 'bg-green-100 dark:bg-green-800 text-green-700 dark:text-green-300'
+                  : 'bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-300'">
+                {{ svc.result === 'Success' ? 'Başarılı' : 'Hatalı' }}
+              </span>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ formatRunAt(svc.runAt) }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -589,25 +1126,38 @@
 </style>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import PageHeader from '../components/PageHeader.vue';
 import transportService from '../services/transportService';
 import apiClient from '../services/apiClient';
 import projectService from '../services/projectService';
-import systemSettingsService, { type PoCounterDto } from '../services/systemSettingsService';
+import systemSettingsService, { type PoCounterDto, type EmailSettingsDto, type WmsSettingsDto } from '../services/systemSettingsService';
+import { healthService, type BackgroundServiceStatus } from '../services/healthService';
 import { ApiErrorUtils } from '../utils/apiError';
 import { useNotificationStore } from '../stores/notification';
+import { useAuthStore } from '../stores/auth';
 import BaseModal from '../components/BaseModal.vue';
 
 const notificationStore = useNotificationStore();
+const authStore = useAuthStore();
 
-const tabs = [
-  { key: 'transport', label: 'Şoför & Araç' },
-  { key: 'zones',     label: 'Bölge Yönetimi' },
-  { key: 'depot',     label: 'Depo Tanımları' },
-  { key: 'locations', label: 'Depo Adresleri' },
-  { key: 'po_counter', label: 'Sipariş Sayaçları' },
-];
+const tabs = computed(() => {
+  const base = [
+    { key: 'transport',   label: 'Şoför & Araç' },
+    { key: 'zones',       label: 'Bölge Yönetimi' },
+    { key: 'depot',       label: 'Depo Tanımları' },
+    { key: 'locations',   label: 'Depo Adresleri' },
+    { key: 'po_counter',  label: 'Sipariş Sayaçları' },
+    { key: 'email',       label: 'E-posta Ayarları' },
+    { key: 'wms',         label: 'Depo Yönetimi' },
+    { key: 'security',    label: 'Güvenlik' },
+    { key: 'printers',    label: 'Yazıcı Yönetimi' },
+  ];
+  if (authStore.userRole === 'Admin') {
+    base.push({ key: 'system', label: 'Sistem Sağlığı' });
+  }
+  return base;
+});
 const activeTab = ref('transport');
 
 // ─── Transport ──────────────────────────────────────────────────────────────
@@ -763,13 +1313,13 @@ const printQr = () => {
 
 // ─── Zones ──────────────────────────────────────────────────────────────────
 
-interface Zone { id: number; name: string; order: number; }
+interface Zone { id: number; name: string; isOutOfCity: boolean; }
 
 const zone_zones = ref<Zone[]>([]);
 const zone_error = ref<string | null>(null);
 const zone_showModal = ref(false);
 const zone_isEdit = ref(false);
-const zone_form = ref({ name: '', order: 0 });
+const zone_form = ref({ name: '', isOutOfCity: false });
 const zone_currentId = ref<number | null>(null);
 
 const fetchZones = async () => {
@@ -784,7 +1334,7 @@ const fetchZones = async () => {
 const zone_openEdit = (zone: Zone) => {
   zone_isEdit.value = true;
   zone_currentId.value = zone.id;
-  zone_form.value = { name: zone.name, order: zone.order };
+  zone_form.value = { name: zone.name, isOutOfCity: zone.isOutOfCity };
   zone_showModal.value = true;
 };
 
@@ -792,9 +1342,9 @@ const zone_saveZone = async () => {
   if (!zone_form.value.name) return notificationStore.add('Bölge adı zorunludur', 'warning');
   try {
     if (zone_isEdit.value && zone_currentId.value) {
-      await projectService.updateZone(zone_currentId.value, { id: zone_currentId.value, name: zone_form.value.name, order: zone_form.value.order });
+      await projectService.updateZone(zone_currentId.value, { id: zone_currentId.value, name: zone_form.value.name, order: 0, isOutOfCity: zone_form.value.isOutOfCity });
     } else {
-      await projectService.createZone({ name: zone_form.value.name, order: zone_form.value.order });
+      await projectService.createZone({ name: zone_form.value.name, order: 0, isOutOfCity: zone_form.value.isOutOfCity });
     }
     zone_showModal.value = false;
     fetchZones();
@@ -916,7 +1466,140 @@ async function savePoCounter(counter: PoCounterDto) {
   }
 }
 
-// ─── Init ────────────────────────────────────────────────────────────────────
+// ─── Email Settings ──────────────────────────────────────────────────────────
+
+const email_form = ref<EmailSettingsDto>({ procurementEmailCc: null, dispatchEmailCc: null, dispatchEmailEnabled: true });
+const email_saving = ref(false);
+const email_error = ref<string | null>(null);
+const email_savedMsg = ref('');
+
+async function email_load() {
+  try {
+    email_form.value = await systemSettingsService.getEmailSettings();
+  } catch (e) {
+    // sessizce geç — sekme açılmadığında hata göstermemek için
+  }
+}
+
+async function email_save() {
+  email_saving.value = true;
+  email_error.value = null;
+  email_savedMsg.value = '';
+  try {
+    email_form.value = await systemSettingsService.saveEmailSettings(email_form.value);
+    email_savedMsg.value = 'E-posta ayarları kaydedildi.';
+    setTimeout(() => { email_savedMsg.value = ''; }, 3000);
+  } catch (e) {
+    email_error.value = ApiErrorUtils.getErrorMessage(e) || 'Kayıt başarısız.';
+  } finally {
+    email_saving.value = false;
+  }
+}
+
+// ─── WMS Ayarları ───────────────────────────────────────────────────────────
+
+const wms_form = ref<WmsSettingsDto>({
+  wmsPutawayEnabled: false,
+  wmsLocationPickingEnabled: false,
+  wmsBarcodePickingEnabled: false,
+});
+const wms_saving = ref(false);
+const wms_error = ref<string | null>(null);
+const wms_savedMsg = ref('');
+
+async function wms_load() {
+  try {
+    wms_form.value = await systemSettingsService.getWmsSettings();
+  } catch {
+    // sessizce geç — sekme açılmadığında hata göstermemek için
+  }
+}
+
+async function wms_save() {
+  wms_saving.value = true;
+  wms_error.value = null;
+  wms_savedMsg.value = '';
+  try {
+    wms_form.value = await systemSettingsService.saveWmsSettings(wms_form.value);
+    wms_savedMsg.value = 'WMS ayarları kaydedildi.';
+    setTimeout(() => { wms_savedMsg.value = ''; }, 3000);
+  } catch (e) {
+    wms_error.value = ApiErrorUtils.getErrorMessage(e) || 'Kayıt başarısız.';
+  } finally {
+    wms_saving.value = false;
+  }
+}
+
+// ─── Güvenlik / Login Kilitleri ─────────────────────────────────────────────
+
+const securityLoading = ref(false);
+const securityResetting = ref<string | null>(null);
+const blockedIps = ref<{ ip: string; attempts: number; blockedUntil: string }[]>([]);
+
+async function loadLoginBlocks() {
+  securityLoading.value = true;
+  try {
+    const res = await apiClient.get('/auth/login-blocks');
+    blockedIps.value = res.data;
+  } catch {
+    // sessizce geç — sekme açılmadığında hata göstermemek için
+  } finally {
+    securityLoading.value = false;
+  }
+}
+
+async function resetLoginBlock(ip: string) {
+  securityResetting.value = ip;
+  try {
+    await apiClient.post('/auth/reset-login-block', { ip });
+    blockedIps.value = blockedIps.value.filter(b => b.ip !== ip);
+    notificationStore.add(`${ip} adresinin kilidi kaldırıldı.`, 'success');
+  } catch (e) {
+    notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'İşlem başarısız.', 'error');
+  } finally {
+    securityResetting.value = null;
+  }
+}
+
+function formatBlockedUntil(iso: string) {
+  const d = new Date(iso);
+  return d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+// ─── Sistem Sağlığı (Admin) ─────────────────────────────────────────────────
+
+const system_loading = ref(false);
+const system_services = ref<BackgroundServiceStatus[]>([]);
+const system_error = ref<string | null>(null);
+
+const serviceLabels: Record<string, string> = {
+  'iss-import': 'ISS-IP Sipariş İmport',
+  'yk-sync': 'Yurtiçi Kargo Durum Sync',
+  'netsis-irsaliye': 'Netsis İrsaliye Sync',
+};
+
+async function loadSystemHealth() {
+  system_loading.value = true;
+  system_error.value = null;
+  try {
+    system_services.value = await healthService.getBackgroundServices();
+  } catch (e) {
+    system_error.value = ApiErrorUtils.getErrorMessage(e) || 'Servis durumu yüklenemedi.';
+  } finally {
+    system_loading.value = false;
+  }
+}
+
+function formatRunAt(runAt: string): string {
+  const d = new Date(runAt);
+  const diffMs = Date.now() - d.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return 'Az önce';
+  if (diffMin < 60) return `${diffMin} dakika önce`;
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return `${diffH} saat önce`;
+  return `${Math.floor(diffH / 24)} gün önce`;
+}
 
 onMounted(() => {
   fetchDrivers();
@@ -924,5 +1607,114 @@ onMounted(() => {
   fetchZones();
   depot_load();
   loadPoCounters();
+  email_load();
+  wms_load();
+  loadLoginBlocks();
+  if (authStore.userRole === 'Admin') loadSystemHealth();
+  loadPrinters();
+  loadPrintJobs();
 });
+
+// ─── Yazıcı Yönetimi ────────────────────────────────────────────────────────
+
+const printer_loading = ref(false);
+const printer_saving  = ref(false);
+const printer_agents  = ref<any[]>([]);
+const printer_configs = ref<any[]>([]);
+const showPrinterModal  = ref(false);
+const printerModalEdit  = ref<any | null>(null);
+const printerForm = ref({
+  name: '',
+  labelType: 0,
+  windowsPrinterName: '',
+  agentId: null as number | null,
+  isDefault: false,
+});
+
+const selectedAgentPrinters = computed(() => {
+  if (!printerForm.value.agentId) return [];
+  const agent = printer_agents.value.find(a => a.id === printerForm.value.agentId);
+  return agent?.installedPrinters ?? [];
+});
+
+async function loadPrinters() {
+  printer_loading.value = true;
+  try {
+    const [agents, configs] = await Promise.all([
+      apiClient.get('/print/agents').then(r => r.data),
+      apiClient.get('/print/printer-configs').then(r => r.data),
+    ]);
+    printer_agents.value  = agents;
+    printer_configs.value = configs;
+  } catch {
+    // sessizce geç
+  } finally {
+    printer_loading.value = false;
+  }
+}
+
+const print_jobs         = ref<any[]>([]);
+const print_jobs_loading = ref(false);
+
+async function loadPrintJobs() {
+  print_jobs_loading.value = true;
+  try {
+    const res = await apiClient.get('/print/jobs?page=1&pageSize=20');
+    print_jobs.value = res.data.items ?? [];
+  } catch {
+    // sessizce geç
+  } finally {
+    print_jobs_loading.value = false;
+  }
+}
+
+function openPrinterModal(cfg?: any) {
+  printerModalEdit.value = cfg ?? null;
+  printerForm.value = cfg
+    ? { name: cfg.name, labelType: cfg.labelType, windowsPrinterName: cfg.windowsPrinterName, agentId: cfg.agentId ?? null, isDefault: cfg.isDefault }
+    : { name: '', labelType: 0, windowsPrinterName: '', agentId: null, isDefault: false };
+  showPrinterModal.value = true;
+}
+
+async function savePrinterConfig() {
+  if (!printerForm.value.name || !printerForm.value.windowsPrinterName) {
+    notificationStore.add('Ad ve yazıcı adı zorunludur.', 'error');
+    return;
+  }
+  printer_saving.value = true;
+  try {
+    if (printerModalEdit.value) {
+      await apiClient.put(`/print/printer-configs/${printerModalEdit.value.id}`, printerForm.value);
+    } else {
+      await apiClient.post('/print/printer-configs', printerForm.value);
+    }
+    showPrinterModal.value = false;
+    notificationStore.add('Yazıcı kaydedildi.', 'success');
+    await loadPrinters();
+  } catch {
+    notificationStore.add('Kayıt sırasında hata oluştu.', 'error');
+  } finally {
+    printer_saving.value = false;
+  }
+}
+
+async function deletePrinterConfig(id: number) {
+  if (!confirm('Bu yazıcıyı silmek istediğinize emin misiniz?')) return;
+  try {
+    await apiClient.delete(`/print/printer-configs/${id}`);
+    notificationStore.add('Yazıcı silindi.', 'success');
+    await loadPrinters();
+  } catch {
+    notificationStore.add('Silme sırasında hata oluştu.', 'error');
+  }
+}
+
+async function testPrint(id: number) {
+  try {
+    await apiClient.post(`/print/printer-configs/${id}/test`);
+    notificationStore.add('Test baskısı kuyruğa alındı.', 'success');
+  } catch {
+    notificationStore.add('Test baskısı gönderilemedi.', 'error');
+  }
+}
 </script>

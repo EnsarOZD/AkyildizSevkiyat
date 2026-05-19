@@ -78,6 +78,12 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                     b.Property<double?>("EndLongitude")
                         .HasColumnType("float");
 
+                    b.Property<int?>("EndOdometerKm")
+                        .HasColumnType("int");
+
+                    b.Property<string>("EndOdometerPhotoPath")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime?>("EndTime")
                         .HasColumnType("datetime2");
 
@@ -97,6 +103,12 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                     b.Property<double>("StartLongitude")
                         .HasColumnType("float");
 
+                    b.Property<int?>("StartOdometerKm")
+                        .HasColumnType("int");
+
+                    b.Property<string>("StartOdometerPhotoPath")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("StartTime")
                         .HasColumnType("datetime2");
 
@@ -114,6 +126,11 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DriverId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_DriverSessions_Driver_OneOpen")
+                        .HasFilter("[Status] = 0");
+
                     b.HasIndex("StartTime");
 
                     b.HasIndex("ZonePreparationId");
@@ -123,6 +140,33 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                     b.HasIndex("VehicleId", "Status");
 
                     b.ToTable("DriverSessions");
+                });
+
+            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.ExternalEmailContact", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ExternalEmailContacts");
                 });
 
             modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.FloatingReturn", b =>
@@ -213,6 +257,12 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
 
                     b.Property<DateOnly>("ReceiptDate")
                         .HasColumnType("date");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -468,12 +518,12 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                         new
                         {
                             Id = 1,
-                            DeliveryDate = new DateTime(2026, 4, 19, 0, 0, 0, 0, DateTimeKind.Local),
+                            DeliveryDate = new DateTime(2026, 5, 19, 0, 0, 0, 0, DateTimeKind.Local),
                             ExternalOrderNumber = "SO-1001",
                             ImportStatus = 0,
                             IsActive = true,
                             IsTransferred = false,
-                            OrderDate = new DateTime(2026, 4, 18, 0, 0, 0, 0, DateTimeKind.Local),
+                            OrderDate = new DateTime(2026, 5, 18, 0, 0, 0, 0, DateTimeKind.Local),
                             ProjectId = 1,
                             Status = "Imported"
                         });
@@ -581,6 +631,166 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                     b.ToTable("LocationTransfers");
                 });
 
+            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Url")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("UserId", "IsRead");
+
+                    b.ToTable("Notifications");
+                });
+
+            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.PrintAgent", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AgentKey")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("InstalledPrintersJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("LastSeenAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("MachineName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PrintAgents");
+                });
+
+            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.PrintJob", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("LabelType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PayloadJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("PrinterConfigId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("StartedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PrinterConfigId");
+
+                    b.ToTable("PrintJobs");
+                });
+
+            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.PrinterConfig", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AgentId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("LabelType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("WindowsPrinterName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AgentId");
+
+                    b.ToTable("PrinterConfigs");
+                });
+
             modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.Project", b =>
                 {
                     b.Property<int>("Id")
@@ -592,10 +802,19 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                     b.Property<string>("Address")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("CityName")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("DefaultContactName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DefaultContactPhone")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("DeliveryOrder")
                         .HasColumnType("int");
@@ -605,6 +824,9 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
 
                     b.Property<TimeOnly?>("DeliveryWindowStart")
                         .HasColumnType("time");
+
+                    b.Property<string>("DistrictName")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("InstitutionCode")
                         .HasColumnType("nvarchar(max)");
@@ -672,6 +894,12 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("EmailSentAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("EmailSentTo")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateOnly?>("ExpectedDeliveryDate")
@@ -781,6 +1009,119 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("PurchaseOrderNumberCounters");
+                });
+
+            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.PushSubscription", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Auth")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Endpoint")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("P256DH")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Endpoint")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PushSubscriptions");
+                });
+
+            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.PutawayLine", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PutawayTaskId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Qty")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<int>("WarehouseLocationId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PutawayTaskId");
+
+                    b.HasIndex("WarehouseLocationId");
+
+                    b.ToTable("PutawayLines");
+                });
+
+            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.PutawayTask", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("DistributedQty")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(18,4)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<Guid>("GoodsReceiptId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("GoodsReceiptLineId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StockMasterId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("TotalQty")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GoodsReceiptLineId");
+
+                    b.HasIndex("StockMasterId");
+
+                    b.HasIndex("GoodsReceiptId", "Status");
+
+                    b.ToTable("PutawayTasks");
                 });
 
             modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.ReconciliationIssue", b =>
@@ -926,6 +1267,12 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                     b.Property<DateTime>("DeliveryDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<double?>("DeliveryLatitude")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("DeliveryLongitude")
+                        .HasColumnType("float");
+
                     b.Property<string>("DeliveryNote")
                         .HasColumnType("nvarchar(max)");
 
@@ -933,6 +1280,9 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("DeliveryPhotoBase64")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DeliveryPhotoPath")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("DeliveryRecipient")
@@ -944,6 +1294,15 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                     b.Property<DateTime?>("DispatchedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("FreightCarrierName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FreightCarrierPhone")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FreightCarrierPlate")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateOnly?>("IrsaliyeDate")
                         .HasColumnType("date");
 
@@ -952,6 +1311,9 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
 
                     b.Property<int>("IssOrderId")
                         .HasColumnType("int");
+
+                    b.Property<DateTime?>("MissingItemsMailSentAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("NetsisTransferredAt")
                         .HasColumnType("datetime2");
@@ -983,6 +1345,33 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                     b.Property<string>("TalepNo")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("YkBarcode")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("YkCargoKey")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("YkErrorCode")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("YkErrorMessage")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("YkInvoiceKey")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("YkJobId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("YkLastQueryAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("YkOperationMessage")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("YkOperationStatus")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int?>("ZonePreparationId")
                         .HasColumnType("int");
 
@@ -1002,6 +1391,35 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                     b.HasIndex("ZonePreparationId");
 
                     b.ToTable("Shipments");
+                });
+
+            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.ShipmentDeliveryPhoto", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("PhotoIndex")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PhotoPath")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("ShipmentId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("TakenAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ShipmentId");
+
+                    b.ToTable("ShipmentDeliveryPhotos");
                 });
 
             modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.ShipmentHistory", b =>
@@ -1120,6 +1538,109 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                     b.HasIndex("ShipmentId");
 
                     b.ToTable("ShipmentPrintLogs");
+                });
+
+            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.StockBarcode", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Barcode")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("StockMasterId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Barcode");
+
+                    b.HasIndex("StockMasterId");
+
+                    b.ToTable("StockBarcodes");
+                });
+
+            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.StockConsumption", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime?>("LastModified")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("RecipientName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<decimal?>("SalePrice")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<string>("StockCodeSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("StockMasterId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("StockNameSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UnitSnapshot")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Date");
+
+                    b.HasIndex("StockMasterId");
+
+                    b.HasIndex("Type");
+
+                    b.ToTable("StockConsumptions");
                 });
 
             modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.StockCount", b =>
@@ -1270,11 +1791,18 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Barcode")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<string>("Brand")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
                     b.Property<int>("Category")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DefaultPickingFaceId")
                         .HasColumnType("int");
 
                     b.Property<bool>("IsActive")
@@ -1290,6 +1818,9 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("decimal(18,4)")
                         .HasDefaultValue(0m);
+
+                    b.Property<int>("PickingOrder")
+                        .HasColumnType("int");
 
                     b.Property<int>("PickingType")
                         .HasColumnType("int");
@@ -1329,7 +1860,14 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<decimal?>("WeightKg")
+                        .HasColumnType("decimal(18,2)");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("Barcode");
+
+                    b.HasIndex("DefaultPickingFaceId");
 
                     b.HasIndex("StockCode")
                         .IsUnique();
@@ -1350,6 +1888,7 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                             Category = 0,
                             IsActive = true,
                             OnHandQty = 0m,
+                            PickingOrder = 0,
                             PickingType = 0,
                             ReservedQty = 0m,
                             StockCode = "EKMEK-01",
@@ -1364,6 +1903,7 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                             Category = 0,
                             IsActive = true,
                             OnHandQty = 0m,
+                            PickingOrder = 0,
                             PickingType = 0,
                             ReservedQty = 0m,
                             StockCode = "SU-05",
@@ -1378,6 +1918,7 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                             Category = 0,
                             IsActive = true,
                             OnHandQty = 0m,
+                            PickingOrder = 0,
                             PickingType = 0,
                             ReservedQty = 0m,
                             StockCode = "YOGURT-200",
@@ -1478,6 +2019,24 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<string>("DispatchEmailCc")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("DispatchEmailEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ProcurementEmailCc")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("WmsBarcodePickingEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("WmsLocationPickingEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("WmsPutawayEnabled")
+                        .HasColumnType("bit");
+
                     b.HasKey("Id");
 
                     b.ToTable("SystemSettings");
@@ -1519,6 +2078,10 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
 
                     b.Property<int>("Role")
                         .HasColumnType("int");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -1571,6 +2134,85 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                     b.ToTable("Vehicles");
                 });
 
+            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.VehicleReturn", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("DriverSessionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("ReturnDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DriverSessionId");
+
+                    b.ToTable("VehicleReturns");
+                });
+
+            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.VehicleReturnLine", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("LinkedShipmentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Qty")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ResolvedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("StockCodeFree")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("StockMasterId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("StockNameFree")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("VehicleReturnId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LinkedShipmentId");
+
+                    b.HasIndex("StockMasterId");
+
+                    b.HasIndex("VehicleReturnId");
+
+                    b.ToTable("VehicleReturnLines");
+                });
+
             modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.WarehouseLocation", b =>
                 {
                     b.Property<int>("Id")
@@ -1579,14 +2221,27 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Alan")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<string>("Code")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<int>("ContainerType")
+                        .HasColumnType("int");
 
                     b.Property<string>("Description")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("InnerLevel")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("InnerPosition")
+                        .HasColumnType("int");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -1609,15 +2264,24 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                     b.Property<int>("ModulNo")
                         .HasColumnType("int");
 
+                    b.Property<string>("QrCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<string>("Taraf")
                         .IsRequired()
                         .HasMaxLength(1)
                         .HasColumnType("nvarchar(1)");
 
+                    b.Property<int?>("TotalFloors")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Code")
                         .IsUnique();
+
+                    b.HasIndex("QrCode");
 
                     b.HasIndex("KoridorNo", "Taraf", "ModulNo", "Kat");
 
@@ -1631,6 +2295,9 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsOutOfCity")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -1669,6 +2336,15 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
 
                     b.Property<bool>("IsFrozen")
                         .HasColumnType("bit");
+
+                    b.Property<DateTime?>("MacroLockedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("MacroLockedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("MacroLockedByUserName")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("StartedAt")
                         .HasColumnType("datetime2");
@@ -1743,7 +2419,22 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                     b.Property<DateTime?>("MicroReadyAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("PickingLockedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("PickingLockedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PickingLockedByUserName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PreparedByUserName")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("ProjectId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("RouteOrder")
                         .HasColumnType("int");
 
                     b.Property<int>("ZonePreparationId")
@@ -1906,6 +2597,37 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                     b.Navigation("ToLocation");
                 });
 
+            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.Notification", b =>
+                {
+                    b.HasOne("Akyildiz.Sevkiyat.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.PrintJob", b =>
+                {
+                    b.HasOne("Akyildiz.Sevkiyat.Domain.Entities.PrinterConfig", "PrinterConfig")
+                        .WithMany("PrintJobs")
+                        .HasForeignKey("PrinterConfigId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PrinterConfig");
+                });
+
+            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.PrinterConfig", b =>
+                {
+                    b.HasOne("Akyildiz.Sevkiyat.Domain.Entities.PrintAgent", "Agent")
+                        .WithMany("PrinterConfigs")
+                        .HasForeignKey("AgentId");
+
+                    b.Navigation("Agent");
+                });
+
             modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.Project", b =>
                 {
                     b.HasOne("Akyildiz.Sevkiyat.Domain.Entities.Zone", "Zone")
@@ -1942,6 +2664,63 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("PurchaseOrder");
+
+                    b.Navigation("StockMaster");
+                });
+
+            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.PushSubscription", b =>
+                {
+                    b.HasOne("Akyildiz.Sevkiyat.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.PutawayLine", b =>
+                {
+                    b.HasOne("Akyildiz.Sevkiyat.Domain.Entities.PutawayTask", "PutawayTask")
+                        .WithMany("Lines")
+                        .HasForeignKey("PutawayTaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Akyildiz.Sevkiyat.Domain.Entities.WarehouseLocation", "WarehouseLocation")
+                        .WithMany()
+                        .HasForeignKey("WarehouseLocationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("PutawayTask");
+
+                    b.Navigation("WarehouseLocation");
+                });
+
+            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.PutawayTask", b =>
+                {
+                    b.HasOne("Akyildiz.Sevkiyat.Domain.Entities.GoodsReceipt", "GoodsReceipt")
+                        .WithMany()
+                        .HasForeignKey("GoodsReceiptId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Akyildiz.Sevkiyat.Domain.Entities.GoodsReceiptLine", "GoodsReceiptLine")
+                        .WithMany()
+                        .HasForeignKey("GoodsReceiptLineId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Akyildiz.Sevkiyat.Domain.Entities.StockMaster", "StockMaster")
+                        .WithMany()
+                        .HasForeignKey("StockMasterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("GoodsReceipt");
+
+                    b.Navigation("GoodsReceiptLine");
 
                     b.Navigation("StockMaster");
                 });
@@ -1989,6 +2768,17 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                     b.Navigation("ZonePreparation");
                 });
 
+            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.ShipmentDeliveryPhoto", b =>
+                {
+                    b.HasOne("Akyildiz.Sevkiyat.Domain.Entities.Shipment", "Shipment")
+                        .WithMany("DeliveryPhotos")
+                        .HasForeignKey("ShipmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Shipment");
+                });
+
             modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.ShipmentHistory", b =>
                 {
                     b.HasOne("Akyildiz.Sevkiyat.Domain.Entities.Shipment", null)
@@ -2032,6 +2822,28 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Shipment");
+                });
+
+            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.StockBarcode", b =>
+                {
+                    b.HasOne("Akyildiz.Sevkiyat.Domain.Entities.StockMaster", "StockMaster")
+                        .WithMany()
+                        .HasForeignKey("StockMasterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("StockMaster");
+                });
+
+            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.StockConsumption", b =>
+                {
+                    b.HasOne("Akyildiz.Sevkiyat.Domain.Entities.StockMaster", "StockMaster")
+                        .WithMany()
+                        .HasForeignKey("StockMasterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("StockMaster");
                 });
 
             modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.StockCountLine", b =>
@@ -2082,6 +2894,16 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                     b.Navigation("LocalStock");
                 });
 
+            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.StockMaster", b =>
+                {
+                    b.HasOne("Akyildiz.Sevkiyat.Domain.Entities.WarehouseLocation", "DefaultPickingFace")
+                        .WithMany()
+                        .HasForeignKey("DefaultPickingFaceId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("DefaultPickingFace");
+                });
+
             modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.StockTransaction", b =>
                 {
                     b.HasOne("Akyildiz.Sevkiyat.Domain.Entities.StockMaster", "StockMaster")
@@ -2091,6 +2913,40 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("StockMaster");
+                });
+
+            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.VehicleReturn", b =>
+                {
+                    b.HasOne("Akyildiz.Sevkiyat.Domain.Entities.DriverSession", "DriverSession")
+                        .WithMany()
+                        .HasForeignKey("DriverSessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DriverSession");
+                });
+
+            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.VehicleReturnLine", b =>
+                {
+                    b.HasOne("Akyildiz.Sevkiyat.Domain.Entities.Shipment", "LinkedShipment")
+                        .WithMany()
+                        .HasForeignKey("LinkedShipmentId");
+
+                    b.HasOne("Akyildiz.Sevkiyat.Domain.Entities.StockMaster", "StockMaster")
+                        .WithMany()
+                        .HasForeignKey("StockMasterId");
+
+                    b.HasOne("Akyildiz.Sevkiyat.Domain.Entities.VehicleReturn", "VehicleReturn")
+                        .WithMany("Lines")
+                        .HasForeignKey("VehicleReturnId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LinkedShipment");
+
+                    b.Navigation("StockMaster");
+
+                    b.Navigation("VehicleReturn");
                 });
 
             modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.ZonePreparation", b =>
@@ -2176,6 +3032,16 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                     b.Navigation("ShipmentLines");
                 });
 
+            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.PrintAgent", b =>
+                {
+                    b.Navigation("PrinterConfigs");
+                });
+
+            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.PrinterConfig", b =>
+                {
+                    b.Navigation("PrintJobs");
+                });
+
             modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.Project", b =>
                 {
                     b.Navigation("IssOrders");
@@ -2188,14 +3054,26 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                     b.Navigation("Lines");
                 });
 
+            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.PutawayTask", b =>
+                {
+                    b.Navigation("Lines");
+                });
+
             modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.Shipment", b =>
                 {
+                    b.Navigation("DeliveryPhotos");
+
                     b.Navigation("Histories");
 
                     b.Navigation("Lines");
                 });
 
             modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.StockCount", b =>
+                {
+                    b.Navigation("Lines");
+                });
+
+            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.VehicleReturn", b =>
                 {
                     b.Navigation("Lines");
                 });

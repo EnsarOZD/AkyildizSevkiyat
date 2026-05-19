@@ -16,6 +16,13 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Commands.StartDriverSession
 
             RuleFor(x => x.Longitude)
                 .InclusiveBetween(-180, 180).WithMessage("Geçersiz boylam değeri.");
+
+            RuleFor(x => x.StartOdometerPhotoBase64)
+                .NotEmpty().WithMessage("Başlangıç kadran fotoğrafı zorunludur.");
+
+            RuleFor(x => x.StartOdometerKm)
+                .NotNull().WithMessage("Başlangıç kilometre bilgisi zorunludur.")
+                .GreaterThan(0).When(x => x.StartOdometerKm.HasValue).WithMessage("Kilometre değeri 0'dan büyük olmalıdır.");
         }
     }
 }

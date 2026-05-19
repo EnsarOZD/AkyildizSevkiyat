@@ -54,9 +54,9 @@
             </button>
 
             <button
-                @click="checkNetsisTransfers"
+                @click="checkNetsisTransfers({ fromDate: startDate, toDate: endDate, checkTransferred: true })"
                 class="flex-1 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 px-3 py-2 rounded hover:bg-indigo-100 dark:hover:bg-indigo-900/40 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center gap-2 text-sm font-medium transition-colors"
-                title="Netsis'te aktarılmış siparişleri işaretle"
+                :title="`Netsis'te aktarılmış siparişleri kontrol et — silinenleri geri al (${startDate} – ${endDate})`"
                 :disabled="checkingNetsis"
             >
                 <span v-if="checkingNetsis">...</span>
@@ -81,11 +81,66 @@
       </div>
     </div>
 
+    <!-- Netsis Tekil Sipariş Sorgulama -->
+    <div class="bg-white dark:bg-gray-900 p-4 rounded shadow">
+      <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">Netsis Tekil Kontrol</p>
+      <div class="flex gap-2 items-end">
+        <div class="flex-1">
+          <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Sipariş No (ISS veya Netsis formatında)</label>
+          <input
+            v-model="singleOrderNumber"
+            type="text"
+            placeholder="Örn: 202604290926"
+            class="w-full border border-gray-300 dark:border-gray-700 rounded px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            @keydown.enter="checkSingleOrder"
+          />
+        </div>
+        <button
+          @click="checkSingleOrder"
+          :disabled="!singleOrderNumber.trim() || checkingSingle"
+          class="bg-indigo-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
+        >
+          <span v-if="checkingSingle">Sorgulanıyor...</span>
+          <span v-else>Netsis Sorgula</span>
+        </button>
+      </div>
+      <div v-if="singleOrderResult" class="mt-3 rounded-lg border p-3 text-sm"
+        :class="{
+          'border-green-300 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200': singleOrderResult.reverted,
+          'border-blue-300 bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200': singleOrderResult.found && singleOrderResult.existsInNetsis,
+          'border-amber-300 bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200': singleOrderResult.found && !singleOrderResult.wasTransferred,
+          'border-red-300 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200': !singleOrderResult.found,
+        }">
+        {{ singleOrderResult.message }}
+        <span v-if="singleOrderResult.externalOrderNumber && singleOrderResult.externalOrderNumber !== singleOrderNumber" class="block text-xs opacity-70 mt-1">
+          ISS Sipariş No: {{ singleOrderResult.externalOrderNumber }}
+        </span>
+      </div>
+    </div>
+
     <!-- Tabs & Content -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-        <!-- Mapping Manager -->
-        <div class="lg:col-span-3" v-if="showMapping && activeTab === 'NeedsMapping'">
-            <StockMappingManager @mapped="loadOrders" />
+        <!-- Eşleştirme Bekleyen sekmesinde stok eşleştirme sayfasına yönlendirme -->
+        <div class="lg:col-span-3" v-if="activeTab === 'NeedsMapping'">
+            <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 flex items-center justify-between gap-4">
+                <div class="flex items-start gap-3">
+                    <svg class="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                    </svg>
+                    <div>
+                        <p class="text-amber-800 dark:text-amber-300 font-semibold text-sm">Stok eşleştirme gerekiyor</p>
+                        <p class="text-amber-700 dark:text-amber-400 text-xs mt-0.5">
+                            Bu sipariş(ler)de henüz sistem stok kartına eşleştirilmemiş ISS kalemleri var.
+                            Eşleştirme yaptıktan sonra siparişler "Hazır" sekmesine geçecek.
+                        </p>
+                    </div>
+                </div>
+                <router-link to="/stocks/mappings"
+                    class="shrink-0 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 text-sm font-semibold transition-colors whitespace-nowrap">
+                    Eşleştirme Sayfası →
+                </router-link>
+            </div>
         </div>
 
         <div class="lg:col-span-3 bg-white dark:bg-gray-900 rounded-lg shadow-sm border dark:border-gray-800">
@@ -144,7 +199,7 @@
                     <BaseSelect v-model="talepNoFilter" @change="loadOrders" size="sm">
                         <option value="">İş Türü</option>
                         <option value="Zero">Catering</option>
-                        <option value="NonZero">Diğer</option>
+                        <option value="NonZero">Diğer / Kıyafet</option>
                     </BaseSelect>
                     <BaseInput
                         v-model="searchQuery"
@@ -290,7 +345,7 @@
                                             <td class="p-4">
                                                 <div class="text-[10px] text-gray-400 uppercase font-bold">{{ order.institutionCode || order.InstitutionCode }}</div>
                                                 <div class="text-xs font-semibold dark:text-gray-200">{{ order.projectCode || order.ProjectCode }}</div>
-                                                <div class="text-xs text-gray-500 truncate max-w-[150px]">{{ order.projectName || order.ProjectName }}</div>
+                                                <div class="text-xs text-gray-500">{{ order.projectName || order.ProjectName }}</div>
                                                 <div v-if="order.aciklama || order.Aciklama" class="text-[10px] text-indigo-600 dark:text-indigo-400 truncate max-w-[150px] mt-0.5" :title="order.aciklama || order.Aciklama">
                                                     {{ order.aciklama || order.Aciklama }}
                                                 </div>
@@ -415,7 +470,7 @@
                          </div>
                          <div class="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl border dark:border-gray-700">
                              <span class="block text-gray-400 text-[10px] font-bold uppercase mb-1">Proje</span>
-                             <span class="font-bold dark:text-gray-100 block truncate">{{ selectedOrder.projectName }}</span>
+                             <span class="font-bold dark:text-gray-100 block">{{ selectedOrder.projectName }}</span>
                              <span class="text-xs text-gray-500">{{ selectedOrder.projectCode }}</span>
                          </div>
                          <div class="col-span-full">
@@ -512,7 +567,6 @@ import PageHeader from '../components/PageHeader.vue';
 import shipmentService from '../services/shipmentService';
 import projectService from '../services/projectService';
 import apiClient from '../services/apiClient';
-import StockMappingManager from '../components/StockMappingManager.vue';
 import { useNotificationStore } from '../stores/notification';
 import { ApiErrorUtils } from '../utils/apiError';
 import BaseButton from '../components/BaseButton.vue';
@@ -543,8 +597,6 @@ const importing = ref(false);
 const importBatchId = ref<number | null>(null);
 const importPollInterval = ref<ReturnType<typeof setInterval> | null>(null);
 const importResult = ref<null | { totalFromIss: number; newCount: number; skippedCount: number; needsMappingCount: number; failedCount: number; errors: string[] }>(null);
-const showMapping = ref(true);
-
 const batches = ref<any[]>([]);
 const historyLoading = ref(false);
 
@@ -723,6 +775,8 @@ const importOrders = async () => {
                     page.value = 1;
                     await loadOrders();
                     await loadHistory();
+                    // Netsis'e aktarılmış siparişleri otomatik gizle (aktarılan tarih aralığıyla)
+                    checkNetsisTransfers({ fromDate: startDate.value, toDate: endDate.value });
                 }
             } catch (e) {
                 console.error('Batch poll error:', e);
@@ -739,37 +793,72 @@ const importOrders = async () => {
 onUnmounted(stopImportPolling);
 
 const syncing = ref(false);
-const syncProjects = async () => {
+const syncProjects = () => {
+    if (syncing.value) return;
     syncing.value = true;
+    notificationStore.add('Proje senkronizasyonu arka planda devam ediyor...', 'info');
+    projectService.syncProjects({ forceAll: false }, { timeout: 0 })
+        .then(res => {
+            notificationStore.add(`${res.count} proje senkronize edildi.`, 'success');
+            loadOrders();
+        })
+        .catch(e => {
+            notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Proje senkronizasyonu başarısız.', 'error');
+        })
+        .finally(() => { syncing.value = false; });
+};
+
+const singleOrderNumber = ref('');
+const checkingSingle = ref(false);
+const singleOrderResult = ref<{ found: boolean; wasTransferred: boolean; existsInNetsis: boolean; reverted: boolean; message: string; externalOrderNumber?: string } | null>(null);
+
+const checkSingleOrder = async () => {
+    const num = singleOrderNumber.value.trim();
+    if (!num || checkingSingle.value) return;
+    checkingSingle.value = true;
+    singleOrderResult.value = null;
     try {
-        const res = await projectService.syncProjects();
-        await loadOrders();
-        notificationStore.add(`${res.count} proje senkronize edildi.`, 'success');
+        const result = await shipmentService.checkSingleOrderNetsis(num);
+        singleOrderResult.value = result;
+        if (result.reverted) {
+            notificationStore.add(`Sipariş Netsis'te bulunamadı ve aktarım bilgisi sıfırlandı.`, 'warning');
+            loadOrders();
+        }
     } catch (e) {
-        console.error(e);
-        notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Hata oluştu.', 'error');
+        notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Sorgu sırasında hata oluştu.', 'error');
     } finally {
-        syncing.value = false;
+        checkingSingle.value = false;
     }
 };
 
 const checkingNetsis = ref(false);
-const checkNetsisTransfers = async () => {
+const checkNetsisTransfers = (opts?: { fromDate?: string; toDate?: string; checkTransferred?: boolean }) => {
+    if (checkingNetsis.value) return;
     checkingNetsis.value = true;
-    try {
-        const res = await shipmentService.checkNetsisTransfers();
-        const parts: string[] = [`${res.checked} sipariş kontrol edildi`];
-        if (res.markedAsTransferred > 0) parts.push(`${res.markedAsTransferred} tanesi aktarıldı olarak işaretlendi`);
-        if (res.resetToActive > 0) parts.push(`${res.resetToActive} tanesi sevkiyatı silindiğinden aktif listeye geri alındı`);
-        notificationStore.add(`Netsis kontrolü tamamlandı. ${parts.join(', ')}.`, 'success');
-        if (res.error) notificationStore.add(`Netsis uyarısı: ${res.error}`, 'warning');
-        if (res.markedAsTransferred > 0 || res.resetToActive > 0) await loadOrders();
-    } catch (e) {
-        console.error(e);
-        notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Netsis kontrolü sırasında hata oluştu.', 'error');
-    } finally {
-        checkingNetsis.value = false;
-    }
+    const rangeLabel = opts?.fromDate
+        ? ` (${opts.fromDate}${opts.toDate && opts.toDate !== opts.fromDate ? ' – ' + opts.toDate : ''})`
+        : ' (son 30 gün)';
+    notificationStore.add(`Netsis transferleri kontrol ediliyor${rangeLabel}, lütfen bekleyiniz...`, 'info');
+    shipmentService.checkNetsisTransfers(opts)
+        .then((result) => {
+            if (result.error) {
+                notificationStore.add(`Netsis kontrolü tamamlandı ancak hata oluştu: ${result.error}`, 'warning');
+            } else {
+                const parts: string[] = [];
+                if (result.markedAsTransferred) parts.push(`${result.markedAsTransferred} aktarıldı olarak işaretlendi`);
+                if (result.resetToActive) parts.push(`${result.resetToActive} yerel çakışma düzeltildi`);
+                if (result.netsisDeletedCount) parts.push(`⚠ ${result.netsisDeletedCount} sipariş Netsis'te bulunamadı ve listeye geri alındı`);
+                const summary = parts.length ? parts.join(' • ') : 'Değişiklik yok';
+                notificationStore.add(`Netsis kontrolü tamamlandı — ${summary}.`, result.netsisDeletedCount ? 'warning' : 'success');
+            }
+            loadOrders();
+        })
+        .catch(e => {
+            notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Netsis kontrolü başlatılamadı.', 'error');
+        })
+        .finally(() => {
+            checkingNetsis.value = false;
+        });
 };
 
 const checking = ref(false);
@@ -792,6 +881,8 @@ const createShipment = async (orderId: number) => {
     try {
         await shipmentService.createShipmentFromIss(orderId);
         notificationStore.add('Sevkiyat başarıyla oluşturuldu.', 'success');
+        selectedOrder.value = null;
+        await loadOrders();
     } catch (e) {
         console.error(e);
         notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Sevkiyat oluşturulurken hata oluştu.', 'error');
@@ -829,5 +920,15 @@ const formatDate = (d: string) => {
 
 watch([activeTab, page], loadOrders);
 
-onMounted(loadOrders);
+onMounted(async () => {
+    await loadOrders();
+    // Sayfa açılışında arka planda sessizce Netsis kontrolü yap (son 30 gün), bitince listeyi yenile
+    shipmentService.checkNetsisTransfers()
+        .then((result) => {
+            if ((result.markedAsTransferred ?? 0) > 0 || (result.resetToActive ?? 0) > 0) {
+                loadOrders();
+            }
+        })
+        .catch(() => { /* sessiz hata — kullanıcıyı engelleme */ });
+});
 </script>

@@ -5,8 +5,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Akyildiz.Sevkiyat.Application.Warehouse.Services
 {
     /// <summary>
-    /// After a shipment is removed or passived, checks if the owning ZonePrep has
-    /// zero remaining active shipments and auto-closes it (→ Dispatched).
+    /// Tüm sevkiyatlar final duruma (Delivered, ReturnedToWarehouse, Cancelled, Passive) geçince
+    /// zone'u otomatik olarak Dispatched'e kapatır. Teslim, iade, iptal ve pasif işlemleri sonrası çağrılır.
     /// </summary>
     public class ZoneAutoCloseService
     {
@@ -25,12 +25,15 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Services
             if (zp == null || zp.Status == ZonePreparationStatus.Dispatched)
                 return;
 
-            var hasActive = await _context.Shipments
+            // Final durumlar: Delivered, ReturnedToWarehouse, Cancelled, Passive
+            // Bu statülerin dışında aktif sevkiyat varsa zone kapanmaz.
+            var hasActive = await _context.WarehouseShipments
                 .AnyAsync(s =>
                     s.ZonePreparationId == zonePreparationId &&
                     s.Status != ShipmentStatus.Cancelled &&
                     s.Status != ShipmentStatus.Passive &&
-                    s.Status != ShipmentStatus.Created,
+                    s.Status != ShipmentStatus.Delivered &&
+                    s.Status != ShipmentStatus.ReturnedToWarehouse,
                     ct);
 
             if (!hasActive)

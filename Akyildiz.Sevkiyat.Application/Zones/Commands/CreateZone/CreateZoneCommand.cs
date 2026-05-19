@@ -10,6 +10,7 @@ namespace Akyildiz.Sevkiyat.Application.Zones.Commands.CreateZone
     {
         public string Name { get; init; } = "";
         public int Order { get; init; }
+        public bool IsOutOfCity { get; init; } = false;
     }
 
     public class CreateZoneCommandHandler : IRequestHandler<CreateZoneCommand, int>
@@ -26,7 +27,8 @@ namespace Akyildiz.Sevkiyat.Application.Zones.Commands.CreateZone
             var entity = new Zone
             {
                 Name = request.Name,
-                Order = request.Order
+                Order = request.Order,
+                IsOutOfCity = request.IsOutOfCity
             };
 
             _context.Zones.Add(entity);

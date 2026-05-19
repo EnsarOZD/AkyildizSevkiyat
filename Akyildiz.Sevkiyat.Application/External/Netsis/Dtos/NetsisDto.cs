@@ -190,6 +190,7 @@ namespace Akyildiz.Sevkiyat.Application.External.Netsis.Dtos
         public string  StokKodu { get; set; } = string.Empty;
         public decimal Miktar   { get; set; }
         public string? Birim    { get; set; }
+        public decimal KdvOrani { get; set; }
     }
 
     public sealed class NetsisPoResult

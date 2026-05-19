@@ -1,3 +1,4 @@
+using Akyildiz.Sevkiyat.Application.Common.Interfaces;
 using Akyildiz.Sevkiyat.Application.Interfaces;
 using Akyildiz.Sevkiyat.Domain.Entities;
 using Akyildiz.Sevkiyat.Domain.Enums;
@@ -11,11 +12,16 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipmentDetail
     {
         private readonly IApplicationDbContext _context;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IPhotoStorageService _photos;
 
-        public GetShipmentDetailQueryHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+        public GetShipmentDetailQueryHandler(
+            IApplicationDbContext context,
+            ICurrentUserService currentUserService,
+            IPhotoStorageService photos)
         {
             _context = context;
             _currentUserService = currentUserService;
+            _photos = photos;
         }
 
         public async Task<ShipmentDetailDto> Handle(GetShipmentDetailQuery request, CancellationToken cancellationToken)
@@ -82,6 +88,12 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipmentDetail
                 }
             }
 
+            // Fetch delivery photos
+            var deliveryPhotos = await _context.ShipmentDeliveryPhotos
+                .Where(p => p.ShipmentId == request.Id)
+                .OrderBy(p => p.PhotoIndex)
+                .ToListAsync(cancellationToken);
+
             // Fetch print logs
             var printLogs = await _context.ShipmentPrintLogs
                 .Where(l => l.ShipmentId == request.Id)
@@ -110,6 +122,7 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipmentDetail
                 ProjectAddress = shipment.Project.Address,
                 ZoneId = shipment.Project.ZoneId,
                 ZoneName = shipment.Project.Zone?.Name,
+                ZonePreparationId = shipment.ZonePreparationId,
                 Status = shipment.Status.ToString(),
                 DeliveryDate = shipment.DeliveryDate,
                 DriverName = shipment.AssignedDriverName,
@@ -125,13 +138,33 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipmentDetail
                 DeliveryNote = shipment.DeliveryNote,
                 DeliveryRecipient = shipment.DeliveryRecipient,
                 DeliveryPhotoBase64 = shipment.DeliveryPhotoBase64,
+                DeliveryPhotoPath   = shipment.DeliveryPhotoPath,
+                DeliveryPhotos = deliveryPhotos.Select(p => new DeliveryPhotoDto
+                {
+                    Id         = p.Id,
+                    PhotoUrl   = _photos.GetUrl(p.PhotoPath),
+                    PhotoIndex = p.PhotoIndex,
+                    TakenAt    = p.TakenAt,
+                }).ToList(),
 
                 OperationType      = shipment.OperationType == Domain.Enums.OperationType.Clothing ? "Kıyafet" : "Catering",
                 OperationTypeValue = (int)shipment.OperationType,
 
+                YkCargoKey         = shipment.YkCargoKey,
+                YkInvoiceKey       = shipment.YkInvoiceKey,
+                YkJobId            = shipment.YkJobId,
+                YkBarcode          = shipment.YkBarcode,
+                YkOperationStatus  = shipment.YkOperationStatus,
+                YkOperationMessage = shipment.YkOperationMessage,
+                YkErrorCode        = shipment.YkErrorCode,
+                YkErrorMessage     = shipment.YkErrorMessage,
+                YkLastQueryAt      = shipment.YkLastQueryAt,
+
                 // Mapped Fields
                 ExternalOrderNumber = shipment.IssOrder?.ExternalOrderNumber,
                 TalepNo = shipment.TalepNo ?? shipment.IssOrder?.TalepNo,
+                TalepTuru = shipment.IssOrder?.TalepTuru,
+                InstitutionCode = shipment.Project.InstitutionCode,
                 TeslimAlacakKisiler = shipment.IssOrder?.TeslimAlacakKisiler,
                 TeslimAlacakTelefon = shipment.IssOrder?.TeslimAlacakTelefonNumaralari,
                 YoneticiMail = shipment.IssOrder?.YoneticiMailAdresleri,
@@ -152,6 +185,7 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipmentDetail
                         
                         LocalStockCode = hasLocal ? localStock!.StockCode : l.StockCode, // Fallback to ISS if no map
                         Unit = hasLocal ? localStock!.Unit.ToString() : l.Unit.ToString(),
+                        UnitValue = (int)(hasLocal ? localStock!.Unit : l.Unit),
                         StockQty = null, // Placeholder
 
                         OrderedQty = l.OrderedQty,

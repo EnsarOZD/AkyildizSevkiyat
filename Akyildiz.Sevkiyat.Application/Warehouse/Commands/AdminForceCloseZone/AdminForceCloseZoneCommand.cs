@@ -31,19 +31,30 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.AdminForceCloseZone
                 .FirstOrDefaultAsync(z => z.Id == request.ZonePreparationId, cancellationToken)
                 ?? throw new NotFoundException("ZonePreparation", request.ZonePreparationId);
 
-            if (zp.Status == ZonePreparationStatus.Dispatched)
-                throw new DomainException("Bu hazırlık zaten kapatılmış.");
+            var userId = _currentUserService.UserId;
+            const string reason = "Admin tarafından zona kapatıldı — sevke hazır durumuna geri alındı.";
 
-            // Detach all remaining non-dispatched shipments from this zone
-            var remainingShipments = await _context.Shipments
+            // Tüm bağlı sevkiyatları bul (teslim edilmiş/iptal olanlar hariç)
+            var shipments = await _context.WarehouseShipments
                 .Where(s =>
                     s.ZonePreparationId == request.ZonePreparationId &&
+                    s.Status != ShipmentStatus.Delivered &&
                     s.Status != ShipmentStatus.Cancelled &&
-                    s.Status != ShipmentStatus.Dispatched)
+                    s.Status != ShipmentStatus.ReturnedToWarehouse)
                 .ToListAsync(cancellationToken);
 
-            foreach (var s in remainingShipments)
+            foreach (var s in shipments)
+            {
+                // ReadyForDispatch'te değilse geri al
+                if (s.Status != ShipmentStatus.ReadyForDispatch)
+                    s.ChangeStatus(ShipmentStatus.ReadyForDispatch, userId, reason);
+
+                // Araç/sürücü atamasını temizle
+                s.ClearVehicleAssignment();
+
+                // Zonadan ayır
                 s.ZonePreparationId = null;
+            }
 
             zp.Status = ZonePreparationStatus.Dispatched;
 

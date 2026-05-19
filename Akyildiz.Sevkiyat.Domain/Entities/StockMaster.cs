@@ -33,7 +33,30 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
         // Netsis stok kodu — API bilgileri gelince doldurulur
         public string? NetsisStockCode { get; set; }
 
+        /// <summary>
+        /// Birincil tedarikçi barkodu (EAN13, Code128 vb.).
+        /// Hızlı lookup için. Birden fazla barkod için StockBarcode tablosunu kullanın.
+        /// </summary>
+        public string? Barcode { get; set; }
+
+        /// <summary>
+        /// Bu ürünün sabit toplama gözü (PickingFace lokasyonu).
+        /// Picking yönlendirmesinde öncelikli olarak bu lokasyon önerilir.
+        /// </summary>
+        public int? DefaultPickingFaceId { get; set; }
+        public WarehouseLocation? DefaultPickingFace { get; set; }
+
         public bool IsActive { get; set; } = true;
+
+        /// <summary>
+        /// Pick listelerinde sıralama için kullanılır. Düşük değer önce gelir.
+        /// </summary>
+        public int PickingOrder { get; set; } = 0;
+
+        /// <summary>
+        /// Ürünün birim ağırlığı (kg). Toplam tonaj hesabında kullanılır. Boş bırakılabilir.
+        /// </summary>
+        public decimal? WeightKg { get; set; }
 
         // EF Core optimistic concurrency token
         public byte[] RowVersion { get; set; } = null!;

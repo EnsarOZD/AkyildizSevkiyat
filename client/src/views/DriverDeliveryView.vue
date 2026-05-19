@@ -25,7 +25,7 @@
       <div class="bg-white dark:bg-[#0f2744] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 p-4 space-y-3">
         <div>
           <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ shipment.projectName }}</h2>
-          <p v-if="shipment.talepNo" class="text-sm text-gray-500 dark:text-gray-400">Talep: {{ shipment.talepNo }}</p>
+          <p v-if="shipment.externalOrderNumber" class="text-sm text-gray-500 dark:text-gray-400">Sipariş: {{ shipment.externalOrderNumber }}</p>
         </div>
 
         <div v-if="shipment.projectAddress" class="flex items-start gap-2">
@@ -36,16 +36,16 @@
           </a>
         </div>
 
-        <div v-if="shipment.teslimAlacakKisiler" class="flex items-center gap-2">
+        <div v-if="stop?.contactName" class="flex items-center gap-2">
           <UserIcon class="w-4 h-4 text-gray-400 flex-shrink-0" />
-          <span class="text-sm text-gray-700 dark:text-gray-300">{{ shipment.teslimAlacakKisiler }}</span>
+          <span class="text-sm text-gray-700 dark:text-gray-300">{{ stop.contactName }}</span>
         </div>
 
-        <div v-if="shipment.teslimAlacakTelefon" class="flex items-center gap-2">
+        <div v-if="stop?.contactPhone" class="flex items-center gap-2">
           <PhoneIcon class="w-4 h-4 text-gray-400 flex-shrink-0" />
-          <a :href="`tel:${shipment.teslimAlacakTelefon}`"
+          <a :href="`tel:${stop.contactPhone}`"
              class="text-sm text-blue-600 dark:text-blue-400 hover:underline">
-            {{ shipment.teslimAlacakTelefon }}
+            {{ stop.contactPhone }}
           </a>
         </div>
 
@@ -82,12 +82,22 @@
         <p v-if="shipment.deliveredAt" class="text-sm text-green-600 dark:text-green-500">
           {{ formatDateTime(shipment.deliveredAt) }}
         </p>
-        <!-- Photo thumbnail -->
-        <div v-if="shipment.deliveryPhotoBase64" class="mt-3">
+        <!-- Delivery photos (new multi-photo) -->
+        <div v-if="deliveryPhotos.length" class="mt-3 grid grid-cols-3 gap-2">
           <img
-            :src="`data:image/jpeg;base64,${shipment.deliveryPhotoBase64}`"
+            v-for="photo in deliveryPhotos"
+            :key="photo.photoIndex"
+            :src="photo.photoUrl"
+            class="w-full aspect-square object-cover rounded-lg cursor-pointer"
+            @click="lightboxSrc = photo.photoUrl"
+          />
+        </div>
+        <!-- Legacy single photo -->
+        <div v-else-if="legacyPhotoSrc" class="mt-3">
+          <img
+            :src="legacyPhotoSrc"
             class="w-full max-h-48 object-cover rounded-lg cursor-pointer"
-            @click="lightboxSrc = `data:image/jpeg;base64,${shipment.deliveryPhotoBase64}`"
+            @click="lightboxSrc = legacyPhotoSrc"
           />
         </div>
       </div>
@@ -138,28 +148,37 @@
             ></textarea>
           </div>
 
-          <!-- Photo -->
+          <!-- Photos (up to 5) -->
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Fotoğraf <span class="text-gray-400 font-normal">(isteğe bağlı)</span>
+              Teslim Fotoğrafları <span class="text-red-500">*</span>
+              <span class="text-gray-400 font-normal ml-1">({{ form.photos.length }}/5)</span>
             </label>
 
-            <div v-if="form.photoPreview" class="mb-2 relative">
-              <img
-                :src="form.photoPreview"
-                class="w-full max-h-40 object-cover rounded-lg cursor-pointer"
-                @click="lightboxSrc = form.photoPreview"
-              />
-              <button
-                @click="clearPhoto"
-                class="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1"
+            <!-- Thumbnail grid -->
+            <div v-if="form.photos.length" class="grid grid-cols-3 gap-2 mb-2">
+              <div
+                v-for="(photo, idx) in form.photos"
+                :key="idx"
+                class="relative aspect-square"
               >
-                <XMarkIcon class="w-4 h-4" />
-              </button>
+                <img
+                  :src="photo.preview"
+                  class="w-full h-full object-cover rounded-lg cursor-pointer"
+                  @click="lightboxSrc = photo.preview"
+                />
+                <button
+                  @click="removePhoto(idx)"
+                  class="absolute top-1 right-1 bg-black/50 text-white rounded-full p-0.5"
+                >
+                  <XMarkIcon class="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
 
+            <!-- Add photo button (hidden when 5 photos taken) -->
             <label
-              v-if="!form.photoPreview"
+              v-if="form.photos.length < 5"
               class="flex items-center justify-center gap-2 w-full py-3 border-2 border-dashed border-gray-300 dark:border-white/20 rounded-lg cursor-pointer hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
             >
               <input
@@ -176,7 +195,9 @@
               </span>
               <template v-else>
                 <CameraIcon class="w-5 h-5 text-gray-400" />
-                <span class="text-sm text-gray-500 dark:text-gray-400">Fotoğraf Çek / Seç</span>
+                <span class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ form.photos.length === 0 ? 'Fotoğraf Çek / Seç' : 'Fotoğraf Ekle' }}
+                </span>
               </template>
             </label>
           </div>
@@ -221,8 +242,27 @@ import {
   ArrowLeftIcon,
 } from '@heroicons/vue/24/outline';
 import driverService, { type StopShipmentDto, type DeliveryStopDto, type ShipmentLineDto } from '../services/driverService';
-import shipmentService from '../services/shipmentService';
+import shipmentService, { type DeliveryPhoto } from '../services/shipmentService';
 import { useNotificationStore } from '../stores/notification';
+import { useDeliveryQueue } from '../composables/useDeliveryQueue';
+import { getPhotoUrl } from '../utils/photoUrl';
+
+const deliveryPosition = ref<{ latitude: number; longitude: number } | null>(null);
+const { isOnline, enqueue } = useDeliveryQueue();
+
+function captureLocation() {
+  if (!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      deliveryPosition.value = {
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+      };
+    },
+    () => { /* GPS optional — proceed without */ },
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
+}
 
 const route = useRoute();
 const router = useRouter();
@@ -242,11 +282,15 @@ const error = ref('');
 const submitting = ref(false);
 const lightboxSrc = ref<string | null>(null);
 
+interface PhotoEntry {
+  base64: string;
+  preview: string;
+}
+
 const form = ref({
   deliveryRecipient: '',
   deliveryNote: '',
-  photoBase64: '',
-  photoPreview: '',
+  photos: [] as PhotoEntry[],
   photoCompressing: false,
 });
 
@@ -258,6 +302,15 @@ const mapsUrl = computed(() => {
   return `https://www.google.com/maps/search/?api=1&query=${addr}`;
 });
 
+const deliveryPhotos = computed<DeliveryPhoto[]>(() =>
+  (shipment.value as any)?.deliveryPhotos ?? []
+);
+const legacyPhotoSrc = computed<string | null>(() =>
+  shipment.value
+    ? getPhotoUrl((shipment.value as any).deliveryPhotoPath, shipment.value.deliveryPhotoBase64)
+    : null
+);
+
 async function load() {
   loading.value = true;
   error.value = '';
@@ -268,9 +321,9 @@ async function load() {
       if (sh) {
         stop.value = s;
         shipment.value = { ...sh, projectName: s.projectName, projectAddress: s.projectAddress };
-        // Pre-fill teslim alan kişi (ilk kişi)
-        if (sh.teslimAlacakKisiler) {
-          form.value.deliveryRecipient = sh.teslimAlacakKisiler.split(',')[0]?.trim() || '';
+        // Pre-fill teslim alan kişi (stop-level contact info)
+        if (s.contactName) {
+          form.value.deliveryRecipient = s.contactName.split(',')[0]?.trim() || '';
         }
         break;
       }
@@ -283,15 +336,14 @@ async function load() {
   }
 }
 
-function clearPhoto() {
-  form.value.photoBase64 = '';
-  form.value.photoPreview = '';
+function removePhoto(idx: number) {
+  form.value.photos.splice(idx, 1);
 }
 
 function onPhotoSelected(event: Event) {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
-  if (!file) return;
+  if (!file || form.value.photos.length >= 5) return;
 
   form.value.photoCompressing = true;
 
@@ -312,8 +364,10 @@ function onPhotoSelected(event: Event) {
       canvas.height = h;
       canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
       const compressed = canvas.toDataURL('image/jpeg', 0.75);
-      form.value.photoBase64    = compressed.split(',')[1] ?? '';
-      form.value.photoPreview   = compressed;
+      form.value.photos.push({
+        base64: compressed.split(',')[1] ?? '',
+        preview: compressed,
+      });
       form.value.photoCompressing = false;
     };
     img.src = dataUrl;
@@ -329,30 +383,47 @@ async function markDelivered() {
     notify.add('Lütfen teslim alan kişi bilgisini giriniz.', 'warning');
     return;
   }
-  
-  if (submitting.value) return; // double submit guard
+  if (form.value.photos.length === 0) {
+    notify.add('En az bir teslim fotoğrafı zorunludur.', 'warning');
+    return;
+  }
+  if (submitting.value) return;
   submitting.value = true;
+
+  const photosBase64 = form.value.photos.map(p => p.base64);
+
+  if (!isOnline.value) {
+    // Offline — queue for later sync
+    await enqueue({
+      shipmentId,
+      deliveryRecipient: form.value.deliveryRecipient || undefined,
+      deliveryNote: form.value.deliveryNote || undefined,
+      photosBase64,
+      latitude: deliveryPosition.value?.latitude,
+      longitude: deliveryPosition.value?.longitude,
+    });
+    notify.add('Çevrimdışısınız. Teslimat kaydedildi — internet bağlantısı gelince otomatik gönderilecek.', 'warning');
+    submitting.value = false;
+    router.back();
+    return;
+  }
+
   try {
     await shipmentService.markDelivered(
       shipmentId,
       form.value.deliveryNote || undefined,
       form.value.deliveryRecipient || undefined,
-      form.value.photoBase64 || undefined,
+      photosBase64,
+      undefined,
+      deliveryPosition.value?.latitude,
+      deliveryPosition.value?.longitude,
     );
     notify.add('Sevkiyat teslim edildi olarak işaretlendi.', 'success');
-    // Return to the previous screen (DriverStopView)
     router.back();
   } catch (err: unknown) {
-    const status = (err as { response?: { status?: number } })?.response?.status;
-    if (!navigator.onLine || (err instanceof TypeError && (err as TypeError).message.includes('fetch'))) {
-      notify.add('İnternet bağlantınızı kontrol edin.', 'error');
-    } else if (status === 409) {
-      notify.add('Bu teslimat zaten onaylanmış.', 'warning');
-    } else if (status === 403) {
-      notify.add('Bu işlem için yetkiniz bulunmuyor.', 'error');
-    } else {
-      notify.add('Bir hata oluştu, lütfen tekrar deneyin.', 'error');
-    }
+    const { ApiErrorUtils } = await import('../utils/apiError');
+    const msg = ApiErrorUtils.getErrorMessage(err);
+    notify.add(msg || 'Bir hata oluştu, lütfen tekrar deneyin.', 'error');
   } finally {
     submitting.value = false;
   }
@@ -365,5 +436,8 @@ function formatDateTime(iso: string) {
   return new Date(iso).toLocaleString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
-onMounted(load);
+onMounted(() => {
+  load();
+  captureLocation();
+});
 </script>

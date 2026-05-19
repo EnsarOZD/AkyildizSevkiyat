@@ -407,3 +407,29 @@ appsettings.*.local.json
 # Local build / debug output drops (contain bundled appsettings + DLLs)
 .debug_bin/
 _build_check/
+
+Add-Content -Path .gitignore -Value @"
+
+# Akyildiz Sevkiyat — additional ignores (added 2026-05-19)
+
+# Deploy script temporary outputs
+.publish_temp/
+.publish_tmp/
+
+# Claude Code worktrees (separate working trees, not for git)
+.claude/worktrees/
+
+# Audit reports (local-only, not committed)
+audit/
+
+# Build error logs (debugging artifacts)
+build_err*.txt
+build_errors*.txt
+build_output.txt
+error_log.txt
+errors_*.txt
+*_errors.txt
+db_update_err.txt
+infra_errors.txt
+tax_build_errors.txt
+full_build_errors*.txt

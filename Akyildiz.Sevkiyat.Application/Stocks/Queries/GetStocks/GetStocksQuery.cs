@@ -28,14 +28,17 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Queries.GetStocks
         decimal OnHandQty,
         decimal ReservedQty,
         string? NetsisStockCode,
-        bool IsActive
+        bool IsActive,
+        decimal? WeightKg,
+        int PickingOrder,
+        string? Barcode
     );
 
-    public record GetStocksQuery(string? SearchTerm, int PageNumber = 1, int PageSize = 15, int? CategoryId = null, int? PickingTypeId = null, int? UnitId = null, bool? IsActive = null)
+    public record GetStocksQuery(string? SearchTerm, int PageNumber = 1, int PageSize = 15, int? CategoryId = null, int? PickingTypeId = null, int? UnitId = null, bool? IsActive = null, int? ExcludeCategoryId = null)
         : IRequest<PaginatedList<StockDto>>, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles =>
-            new[] { "Admin", "Manager", "Warehouse" };
+            new[] { "Admin", "Manager", "Warehouse", "Accounting" };
     }
 
     public class GetStocksQueryHandler : IRequestHandler<GetStocksQuery, PaginatedList<StockDto>>
@@ -71,6 +74,9 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Queries.GetStocks
             if (request.IsActive.HasValue)
                 query = query.Where(s => s.IsActive == request.IsActive.Value);
 
+            if (request.ExcludeCategoryId.HasValue)
+                query = query.Where(s => (int)s.Category != request.ExcludeCategoryId.Value);
+
             return await PaginatedList<StockDto>.CreateAsync(
                 query
                     .OrderBy(s => s.StockCode)
@@ -92,7 +98,10 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Queries.GetStocks
                         s.OnHandQty,
                         s.ReservedQty,
                         s.NetsisStockCode,
-                        s.IsActive
+                        s.IsActive,
+                        s.WeightKg,
+                        s.PickingOrder,
+                        s.Barcode
                     )),
                 request.PageNumber,
                 request.PageSize

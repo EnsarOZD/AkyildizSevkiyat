@@ -49,13 +49,13 @@ const router = createRouter({
                     path: 'projects/zone-mapping',
                     name: 'ProjectMapping',
                     component: () => import('../views/ProjectMappingView.vue'),
-                    meta: { title: 'Proje-Bölge Eşleşmesi', roles: ['Admin', 'Manager'] }
+                    meta: { title: 'Proje-Bölge Eşleşmesi', roles: ['Admin', 'Manager', 'Accounting'] }
                 },
                 {
                     path: 'zones/project-order',
                     name: 'ZoneProjectOrder',
                     component: () => import('../views/ZoneProjectOrderView.vue'),
-                    meta: { title: 'Teslimat Sırası', roles: ['Admin', 'Manager'] }
+                    meta: { title: 'Teslimat Sırası', roles: ['Admin', 'Manager', 'Accounting'] }
                 },
                 {
                     path: 'projects/coordinates',
@@ -76,10 +76,16 @@ const router = createRouter({
                     meta: { title: 'Stok Yönetimi', roles: ['Admin', 'Accounting', 'Manager'] }
                 },
                 {
+                    path: 'stocks/mappings',
+                    name: 'StockMappings',
+                    component: () => import('../views/StockMappingView.vue'),
+                    meta: { title: 'Stok Eşleştirme', roles: ['Admin', 'Accounting', 'Manager'] }
+                },
+                {
                     path: 'warehouse',
                     name: 'WarehouseDashboard',
                     component: () => import('../views/WarehouseDashboard.vue'),
-                    meta: { title: 'Depo Hazırlık', roles: ['Admin', 'Warehouse', 'Manager', 'Driver'] }
+                    meta: { title: 'Depo Hazırlık', roles: ['Admin', 'Accounting', 'Warehouse', 'Manager', 'Driver'] }
                 },
                 {
                     path: 'transport',
@@ -123,13 +129,13 @@ const router = createRouter({
                     path: 'goods-receipts/:id',
                     name: 'GoodsReceiptDetail',
                     component: () => import('../views/GoodsReceiptDetailView.vue'),
-                    meta: { title: 'İrsaliye Detayı', roles: ['Admin', 'Warehouse', 'Manager'] }
+                    meta: { title: 'İrsaliye Detayı', roles: ['Admin', 'Warehouse', 'Manager', 'Accounting'] }
                 },
                 {
                     path: 'goods-receipts/:id/print',
                     name: 'GoodsReceiptPrint',
                     component: () => import('../views/GoodsReceiptPrintView.vue'),
-                    meta: { title: 'İrsaliye Yazdır', roles: ['Admin', 'Warehouse', 'Manager'] }
+                    meta: { title: 'İrsaliye Yazdır', roles: ['Admin', 'Warehouse', 'Manager', 'Accounting'] }
                 },
                 {
                     path: 'suppliers',
@@ -156,10 +162,28 @@ const router = createRouter({
                     meta: { title: 'Raporlar', roles: ['Admin', 'Accounting', 'Manager'] }
                 },
                 {
+                    path: 'reports/shipment-comparison',
+                    name: 'ShipmentComparisonReport',
+                    component: () => import('../views/ShipmentComparisonReportView.vue'),
+                    meta: { title: 'Sevkiyat Karşılaştırma', roles: ['Admin', 'Accounting', 'Manager'] }
+                },
+                {
+                    path: 'cargo-tracking',
+                    name: 'CargoTracking',
+                    component: () => import('../views/CargoTrackingView.vue'),
+                    meta: { title: 'Kargo Takip', roles: ['Admin', 'Manager', 'Accounting', 'Dispatcher'] }
+                },
+                {
                     path: 'admin/driver-sessions',
                     name: 'DriverSessionsAdmin',
                     component: () => import('../views/DriverSessionsView.vue'),
                     meta: { title: 'Şoför Puantajı', roles: ['Admin', 'Manager', 'Accounting'] }
+                },
+                {
+                    path: 'admin/active-operations',
+                    name: 'ActiveOperations',
+                    component: () => import('../views/ActiveOperationsView.vue'),
+                    meta: { title: 'Aktif Operasyonlar', roles: ['Admin', 'Manager', 'Accounting'] }
                 },
                 {
                     path: 'floating-returns',
@@ -168,16 +192,34 @@ const router = createRouter({
                     meta: { title: 'Belirsiz İadeler', roles: ['Admin', 'Manager', 'Warehouse', 'Driver'] }
                 },
                 {
+                    path: 'vehicle-returns',
+                    name: 'VehicleReturns',
+                    component: () => import('../views/VehicleReturnsView.vue'),
+                    meta: { title: 'Araç İade Takibi', roles: ['Admin', 'Manager', 'Accounting', 'Warehouse'] }
+                },
+                {
                     path: 'stock-counts',
                     name: 'StockCounts',
                     component: () => import('../views/StockCountView.vue'),
                     meta: { title: 'Stok Sayımı', roles: ['Admin', 'Manager', 'Warehouse'] }
                 },
                 {
+                    path: 'stock-consumptions',
+                    name: 'StockConsumptions',
+                    component: () => import('../views/StockConsumptionView.vue'),
+                    meta: { title: 'Stok Tüketim / Zai', roles: ['Admin', 'Manager', 'Warehouse', 'Accounting'] }
+                },
+                {
                     path: 'warehouse/locations',
                     name: 'WarehouseLocations',
                     component: () => import('../views/WarehouseLocationsView.vue'),
                     meta: { title: 'Depo Adres Yönetimi', roles: ['Admin', 'Manager', 'Warehouse', 'Accounting'] }
+                },
+                {
+                    path: 'warehouse/map',
+                    name: 'WarehouseMap',
+                    component: () => import('../views/WarehouseMapView.vue'),
+                    meta: { title: 'Depo Haritası', roles: ['Admin', 'Manager', 'Warehouse', 'Accounting'] }
                 },
                 {
                     path: 'warehouse/stock-locations',
@@ -207,6 +249,18 @@ const router = createRouter({
                     path: 'settings/depot',
                     redirect: '/settings',
                 },
+                {
+                    path: 'projects/contacts',
+                    name: 'ProjectContacts',
+                    component: () => import('../views/ProjectContactsView.vue'),
+                    meta: { title: 'Proje İletişim Bilgileri', roles: ['Admin', 'Manager', 'Accounting'] }
+                },
+                {
+                    path: 'external-email-contacts',
+                    name: 'ExternalEmailContacts',
+                    component: () => import('../views/ExternalEmailContactsView.vue'),
+                    meta: { requiresAuth: true, roles: ['Admin', 'Manager', 'Accounting'] }
+                },
             ]
         },
         {
@@ -225,6 +279,12 @@ const router = createRouter({
                     name: 'DriverStop',
                     component: () => import('../views/DriverStopView.vue'),
                     meta: { title: 'Teslimat Noktası' }
+                },
+                {
+                    path: 'settings',
+                    name: 'DriverSettings',
+                    component: () => import('../views/DriverSettingsView.vue'),
+                    meta: { title: 'İzinler & Ayarlar' }
                 },
                 {
                     path: ':id',
@@ -246,6 +306,12 @@ const router = createRouter({
             name: 'ShipmentOrderPrint',
             component: () => import('../views/ShipmentOrderPrintView.vue'),
             meta: { requiresAuth: true, title: 'Sipariş Formu' }
+        },
+        {
+            path: '/shipments/:id/cargo-label',
+            name: 'CargoLabel',
+            component: () => import('../views/CargoLabelPrintView.vue'),
+            meta: { requiresAuth: true, roles: ['Admin', 'Manager', 'Accounting', 'Dispatcher', 'Warehouse'], title: 'Kargo Etiketi' }
         },
     ],
 });

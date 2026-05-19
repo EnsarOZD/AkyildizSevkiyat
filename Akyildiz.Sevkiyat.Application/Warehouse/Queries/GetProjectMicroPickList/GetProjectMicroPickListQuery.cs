@@ -10,13 +10,15 @@ using System.Threading.Tasks;
 namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetProjectMicroPickList
 {
     public record MicroPickItemDto(
-        int ShipmentLineId, // Added for corrections
+        int ShipmentLineId,
         string StockCode,
         string StockName,
         string Unit,
         decimal TotalQty,
-        decimal PickedQty, // Placeholder for future partial picking
-        bool IsCompleted
+        decimal PickedQty,
+        bool IsCompleted,
+        string Category,
+        int PickingOrder
     );
 
     public record GetProjectMicroPickListQuery(int ZonePreparationProjectId) : IRequest<List<MicroPickItemDto>>;
@@ -51,27 +53,29 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetProjectMicroPickLis
             var lines = await _context.ShipmentLines
                 .Include(sl => sl.Shipment)
                 .Include(sl => sl.StockMaster)
-                .Include(sl => sl.IssOrderLine) 
-                .Where(sl => 
-                    sl.Shipment.Project.Name.Trim().ToUpper() == projectNameUpper && 
-                    sl.Shipment.ZonePreparationId == zpProject.ZonePreparationId && 
+                .Include(sl => sl.IssOrderLine)
+                .Where(sl =>
+                    sl.Shipment.Project.Name.Trim().ToUpper() == projectNameUpper &&
+                    sl.Shipment.ZonePreparationId == zpProject.ZonePreparationId &&
                     sl.Shipment.Status != ShipmentStatus.Cancelled &&
                     sl.Shipment.Status != ShipmentStatus.Passive &&
-                    sl.Shipment.Status != ShipmentStatus.Created 
+                    sl.Shipment.Status != ShipmentStatus.Created
                 )
-                .Select(sl => new 
+                .Select(sl => new
                 {
-                   sl.Id,
-                   sl.OrderedQty,
-                   sl.DeliveredQty,
-                   sl.StockCode,
-                   sl.StockName,
-                   sl.Unit,
-                   sl.StockMasterId,
-                   PickingType = sl.StockMaster != null ? (PickingType?)sl.StockMaster.PickingType : null,
-                   LocalStockCode = sl.StockMaster != null ? sl.StockMaster.StockCode : null,
-                   LocalStockName = sl.StockMaster != null ? sl.StockMaster.StockName : null,
-                   LocalUnit = sl.StockMaster != null ? sl.StockMaster.Unit.ToString() : null
+                    sl.Id,
+                    sl.OrderedQty,
+                    sl.DeliveredQty,
+                    sl.StockCode,
+                    sl.StockName,
+                    sl.Unit,
+                    sl.StockMasterId,
+                    PickingType    = sl.StockMaster != null ? (PickingType?)sl.StockMaster.PickingType : null,
+                    LocalStockCode = sl.StockMaster != null ? sl.StockMaster.StockCode : null,
+                    LocalStockName = sl.StockMaster != null ? sl.StockMaster.StockName : null,
+                    LocalUnit      = sl.StockMaster != null ? sl.StockMaster.Unit.ToString() : null,
+                    LocalCategory  = sl.StockMaster != null ? sl.StockMaster.Category.ToString() : null,
+                    LocalPickingOrder = sl.StockMaster != null ? sl.StockMaster.PickingOrder : 0,
                 })
                 .ToListAsync(cancellationToken);
 
@@ -95,33 +99,37 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetProjectMicroPickLis
                 string stockName = line.StockName;
                 string unit = line.Unit.ToString() ?? "ADET";
 
+                string category = string.Empty;
+                int pickingOrder = 0;
+
                 // Prioritize direct link to StockMaster if it exists
                 if (line.StockMasterId.HasValue && line.PickingType.HasValue)
                 {
                     if (line.PickingType == PickingType.Macro) isMicro = false;
-                    stockCode = line.LocalStockCode ?? line.StockCode;
-                    stockName = line.LocalStockName ?? line.StockName;
-                    unit = line.LocalUnit ?? unit;
+                    stockCode    = line.LocalStockCode ?? line.StockCode;
+                    stockName    = line.LocalStockName ?? line.StockName;
+                    unit         = line.LocalUnit ?? unit;
+                    category     = line.LocalCategory ?? string.Empty;
+                    pickingOrder = line.LocalPickingOrder;
                 }
-                else 
+                else
                 {
                     // Fallback to mappings
                     var mapping = mappings.FirstOrDefault(m => m.ExternalStockCode.Equals(line.StockCode, System.StringComparison.OrdinalIgnoreCase));
                     if (mapping != null && mapping.LocalStock != null)
                     {
                         if (mapping.LocalStock.PickingType == PickingType.Macro) isMicro = false;
-                        stockCode = mapping.LocalStock.StockCode;
-                        stockName = mapping.LocalStock.StockName;
-                        unit = mapping.LocalStock.Unit.ToString();
+                        stockCode    = mapping.LocalStock.StockCode;
+                        stockName    = mapping.LocalStock.StockName;
+                        unit         = mapping.LocalStock.Unit.ToString();
+                        category     = mapping.LocalStock.Category.ToString();
+                        pickingOrder = mapping.LocalStock.PickingOrder;
                     }
                 }
 
                 if (isMicro)
                 {
-                    // IsCompleted: DeliveredQty set edilmişse tamamlandı.
-                    // Fazla toplama (DeliveredQty > OrderedQty) da tamamlandı sayılır.
                     bool isCompleted = line.DeliveredQty > 0;
-
                     result.Add(new MicroPickItemDto(
                         line.Id,
                         stockCode,
@@ -129,12 +137,18 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetProjectMicroPickLis
                         unit,
                         line.OrderedQty,
                         line.DeliveredQty,
-                        isCompleted
+                        isCompleted,
+                        category,
+                        pickingOrder
                     ));
                 }
             }
-            
-            return result.OrderBy(r => r.StockName).ToList();
+
+            return result
+                .OrderBy(r => r.Category)
+                .ThenBy(r => r.PickingOrder)
+                .ThenBy(r => r.StockName)
+                .ToList();
         }
     }
 }

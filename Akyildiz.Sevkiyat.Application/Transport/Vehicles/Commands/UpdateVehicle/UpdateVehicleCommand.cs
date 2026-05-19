@@ -30,7 +30,7 @@ namespace Akyildiz.Sevkiyat.Application.Transport.Vehicles.Commands.UpdateVehicl
             var vehicle = await _context.Vehicles.FindAsync(new object[] { request.Id }, cancellationToken);
             if (vehicle == null) return false;
 
-            vehicle.PlateNumber = request.PlateNumber;
+            vehicle.PlateNumber = request.PlateNumber.Trim().ToUpperInvariant();
             vehicle.Capacity    = request.Capacity;
             vehicle.VehicleType = request.VehicleType;
             vehicle.Description = request.Description;

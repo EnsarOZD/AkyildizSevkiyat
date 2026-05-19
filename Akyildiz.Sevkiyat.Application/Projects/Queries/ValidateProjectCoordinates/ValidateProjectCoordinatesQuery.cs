@@ -19,6 +19,8 @@ namespace Akyildiz.Sevkiyat.Application.Projects.Queries.ValidateProjectCoordina
         public double? GeocodedLat { get; set; }
         public double? GeocodedLng { get; set; }
         public double? DistanceKm { get; set; }
+        public string? CityName { get; set; }
+        public string? DistrictName { get; set; }
         // "Compatible" | "Suspicious" | "Incompatible" | "NoAddress" | "NoCoordinate"
         public string Status { get; set; } = string.Empty;
     }
@@ -83,8 +85,10 @@ namespace Akyildiz.Sevkiyat.Application.Projects.Queries.ValidateProjectCoordina
                         continue;
                     }
 
-                    dto.GeocodedLat = geocoded.Value.Lat;
-                    dto.GeocodedLng = geocoded.Value.Lng;
+                    dto.GeocodedLat   = geocoded.Lat;
+                    dto.GeocodedLng   = geocoded.Lng;
+                    dto.CityName      = geocoded.CityName;
+                    dto.DistrictName  = geocoded.DistrictName;
 
                     if (project.Latitude == null || project.Longitude == null)
                     {
@@ -95,7 +99,7 @@ namespace Akyildiz.Sevkiyat.Application.Projects.Queries.ValidateProjectCoordina
                     {
                         var km = HaversineKm(
                             project.Latitude.Value, project.Longitude.Value,
-                            geocoded.Value.Lat, geocoded.Value.Lng);
+                            geocoded.Lat, geocoded.Lng);
 
                         dto.DistanceKm = Math.Round(km, 2);
                         dto.Status = km < 5 ? "Compatible"

@@ -5,6 +5,16 @@ export interface StartSessionRequest {
   latitude: number;
   longitude: number;
   deviceFingerprint?: string;
+  startOdometerPhotoBase64?: string;
+  startOdometerKm?: number;
+}
+
+export interface EndSessionRequest {
+  qrCode: string;
+  latitude: number;
+  longitude: number;
+  endOdometerPhotoBase64?: string;
+  endOdometerKm?: number;
 }
 
 export interface StartSessionResult {
@@ -34,12 +44,8 @@ const driverSessionService = {
     return res.data;
   },
 
-  async endSession(qrCode: string, latitude: number, longitude: number): Promise<EndSessionResult> {
-    const res = await apiClient.post<EndSessionResult>('/driver/sessions/end', {
-      qrCode,
-      latitude,
-      longitude,
-    });
+  async endSession(req: EndSessionRequest): Promise<EndSessionResult> {
+    const res = await apiClient.post<EndSessionResult>('/driver/sessions/end', req);
     return res.data;
   },
 

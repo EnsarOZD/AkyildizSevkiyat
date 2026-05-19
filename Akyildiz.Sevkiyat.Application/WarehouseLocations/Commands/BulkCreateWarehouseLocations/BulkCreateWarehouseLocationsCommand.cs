@@ -8,17 +8,18 @@ namespace Akyildiz.Sevkiyat.Application.WarehouseLocations.Commands.BulkCreateWa
 {
     /// <summary>
     /// Bir koridor+taraf kombinasyonu için modül × kat kombinasyonlarını toplu oluşturur.
-    /// Örn: KoridorNo=1, Taraf="K", Modül 1-20, Kat 1-5  → 100 lokasyon
+    /// Örn: KoridorNo=1, Taraf="K", Modül 1-20, Kat 1-5  → 100 palet lokasyonu
     /// Kod formatı: {KoridorNo}{Taraf}-{ModulNo:D3}-{Kat:D2}  →  "1K-001-03"
     /// </summary>
     public record BulkCreateWarehouseLocationsCommand(
-        int          KoridorNo,
-        string       Taraf,        // "K" veya "G"
-        int          ModulFrom,
-        int          ModulTo,
-        int          KatFrom,
-        int          KatTo,
-        LocationType LocationType
+        int           KoridorNo,
+        string        Taraf,        // "K" veya "G"
+        int           ModulFrom,
+        int           ModulTo,
+        int           KatFrom,
+        int           KatTo,
+        LocationType  LocationType,
+        ContainerType ContainerType = ContainerType.Pallet
     ) : IRequest<BulkCreateResult>;
 
     public record BulkCreateResult(int Created, int Skipped);
@@ -39,7 +40,6 @@ namespace Akyildiz.Sevkiyat.Application.WarehouseLocations.Commands.BulkCreateWa
         {
             var taraf = request.Taraf.Trim().ToUpperInvariant();
 
-            // Mevcut kodları önceden çek (çakışma kontrolü için)
             var existingCodes = await _context.WarehouseLocations
                 .Where(l => l.KoridorNo == request.KoridorNo && l.Taraf == taraf)
                 .Select(l => l.Code)
@@ -56,13 +56,14 @@ namespace Akyildiz.Sevkiyat.Application.WarehouseLocations.Commands.BulkCreateWa
 
                 toAdd.Add(new WarehouseLocation
                 {
-                    Code         = code,
-                    KoridorNo    = request.KoridorNo,
-                    Taraf        = taraf,
-                    ModulNo      = modul,
-                    Kat          = kat,
-                    LocationType = request.LocationType,
-                    IsActive     = true,
+                    Code          = code,
+                    KoridorNo     = request.KoridorNo,
+                    Taraf         = taraf,
+                    ModulNo       = modul,
+                    Kat           = kat,
+                    LocationType  = request.LocationType,
+                    ContainerType = request.ContainerType,
+                    IsActive      = true,
                 });
                 existingCodes.Add(code);
             }

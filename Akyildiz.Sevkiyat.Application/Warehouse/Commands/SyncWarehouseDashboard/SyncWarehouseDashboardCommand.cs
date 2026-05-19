@@ -50,10 +50,11 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.SyncWarehouseDashboar
                 
                 int zoneId = shipment.Project.ZoneId.Value;
 
-                bool isEligible = shipment.DeliveryDate.Date == date && 
-                                  shipment.Status >= ShipmentStatus.AssignedToWarehouse && 
-                                  shipment.Status != ShipmentStatus.Cancelled && 
-                                  shipment.Status != ShipmentStatus.Passive;
+                bool isEligible = shipment.DeliveryDate.Date == date &&
+                                  shipment.Status >= ShipmentStatus.AssignedToWarehouse &&
+                                  shipment.Status != ShipmentStatus.Cancelled &&
+                                  shipment.Status != ShipmentStatus.Passive &&
+                                  shipment.OperationType != OperationType.Clothing; // kıyafet depo hazırlığını atlar
 
                 if (!isEligible)
                 {
@@ -67,24 +68,25 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.SyncWarehouseDashboar
                     continue; // Skip further processing for ineligible
                 }
 
-                if (shipment.ZonePreparationId.HasValue) 
+                if (shipment.ZonePreparationId.HasValue)
                 {
                     // Check for stale reference: if the existing ZonePreparation is for a different date or different zone, clear it
                     var currentPrep = existingPreps.FirstOrDefault(p => p.Id == shipment.ZonePreparationId.Value);
-                    if (currentPrep != null && currentPrep.ZoneId == shipment.Project?.ZoneId)
+                    if (currentPrep != null && currentPrep.ZoneId == shipment.Project?.ZoneId
+                        && currentPrep.Status != ZonePreparationStatus.Dispatched)
                     {
                         // Already correctly assigned to this date's zone prep
                         continue;
                     }
-                    // Stale reference - clear it so it gets re-assigned below
+                    // Stale reference (wrong zone, wrong date, or dispatched) - clear so it gets re-assigned below
                     shipment.ZonePreparationId = null;
                     shipment.ZonePreparation = null;
                     changesMade = true;
                 }
 
-                // If not assigned, Find Open Batch for this Zone
+                // If not assigned, Find Open Batch for this Zone (exclude Dispatched — they should never receive new shipments)
                 var openPrep = existingPreps
-                    .Where(z => z.ZoneId == zoneId && !z.IsFrozen)
+                    .Where(z => z.ZoneId == zoneId && !z.IsFrozen && z.Status != ZonePreparationStatus.Dispatched)
                     .OrderByDescending(z => z.BatchNo)
                     .FirstOrDefault();
 

@@ -4,8 +4,6 @@ import type { User } from '../services/authService';
 import { API_EVENTS } from '../services/apiClient';
 
 interface AuthState {
-    token: string | null;
-    storedRefreshToken: string | null;
     user: User | null;
     _isInitialized: boolean;
 }
@@ -21,44 +19,33 @@ function safeJsonParse<T>(key: string, fallback: T): T {
 
 export const useAuthStore = defineStore('auth', {
     state: (): AuthState => ({
-        token: localStorage.getItem('token'),
-        storedRefreshToken: localStorage.getItem('refreshToken'),
+        // #1: Tokens are in HttpOnly cookies — only store non-sensitive user info
         user: safeJsonParse<User | null>('user', null),
         _isInitialized: false,
     }),
     getters: {
-        isAuthenticated: (state) => !!state.token,
+        // #1: isAuthenticated is based on user presence, not token in memory
+        isAuthenticated: (state) => !!state.user,
         userRole: (state) => state.user?.role || '',
         userName: (state) => state.user ? `${state.user.firstName} ${state.user.lastName}`.trim() : '',
         userEmail: (state) => state.user?.email || '',
         userInitial: (state) => state.user?.firstName?.charAt(0).toUpperCase() || '?',
     },
     actions: {
-        async login(email: string, password: string) {
-            const { accessToken, refreshToken, user } = await authService.login({ email, password });
-
-            this.token = accessToken;
-            this.storedRefreshToken = refreshToken;
+        async login(username: string, password: string, rememberMe = false) {
+            const { user } = await authService.login({ username, password, rememberMe });
+            // #1: Tokens are set as HttpOnly cookies by the server — never touch them here
             this.user = user;
-
-            localStorage.setItem('token', accessToken);
-            localStorage.setItem('refreshToken', refreshToken);
             localStorage.setItem('user', JSON.stringify(user));
         },
 
         async logout() {
-            if (!this.token && !this.user) return;
+            if (!this.user) return;
 
-            const rt = this.storedRefreshToken;
-
-            this.token = null;
-            this.storedRefreshToken = null;
             this.user = null;
-            authService.clearStorage();
+            authService.clearStorage(); // Removes user from localStorage
 
-            if (rt) {
-                await authService.logout(rt);
-            }
+            await authService.logout(); // Server clears HttpOnly cookies
 
             if (window.location.pathname !== '/login') {
                 window.location.href = '/login';
@@ -66,16 +53,10 @@ export const useAuthStore = defineStore('auth', {
         },
 
         async refreshToken(): Promise<boolean> {
-            const rt = this.storedRefreshToken ?? localStorage.getItem('refreshToken');
-            if (!rt) return false;
-
             try {
-                const response = await authService.refreshToken(rt);
-                this.token = response.accessToken;
-                this.storedRefreshToken = response.refreshToken;
+                // #1: No refresh token in localStorage — cookie sent automatically by browser
+                const response = await authService.refreshToken();
                 this.user = response.user;
-                localStorage.setItem('token', response.accessToken);
-                localStorage.setItem('refreshToken', response.refreshToken);
                 localStorage.setItem('user', JSON.stringify(response.user));
                 return true;
             } catch {

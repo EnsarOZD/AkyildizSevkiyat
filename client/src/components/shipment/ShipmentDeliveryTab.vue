@@ -64,13 +64,13 @@
         >
           {{ shipment.deliveryNote }}
         </div>
-        <div v-if="shipment.deliveryPhotoBase64" class="col-span-2">
+        <div v-if="photoSrc" class="col-span-2">
           <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">Teslimat Fotoğrafı</div>
           <img
-            :src="`data:image/jpeg;base64,${shipment.deliveryPhotoBase64}`"
+            :src="photoSrc"
             alt="Teslimat fotoğrafı"
             class="rounded-lg border border-green-200 dark:border-green-800 max-h-64 object-contain cursor-pointer hover:opacity-90 transition-opacity"
-            @click="$emit('photoClick', `data:image/jpeg;base64,${shipment.deliveryPhotoBase64}`)"
+            @click="$emit('photoClick', photoSrc)"
           />
         </div>
       </div>
@@ -87,6 +87,9 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
+import { getPhotoUrl } from '../../utils/photoUrl';
+
 interface ShipmentDeliveryInfo {
   driverName?: string
   plateNumber?: string
@@ -97,11 +100,16 @@ interface ShipmentDeliveryInfo {
   deliveryNote?: string
   deliveryRecipient?: string
   deliveryPhotoBase64?: string
+  deliveryPhotoPath?: string
 }
 
-defineProps<{ shipment: ShipmentDeliveryInfo }>()
+const props = defineProps<{ shipment: ShipmentDeliveryInfo }>()
 defineEmits<{
   openIrsaliye: []
   photoClick: [src: string]
 }>()
+
+const photoSrc = computed<string | null>(() =>
+  getPhotoUrl(props.shipment.deliveryPhotoPath, props.shipment.deliveryPhotoBase64)
+)
 </script>

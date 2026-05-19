@@ -52,6 +52,8 @@ const props = defineProps<{
     modelValue?: any;
     placeholder?: string;
     initialCode?: string;
+    /** 0 = Catering context (excludes Kıyafet), 1 = Clothing context (only Kıyafet), undefined = all */
+    operationType?: number;
 }>();
 
 const emit = defineEmits(['update:modelValue', 'search', 'select']);
@@ -99,10 +101,16 @@ const onInput = (_e: Event) => {
 const search = async () => {
     loading.value = true;
     try {
+        const categoryFilter = props.operationType === 0
+            ? { excludeCategoryId: 3 }
+            : props.operationType === 1
+              ? { categoryId: 3 }
+              : {};
         const data = await stockService.getAll({
             search: searchTerm.value,
             page: 1,
-            size: 100
+            size: 100,
+            ...categoryFilter,
         });
 
         results.value = data.items;

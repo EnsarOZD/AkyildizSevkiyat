@@ -34,6 +34,7 @@
           <tr v-for="user in users" :key="user.id" :class="!user.isActive ? 'bg-gray-50 dark:bg-gray-800 opacity-60' : ''">
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
               {{ user.firstName }} {{ user.lastName }}
+              <div class="text-xs text-gray-400 font-normal">{{ user.username }}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden sm:table-cell">{{ user.email }}</td>
             <td class="px-6 py-4 whitespace-nowrap">
@@ -73,11 +74,26 @@
           <BaseInput v-model="form.lastName" label="Soyad" />
         </div>
         <BaseInput v-model="form.email" type="email" label="E-posta" />
+        <BaseInput v-model="form.username" label="Kullanıcı Adı" hint="Giriş ekranında kullanılır. Boş bırakılırsa e-posta adresi kullanılır." />
         <BaseInput v-if="!editingUser" v-model="form.password" type="password" label="Şifre" :error="formErrors.password" />
         <BaseInput v-if="!editingUser" v-model="form.confirmPassword" type="password" label="Şifre Tekrar" :error="formErrors.confirmPassword" />
         <BaseSelect v-model.number="form.role" label="Rol">
           <option v-for="r in roles" :key="r.value" :value="r.value">{{ r.label }}</option>
         </BaseSelect>
+        <!-- Driver link — shown only when Driver role is selected -->
+        <div v-if="form.role === 5">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Bağlı Şoför Kaydı <span class="text-gray-400 font-normal">(isteğe bağlı)</span>
+          </label>
+          <select
+            v-model.number="form.linkedDriverId"
+            class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option :value="null">— Bağlantı yok —</option>
+            <option v-for="d in availableDriversForLink" :key="d.id" :value="d.id">{{ d.fullName }}</option>
+          </select>
+          <p class="mt-1 text-xs text-gray-400">Seçilen şoför kaydı bu kullanıcıya bağlanır ve QR sefer başlatma yapabilir.</p>
+        </div>
       </div>
       <template #footer>
         <BaseButton @click="showUserModal = false" variant="secondary">İptal</BaseButton>
@@ -107,9 +123,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import PageHeader from '../components/PageHeader.vue';
 import userService, { type UserListItem } from '../services/userService';
+import transportService, { type Driver } from '../services/transportService';
 import { useNotificationStore } from '../stores/notification';
 import BaseModal from '../components/BaseModal.vue';
 import BaseButton from '../components/BaseButton.vue';
@@ -119,13 +136,22 @@ import BaseSelect from '../components/base/BaseSelect.vue';
 const notificationStore = useNotificationStore();
 
 const users = ref<UserListItem[]>([]);
+const allDrivers = ref<Driver[]>([]);
 const loading = ref(false);
 const saving = ref(false);
 
 const showUserModal = ref(false);
 const editingUser = ref<UserListItem | null>(null);
-const form = ref({ firstName: '', lastName: '', email: '', password: '', confirmPassword: '', role: 0 });
+const form = ref({ firstName: '', lastName: '', email: '', username: '', password: '', confirmPassword: '', role: 0, linkedDriverId: null as number | null });
 const formErrors = ref({ password: '', confirmPassword: '' });
+
+// Drivers available for linking: unlinked ones + the one currently linked to this user (edit mode)
+const availableDriversForLink = computed(() => {
+  const currentLinkedDriverId = editingUser.value
+    ? allDrivers.value.find(d => d.userId === editingUser.value!.id)?.id ?? null
+    : null;
+  return allDrivers.value.filter(d => d.isActive && (!d.userId || d.id === currentLinkedDriverId));
+});
 
 const showResetModal = ref(false);
 const resetTarget = ref<UserListItem | null>(null);
@@ -161,7 +187,9 @@ const roleBadgeClass = (role: string) => {
   return map[role] || 'bg-gray-100 text-gray-800';
 };
 
-onMounted(fetchUsers);
+onMounted(async () => {
+  await Promise.all([fetchUsers(), fetchDrivers()]);
+});
 
 async function fetchUsers() {
   loading.value = true;
@@ -174,9 +202,17 @@ async function fetchUsers() {
   }
 }
 
+async function fetchDrivers() {
+  try {
+    allDrivers.value = await transportService.getDrivers();
+  } catch {
+    // non-critical — silently ignore
+  }
+}
+
 function openCreateModal() {
   editingUser.value = null;
-  form.value = { firstName: '', lastName: '', email: '', password: '', confirmPassword: '', role: 5 };
+  form.value = { firstName: '', lastName: '', email: '', username: '', password: '', confirmPassword: '', role: 5, linkedDriverId: null };
   formErrors.value = { password: '', confirmPassword: '' };
   showUserModal.value = true;
 }
@@ -184,13 +220,16 @@ function openCreateModal() {
 function openEditModal(user: UserListItem) {
   editingUser.value = user;
   const roleMap: Record<string, number> = { Admin: 0, Accounting: 1, Warehouse: 2, Manager: 4, Driver: 5 };
+  const linkedDriver = allDrivers.value.find(d => d.userId === user.id);
   form.value = {
     firstName: user.firstName,
     lastName: user.lastName,
     email: user.email,
+    username: user.username || '',
     password: '',
     confirmPassword: '',
     role: roleMap[user.role] ?? 3,
+    linkedDriverId: linkedDriver?.id ?? null,
   };
   formErrors.value = { password: '', confirmPassword: '' };
   showUserModal.value = true;
@@ -229,21 +268,45 @@ async function saveUser() {
   if (!editingUser.value && !validatePasswordForm()) return;
   saving.value = true;
   try {
+    let userId: number;
     if (editingUser.value) {
+      userId = editingUser.value.id;
       await userService.update({
-        id: editingUser.value.id,
+        id: userId,
         email: form.value.email,
+        username: form.value.username || undefined,
         firstName: form.value.firstName,
         lastName: form.value.lastName,
         role: form.value.role,
       });
-      notificationStore.add('Kullanıcı güncellendi.', 'success');
     } else {
-      await userService.create({ ...form.value });
-      notificationStore.add('Kullanıcı oluşturuldu.', 'success');
+      userId = await userService.create({
+        email: form.value.email,
+        username: form.value.username || undefined,
+        firstName: form.value.firstName,
+        lastName: form.value.lastName,
+        password: form.value.password,
+        role: form.value.role,
+      });
     }
+
+    // Handle driver linking when role is Driver (5)
+    if (form.value.role === 5 && form.value.linkedDriverId) {
+      const driver = allDrivers.value.find(d => d.id === form.value.linkedDriverId);
+      if (driver) {
+        await transportService.updateDriver({ ...driver, userId });
+      }
+    } else if (editingUser.value) {
+      // If role changed away from Driver, unlink any previously linked driver
+      const prevLinked = allDrivers.value.find(d => d.userId === userId);
+      if (prevLinked && form.value.role !== 5) {
+        await transportService.updateDriver({ ...prevLinked, userId: null });
+      }
+    }
+
+    notificationStore.add(editingUser.value ? 'Kullanıcı güncellendi.' : 'Kullanıcı oluşturuldu.', 'success');
     showUserModal.value = false;
-    await fetchUsers();
+    await Promise.all([fetchUsers(), fetchDrivers()]);
   } catch (e: any) {
     notificationStore.add(e?.message || 'Kaydetme başarısız.', 'error');
   } finally {

@@ -32,6 +32,8 @@
       <PerformanceTab v-else-if="activeTab === 'performance'" />
       <ZoneMaterialTab v-else-if="activeTab === 'zone-material'" />
       <StockStatusTab v-else-if="activeTab === 'stock'" />
+      <StockMovementsTab v-else-if="activeTab === 'stock-movements'" />
+      <WarehouseStockDistributionTab v-else-if="activeTab === 'warehouse-dist'" />
       <ReturnsTab v-else-if="activeTab === 'returns'" />
       <PendingReceiptsTab v-else-if="activeTab === 'gr'" />
       <MaterialPurchaseTab v-else-if="activeTab === 'material-purchase'" />
@@ -49,6 +51,8 @@ import ShipmentSummaryTab from '../components/reports/ShipmentSummaryTab.vue';
 import PerformanceTab from '../components/reports/PerformanceTab.vue';
 import ZoneMaterialTab from '../components/reports/ZoneMaterialTab.vue';
 import StockStatusTab from '../components/reports/StockStatusTab.vue';
+import StockMovementsTab from '../components/reports/StockMovementsTab.vue';
+import WarehouseStockDistributionTab from '../components/reports/WarehouseStockDistributionTab.vue';
 import ReturnsTab from '../components/reports/ReturnsTab.vue';
 import PendingReceiptsTab from '../components/reports/PendingReceiptsTab.vue';
 import MaterialPurchaseTab from '../components/reports/MaterialPurchaseTab.vue';
@@ -61,6 +65,8 @@ const tabs = [
   { key: 'performance',      label: 'Teslimat Performansı' },
   { key: 'zone-material',    label: 'Bölge Malzeme Raporu' },
   { key: 'stock',            label: 'Stok Durumu' },
+  { key: 'stock-movements',  label: 'Stok Hareketleri' },
+  { key: 'warehouse-dist',   label: 'Depo Stok Dağılımı' },
   { key: 'returns',          label: 'İade Analizi' },
   { key: 'pos',              label: 'Açık Satın Alma' },
   { key: 'gr',               label: 'Bekleyen Mal Girişi' },

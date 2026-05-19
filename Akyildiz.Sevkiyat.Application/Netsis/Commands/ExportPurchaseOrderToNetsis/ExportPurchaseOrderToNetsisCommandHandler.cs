@@ -51,7 +51,14 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportPurchaseOrderToNet
                 throw new DomainException(
                     $"Aşağıdaki ürünlerin Netsis Stok Kodu tanımlanmamış: {string.Join(", ", missingNetsisCode)}");
 
-            var poRequest = BuildPoRequest(po);
+            var netsisKodlari = po.Lines
+                .Select(l => l.StockMaster.NetsisStockCode!)
+                .Distinct()
+                .ToList();
+
+            var kdvRates = await _netsisClient.GetStockKdvRatesAsync(netsisKodlari, cancellationToken);
+
+            var poRequest = BuildPoRequest(po, kdvRates);
 
             var result = await _netsisClient.CreateSatinalmaSiparisAsync(poRequest, cancellationToken);
 
@@ -67,15 +74,23 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportPurchaseOrderToNet
             return po.ExternalRef;
         }
 
-        private static NetsisPoRequest BuildPoRequest(Domain.Entities.PurchaseOrder po)
+        private static NetsisPoRequest BuildPoRequest(
+            Domain.Entities.PurchaseOrder po,
+            IReadOnlyDictionary<string, decimal> kdvRates)
         {
             var lines = po.Lines
-                .Select((l, idx) => new NetsisPoLine
+                .Select((l, idx) =>
                 {
-                    SatirNo  = idx + 1,
-                    StokKodu = l.StockMaster.NetsisStockCode!,
-                    Miktar   = l.OrderedQty,
-                    Birim    = l.Unit.ToString(),
+                    var netsisKod = l.StockMaster.NetsisStockCode!;
+                    kdvRates.TryGetValue(netsisKod, out var kdv);
+                    return new NetsisPoLine
+                    {
+                        SatirNo  = idx + 1,
+                        StokKodu = netsisKod,
+                        Miktar   = l.OrderedQty,
+                        Birim    = l.Unit.ToString(),
+                        KdvOrani = kdv,
+                    };
                 })
                 .ToList();
 

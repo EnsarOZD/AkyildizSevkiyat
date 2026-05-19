@@ -29,15 +29,18 @@
 
         <!-- Group Items -->
         <div class="space-y-0.5">
-          <router-link
+          <component
             v-for="(item, iIdx) in group.items"
             :key="iIdx"
-            :to="item.to"
-            class="group flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-150 hover:bg-gray-800"
-            :class="group.title === 'Planlanan'
-              ? 'text-gray-600 hover:text-gray-400 opacity-60'
-              : 'text-gray-400 hover:text-white'"
-            active-class="!bg-blue-600/20 !text-blue-400 border-l-2 border-blue-400 !opacity-100"
+            :is="item.to === '/shipments' ? 'button' : 'router-link'"
+            v-bind="item.to === '/shipments' ? {} : { to: item.to }"
+            @click="item.to === '/shipments' ? navTo(item) : undefined"
+            class="w-full group flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-150 hover:bg-gray-800"
+            :class="[
+              group.title === 'Planlanan' ? 'text-gray-600 hover:text-gray-400 opacity-60' : 'text-gray-400 hover:text-white',
+              item.to === '/shipments' && currentRoute.path === '/shipments' ? '!bg-blue-600/20 !text-blue-400 border-l-2 border-blue-400 !opacity-100' : ''
+            ]"
+            :active-class="item.to !== '/shipments' ? '!bg-blue-600/20 !text-blue-400 border-l-2 border-blue-400 !opacity-100' : undefined"
           >
             <component
               v-if="item.icon"
@@ -46,7 +49,11 @@
             />
             <span class="text-sm font-medium truncate">{{ item.label }}</span>
             <span v-if="group.title === 'Planlanan'" class="ml-auto text-[9px] text-gray-600 italic shrink-0">yakında</span>
-          </router-link>
+            <span
+              v-else-if="item.to === '/reconciliation' && reconciliationStore.openCount > 0"
+              class="ml-auto flex-shrink-0 min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1"
+            >{{ reconciliationStore.openCount > 99 ? '99+' : reconciliationStore.openCount }}</span>
+          </component>
         </div>
       </div>
     </nav>
@@ -67,12 +74,45 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import { XMarkIcon } from '@heroicons/vue/24/outline';
 import { useAuthStore } from '../stores/auth';
+import { useReconciliationStore } from '../stores/reconciliation';
 import { NAV_ITEMS } from '../navigation';
 
+const router = useRouter();
+const currentRoute = useRoute();
+
+const SHIPMENT_FILTER_KEY = 'shipment_list_last_query';
+
+function navTo(item: { to: string | { name: string } }) {
+  if (item.to === '/shipments') {
+    try {
+      const saved = sessionStorage.getItem(SHIPMENT_FILTER_KEY);
+      if (saved) {
+        const q = JSON.parse(saved) as Record<string, string>;
+        if (Object.keys(q).length) {
+          router.push({ path: '/shipments', query: q });
+          return;
+        }
+      }
+    } catch { /* ignore */ }
+  }
+  router.push(item.to as string);
+}
+
 const authStore = useAuthStore();
+const reconciliationStore = useReconciliationStore();
+
+onMounted(() => {
+  const role = authStore.userRole;
+  if (role === 'Admin' || role === 'Manager') {
+    reconciliationStore.fetchOpenCount();
+    // Refresh every 5 minutes
+    setInterval(() => reconciliationStore.fetchOpenCount(), 5 * 60 * 1000);
+  }
+});
 
 const filteredNav = computed(() => {
   const userRole = authStore.userRole;

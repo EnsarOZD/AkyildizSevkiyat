@@ -13,7 +13,8 @@ namespace Akyildiz.Sevkiyat.Application.Users.Commands.UpdateUser
         string Email,
         string FirstName,
         string LastName,
-        UserRole Role
+        UserRole Role,
+        string? Username = null
     ) : IRequest, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles =>
@@ -27,6 +28,7 @@ namespace Akyildiz.Sevkiyat.Application.Users.Commands.UpdateUser
             RuleFor(x => x.Email).NotEmpty().EmailAddress().MaximumLength(200);
             RuleFor(x => x.FirstName).NotEmpty().MaximumLength(100);
             RuleFor(x => x.LastName).NotEmpty().MaximumLength(100);
+            RuleFor(x => x.Username).MaximumLength(100).When(x => x.Username != null);
         }
     }
 
@@ -51,7 +53,16 @@ namespace Akyildiz.Sevkiyat.Application.Users.Commands.UpdateUser
             if (emailTaken)
                 throw new ConflictException($"'{request.Email}' e-posta adresi başka bir kullanıcı tarafından kullanılıyor.");
 
-            user.UpdateProfile(request.Email, request.FirstName, request.LastName);
+            if (!string.IsNullOrWhiteSpace(request.Username))
+            {
+                var usernameTaken = await _context.Users
+                    .AnyAsync(u => u.Username == request.Username && u.Id != request.Id, cancellationToken);
+
+                if (usernameTaken)
+                    throw new ConflictException($"'{request.Username}' kullanıcı adı başka bir kullanıcı tarafından kullanılıyor.");
+            }
+
+            user.UpdateProfile(request.Email, request.FirstName, request.LastName, request.Username);
             user.UpdateRole(request.Role);
 
             await _context.SaveChangesAsync(cancellationToken);

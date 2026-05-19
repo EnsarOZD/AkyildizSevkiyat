@@ -5,6 +5,7 @@ export interface Driver {
   fullName: string;
   phone: string;
   isActive: boolean;
+  userId?: number | null;
 }
 
 export interface Vehicle {

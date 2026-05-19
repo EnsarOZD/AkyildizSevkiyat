@@ -5,7 +5,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Akyildiz.Sevkiyat.Application.Projects.Commands.UpdateProjectLocation
 {
-    public record UpdateProjectLocationCommand(int ProjectId, double? Latitude, double? Longitude) : IRequest;
+    public record UpdateProjectLocationCommand(
+        int ProjectId,
+        double? Latitude,
+        double? Longitude,
+        string? CityName = null,
+        string? DistrictName = null
+    ) : IRequest;
 
     public class UpdateProjectLocationCommandHandler : IRequestHandler<UpdateProjectLocationCommand>
     {
@@ -21,8 +27,10 @@ namespace Akyildiz.Sevkiyat.Application.Projects.Commands.UpdateProjectLocation
             var project = await _context.Projects.FindAsync(new object[] { request.ProjectId }, cancellationToken)
                 ?? throw new NotFoundException("Project", request.ProjectId);
 
-            project.Latitude = request.Latitude;
-            project.Longitude = request.Longitude;
+            project.Latitude     = request.Latitude;
+            project.Longitude    = request.Longitude;
+            project.CityName     = request.CityName;
+            project.DistrictName = request.DistrictName;
             await _context.SaveChangesAsync(cancellationToken);
         }
     }

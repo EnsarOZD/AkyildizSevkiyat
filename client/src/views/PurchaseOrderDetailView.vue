@@ -13,12 +13,23 @@
       </div>
 
       <template v-else-if="order">
-        <!-- Breadcrumb -->
-        <nav class="flex items-center gap-2 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">
-          <router-link to="/purchase-orders" class="hover:text-indigo-600 transition-colors">Siparişler</router-link>
-          <span class="text-gray-300">/</span>
-          <span class="text-indigo-600 dark:text-indigo-400">{{ order.orderNumber }}</span>
-        </nav>
+        <!-- Breadcrumb + Back -->
+        <div class="flex items-center gap-3 mb-2">
+          <button
+            @click="router.back()"
+            class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-indigo-300 transition-all"
+          >
+            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+            </svg>
+            Geri
+          </button>
+          <nav class="flex items-center gap-2 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+            <button @click="router.back()" class="hover:text-indigo-600 transition-colors">Siparişler</button>
+            <span class="text-gray-300">/</span>
+            <span class="text-indigo-600 dark:text-indigo-400">{{ order.orderNumber }}</span>
+          </nav>
+        </div>
 
         <!-- Main Header Card -->
         <div class="relative overflow-hidden bg-white dark:bg-gray-900 rounded-3xl shadow-xl shadow-indigo-100/50 dark:shadow-none border border-indigo-50 dark:border-indigo-900 group">
@@ -666,52 +677,47 @@ const downloadPdf = async () => {
 
 const openMail = async () => {
   const o = order.value;
+
   if (!o.supplierEmail) {
-    const emailStr = window.prompt('Tedarikçi mail adresi tanımlı değil. Lütfen bir e-posta girin (bu adrese gönderilecek ve tedarikçi güncellenecektir):');
-    if (!emailStr) return; // User cancelled
-    
-    // validate simple email
+    const emailStr = window.prompt('Tedarikçi mail adresi tanımlı değil. Lütfen bir e-posta girin:');
+    if (!emailStr) return;
     if (!emailStr.includes('@')) {
-       notificationStore.add('Geçerli bir e-posta adresi girmediniz.', 'warning');
-       return;
+      notificationStore.add('Geçerli bir e-posta adresi girmediniz.', 'warning');
+      return;
     }
-    
     try {
-        actionLoading.value = true;
-        const sups = await supplierService.getAll();
-        const sup = sups.find(s => s.id === o.supplierId);
-        if (sup) {
-           await supplierService.update(sup.id, { 
-               name: sup.name, 
-               supplierCode: sup.supplierCode, 
-               email: emailStr 
-           });
-           o.supplierEmail = emailStr;
-           notificationStore.add('Tedarikçi e-posta adresi başarıyla kaydedildi.', 'success');
-        } else {
-           notificationStore.add('Tedarikçi bulunamadı.', 'error');
-           return;
-        }
-    } catch (e) {
-       notificationStore.add('Tedarikçi güncellenemedi.', 'error');
-       return;
+      actionLoading.value = true;
+      const sups = await supplierService.getAll();
+      const sup = sups.find((s: any) => s.id === o.supplierId);
+      if (sup) {
+        await supplierService.update(sup.id, { name: sup.name, supplierCode: sup.supplierCode, email: emailStr });
+        o.supplierEmail = emailStr;
+        notificationStore.add('Tedarikçi e-posta adresi kaydedildi.', 'success');
+      } else {
+        notificationStore.add('Tedarikçi bulunamadı.', 'error');
+        return;
+      }
+    } catch {
+      notificationStore.add('Tedarikçi güncellenemedi.', 'error');
+      return;
     } finally {
-       actionLoading.value = false;
+      actionLoading.value = false;
     }
   }
 
-  const subject = encodeURIComponent(`Satın Alma Siparişi - ${o.orderNumber} - ${o.supplierNameSnapshot}`);
-  const termin = o.expectedDeliveryDate ? `Termin tarihi: ${formatDate(o.expectedDeliveryDate)}\n\n` : '';
-  const body = encodeURIComponent(
-    `Sayın ${o.supplierNameSnapshot} yetkilileri,\n\n` +
-    `${o.orderNumber} numaralı satın alma siparişimiz ekte yer almaktadır.\n\n` +
-    `Sipariş numarasının irsaliye ve/veya faturada belirtilmesi gerekmektedir.\n\n` +
-    `Siparişte belirtilen miktarların üzerinde yapılacak teslimatlar kabul edilmeyecektir.\n\n` +
-    termin +
-    `İyi çalışmalar,\nAkyıldız Lojistik`
-  );
-  window.open(`mailto:${o.supplierEmail}?subject=${subject}&body=${body}`);
-  notificationStore.add('PDF otomatik ek olarak eklenemiyor. İndirdiğiniz PDF\'i Outlook\'ta manuel ekleyin.', 'info');
+  if (!window.confirm(`"${o.supplierEmail}" adresine sipariş maili gönderilecek. Onaylıyor musunuz?`)) return;
+
+  try {
+    actionLoading.value = true;
+    await purchaseOrderService.sendEmail(o.id);
+    o.emailSentAt = new Date().toISOString();
+    o.emailSentTo = o.supplierEmail;
+    notificationStore.add(`Mail başarıyla gönderildi → ${o.supplierEmail}`, 'success');
+  } catch (e) {
+    notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Mail gönderilemedi.', 'error');
+  } finally {
+    actionLoading.value = false;
+  }
 };
 
 onMounted(() => {

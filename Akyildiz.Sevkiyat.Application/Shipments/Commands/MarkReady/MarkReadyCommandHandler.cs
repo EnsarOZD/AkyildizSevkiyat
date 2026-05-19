@@ -35,8 +35,8 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.MarkReady
         {
             var response = new MarkReadyCommandResponse();
 
-            // ── Enforcement: ISS miktar uyumsuzluğu varsa hazır işaretlenemez ──
-            await _guard.ThrowIfIssQtyMismatchAsync(request.ShipmentId, cancellationToken);
+            // ── Enforcement: ISS miktar uyumsuzluğu artık süreci bloklamıyor (kullanıcı talebi) ──
+            // await _guard.ThrowIfIssQtyMismatchAsync(request.ShipmentId, cancellationToken);
 
             var shipment = await _context.Shipments
                 .Include(s => s.Project)

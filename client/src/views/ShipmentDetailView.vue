@@ -9,7 +9,7 @@
 
     <!-- Back button -->
     <button
-      @click="router.push({ name: 'ShipmentList' })"
+      @click="router.back()"
       class="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors mb-4"
     >
       <ChevronLeftIcon class="w-4 h-4" />
@@ -29,18 +29,54 @@
           </div>
           <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 break-words font-medium">{{ shipment.projectName }}</p>
         </div>
-        <router-link
-          :to="{ name: 'ShipmentOrderPrint', params: { id: shipment.id } }"
-          target="_blank"
-          class="flex-shrink-0 flex items-center gap-1.5 text-[11px] font-bold px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all shadow-sm active:scale-95"
-        >
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
-          </svg>
-          <span class="hidden sm:inline">Sipariş Formu</span>
-          <span class="sm:hidden">Yazdır</span>
-        </router-link>
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <!-- Kargo Etiketi Bas — sadece YurtiKargo sevkiyatlarında göster -->
+          <button
+            v-if="shipment.ykCargoKey"
+            @click="printCargoLabel"
+            :disabled="cargoLabelPrinting"
+            class="flex items-center gap-1.5 text-[11px] font-bold px-3 py-2 rounded-xl border border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all shadow-sm active:scale-95 disabled:opacity-50"
+          >
+            <svg v-if="!cargoLabelPrinting" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+            </svg>
+            <svg v-else class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+            </svg>
+            <span class="hidden sm:inline">{{ cargoLabelPrinting ? 'Gönderiliyor...' : 'Kargo Etiketi' }}</span>
+            <span class="sm:hidden">Etiket</span>
+          </button>
+
+          <!-- A4 Yazıcı — kargo etiketi tarayıcıdan yazdırma -->
+          <router-link
+            v-if="shipment.ykCargoKey"
+            :to="{ name: 'CargoLabel', params: { id: shipment.id } }"
+            target="_blank"
+            class="flex items-center gap-1.5 text-[11px] font-bold px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all shadow-sm active:scale-95"
+          >
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+            </svg>
+            <span class="hidden sm:inline">A4 Yazıcı</span>
+            <span class="sm:hidden">A4</span>
+          </router-link>
+
+          <router-link
+            :to="{ name: 'ShipmentOrderPrint', params: { id: shipment.id } }"
+            target="_blank"
+            class="flex items-center gap-1.5 text-[11px] font-bold px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all shadow-sm active:scale-95"
+          >
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+            </svg>
+            <span class="hidden sm:inline">Sipariş Formu</span>
+            <span class="sm:hidden">Yazdır</span>
+          </router-link>
+        </div>
       </div>
     </div>
 
@@ -69,7 +105,7 @@
       <div class="flex-1 min-w-0 w-full">
 
         <!-- Info card -->
-        <ShipmentInfoCard :shipment="shipment" />
+        <ShipmentInfoCard :shipment="shipment" :is-querying-yk="isQueryingYk" @query-yk-status="queryYkStatus" />
 
         <!-- Tab nav -->
         <div class="border-b border-gray-200 dark:border-gray-700 mb-4 overflow-x-auto scrollbar-hide px-2">
@@ -142,6 +178,7 @@
         @openDelivery="openDeliveryModal"
         @openVehicleReturn="openVehicleReturnModal"
         @openRevert="openRevertModal"
+        @openRevertDelivered="openRevertDeliveredModal"
         @openAdminReset="openAdminResetModal"
       />
     </div>
@@ -162,13 +199,47 @@
       <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
         Bu proje için henüz bir bölge tanımlanmamış. İşlemlere devam etmek için bir bölge seçiniz.
       </p>
-      <div class="mb-4">
+      <div class="mb-3">
         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Bölge</label>
         <select v-model="selectedZoneId" class="w-full border dark:border-gray-700 p-2 rounded focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100">
           <option :value="null">Seçiniz...</option>
           <option v-for="zone in availableZones" :key="zone.id" :value="zone.id">{{ zone.name }}</option>
         </select>
       </div>
+
+      <!-- Quick new zone form -->
+      <div class="border-t border-gray-200 dark:border-gray-700 pt-3">
+        <button
+          v-if="!showNewZoneForm"
+          @click="showNewZoneForm = true"
+          class="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Yeni bölge ekle
+        </button>
+        <div v-else class="space-y-2">
+          <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Yeni Bölge</p>
+          <input
+            v-model="newZoneName"
+            type="text"
+            placeholder="Bölge adı"
+            class="w-full border dark:border-gray-700 px-3 py-1.5 text-sm rounded focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100"
+          />
+          <label class="flex items-center gap-2 cursor-pointer select-none">
+            <input type="checkbox" v-model="newZoneIsOutOfCity" class="w-4 h-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500" />
+            <span class="text-sm text-gray-700 dark:text-gray-300">Şehir Dışı Bölge</span>
+          </label>
+          <div class="flex gap-2">
+            <button
+              @click="createAndSelectZone"
+              :disabled="!newZoneName.trim() || savingNewZone"
+              class="flex-1 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50 font-medium"
+            >{{ savingNewZone ? 'Kaydediliyor...' : 'Oluştur ve Seç' }}</button>
+            <button @click="showNewZoneForm = false; newZoneName = ''" class="px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">İptal</button>
+          </div>
+        </div>
+      </div>
+
       <template #footer>
         <button @click="showZoneModal = false" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">İptal</button>
         <button
@@ -256,14 +327,15 @@
                     :ref="(el: any) => stockRefs[idx] = el"
                     :initialCode="line.stockCode"
                     :placeholder="line.stockName"
+                    :operationType="shipment?.operationTypeValue ?? 0"
                     @select="(item: any) => { onStockSelect(item, line, idx); editingStockIdx = -1; }"
                     class="w-full"
                   />
                   <button @click="editingStockIdx = -1" class="mt-1 text-xs text-gray-400 hover:text-gray-600">İptal</button>
                 </template>
                 <template v-else>
-                  <div class="flex items-center gap-2 min-w-0">
-                    <span class="text-gray-800 dark:text-gray-100 text-sm truncate flex-1">{{ line.stockName || '—' }}</span>
+                  <div class="flex items-start gap-2 min-w-0">
+                    <span class="text-gray-800 dark:text-gray-100 text-sm break-words flex-1">{{ line.stockName || '—' }}</span>
                     <button
                       @click="editingStockIdx = idx"
                       class="shrink-0 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 border border-blue-300 dark:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 px-2 py-0.5 rounded transition"
@@ -510,6 +582,33 @@
       </template>
     </BaseModal>
 
+    <!-- Revert Delivered Modal -->
+    <BaseModal :show="showRevertDeliveredModal" title="Teslimi Geri Al" maxWidth="sm" @close="showRevertDeliveredModal = false">
+      <div class="space-y-3">
+        <p class="text-sm text-gray-600 dark:text-gray-400 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 rounded p-3">
+          Bu sevkiyat <strong>Sevke Hazır</strong> durumuna geri alınacak. Teslimat kanıtı (fotoğraf, imza, konum) silinir. İşlem tarihçeye kaydedilir.
+        </p>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Neden <span class="text-red-500">*</span></label>
+          <textarea v-model="revertDeliveredReason" rows="3" placeholder="Geri alma nedeni..."
+            class="w-full border dark:border-gray-700 p-2 rounded resize-none text-sm focus:ring-2 focus:ring-orange-400 dark:bg-gray-800 dark:text-gray-100" />
+        </div>
+      </div>
+      <template #footer>
+        <button @click="showRevertDeliveredModal = false" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">İptal</button>
+        <button @click="confirmRevertDelivered" :disabled="!revertDeliveredReason.trim()"
+          class="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 font-bold disabled:opacity-50">Geri Al</button>
+      </template>
+    </BaseModal>
+
+    <!-- Zone-based Driver Assignment Modal (when shipment belongs to a zone preparation) -->
+    <DriverAssignmentModal
+      v-if="showZoneDriverModal && shipment?.zonePreparationId"
+      :zone-preparation-ids="[shipment.zonePreparationId]"
+      @close="showZoneDriverModal = false"
+      @completed="fetchShipmentDetail"
+    />
+
     <!-- Revert to Draft Modal -->
     <BaseModal :show="showRevertModal" title="Taslağa Geri Çek" maxWidth="sm" @close="showRevertModal = false">
       <div class="space-y-3">
@@ -534,8 +633,10 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import apiClient from '../services/apiClient';
 import { ChevronLeftIcon } from '@heroicons/vue/24/outline';
 import shipmentService from '../services/shipmentService';
+import warehouseService from '../services/warehouseService';
 import projectService from '../services/projectService';
 import transportService, { type Driver, type Vehicle } from '../services/transportService';
 import StockCombobox from '../components/StockCombobox.vue';
@@ -545,6 +646,7 @@ import ShipmentLinesTab from '../components/shipment/ShipmentLinesTab.vue';
 import ShipmentDeliveryTab from '../components/shipment/ShipmentDeliveryTab.vue';
 import ShipmentHistoryTab from '../components/shipment/ShipmentHistoryTab.vue';
 import ShipmentActionsPanel from '../components/shipment/ShipmentActionsPanel.vue';
+import DriverAssignmentModal from '../components/DriverAssignmentModal.vue';
 import { useNotificationStore } from '../stores/notification';
 import { ApiErrorUtils } from '../utils/apiError';
 
@@ -555,6 +657,7 @@ interface ShipmentDetail {
   projectName: string;
   zoneId?: number;
   zoneName?: string;
+  zonePreparationId?: number;
   status: string;
   deliveryDate: string;
   driverName?: string;
@@ -568,12 +671,20 @@ interface ShipmentDetail {
   deliveryNote?: string;
   deliveryRecipient?: string;
   deliveryPhotoBase64?: string;
+  deliveryPhotoPath?: string;
   externalOrderNumber?: string;
   talepNo?: string;
+  talepTuru?: string;
+  institutionCode?: string;
   teslimAlacakKisiler?: string;
   teslimAlacakTelefon?: string;
   yoneticiMail?: string;
   aciklama?: string;
+  projectAddress?: string | null;
+  ykCargoKey?: string | null;
+  ykBarcode?: string | null;
+  ykJobId?: number | null;
+  ykOperationStatus?: string | null;
   lines: Array<{
     id: number;
     stockCode: string;
@@ -604,8 +715,75 @@ interface ShipmentDetail {
 const route = useRoute();
 const router = useRouter();
 const notificationStore = useNotificationStore();
+const cargoLabelPrinting = ref(false);
+
+async function printCargoLabel() {
+  if (!shipment.value?.ykBarcode && !shipment.value?.ykCargoKey) return;
+  cargoLabelPrinting.value = true;
+  try {
+    const res = await apiClient.post('/print/jobs/cargo', {
+      printerConfigId: null,
+      payload: {
+        barcode:      shipment.value.ykBarcode ?? shipment.value.ykCargoKey,
+        receiverName: shipment.value.projectCode
+          ? `${shipment.value.projectCode}-${shipment.value.projectName}`
+          : shipment.value.projectName,
+        address:      shipment.value.projectAddress ?? '',
+        phone:        shipment.value.teslimAlacakTelefon ?? '',
+        irsaliyeNo:   shipment.value.irsaliyeNo ?? null,
+        shipmentId:   shipment.value.id,
+        deliveryDate: new Date(shipment.value.deliveryDate).toLocaleDateString('tr-TR'),
+      },
+    });
+    const jobId = res.data?.jobId;
+    notificationStore.add('Kargo etiketi kuyruğa alındı, yazdırılıyor…', 'success');
+
+    // Poll for completion — agent typically processes within 3s
+    if (jobId) {
+      for (let i = 0; i < 5; i++) {
+        await new Promise(r => setTimeout(r, 2000));
+        try {
+          const jobRes = await apiClient.get(`/print/jobs/${jobId}`);
+          const job = jobRes.data;
+          if (job.status === 2) break; // Done
+          if (job.status === 3) {
+            // Failed
+            notificationStore.add(
+              `Yazıcı hatası: ${job.errorMessage ?? 'Bilinmeyen hata'}. Ayarlar → Yazıcı Yönetimi sayfasını kontrol edin.`,
+              'error'
+            );
+            break;
+          }
+        } catch { break; }
+      }
+    }
+  } catch {
+    notificationStore.add('Etiket gönderilemedi. Yazıcı ayarlarını kontrol edin.', 'error');
+  } finally {
+    cargoLabelPrinting.value = false;
+  }
+}
 const shipment = ref<ShipmentDetail | null>(null);
 const loading = ref(false);
+const isQueryingYk = ref(false);
+
+async function queryYkStatus() {
+  if (!shipment.value?.id || isQueryingYk.value) return;
+  isQueryingYk.value = true;
+  try {
+    const status = await warehouseService.queryYkShipmentStatus(shipment.value.id);
+    if (status) {
+      shipment.value = await shipmentService.getDetail(shipment.value.id) as unknown as ShipmentDetail;
+      notificationStore.add(`Kargo durumu: ${status.statusCode ?? '-'}`, 'success');
+    } else {
+      notificationStore.add('Durum bilgisi alınamadı.', 'warning');
+    }
+  } catch (e) {
+    notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Durum sorgulanamadı.', 'error');
+  } finally {
+    isQueryingYk.value = false;
+  }
+}
 
 // Action warnings banner
 const actionWarnings = ref<string[]>([]);
@@ -626,6 +804,7 @@ const photoLightboxSrc = ref<string | null>(null);
 
 // Vehicle modal
 const showVehicleModal = ref(false);
+const showZoneDriverModal = ref(false);
 const vehicleForm = ref<{ driverId: number | null; vehicleId: number | null }>({ driverId: null, vehicleId: null });
 const activeDrivers = ref<Driver[]>([]);
 const activeVehicles = ref<Vehicle[]>([]);
@@ -643,6 +822,10 @@ const revertReasonText = ref('');
 // Admin reset modal
 const showAdminResetModal = ref(false);
 const adminResetReason = ref('');
+
+// Revert delivered modal
+const showRevertDeliveredModal = ref(false);
+const revertDeliveredReason = ref('');
 
 // Delivery modal
 const showDeliveryModal = ref(false);
@@ -681,6 +864,7 @@ interface EditLine {
   stockCode: string;
   stockName: string;
   orderedQty: number;
+  unit: number; // Unit enum value
 }
 
 interface VehicleReturnLine {
@@ -736,13 +920,40 @@ const saveZoneAssignment = async () => {
   }
 };
 
+const showNewZoneForm = ref(false);
+const newZoneName = ref('');
+const newZoneIsOutOfCity = ref(false);
+const savingNewZone = ref(false);
+const createAndSelectZone = async () => {
+  if (!newZoneName.value.trim()) return;
+  savingNewZone.value = true;
+  try {
+    const zone = await projectService.createZone({ name: newZoneName.value.trim(), order: 0, isOutOfCity: newZoneIsOutOfCity.value });
+    await fetchZones();
+    selectedZoneId.value = zone.id;
+    showNewZoneForm.value = false;
+    newZoneName.value = '';
+    newZoneIsOutOfCity.value = false;
+    notificationStore.add('Bölge oluşturuldu.', 'success');
+  } catch (e) {
+    notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Bölge oluşturulamadı.', 'error');
+  } finally {
+    savingNewZone.value = false;
+  }
+};
+
 // Warehouse / ready / revert actions
 const assignToWarehouse = async () => {
   if (!shipment.value) return;
   try {
     const result = await shipmentService.assignToWarehouse(shipment.value.id);
-    await fetchShipmentDetail();
-    if (result?.warnings?.length) actionWarnings.value = result.warnings;
+    if (result?.warnings?.length) {
+      actionWarnings.value = result.warnings;
+      await fetchShipmentDetail();
+    } else {
+      notificationStore.add('Sevkiyat depoya atandı.', 'success');
+      router.push('/shipments');
+    }
   } catch (error) {
     notificationStore.add(ApiErrorUtils.getErrorMessage(error) || 'İşlem başarısız.', 'error');
   }
@@ -764,6 +975,18 @@ const markReady = async () => {
 const openRevertModal = () => { revertReasonText.value = ''; showRevertModal.value = true; };
 
 const openAdminResetModal = () => { adminResetReason.value = ''; showAdminResetModal.value = true; };
+const openRevertDeliveredModal = () => { revertDeliveredReason.value = ''; showRevertDeliveredModal.value = true; };
+const confirmRevertDelivered = async () => {
+  if (!shipment.value || !revertDeliveredReason.value.trim()) return;
+  showRevertDeliveredModal.value = false;
+  try {
+    await shipmentService.revertDelivered(shipment.value.id, revertDeliveredReason.value.trim());
+    await fetchShipmentDetail();
+    notificationStore.add('Teslimat geri alındı. Sevkiyat "Sevke Hazır" durumuna geçirildi.', 'success');
+  } catch (error) {
+    notificationStore.add(ApiErrorUtils.getErrorMessage(error) || 'İşlem başarısız.', 'error');
+  }
+};
 const confirmAdminReset = async () => {
   if (!shipment.value || !adminResetReason.value.trim()) return;
   showAdminResetModal.value = false;
@@ -838,6 +1061,10 @@ const saveIrsaliye = async () => {
 
 // Vehicle assignment
 const openAssignVehicleModal = async () => {
+  if (shipment.value?.zonePreparationId) {
+    showZoneDriverModal.value = true;
+    return;
+  }
   vehicleForm.value = { driverId: null, vehicleId: null };
   showVehicleModal.value = true;
   if (activeDrivers.value.length === 0 || activeVehicles.value.length === 0) {
@@ -902,7 +1129,7 @@ const onDeliveryPhotoSelected = (e: Event) => {
 const confirmMarkDelivered = async () => {
   if (!shipment.value) return;
   try {
-    await shipmentService.markDelivered(shipment.value.id, deliveryForm.value.deliveryNote || undefined, deliveryForm.value.deliveryRecipient || undefined, deliveryForm.value.photoBase64 || undefined);
+    await shipmentService.markDelivered(shipment.value.id, deliveryForm.value.deliveryNote || undefined, deliveryForm.value.deliveryRecipient || undefined, deliveryForm.value.photoBase64 ? [deliveryForm.value.photoBase64] : undefined);
     showDeliveryModal.value = false;
     await fetchShipmentDetail();
     notificationStore.add('Sevkiyat teslim edildi olarak işaretlendi.', 'success');
@@ -916,13 +1143,20 @@ const generateId = () => { try { return crypto.randomUUID(); } catch { return `$
 const openEditModal = () => {
   if (!shipment.value) return;
   editForm.value.deliveryDate = shipment.value.deliveryDate.split('T')[0] || '';
-  editForm.value.lines = shipment.value.lines.map(l => ({ id: generateId(), lineId: l.id, stockCode: l.localStockCode || l.stockCode, stockName: l.stockName, orderedQty: l.orderedQty }));
+  editForm.value.lines = shipment.value.lines.map(l => ({ 
+    id: generateId(), 
+    lineId: l.id, 
+    stockCode: l.localStockCode || l.stockCode, 
+    stockName: l.stockName, 
+    orderedQty: l.orderedQty,
+    unit: (l as any).unitValue ?? 0
+  }));
   if (editForm.value.lines.length === 0) addNewLine();
   editingStockIdx.value = -1;
   showEditModal.value = true;
 };
 const addNewLine = () => {
-  editForm.value.lines.push({ id: generateId(), lineId: 0, stockCode: '', stockName: '', orderedQty: 1 });
+  editForm.value.lines.push({ id: generateId(), lineId: undefined as any, stockCode: '', stockName: '', orderedQty: 1, unit: 0 });
   const newIdx = editForm.value.lines.length - 1;
   editingStockIdx.value = newIdx;
   requestAnimationFrame(() => {
@@ -938,6 +1172,7 @@ const removeLine = (index: number) => {
 const onStockSelect = (item: any, line: EditLine, idx: number) => {
   line.stockCode = item.stockCode || item.StockCode;
   line.stockName = item.stockName || item.StockName;
+  line.unit = typeof item.unitId === 'number' ? item.unitId : (typeof item.UnitId === 'number' ? item.UnitId : 0);
   requestAnimationFrame(() => { qtyRefs.value[idx]?.focus(); });
 };
 const onQtyEnter = (idx: number) => {
@@ -955,7 +1190,16 @@ const saveDetails = async () => {
   const emptyIdx = editForm.value.lines.findIndex(l => !l.stockCode?.trim());
   if (emptyIdx !== -1) { notificationStore.add('Lütfen tüm satırlar için stok seçimi yapınız.', 'warning'); requestAnimationFrame(() => { stockRefs.value[emptyIdx]?.focus(); }); return; }
   try {
-    await shipmentService.updateDetails(shipment.value.id, { deliveryDate: editForm.value.deliveryDate, lines: editForm.value.lines.map(l => ({ lineId: l.lineId, stockCode: l.stockCode, stockName: l.stockName, orderedQty: Number(l.orderedQty) })) } as any);
+    await shipmentService.updateDetails(shipment.value.id, { 
+      deliveryDate: editForm.value.deliveryDate, 
+      lines: editForm.value.lines.map(l => ({ 
+        lineId: l.lineId, 
+        stockCode: l.stockCode, 
+        stockName: l.stockName, 
+        orderedQty: Number(l.orderedQty), 
+        unit: Number(l.unit || 0) 
+      })) 
+    } as any);
     showEditModal.value = false;
     await fetchShipmentDetail();
   } catch (error) {
@@ -1005,5 +1249,12 @@ const confirmVehicleReturn = async () => {
   }
 };
 
-onMounted(() => { fetchShipmentDetail(); });
+// Ensure route is defined (it should be at the top of script setup)
+
+onMounted(async () => { 
+  await fetchShipmentDetail(); 
+  if (route.query.action === 'return' && shipment.value?.status === 'Dispatched') {
+    openVehicleReturnModal();
+  }
+});
 </script>

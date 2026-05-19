@@ -40,7 +40,9 @@ namespace Akyildiz.Sevkiyat.Application.RouteOptimization.Dtos
         string ProjectName,
         string? Address,
         double? EstimatedDistanceFromPrevious,
-        double? EstimatedDurationFromPrevious
+        double? EstimatedDurationFromPrevious,
+        double? Latitude = null,
+        double? Longitude = null
     );
 
     public record TimeWindowWarningDto(
@@ -59,7 +61,9 @@ namespace Akyildiz.Sevkiyat.Application.RouteOptimization.Dtos
         double TotalDuration,
         List<string> ExcludedProjects,
         string? BridgeNotice,
-        List<TimeWindowWarningDto>? TimeWindowWarnings = null
+        List<TimeWindowWarningDto>? TimeWindowWarnings = null,
+        double? StartLatitude = null,
+        double? StartLongitude = null
     );
 
     public record DepotSettingsDto(

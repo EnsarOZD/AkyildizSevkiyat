@@ -19,12 +19,18 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipments
         public string? PlateNumber { get; set; }
         // New Fields
         public string? TalepNo { get; set; }
-        public string? ExternalOrderNumber { get; set; } // Added
-        public string? WaybillNumber { get; set; } // Added (Irsaliye No)
+        public string? TalepTuru { get; set; }
+        public string? InstitutionCode { get; set; }
+        public string? ExternalOrderNumber { get; set; }
+        public string? WaybillNumber { get; set; }
         public string? Aciklama { get; set; }
         public DateTime? NetsisTransferredAt { get; set; }
         public string OperationType { get; set; } = "Catering";
         public int OperationTypeValue { get; set; } = 0;
+        // Dispatch type fields
+        public int? CargoProviderValue { get; set; }
+        public string? FreightCarrierName { get; set; }
+        public string? FreightCarrierPlate { get; set; }
     }
 
     public class GetShipmentsQuery : IRequest<PaginatedList<ShipmentDto>>, IRequireRoles
@@ -35,14 +41,20 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipments
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public ShipmentStatus? Status { get; set; }
+        /// <summary>Virgülle ayrılmış status değerleri. Örn: "5,6" → Dispatched + Delivered.</summary>
+        public string? Statuses { get; set; }
         public string? Region { get; set; }
         public bool IncludePassive { get; set; } = false;
-        
+
         // Search & Pagination
         public string? Search { get; set; }
         public int? ZoneId { get; set; }
         public int PageNumber { get; set; } = 1;
         public int PageSize { get; set; } = 20;
+        // "Cargo" | "Freight" | "Vehicle" | "None"
+        public string? DispatchType { get; set; }
+        // 0 = Catering, 1 = Clothing
+        public int? OperationType { get; set; }
     }
     
     public class GetShipmentsQueryHandler : IRequestHandler<GetShipmentsQuery, PaginatedList<ShipmentDto>>
@@ -72,7 +84,20 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipments
                 query = query.Where(s => s.DeliveryDate <= request.EndDate.Value);
             }
 
-            if (request.Status.HasValue)
+            // Çoklu status filtresi (virgülle ayrılmış): tekil Status'tan öncelikli
+            var parsedStatuses = string.IsNullOrWhiteSpace(request.Statuses)
+                ? null
+                : request.Statuses.Split(',', System.StringSplitOptions.RemoveEmptyEntries)
+                    .Select(s => int.TryParse(s.Trim(), out var v) ? (int?)v : null)
+                    .Where(v => v.HasValue)
+                    .Select(v => (Akyildiz.Sevkiyat.Domain.Enums.ShipmentStatus)v!.Value)
+                    .ToList();
+
+            if (parsedStatuses != null && parsedStatuses.Count > 0)
+            {
+                query = query.Where(s => parsedStatuses.Contains(s.Status));
+            }
+            else if (request.Status.HasValue)
             {
                 query = query.Where(s => s.Status == request.Status.Value);
             }
@@ -91,6 +116,24 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipments
                 query = query.Where(s => s.Project.ZoneId == request.ZoneId.Value);
             }
 
+            if (!string.IsNullOrEmpty(request.DispatchType))
+            {
+                query = request.DispatchType switch
+                {
+                    "Cargo"   => query.Where(s => s.CargoProvider != null),
+                    "Freight" => query.Where(s => s.FreightCarrierName != null && s.CargoProvider == null),
+                    "Vehicle" => query.Where(s => s.AssignedDriverName != null && s.CargoProvider == null && s.FreightCarrierName == null),
+                    "None"    => query.Where(s => s.CargoProvider == null && s.FreightCarrierName == null && s.AssignedDriverName == null),
+                    _         => query
+                };
+            }
+
+            if (request.OperationType.HasValue)
+            {
+                var opType = (Domain.Enums.OperationType)request.OperationType.Value;
+                query = query.Where(s => s.OperationType == opType);
+            }
+
             // Search
             if (!string.IsNullOrWhiteSpace(request.Search))
             {
@@ -98,9 +141,11 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipments
                 // Simple integer check for ID if it parses
                 if (int.TryParse(s, out int id))
                 {
-                    query = query.Where(x => 
-                        x.Id == id || 
-                        (x.IssOrder != null && EF.Functions.Collate(x.IssOrder.ExternalOrderNumber, "Turkish_CI_AS").Contains(EF.Functions.Collate(s, "Turkish_CI_AS"))) || 
+                    query = query.Where(x =>
+                        x.Id == id ||
+                        EF.Functions.Collate(x.Project.Name, "Turkish_CI_AS").Contains(EF.Functions.Collate(s, "Turkish_CI_AS")) ||
+                        EF.Functions.Collate(x.Project.Code, "Turkish_CI_AS").Contains(EF.Functions.Collate(s, "Turkish_CI_AS")) ||
+                        (x.IssOrder != null && EF.Functions.Collate(x.IssOrder.ExternalOrderNumber, "Turkish_CI_AS").Contains(EF.Functions.Collate(s, "Turkish_CI_AS"))) ||
                         (x.IssOrder != null && x.IssOrder.TalepNo != null && EF.Functions.Collate(x.IssOrder.TalepNo, "Turkish_CI_AS").Contains(EF.Functions.Collate(s, "Turkish_CI_AS"))));
                 }
                 else
@@ -118,7 +163,8 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipments
             var totalCount = await query.CountAsync(cancellationToken);
 
             var items = await query
-                .OrderByDescending(s => s.DeliveryDate)
+                .OrderByDescending(s => s.DeliveryDate.Date)
+                .ThenBy(s => s.Project.Name)
                 .Skip((request.PageNumber - 1) * request.PageSize)
                 .Take(request.PageSize)
                 .Select(s => new ShipmentDto
@@ -132,12 +178,17 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipments
                     DriverName = s.AssignedDriverName,
                     PlateNumber = s.AssignedPlateNumber,
                     TalepNo = s.IssOrder != null ? s.IssOrder.TalepNo : null,
+                    TalepTuru = s.IssOrder != null ? s.IssOrder.TalepTuru : null,
+                    InstitutionCode = s.Project.InstitutionCode,
                     ExternalOrderNumber = s.IssOrder != null ? s.IssOrder.ExternalOrderNumber : null,
                     WaybillNumber = s.IrsaliyeNo,
                     Aciklama = s.IssOrder != null ? s.IssOrder.Aciklama : null,
                     NetsisTransferredAt  = s.NetsisTransferredAt,
                     OperationType        = s.OperationType == Domain.Enums.OperationType.Clothing ? "Kıyafet" : "Catering",
                     OperationTypeValue   = (int)s.OperationType,
+                    CargoProviderValue   = s.CargoProvider != null ? (int?)s.CargoProvider.Value : null,
+                    FreightCarrierName   = s.FreightCarrierName,
+                    FreightCarrierPlate  = s.FreightCarrierPlate,
                 }).ToListAsync(cancellationToken);
 
             return new PaginatedList<ShipmentDto>(items, totalCount, request.PageNumber, request.PageSize);

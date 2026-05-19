@@ -41,7 +41,7 @@ namespace Akyildiz.Sevkiyat.Infrastructure.ExternalServices.Netsis
         public string StokBakiyePath       { get; init; } = "api/v2/Queries";
         public string IrsaliyePath         { get; init; } = "api/v2/ItemSlips";
 
-        public int TimeoutSeconds     { get; init; } = 30;
+        public int TimeoutSeconds     { get; init; } = 120;
         public int TokenExpiryMinutes { get; init; } = 55;
     }
 }

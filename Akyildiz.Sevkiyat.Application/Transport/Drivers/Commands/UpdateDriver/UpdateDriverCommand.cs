@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Akyildiz.Sevkiyat.Application.Transport.Drivers.Commands.UpdateDriver
 {
-    public record UpdateDriverCommand(int Id, string FullName, string? Phone, bool IsActive) : IRequest<bool>, IRequireRoles
+    public record UpdateDriverCommand(int Id, string FullName, string? Phone, bool IsActive, int? UserId) : IRequest<bool>, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles =>
             new[] { "Admin", "Manager", "Accounting" };
@@ -25,6 +25,7 @@ namespace Akyildiz.Sevkiyat.Application.Transport.Drivers.Commands.UpdateDriver
             driver.FullName = request.FullName;
             driver.Phone = request.Phone;
             driver.IsActive = request.IsActive;
+            driver.UserId = request.UserId;
 
             await _context.SaveChangesAsync(cancellationToken);
             return true;

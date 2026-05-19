@@ -142,6 +142,66 @@ export interface MaterialPurchaseReportRow {
   remainingQty: number;
 }
 
+export interface StockMovementRow {
+  id: number;
+  date: string;
+  stockCode: string;
+  stockName: string;
+  unit: string;
+  transactionType: string;
+  transactionTypeId: number;
+  qty: number;
+  reference?: string;
+  note?: string;
+}
+
+export interface StockMovementsResult {
+  items: StockMovementRow[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface LocationTypeSummary {
+  locationTypeId: number;
+  locationTypeLabel: string;
+  totalOnHand: number;
+  totalReserved: number;
+  totalAvailable: number;
+  locationCount: number;
+  stockCount: number;
+}
+
+export interface LocationStockRow {
+  warehouseLocationId: number;
+  locationCode: string;
+  locationTypeId: number;
+  locationTypeLabel: string;
+  alan?: string;
+  stockMasterId: number;
+  stockCode: string;
+  stockName: string;
+  unit: string;
+  onHandQty: number;
+  reservedQty: number;
+  availableQty: number;
+}
+
+export interface WarehouseStockDistributionDto {
+  summary: LocationTypeSummary[];
+  details: LocationStockRow[];
+}
+
+export const STOCK_TRANSACTION_TYPE_LABELS: Record<number, string> = {
+  0: 'Mal Girişi',
+  1: 'Sevkiyat Çıkışı',
+  2: 'Manuel Düzeltme',
+  3: 'Rezervasyon',
+  4: 'Rezervasyon İptali',
+  5: 'Araç İadesi',
+  6: 'Giriş Düzeltmesi',
+};
+
 const reportService = {
   async getZoneMaterialReport(params: {
     deliveryDate: string;
@@ -192,6 +252,23 @@ const reportService = {
     zoneId?: number | null;
   }): Promise<ReturnsReportDto> {
     const response = await apiClient.get('/reports/returns', { params });
+    return response.data;
+  },
+
+  async getStockMovements(params: {
+    startDate: string;
+    endDate: string;
+    stockSearch?: string;
+    type?: number | null;
+    page?: number;
+    pageSize?: number;
+  }): Promise<StockMovementsResult> {
+    const response = await apiClient.get('/reports/stock-movements', { params });
+    return response.data;
+  },
+
+  async getWarehouseStockDistribution(): Promise<WarehouseStockDistributionDto> {
+    const response = await apiClient.get('/reports/warehouse-stock-distribution');
     return response.data;
   },
 

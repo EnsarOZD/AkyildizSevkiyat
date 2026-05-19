@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Akyildiz.Sevkiyat.Application.Common.Interfaces;
 using Akyildiz.Sevkiyat.Application.Interfaces;
 using Akyildiz.Sevkiyat.Domain.Entities;
 using Akyildiz.Sevkiyat.Domain.Enums;
@@ -12,13 +13,16 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Commands.StartDriverSession
     {
         private readonly IApplicationDbContext _context;
         private readonly ICurrentUserService _currentUser;
+        private readonly IPhotoStorageService _photos;
 
         public StartDriverSessionCommandHandler(
             IApplicationDbContext context,
-            ICurrentUserService currentUser)
+            ICurrentUserService currentUser,
+            IPhotoStorageService photos)
         {
             _context = context;
             _currentUser = currentUser;
+            _photos = photos;
         }
 
         public async Task<StartDriverSessionResult> Handle(
@@ -45,9 +49,10 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Commands.StartDriverSession
             if (hasOpenSession)
                 throw new DomainException("Zaten açık seferiniz var. Önce mevcut seferi kapatın.");
 
-            // 4. Bu driver bu araca atanmış mı? (aktif ZonePreparation'larda)
             var today = DateTime.UtcNow.Date;
-            var assignment = await _context.ZonePreparationDrivers
+
+            // 4a. Depo akışı: ZonePreparationDrivers tablosunda atama var mı?
+            var zoneAssignment = await _context.ZonePreparationDrivers
                 .Include(zpd => zpd.ZonePreparation)
                 .FirstOrDefaultAsync(zpd =>
                     zpd.DriverId == driver.Id &&
@@ -56,19 +61,58 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Commands.StartDriverSession
                     zpd.ZonePreparation.Status <= ZonePreparationStatus.Dispatched,
                     cancellationToken);
 
-            if (assignment == null)
+            // 4b. Direkt atama: Sevkiyatlar sayfasından AssignVehicle ile atanmış mı?
+            // Sevkiyatlar ekranından atanan sevkiyatlar zaten Dispatched olarak gelir (zone onayı yok).
+            bool hasDirectAssignment = false;
+            if (zoneAssignment == null)
+            {
+                hasDirectAssignment = await _context.Shipments
+                    .AnyAsync(s =>
+                        s.AssignedDriverId == driver.Id &&
+                        s.AssignedPlateNumber == vehicle.PlateNumber &&
+                        (s.Status == ShipmentStatus.AssignedToVehicle ||
+                         s.Status == ShipmentStatus.Dispatched),
+                        cancellationToken);
+            }
+
+            if (zoneAssignment == null && !hasDirectAssignment)
                 throw new DomainException("Bu araca atamanız bulunmuyor. Yöneticinizle iletişime geçin.");
 
-            // 5. Session oluştur
+            // 5. Kadran fotoğrafı varsa kaydet
+            string? odometerPath = null;
+            if (!string.IsNullOrWhiteSpace(command.StartOdometerPhotoBase64))
+                odometerPath = await _photos.SaveAsync(command.StartOdometerPhotoBase64, "odometer", cancellationToken);
+
+            // 6. Session oluştur (zone'suz direkt atamada ZonePreparationId = null)
             var session = DriverSession.Create(
                 driver.Id,
                 vehicle.Id,
-                assignment.ZonePreparationId,
+                zoneAssignment?.ZonePreparationId,
                 command.Latitude,
                 command.Longitude,
-                command.DeviceFingerprint);
+                command.DeviceFingerprint,
+                odometerPath,
+                command.StartOdometerKm);
 
             _context.DriverSessions.Add(session);
+
+            // 7. AssignedToVehicle sevkiyatları Dispatched'e al (yolda)
+            var shipmentsToDispatch = zoneAssignment != null
+                ? await _context.Shipments
+                    .Where(s =>
+                        s.ZonePreparationId == zoneAssignment.ZonePreparationId &&
+                        s.Status == ShipmentStatus.AssignedToVehicle)
+                    .ToListAsync(cancellationToken)
+                : await _context.Shipments
+                    .Where(s =>
+                        s.AssignedDriverId == driver.Id &&
+                        s.AssignedPlateNumber == vehicle.PlateNumber &&
+                        s.Status == ShipmentStatus.AssignedToVehicle)
+                    .ToListAsync(cancellationToken);
+
+            foreach (var s in shipmentsToDispatch)
+                s.ChangeStatus(ShipmentStatus.Dispatched, driver.UserId);
+
             await _context.SaveChangesAsync(cancellationToken);
 
             return new StartDriverSessionResult(session.Id, vehicle.PlateNumber, session.StartTime);

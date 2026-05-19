@@ -13,18 +13,27 @@
     <div class="mb-5 border-b border-gray-200 dark:border-gray-700">
       <nav class="-mb-px flex space-x-6">
         <button
-          @click="activeTab = 'active'; page = 1"
-          :class="activeTab === 'active'
+          @click="activeTab = 'catering'; filters.status = ''; page = 1"
+          :class="activeTab === 'catering'
             ? 'border-blue-500 text-blue-600'
             : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'"
           class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition-colors"
         >
-          Aktif Siparişler
+          Catering Siparişler
+        </button>
+        <button
+          @click="activeTab = 'clothing'; filters.status = ''; page = 1"
+          :class="activeTab === 'clothing'
+            ? 'border-purple-500 text-purple-600'
+            : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'"
+          class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition-colors"
+        >
+          Kıyafet Siparişler
         </button>
         <button
           @click="activeTab = 'passive'; filters.status = ''; page = 1"
           :class="activeTab === 'passive'
-            ? 'border-blue-500 text-blue-600'
+            ? 'border-gray-500 text-gray-600'
             : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'"
           class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition-colors"
         >
@@ -35,19 +44,23 @@
 
     <!-- Filters -->
     <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-5">
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
         <div>
-          <BaseInput type="date" label="Tarih" v-model="filters.date" size="sm" />
+          <BaseInput type="date" label="Başlangıç" v-model="filters.startDate" size="sm" />
         </div>
-        <div v-if="activeTab === 'active'">
+        <div>
+          <BaseInput type="date" label="Bitiş" v-model="filters.endDate" size="sm" />
+        </div>
+        <div v-if="activeTab !== 'passive'">
           <BaseSelect label="Durum" v-model="filters.status" size="sm">
             <option value="">Tümü</option>
             <option value="0">Taslak</option>
             <option value="1">Depoda</option>
             <option value="2">Toplanıyor</option>
             <option value="3">Sevke Hazır</option>
-            <option value="4">Yolda</option>
-            <option value="5">Teslim Edildi</option>
+            <option value="4">Araçta</option>
+            <option value="5">Yolda</option>
+            <option value="6">Teslim Edildi</option>
           </BaseSelect>
         </div>
         <div>
@@ -56,7 +69,16 @@
             <option v-for="z in zones" :key="z.id" :value="z.id">{{ z.name }}</option>
           </BaseSelect>
         </div>
-        <div class="col-span-2 sm:col-span-4 xl:col-span-1">
+        <div>
+          <BaseSelect label="Gönderim Tipi" v-model="filters.dispatchType" size="sm">
+            <option value="">Tümü</option>
+            <option value="Cargo">Kargo</option>
+            <option value="Freight">Nakliye</option>
+            <option value="Vehicle">Araç</option>
+            <option value="None">Atanmamış</option>
+          </BaseSelect>
+        </div>
+        <div class="col-span-2 sm:col-span-3 xl:col-span-1">
           <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Arama</label>
           <div class="flex gap-2">
             <BaseInput
@@ -75,21 +97,40 @@
       </div>
     </div>
 
-    <!-- Netsis Durum Kontrol butonu (Admin/Manager) -->
-    <div v-role="['Admin', 'Manager']" class="flex justify-end mb-3">
-      <button
-        @click="verifyNetsisTransfers"
-        :disabled="verifyingNetsis"
-        class="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/40 disabled:opacity-50 transition-colors"
-        title="Netsis'e aktarılmış görünen siparişlerin Netsis'te hâlâ mevcut olup olmadığını kontrol eder. Silinmişlerin aktarım durumu sıfırlanır. Aktarılmamış ama Netsis'te mevcut olanlar otomatik işaretlenir."
-      >
-        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-        </svg>
-        <span v-if="verifyingNetsis">Kontrol başlatıldı...</span>
-        <span v-else>Netsis Durum Kontrol</span>
-      </button>
+    <!-- Netsis Durum Kontrol butonu (Admin/Manager/Accounting) -->
+    <div class="flex justify-end gap-2 mb-3">
+      <!-- Kurtarma butonu — sadece Admin, tek seferlik bug recovery -->
+      <div v-role="['Admin']">
+        <button
+          @click="recoverNetsisTransfers"
+          :disabled="recoveringNetsis"
+          class="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-red-300 dark:border-red-700 text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 disabled:opacity-50 transition-colors"
+          title="Araçta/yolda/iade durumundaki ve irsaliyesi silinmiş sevkiyatları Netsis'te arar. Bulunanları Sevke Hazır durumuna geri alır."
+        >
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+          <span v-if="recoveringNetsis">Kurtarılıyor...</span>
+          <span v-else>Netsis Veri Kurtar</span>
+        </button>
+      </div>
+
+      <div v-role="['Admin', 'Manager', 'Accounting']">
+        <button
+          @click="verifyNetsisTransfers"
+          :disabled="verifyingNetsis"
+          class="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/40 disabled:opacity-50 transition-colors"
+          title="Netsis'e aktarılmış görünen siparişlerin Netsis'te hâlâ mevcut olup olmadığını kontrol eder. Silinmişlerin aktarım durumu sıfırlanır. Aktarılmamış ama Netsis'te mevcut olanlar otomatik işaretlenir."
+        >
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <span v-if="verifyingNetsis">Kontrol başlatıldı...</span>
+          <span v-else>Netsis Durum Kontrol</span>
+        </button>
+      </div>
     </div>
 
     <!-- Skeleton while loading -->
@@ -103,7 +144,9 @@
           title="Sevkiyat bulunamadı"
           :description="activeTab === 'passive'
             ? 'Pasife alınmış sevkiyat bulunmuyor.'
-            : 'Arama kriterlerinize uygun aktif sevkiyat yok.'"
+            : activeTab === 'clothing'
+              ? 'Kıyafet sevkiyatı bulunamadı.'
+              : 'Arama kriterlerinize uygun catering sevkiyatı yok.'"
         />
       </div>
 
@@ -121,7 +164,7 @@
                     @change="toggleSelectAll"
                     :disabled="pageReadyIds.length === 0"
                     class="w-4 h-4 rounded border-gray-300 text-blue-600 cursor-pointer disabled:opacity-30"
-                    title="Sayfadaki tüm 'Sevke Hazır' sevkiyatları seç"
+                    title="Sayfadaki tüm seçilebilir sevkiyatları seç (Sevke Hazır / Araçta / Yolda + irsaliyeli)"
                   />
                 </th>
                 <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" @click="toggleSort('id')">
@@ -138,7 +181,7 @@
                 <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" @click="toggleSort('status')">
                   Durum <span class="ml-1 opacity-50">{{ sortKey === 'status' ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}</span>
                 </th>
-                <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sürücü / Plaka</th>
+                <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Gönderim</th>
                 <th class="px-5 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">İşlem</th>
               </tr>
             </thead>
@@ -151,7 +194,7 @@
               >
                 <td class="px-4 py-3 w-10">
                   <input
-                    v-if="shipment.status === 'ReadyForDispatch'"
+                    v-if="isSelectable(shipment)"
                     type="checkbox"
                     :checked="selectedIds.has(shipment.id)"
                     @change="toggleSelect(shipment.id)"
@@ -184,59 +227,44 @@
                   <StatusBadge :status="shipment.status" type="shipment" />
                 </td>
                 <td class="px-5 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  <div v-if="shipment.driverName">{{ shipment.driverName }}</div>
-                  <div v-if="shipment.plateNumber" class="text-xs text-gray-400">{{ shipment.plateNumber }}</div>
-                  <span v-if="!shipment.driverName" class="text-gray-300">—</span>
+                  <template v-for="info in [getDispatchInfo(shipment)]" :key="shipment.id + '-dispatch'">
+                    <template v-if="info">
+                      <div class="flex items-center gap-1.5">
+                        <span
+                          :class="{
+                            'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300': info.type === 'Kargo',
+                            'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300': info.type === 'Nakliye',
+                            'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300': info.type === 'Araç',
+                          }"
+                          class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold"
+                        >{{ info.type }}</span>
+                        <span class="text-gray-700 dark:text-gray-300">{{ info.label }}</span>
+                      </div>
+                      <div v-if="info.plate" class="text-xs text-gray-400 mt-0.5">{{ info.plate }}</div>
+                    </template>
+                    <span v-else class="text-gray-300">—</span>
+                  </template>
                 </td>
-                <td class="px-5 py-3 whitespace-nowrap text-right text-sm">
-                  <div class="flex justify-end items-center gap-1.5">
-                    <!-- Workflow quick actions -->
-                    <button
-                      v-if="shipment.status === 'Created'"
-                      v-role="['Admin', 'Accounting']"
-                      @click="quickAssignToWarehouse(shipment.id)"
-                      class="text-yellow-700 hover:text-yellow-900 bg-yellow-50 hover:bg-yellow-100 px-2 py-1 rounded text-xs font-medium transition-colors"
-                    >Depoya Ata</button>
-                    <button
-                      v-if="shipment.status === 'AssignedToWarehouse'"
-                      v-role="['Admin', 'Warehouse']"
-                      @click="quickStartPicking(shipment.id)"
-                      class="text-blue-700 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded text-xs font-medium transition-colors"
-                    >Toplamaya Başla</button>
-                    <button
-                      v-if="shipment.status === 'Picking'"
-                      v-role="['Admin', 'Warehouse']"
-                      @click="quickMarkReady(shipment.id)"
-                      class="text-purple-700 hover:text-purple-900 bg-purple-50 hover:bg-purple-100 px-2 py-1 rounded text-xs font-medium transition-colors"
-                    >Hazır İşaretle</button>
-                    <button
-                      v-if="shipment.status === 'ReadyForDispatch' && !shipment.netsisTransferredAt"
-                      v-role="['Admin', 'Manager']"
-                      @click="singleExportToNetsis(shipment.id)"
-                      class="text-orange-700 hover:text-orange-900 bg-orange-50 hover:bg-orange-100 px-2 py-1 rounded text-xs font-medium transition-colors"
-                    >Netsis'e Aktar</button>
+                <td class="px-4 py-3 whitespace-nowrap text-right">
+                  <div class="flex justify-end items-center gap-2">
                     <span
                       v-if="shipment.status === 'ReadyForDispatch' && shipment.netsisTransferredAt"
-                      class="px-2 py-1 text-xs font-medium text-green-700 bg-green-50 rounded"
+                      class="px-2 py-0.5 text-[10px] font-medium text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded"
                       title="Netsis'e aktarıldı"
                     >✓ Netsis</span>
-                    <!-- Toggle active/passive -->
-                    <button
-                      v-if="shipment.status === 'Created'"
-                      v-role="['Admin', 'Accounting']"
-                      @click="confirmToggleStatus(shipment.id, true)"
-                      class="text-amber-600 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 px-2 py-1 rounded text-xs font-medium transition-colors"
-                    >Pasife Al</button>
-                    <button
-                      v-if="shipment.status === 'Passive'"
-                      v-role="['Admin', 'Accounting']"
-                      @click="confirmToggleStatus(shipment.id, false)"
-                      class="text-green-600 hover:text-green-800 bg-green-50 hover:bg-green-100 px-2 py-1 rounded text-xs font-medium transition-colors"
-                    >Aktife Al</button>
-                    <router-link
-                      :to="`/shipments/${shipment.id}`"
-                      class="text-blue-600 hover:text-blue-800 px-2 py-1 text-xs font-medium"
-                    >Detay →</router-link>
+                    <ShipmentActionsDropdown
+                      :shipment="shipment"
+                      :exporting="exportingIds.has(shipment.id)"
+                      @assign-to-warehouse="quickAssignToWarehouse(shipment.id)"
+                      @start-picking="quickStartPicking(shipment.id)"
+                      @mark-ready="quickMarkReady(shipment.id)"
+                      @export-to-netsis="singleExportToNetsis(shipment.id)"
+                      @mark-delivered="openMarkDeliveredModal(shipment.id)"
+                      @delete-draft="deleteDraft(shipment.id)"
+                      @passive-on="confirmToggleStatus(shipment.id, true)"
+                      @passive-off="confirmToggleStatus(shipment.id, false)"
+                      @cancel="confirmToggleStatus(shipment.id, true)"
+                    />
                   </div>
                 </td>
               </tr>
@@ -276,56 +304,45 @@
                 <span class="block text-xs text-gray-400">Sipariş No</span>
                 {{ shipment.externalOrderNumber || '-' }}
               </div>
-              <div v-if="shipment.driverName" class="col-span-2">
-                <span class="block text-xs text-gray-400">Sürücü</span>
-                {{ shipment.driverName }} ({{ shipment.plateNumber }})
+              <div v-for="info in [getDispatchInfo(shipment)]" :key="'m-dispatch-' + shipment.id" class="col-span-2">
+                <template v-if="info">
+                  <span class="block text-xs text-gray-400">Gönderim</span>
+                  <span
+                    :class="{
+                      'bg-sky-100 text-sky-700': info.type === 'Kargo',
+                      'bg-amber-100 text-amber-700': info.type === 'Nakliye',
+                      'bg-green-100 text-green-700': info.type === 'Araç',
+                    }"
+                    class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold mr-1.5"
+                  >{{ info.type }}</span>
+                  {{ info.label }}<span v-if="info.plate"> · {{ info.plate }}</span>
+                </template>
               </div>
             </div>
-            <div class="flex flex-wrap justify-end gap-2 border-t border-gray-100 dark:border-gray-700 pt-3">
-              <button
-                v-if="shipment.status === 'Created'"
-                v-role="['Admin', 'Accounting']"
-                @click="quickAssignToWarehouse(shipment.id)"
-                class="text-yellow-700 text-xs font-medium bg-yellow-50 px-2 py-1 rounded"
-              >Depoya Ata</button>
-              <button
-                v-if="shipment.status === 'AssignedToWarehouse'"
-                v-role="['Admin', 'Warehouse']"
-                @click="quickStartPicking(shipment.id)"
-                class="text-blue-700 text-xs font-medium bg-blue-50 px-2 py-1 rounded"
-              >Toplamaya Başla</button>
-              <button
-                v-if="shipment.status === 'Picking'"
-                v-role="['Admin', 'Warehouse']"
-                @click="quickMarkReady(shipment.id)"
-                class="text-purple-700 text-xs font-medium bg-purple-50 px-2 py-1 rounded"
-              >Hazır İşaretle</button>
-              <button
-                v-if="shipment.status === 'ReadyForDispatch' && !shipment.netsisTransferredAt"
-                v-role="['Admin', 'Manager']"
-                @click="singleExportToNetsis(shipment.id)"
-                class="text-orange-700 text-xs font-medium bg-orange-50 px-2 py-1 rounded"
-              >Netsis'e Aktar</button>
-              <span
-                v-if="shipment.status === 'ReadyForDispatch' && shipment.netsisTransferredAt"
-                class="px-2 py-1 text-xs font-medium text-green-700 bg-green-50 rounded"
-              >✓ Netsis</span>
-              <button
-                v-if="shipment.status === 'Created'"
-                v-role="['Admin', 'Accounting']"
-                @click="confirmToggleStatus(shipment.id, true)"
-                class="text-amber-600 text-xs font-bold bg-amber-50 px-2 py-1 rounded"
-              >Pasife Al</button>
-              <button
-                v-if="shipment.status === 'Passive'"
-                v-role="['Admin', 'Accounting']"
-                @click="confirmToggleStatus(shipment.id, false)"
-                class="text-green-600 text-xs font-bold bg-green-50 px-2 py-1 rounded"
-              >Aktife Al</button>
+            <div class="flex justify-between items-center border-t border-gray-100 dark:border-gray-700 pt-3">
               <router-link
                 :to="`/shipments/${shipment.id}`"
-                class="text-white bg-blue-600 hover:bg-blue-700 px-4 py-1 rounded text-sm font-medium shadow-sm transition-colors"
+                class="text-white bg-blue-600 hover:bg-blue-700 px-4 py-1.5 rounded-lg text-sm font-medium shadow-sm transition-colors"
               >Detay →</router-link>
+              <div class="flex items-center gap-2">
+                <span
+                  v-if="shipment.status === 'ReadyForDispatch' && shipment.netsisTransferredAt"
+                  class="px-2 py-0.5 text-[10px] font-medium text-green-700 bg-green-50 dark:bg-green-900/20 dark:text-green-400 rounded"
+                >✓ Netsis</span>
+                <ShipmentActionsDropdown
+                  :shipment="shipment"
+                  :exporting="exportingIds.has(shipment.id)"
+                  @assign-to-warehouse="quickAssignToWarehouse(shipment.id)"
+                  @start-picking="quickStartPicking(shipment.id)"
+                  @mark-ready="quickMarkReady(shipment.id)"
+                  @export-to-netsis="singleExportToNetsis(shipment.id)"
+                  @mark-delivered="openMarkDeliveredModal(shipment.id)"
+                  @delete-draft="deleteDraft(shipment.id)"
+                  @passive-on="confirmToggleStatus(shipment.id, true)"
+                  @passive-off="confirmToggleStatus(shipment.id, false)"
+                  @cancel="confirmToggleStatus(shipment.id, true)"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -362,7 +379,7 @@
         <span class="text-sm font-medium">{{ selectedIds.size }} sevkiyat seçili</span>
         <div class="w-px h-5 bg-white/20 dark:bg-gray-900/20"></div>
         <button
-          v-role="['Admin', 'Manager']"
+          v-role="['Admin', 'Manager', 'Accounting']"
           @click="bulkExportToNetsis"
           :disabled="isBulkExporting"
           class="flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-400 text-white text-sm font-semibold px-3 py-1.5 rounded-lg transition-colors"
@@ -380,6 +397,14 @@
           Araca Ata
         </button>
         <button
+          v-role="['Admin', 'Manager', 'Accounting']"
+          @click="openBulkDeliverModal"
+          class="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-3 py-1.5 rounded-lg transition-colors"
+        >
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+          Toplu Teslim Et
+        </button>
+        <button
           @click="selectedIds.clear()"
           class="text-sm text-white/70 dark:text-gray-900/60 hover:text-white dark:hover:text-gray-900 px-2 py-1 rounded-lg transition-colors"
         >
@@ -389,54 +414,284 @@
     </Transition>
   </Teleport>
 
-  <!-- Bulk assign vehicle modal -->
-  <BaseModal :show="showBulkModal" title="Toplu Araç Atama" maxWidth="md" @close="showBulkModal = false">
-    <div class="space-y-4">
-      <p class="text-sm text-gray-500 dark:text-gray-400">
-        <span class="font-medium text-gray-700 dark:text-gray-200">{{ selectedIds.size }} sevkiyat</span>
-        aynı araç ve sürücüye atanacak.
-      </p>
+  <!-- Bulk dispatch modal -->
+  <Teleport to="body">
+    <div
+      v-if="showDispatchModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+      @click.self="showDispatchModal = false"
+    >
+      <div class="bg-white dark:bg-gray-900 rounded-lg p-6 w-full max-w-lg shadow-xl border-t-4 border-blue-500 max-h-[90vh] overflow-y-auto">
+        <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-1">Toplu Sevkiyat Gönder</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          <span class="font-medium text-gray-700 dark:text-gray-200">{{ selectedIds.size }} sevkiyat</span> gönderilecek. Gönderim tipini seçin.
+        </p>
 
-      <div v-if="bulkListsLoading" class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 py-2">
-        <span class="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></span>
-        Yükleniyor...
-      </div>
-
-      <template v-else>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Şoför <span class="text-red-500">*</span></label>
-          <select v-model="bulkForm.driverId"
-            class="w-full border border-gray-300 dark:border-gray-700 rounded-input px-3 py-2 text-sm bg-white dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500">
-            <option :value="null">Seçiniz...</option>
-            <option v-for="d in bulkActiveDrivers" :key="d.id" :value="d.id">{{ d.fullName }}</option>
-          </select>
+        <!-- Dispatch type selector -->
+        <div class="flex gap-2 mb-5">
+          <button
+            v-for="opt in dispatchTypeOptions" :key="opt.value"
+            @click="bulkDispatchType = opt.value"
+            :class="bulkDispatchType === opt.value
+              ? 'bg-blue-600 text-white border-blue-600'
+              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700 hover:border-blue-400'"
+            class="flex-1 border rounded-lg px-3 py-2.5 text-sm font-medium transition-colors flex flex-col items-center gap-1"
+          >
+            <span class="text-lg">{{ opt.icon }}</span>
+            <span>{{ opt.label }}</span>
+          </button>
         </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Araç <span class="text-red-500">*</span></label>
-          <select v-model="bulkForm.vehicleId"
-            class="w-full border border-gray-300 dark:border-gray-700 rounded-input px-3 py-2 text-sm bg-white dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500">
-            <option :value="null">Seçiniz...</option>
-            <option v-for="v in bulkActiveVehicles" :key="v.id" :value="v.id">{{ v.plateNumber }}</option>
-          </select>
-          <div v-if="bulkForm.vehicleId" class="mt-1.5">
-            <span v-for="v in bulkActiveVehicles.filter(v => v.id === bulkForm.vehicleId)" :key="v.id"
-                  :class="['text-xs font-medium px-2 py-0.5 rounded',
-                    v.vehicleType === 0 ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' :
-                    v.vehicleType === 1 ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' :
-                                          'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300']">
-              {{ v.vehicleTypeName }}
-            </span>
+
+        <!-- Loading -->
+        <div v-if="bulkListsLoading" class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-4 py-2">
+          <span class="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></span>
+          Yükleniyor...
+        </div>
+
+        <!-- Kargo form -->
+        <div v-else-if="bulkDispatchType === 'cargo'" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kargo Firması <span class="text-red-500">*</span></label>
+            <select v-model="bulkCargoProvider"
+              class="w-full border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option :value="null">Seçiniz...</option>
+              <option v-for="cp in cargoProviderOptions" :key="cp.value" :value="cp.value">{{ cp.label }}</option>
+            </select>
           </div>
         </div>
-      </template>
+
+        <!-- Nakliye form -->
+        <div v-else-if="bulkDispatchType === 'freight'" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Taşıyıcı Adı <span class="text-red-500">*</span></label>
+            <input
+              v-model="bulkFreightCarrierName"
+              type="text"
+              placeholder="Örn: Ekol Lojistik"
+              class="w-full border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Plaka <span class="text-gray-400 font-normal">(opsiyonel)</span></label>
+            <input
+              v-model="bulkFreightCarrierPlate"
+              type="text"
+              placeholder="34 ABC 123"
+              class="w-full border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Telefon <span class="text-gray-400 font-normal">(opsiyonel)</span></label>
+            <input
+              v-model="bulkFreightCarrierPhone"
+              type="tel"
+              placeholder="05XX XXX XX XX"
+              maxlength="30"
+              class="w-full border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+
+        <!-- Araç form -->
+        <div v-else-if="bulkDispatchType === 'vehicle'" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Şoförler
+              <span class="text-gray-400 font-normal ml-1">(ilk seçilen ana şoför)</span>
+            </label>
+            <div class="border border-gray-300 dark:border-gray-700 rounded-md max-h-48 overflow-y-auto">
+              <label
+                v-for="d in bulkActiveDrivers" :key="d.id"
+                class="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-b border-gray-100 dark:border-gray-800 last:border-0"
+              >
+                <input
+                  type="checkbox"
+                  :value="d.id"
+                  v-model="bulkSelectedDriverIds"
+                  class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span class="flex-1 text-sm text-gray-900 dark:text-gray-100">{{ d.fullName }}</span>
+                <span class="text-xs text-gray-400">{{ d.phone }}</span>
+                <span
+                  v-if="bulkSelectedDriverIds[0] === d.id && bulkSelectedDriverIds.length > 0"
+                  class="text-[11px] bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded font-medium"
+                >Ana Şoför</span>
+              </label>
+              <div v-if="bulkActiveDrivers.length === 0" class="px-3 py-3 text-sm text-gray-500 dark:text-gray-400 italic">
+                Aktif şoför bulunamadı.
+              </div>
+            </div>
+            <p v-if="bulkSelectedDriverIds.length > 0" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {{ bulkSelectedDriverIds.length }} şoför seçildi.
+            </p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Araç <span class="text-red-500">*</span></label>
+            <select v-model="bulkVehicleId"
+              class="w-full border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option :value="null">Seçiniz...</option>
+              <option v-for="v in bulkActiveVehicles" :key="v.id" :value="v.id">
+                {{ v.plateNumber }} — {{ v.vehicleTypeName ?? '' }}{{ v.capacity ? ` (${v.capacity})` : '' }}
+              </option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Hareket Saati</label>
+            <input
+              type="time"
+              v-model="bulkDepartureTime"
+              class="w-full border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+
+        <div class="mt-6 flex justify-end gap-3">
+          <button @click="showDispatchModal = false"
+            class="px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-300 dark:border-gray-700 text-sm">
+            İptal
+          </button>
+          <button
+            @click="submitBulkDispatch"
+            :disabled="!canSubmitBulkDispatch || bulkSubmitting"
+            class="px-6 py-2.5 bg-blue-600 text-white rounded font-bold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm"
+          >
+            <span v-if="bulkSubmitting" class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+            <span>{{ bulkSubmitting ? 'Gönderiliyor...' : 'GÖNDER' }}</span>
+          </button>
+        </div>
+      </div>
     </div>
-    <template #footer>
-      <BaseButton @click="showBulkModal = false" variant="secondary">İptal</BaseButton>
-      <BaseButton @click="submitBulkAssign" :disabled="!bulkForm.driverId || !bulkForm.vehicleId" :loading="bulkSubmitting" variant="primary">
-        Araca Ata
-      </BaseButton>
-    </template>
-  </BaseModal>
+  </Teleport>
+
+  <!-- Mark Delivered Modal -->
+  <Teleport to="body">
+    <Transition
+      enter-active-class="transition ease-out duration-150"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition ease-in duration-100"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div
+        v-if="deliverModal.open"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+        @click.self="deliverModal.open = false"
+      >
+        <div class="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden">
+          <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+            <h3 class="font-bold text-gray-900 dark:text-white">Teslim Edildi İşaretle</h3>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Sevkiyat #{{ deliverModal.shipmentId }}</p>
+          </div>
+          <div class="px-5 py-4 space-y-3">
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                Teslim Alan <span class="text-red-500">*</span>
+              </label>
+              <input
+                v-model="deliverModal.recipient"
+                type="text"
+                placeholder="Teslim alan kişi / güvenlik adı"
+                class="w-full px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                Açıklama / Not <span class="text-red-500">*</span>
+              </label>
+              <textarea
+                v-model="deliverModal.note"
+                rows="2"
+                placeholder="Teslim notu veya müdahale açıklaması"
+                class="w-full px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              ></textarea>
+            </div>
+            <p v-if="deliverModal.error" class="text-xs text-red-500">{{ deliverModal.error }}</p>
+          </div>
+          <div class="px-5 pb-5 flex justify-end gap-2">
+            <button
+              @click="deliverModal.open = false"
+              class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
+            >İptal</button>
+            <button
+              @click="confirmMarkDelivered"
+              :disabled="deliverModal.submitting"
+              class="px-4 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 rounded-xl transition-colors flex items-center gap-2"
+            >
+              <span v-if="deliverModal.submitting" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              {{ deliverModal.submitting ? 'İşleniyor...' : 'Teslim Et' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
+
+  <!-- Bulk Mark Delivered Modal -->
+  <Teleport to="body">
+    <Transition
+      enter-active-class="transition ease-out duration-150"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition ease-in duration-100"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div
+        v-if="bulkDeliverModal.open"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+        @click.self="bulkDeliverModal.open = false"
+      >
+        <div class="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden">
+          <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+            <h3 class="font-bold text-gray-900 dark:text-white">Toplu Teslim Et</h3>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              <span class="font-semibold text-gray-700 dark:text-gray-200">{{ selectedIds.size }} sevkiyat</span> teslim edildi olarak işaretlenecek.
+            </p>
+          </div>
+          <div class="px-5 py-4 space-y-3">
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                Teslim Alan <span class="text-red-500">*</span>
+              </label>
+              <input
+                v-model="bulkDeliverModal.recipient"
+                type="text"
+                placeholder="Teslim alan kişi / güvenlik adı"
+                class="w-full px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                Açıklama / Not <span class="text-red-500">*</span>
+              </label>
+              <textarea
+                v-model="bulkDeliverModal.note"
+                rows="2"
+                placeholder="Toplu teslim işlemi için açıklama"
+                class="w-full px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+              ></textarea>
+            </div>
+            <p v-if="bulkDeliverModal.error" class="text-xs text-red-500">{{ bulkDeliverModal.error }}</p>
+          </div>
+          <div class="px-5 pb-5 flex justify-end gap-2">
+            <button
+              @click="bulkDeliverModal.open = false"
+              class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
+            >İptal</button>
+            <button
+              @click="confirmBulkMarkDelivered"
+              :disabled="bulkDeliverModal.submitting"
+              class="px-4 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 rounded-xl transition-colors flex items-center gap-2"
+            >
+              <span v-if="bulkDeliverModal.submitting" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              {{ bulkDeliverModal.submitting ? 'İşleniyor...' : 'Toplu Teslim Et' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 
   </div>
 </template>
@@ -444,7 +699,7 @@
 <script setup lang="ts">
 import { ref, computed, reactive, onMounted, watch } from 'vue';
 import PageHeader from '../components/PageHeader.vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router';
 import { ClipboardDocumentListIcon } from '@heroicons/vue/24/outline';
 import shipmentService, { type ZoneItem } from '../services/shipmentService';
 import transportService, { type Driver, type Vehicle } from '../services/transportService';
@@ -454,10 +709,10 @@ import StatusBadge from '../components/StatusBadge.vue';
 import SkeletonTable from '../components/SkeletonTable.vue';
 import EmptyState from '../components/EmptyState.vue';
 import { useKeyboardShortcut } from '../composables/useKeyboardShortcut';
-import BaseModal from '../components/BaseModal.vue';
 import BaseButton from '../components/BaseButton.vue';
 import BaseInput from '../components/base/BaseInput.vue';
 import BaseSelect from '../components/base/BaseSelect.vue';
+import ShipmentActionsDropdown from '../components/ShipmentActionsDropdown.vue';
 
 const notificationStore = useNotificationStore();
 const route = useRoute();
@@ -471,8 +726,24 @@ function simpleDebounce(fn: Function, delay: number) {
   };
 }
 
-const q = route.query;
-const activeTab = ref<'active' | 'passive'>(q.tab === 'passive' ? 'passive' : 'active');
+const FILTER_STORAGE_KEY = 'shipment_list_last_query';
+
+// URL'de filtre param yok ama sessionStorage'da kaydedilmiş varsa yükle
+function resolveInitialQuery() {
+  const q = route.query;
+  const hasFilters = q.startDate || q.endDate || q.status || q.statuses || q.zone || q.search || q.dispatchType || q.tab;
+  if (hasFilters) return q;
+  try {
+    const saved = sessionStorage.getItem(FILTER_STORAGE_KEY);
+    if (saved) return JSON.parse(saved) as Record<string, string>;
+  } catch { /* ignore */ }
+  return q;
+}
+
+const q = resolveInitialQuery();
+const activeTab = ref<'catering' | 'clothing' | 'passive'>(
+  q.tab === 'passive' ? 'passive' : q.tab === 'clothing' ? 'clothing' : 'catering'
+);
 
 interface Shipment {
   id: number;
@@ -489,27 +760,74 @@ interface Shipment {
   netsisTransferredAt?: string | null;
   operationType?: string;
   operationTypeValue?: number;
+  cargoProviderValue?: number | null;
+  freightCarrierName?: string | null;
+  freightCarrierPlate?: string | null;
+}
+
+const CARGO_PROVIDER_LABELS: Record<number, string> = {
+  0: 'MNG Kargo',
+  1: 'Yurtiçi Kargo',
+  2: 'Aras Kargo',
+  3: 'PTT Kargo',
+  99: 'Diğer Kargo',
+};
+
+function getDispatchInfo(s: Shipment) {
+  if (s.cargoProviderValue != null) {
+    return { type: 'Kargo', label: CARGO_PROVIDER_LABELS[s.cargoProviderValue] ?? 'Kargo', plate: null };
+  }
+  if (s.freightCarrierName) {
+    return { type: 'Nakliye', label: s.freightCarrierName, plate: s.freightCarrierPlate ?? null };
+  }
+  if (s.driverName) {
+    return { type: 'Araç', label: s.driverName, plate: s.plateNumber ?? null };
+  }
+  return null;
 }
 
 const shipments = ref<Shipment[]>([]);
 const loading = ref(false);
 const zones = ref<ZoneItem[]>([]);
 
+function defaultStartDate() {
+  const d = new Date();
+  d.setDate(d.getDate() - 7);
+  return d.toISOString().slice(0, 10);
+}
+function defaultEndDate() {
+  const d = new Date();
+  d.setDate(d.getDate() + 7);
+  return d.toISOString().slice(0, 10);
+}
+
 const filters = ref({
-  date: typeof q.date === 'string' ? q.date : '',
+  startDate: typeof q.startDate === 'string' ? q.startDate : defaultStartDate(),
+  endDate:   typeof q.endDate   === 'string' ? q.endDate   : defaultEndDate(),
   status: typeof q.status === 'string' ? q.status : '',
+  statuses: typeof q.statuses === 'string' ? q.statuses : '', // multi-status (dashboard kartlarından)
   zoneId: typeof q.zone === 'string' ? q.zone : '',
+  dispatchType: typeof q.dispatchType === 'string' ? q.dispatchType : '',
 });
 
 // ── Selection state ───────────────────────────────────────────────────────────
 const selectedIds = reactive(new Set<number>());
 
-const pageReadyIds = computed(() =>
-  shipments.value.filter(s => s.status === 'ReadyForDispatch').map(s => s.id)
+function isSelectable(s: Shipment) {
+  return s.status === 'ReadyForDispatch' ||
+    (s.status === 'AssignedToVehicle' && !!s.waybillNumber) ||
+    (s.status === 'Dispatched' && !!s.waybillNumber);
+}
+
+const pageSelectableIds = computed(() =>
+  shipments.value.filter(isSelectable).map(s => s.id)
 );
 
+// Keep backward-compatible alias used by header checkbox
+const pageReadyIds = pageSelectableIds;
+
 const isAllReadySelected = computed(() =>
-  pageReadyIds.value.length > 0 && pageReadyIds.value.every(id => selectedIds.has(id))
+  pageSelectableIds.value.length > 0 && pageSelectableIds.value.every(id => selectedIds.has(id))
 );
 
 function toggleSelect(id: number) {
@@ -519,23 +837,68 @@ function toggleSelect(id: number) {
 
 function toggleSelectAll() {
   if (isAllReadySelected.value) {
-    pageReadyIds.value.forEach(id => selectedIds.delete(id));
+    pageSelectableIds.value.forEach(id => selectedIds.delete(id));
   } else {
-    pageReadyIds.value.forEach(id => selectedIds.add(id));
+    pageSelectableIds.value.forEach(id => selectedIds.add(id));
   }
 }
 
-// ── Bulk assign modal ─────────────────────────────────────────────────────────
-const showBulkModal = ref(false);
+// ── Bulk dispatch modal ───────────────────────────────────────────────────────
+type BulkDispatchType = 'cargo' | 'freight' | 'vehicle';
+
+const showDispatchModal = ref(false);
 const bulkSubmitting = ref(false);
-const bulkForm = ref<{ driverId: number | null; vehicleId: number | null }>({ driverId: null, vehicleId: null });
+const bulkListsLoading = ref(false);
+const bulkDispatchType = ref<BulkDispatchType>('cargo');
+
+// Cargo
+const bulkCargoProvider = ref<number | null>(null);
+
+// Freight
+const bulkFreightCarrierName = ref('');
+const bulkFreightCarrierPlate = ref('');
+const bulkFreightCarrierPhone = ref('');
+
+// Vehicle
+const bulkSelectedDriverIds = ref<number[]>([]);
+const bulkVehicleId = ref<number | null>(null);
+const bulkDepartureTime = ref('08:00');
+
 const bulkActiveDrivers = ref<Driver[]>([]);
 const bulkActiveVehicles = ref<Vehicle[]>([]);
-const bulkListsLoading = ref(false);
+
+const dispatchTypeOptions = [
+  { value: 'cargo' as BulkDispatchType,   label: 'Kargo',   icon: '📦' },
+  { value: 'freight' as BulkDispatchType, label: 'Nakliye', icon: '🚛' },
+  { value: 'vehicle' as BulkDispatchType, label: 'Araç',    icon: '🚗' },
+];
+
+const cargoProviderOptions = [
+  { value: 0,  label: 'MNG Kargo' },
+  { value: 1,  label: 'Yurtiçi Kargo' },
+  { value: 2,  label: 'Aras Kargo' },
+  { value: 3,  label: 'PTT Kargo' },
+  { value: 99, label: 'Diğer Kargo' },
+];
+
+const canSubmitBulkDispatch = computed(() => {
+  if (bulkDispatchType.value === 'cargo')   return bulkCargoProvider.value !== null;
+  if (bulkDispatchType.value === 'freight') return bulkFreightCarrierName.value.trim().length > 0;
+  if (bulkDispatchType.value === 'vehicle') return bulkSelectedDriverIds.value.length > 0 && bulkVehicleId.value !== null;
+  return false;
+});
 
 async function openBulkModal() {
-  bulkForm.value = { driverId: null, vehicleId: null };
-  showBulkModal.value = true;
+  bulkDispatchType.value = 'cargo';
+  bulkCargoProvider.value = null;
+  bulkFreightCarrierName.value = '';
+  bulkFreightCarrierPlate.value = '';
+  bulkFreightCarrierPhone.value = '';
+  bulkSelectedDriverIds.value = [];
+  bulkVehicleId.value = null;
+  bulkDepartureTime.value = '08:00';
+  showDispatchModal.value = true;
+
   if (bulkActiveDrivers.value.length === 0 || bulkActiveVehicles.value.length === 0) {
     bulkListsLoading.value = true;
     try {
@@ -553,26 +916,41 @@ async function openBulkModal() {
   }
 }
 
-async function submitBulkAssign() {
-  if (!bulkForm.value.driverId || !bulkForm.value.vehicleId) {
-    notificationStore.add('Şoför ve araç seçimi zorunludur.', 'warning');
-    return;
-  }
+async function submitBulkDispatch() {
+  if (!canSubmitBulkDispatch.value) return;
   bulkSubmitting.value = true;
   try {
-    const result = await shipmentService.bulkAssignVehicle({
-      shipmentIds: [...selectedIds],
-      driverId: bulkForm.value.driverId,
-      vehicleId: bulkForm.value.vehicleId,
-    });
-    if (result.successCount > 0) {
-      notificationStore.add(`${result.successCount} sevkiyat araca atandı.`, 'success');
+    const ids = [...selectedIds];
+
+    if (bulkDispatchType.value === 'cargo') {
+      const result = await shipmentService.bulkDispatchAsCargo(ids, bulkCargoProvider.value!);
+      if (result.successCount > 0)
+        notificationStore.add(`${result.successCount} sevkiyat kargo olarak gönderildi.`, 'success');
+      result.errors.forEach(e => notificationStore.add(e, 'warning'));
+
+    } else if (bulkDispatchType.value === 'freight') {
+      const result = await shipmentService.bulkDispatchAsFreight(
+        ids,
+        bulkFreightCarrierName.value.trim(),
+        bulkFreightCarrierPlate.value.trim() || undefined,
+        bulkFreightCarrierPhone.value.trim() || undefined,
+      );
+      if (result.successCount > 0)
+        notificationStore.add(`${result.successCount} sevkiyat nakliye olarak gönderildi.`, 'success');
+      result.errors.forEach(e => notificationStore.add(e, 'warning'));
+
+    } else if (bulkDispatchType.value === 'vehicle') {
+      const result = await shipmentService.bulkAssignVehicle({
+        shipmentIds: ids,
+        driverId: bulkSelectedDriverIds.value[0]!,
+        vehicleId: bulkVehicleId.value!,
+      });
+      if (result.successCount > 0)
+        notificationStore.add(`${result.successCount} sevkiyat araca atandı.`, 'success');
+      result.errors.forEach(e => notificationStore.add(e, 'warning'));
     }
-    if (result.errors.length > 0) {
-      notificationStore.add(`${result.errors.length} sevkiyat atanamadı: ${result.errors[0]}`, 'warning');
-    }
-    showBulkModal.value = false;
-    bulkForm.value = { driverId: null, vehicleId: null };
+
+    showDispatchModal.value = false;
     selectedIds.clear();
     fetchShipments();
   } catch (error) {
@@ -583,13 +961,52 @@ async function submitBulkAssign() {
 }
 // ── Netsis export ─────────────────────────────────────────────────────────────
 const isBulkExporting = ref(false);
+const exportingIds = ref<Set<number>>(new Set());
 
 // ── Netsis durum kontrol ───────────────────────────────────────────────────────
+const recoveringNetsis = ref(false);
+async function recoverNetsisTransfers() {
+  if (!confirm('Araçta/yolda/iade durumundaki ve irsaliyesi silinmiş sevkiyatlar Netsis\'te aranacak. Bulunanlar Sevke Hazır durumuna geri alınacak.\n\nDevam edilsin mi?')) return;
+  recoveringNetsis.value = true;
+  try {
+    const result = await shipmentService.recoverNetsisTransfers();
+    if (result.recovered > 0) {
+      notificationStore.add(
+        `Netsis kurtarma tamamlandı: ${result.recovered} sevkiyat Sevke Hazır durumuna alındı. Araç atamalarını yenileyebilirsiniz.` +
+        (result.notFound > 0 ? ` (${result.notFound} adedi Netsis'te bulunamadı)` : ''),
+        'success'
+      );
+      await fetchShipments();
+    } else {
+      notificationStore.add(
+        result.checked === 0
+          ? 'Kurtarılacak sevkiyat bulunamadı.'
+          : `Kontrol edildi (${result.checked} sevkiyat), hiçbiri Netsis'te bulunamadı.`,
+        'info'
+      );
+    }
+    if (result.error) {
+      notificationStore.add(`Netsis hatası: ${result.error}`, 'warning');
+    }
+  } catch (e) {
+    notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Netsis kurtarma başlatılamadı.', 'error');
+  } finally {
+    recoveringNetsis.value = false;
+  }
+}
+
 const verifyingNetsis = ref(false);
 async function verifyNetsisTransfers() {
   verifyingNetsis.value = true;
   try {
-    await shipmentService.verifyNetsisTransfers();
+    await shipmentService.verifyNetsisTransfers({
+      startDate: filters.value.startDate,
+      endDate: filters.value.endDate,
+      zoneId: filters.value.zoneId ? Number(filters.value.zoneId) : undefined,
+      status: filters.value.status ? Number(filters.value.status) : undefined,
+      statuses: filters.value.statuses || undefined,
+      search: searchQuery.value || undefined,
+    });
     notificationStore.add(
       'Netsis durum kontrolü arka planda başlatıldı. Teslim edilmiş irsaliyeler dahil silinmiş aktarımlar tespit edilip sıfırlanacak; tamamlandığında listeyi yenileyebilirsiniz.',
       'info'
@@ -601,24 +1018,123 @@ async function verifyNetsisTransfers() {
   }
 }
 
+const deliverModal = reactive({
+  open: false,
+  shipmentId: 0,
+  recipient: '',
+  note: '',
+  error: '',
+  submitting: false,
+});
+
+function openMarkDeliveredModal(id: number) {
+  deliverModal.shipmentId = id;
+  deliverModal.recipient = '';
+  deliverModal.note = '';
+  deliverModal.error = '';
+  deliverModal.submitting = false;
+  deliverModal.open = true;
+}
+
+async function confirmMarkDelivered() {
+  if (!deliverModal.recipient.trim()) {
+    deliverModal.error = 'Teslim alan bilgisi zorunludur.';
+    return;
+  }
+  if (!deliverModal.note.trim()) {
+    deliverModal.error = 'Açıklama / not zorunludur.';
+    return;
+  }
+  deliverModal.error = '';
+  deliverModal.submitting = true;
+  try {
+    await shipmentService.markDelivered(
+      deliverModal.shipmentId,
+      deliverModal.note,
+      deliverModal.recipient,
+      undefined,
+      deliverModal.note,
+    );
+    notificationStore.add('Sevkiyat teslim edildi olarak işaretlendi.', 'success');
+    deliverModal.open = false;
+    await fetchShipments();
+  } catch (error) {
+    deliverModal.error = ApiErrorUtils.getErrorMessage(error) || 'İşlem başarısız.';
+  } finally {
+    deliverModal.submitting = false;
+  }
+}
+
+// ── Bulk Mark Delivered ────────────────────────────────────────────────────────
+const bulkDeliverModal = reactive({
+  open: false,
+  recipient: '',
+  note: '',
+  error: '',
+  submitting: false,
+});
+
+function openBulkDeliverModal() {
+  bulkDeliverModal.recipient = '';
+  bulkDeliverModal.note = '';
+  bulkDeliverModal.error = '';
+  bulkDeliverModal.submitting = false;
+  bulkDeliverModal.open = true;
+}
+
+async function confirmBulkMarkDelivered() {
+  if (!bulkDeliverModal.recipient.trim()) {
+    bulkDeliverModal.error = 'Teslim alan bilgisi zorunludur.';
+    return;
+  }
+  if (!bulkDeliverModal.note.trim()) {
+    bulkDeliverModal.error = 'Açıklama / not zorunludur.';
+    return;
+  }
+  bulkDeliverModal.error = '';
+  bulkDeliverModal.submitting = true;
+  try {
+    const result = await shipmentService.bulkMarkDelivered(
+      [...selectedIds],
+      bulkDeliverModal.recipient.trim(),
+      bulkDeliverModal.note.trim(),
+    );
+    if (result.successCount > 0)
+      notificationStore.add(`${result.successCount} sevkiyat teslim edildi olarak işaretlendi.`, 'success');
+    result.errors.forEach(e => notificationStore.add(e, 'warning'));
+    bulkDeliverModal.open = false;
+    selectedIds.clear();
+    await fetchShipments();
+  } catch (error) {
+    bulkDeliverModal.error = ApiErrorUtils.getErrorMessage(error) || 'İşlem başarısız.';
+  } finally {
+    bulkDeliverModal.submitting = false;
+  }
+}
+
 async function singleExportToNetsis(id: number) {
+  if (exportingIds.value.has(id)) return;
   const shipment = shipments.value.find(s => s.id === id);
   if (shipment?.netsisTransferredAt) {
     notificationStore.add(`Sevkiyat #${id} zaten Netsis'e aktarılmış (${new Date(shipment.netsisTransferredAt).toLocaleString('tr-TR')}).`, 'warning');
     return;
   }
+  exportingIds.value = new Set(exportingIds.value).add(id);
   try {
     const result = await shipmentService.exportToNetsis(id);
     notificationStore.add(result.message || `Sevkiyat #${id} Netsis'e aktarıldı.`, 'success');
     await fetchShipments();
   } catch (error) {
     const msg = ApiErrorUtils.getErrorMessage(error) || 'Netsis aktarımı başarısız.';
-    // Stok kodu eksik hatası özel mesaj
     if (msg.includes('Netsis stok kodu') || msg.includes('Netsis Stok Kodu')) {
       notificationStore.add(`Sevkiyat #${id}: ${msg}`, 'error');
     } else {
       notificationStore.add(msg, 'error');
     }
+  } finally {
+    const next = new Set(exportingIds.value);
+    next.delete(id);
+    exportingIds.value = next;
   }
 }
 
@@ -661,7 +1177,7 @@ type SortDir = 'asc' | 'desc';
 const sortKey = ref<SortKey>(
   (q.sortKey === 'status' || q.sortKey === 'id') ? q.sortKey as SortKey : 'deliveryDate'
 );
-const sortDir = ref<SortDir>(q.sortDir === 'desc' ? 'desc' : 'asc');
+const sortDir = ref<SortDir>(q.sortDir === 'asc' ? 'asc' : 'desc');
 
 const sortedShipments = computed(() => {
   const list = [...shipments.value];
@@ -734,18 +1250,25 @@ const fetchShipments = async () => {
     Search: searchQuery.value,
   };
 
-  if (filters.value.date) {
-    params.startDate = filters.value.date;
-    params.endDate = filters.value.date + 'T23:59:59';
-  }
+  if (filters.value.startDate) params.startDate = filters.value.startDate;
+  if (filters.value.endDate)   params.endDate   = filters.value.endDate + 'T23:59:59';
 
   if (activeTab.value === 'passive') {
     params.status = 10;
   } else {
-    if (filters.value.status) params.status = filters.value.status;
+    if (activeTab.value === 'catering') params.OperationType = 0;
+    else if (activeTab.value === 'clothing') params.OperationType = 1;
+
+    if (filters.value.status) {
+      params.status = filters.value.status;
+      filters.value.statuses = '';
+    } else if (filters.value.statuses) {
+      params.statuses = filters.value.statuses;
+    }
   }
 
   if (filters.value.zoneId) params.ZoneId = filters.value.zoneId;
+  if (filters.value.dispatchType) params.DispatchType = filters.value.dispatchType;
 
   try {
     const data = await shipmentService.getAll(params);
@@ -792,6 +1315,23 @@ const quickMarkReady = async (id: number) => {
   }
 };
 
+const deleteDraft = async (id: number) => {
+  const confirmed = await notificationStore.promptConfirm({
+    title: 'Taslak Sevkiyatı Sil',
+    message: 'Bu taslak sevkiyat silinecek ve ilgili ISS siparişi tekrar aktarım listesine dönecek. Emin misiniz?',
+    confirmText: 'Sil',
+    type: 'warning',
+  });
+  if (!confirmed) return;
+  try {
+    await shipmentService.deleteDraft(id);
+    fetchShipments();
+    notificationStore.add('Taslak sevkiyat silindi. ISS siparişi aktarım listesine geri döndü.', 'success');
+  } catch (error) {
+    notificationStore.add(ApiErrorUtils.getErrorMessage(error) || 'Silme işlemi başarısız.', 'error');
+  }
+};
+
 const confirmToggleStatus = async (id: number, setPassive: boolean) => {
   let reason: string | undefined = undefined;
 
@@ -824,10 +1364,13 @@ const confirmToggleStatus = async (id: number, setPassive: boolean) => {
 
 const syncUrl = () => {
   const query: Record<string, string> = {};
-  if (activeTab.value !== 'active') query.tab = activeTab.value;
-  if (filters.value.date) query.date = filters.value.date;
+  if (activeTab.value !== 'catering') query.tab = activeTab.value;
+  if (filters.value.startDate && filters.value.startDate !== defaultStartDate()) query.startDate = filters.value.startDate;
+  if (filters.value.endDate && filters.value.endDate !== defaultEndDate()) query.endDate = filters.value.endDate;
   if (filters.value.status && filters.value.status !== '0') query.status = filters.value.status;
+  if (filters.value.statuses) query.statuses = filters.value.statuses;
   if (filters.value.zoneId) query.zone = filters.value.zoneId;
+  if (filters.value.dispatchType) query.dispatchType = filters.value.dispatchType;
   if (searchQuery.value) query.search = searchQuery.value;
   if (page.value !== 1) query.page = String(page.value);
   if (sortKey.value !== 'deliveryDate') query.sortKey = sortKey.value;
@@ -841,7 +1384,14 @@ watch(activeTab, () => {
   fetchShipments();
 });
 
-watch([() => filters.value.date, () => filters.value.status, () => filters.value.zoneId], () => {
+watch([
+  () => filters.value.startDate,
+  () => filters.value.endDate,
+  () => filters.value.status,
+  () => filters.value.statuses,
+  () => filters.value.zoneId,
+  () => filters.value.dispatchType,
+], () => {
   page.value = 1;
   selectedIds.clear();
   syncUrl();
@@ -865,7 +1415,34 @@ async function fetchZones() {
 }
 
 onMounted(() => {
+  // Eğer sessionStorage'dan filtreler yüklendiyse URL'yi güncelle
+  const hasStoredFilters =
+    filters.value.startDate !== defaultStartDate() ||
+    filters.value.endDate !== defaultEndDate() ||
+    filters.value.status ||
+    filters.value.statuses ||
+    filters.value.zoneId ||
+    filters.value.dispatchType ||
+    searchQuery.value;
+  if (hasStoredFilters && !Object.keys(route.query).length) {
+    syncUrl();
+  }
   fetchZones();
   fetchShipments();
+});
+
+onBeforeRouteLeave(() => {
+  try {
+    const snap: Record<string, string> = {};
+    if (activeTab.value !== 'catering') snap.tab = activeTab.value;
+    if (filters.value.startDate) snap.startDate = filters.value.startDate;
+    if (filters.value.endDate) snap.endDate = filters.value.endDate;
+    if (filters.value.status) snap.status = filters.value.status;
+    if (filters.value.statuses) snap.statuses = filters.value.statuses;
+    if (filters.value.zoneId) snap.zone = filters.value.zoneId;
+    if (filters.value.dispatchType) snap.dispatchType = filters.value.dispatchType;
+    if (searchQuery.value) snap.search = searchQuery.value;
+    sessionStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(snap));
+  } catch { /* ignore */ }
 });
 </script>

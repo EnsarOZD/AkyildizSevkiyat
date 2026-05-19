@@ -9,7 +9,8 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Queries.GetReconciliation
         DateTime? FromDate,
         DateTime? ToDate,
         bool OnlyDiff,
-        int? OperationTypeFilter   // 0 = Catering, 1 = Clothing, null = Tümü
+        int? OperationTypeFilter,   // 0 = Catering, 1 = Clothing, null = Tümü
+        bool? MailSentFilter        // true = mail gönderildi, false = gönderilmedi, null = tümü
     ) : IRequest<List<ShipmentReconciliationDto>>;
 
     // ── DTOs ─────────────────────────────────────────────────────────────────────
@@ -83,6 +84,11 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Queries.GetReconciliation
                 var opType = (OperationType)request.OperationTypeFilter.Value;
                 query = query.Where(s => s.OperationType == opType);
             }
+
+            if (request.MailSentFilter.HasValue)
+                query = request.MailSentFilter.Value
+                    ? query.Where(s => s.MissingItemsMailSentAt.HasValue)
+                    : query.Where(s => !s.MissingItemsMailSentAt.HasValue);
 
             var shipments = await query
                 .OrderByDescending(s => s.DeliveryDate)

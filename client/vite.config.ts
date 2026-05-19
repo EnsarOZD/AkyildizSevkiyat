@@ -8,6 +8,9 @@ export default defineConfig({
     vue(),
     VitePWA({
       registerType: 'autoUpdate',
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       includeAssets: ['logo-icon.png', 'favicon.ico'],
       manifest: {
         name: 'Akyıldız Lojistik',
@@ -40,21 +43,8 @@ export default defineConfig({
           },
         ],
       },
-      workbox: {
-        // Cache static assets (JS/CSS/HTML) — exclude large logo images
+      injectManifest: {
         globPatterns: ['**/*.{js,css,html,ico,svg,woff2}'],
-        // Network-first for API calls — never serve stale API data
-        runtimeCaching: [
-          {
-            urlPattern: /^\/api\//,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-cache',
-              networkTimeoutSeconds: 10,
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-        ],
       },
     }),
   ],

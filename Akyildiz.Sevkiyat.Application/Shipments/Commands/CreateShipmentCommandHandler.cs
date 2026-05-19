@@ -6,6 +6,7 @@ using Akyildiz.Sevkiyat.Domain.Entities;
 using Akyildiz.Sevkiyat.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Akyildiz.Sevkiyat.Application.Shipments.Commands.CreateShipment;
 using Akyildiz.Sevkiyat.Domain.Exceptions;
 
@@ -15,10 +16,17 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands
         : IRequestHandler<CreateShipmentCommand, int>
     {
         private readonly IApplicationDbContext _context;
+        private readonly INetsisClient _netsis;
+        private readonly ILogger<CreateShipmentCommandHandler> _logger;
 
-        public CreateShipmentCommandHandler(IApplicationDbContext context)
+        public CreateShipmentCommandHandler(
+            IApplicationDbContext context,
+            INetsisClient netsis,
+            ILogger<CreateShipmentCommandHandler> logger)
         {
             _context = context;
+            _netsis  = netsis;
+            _logger  = logger;
         }
 
         public async Task<int> Handle(
@@ -38,9 +46,9 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands
             if (order.IsTransferred)
                 throw new ConflictException("Bu sipariş zaten bir sevkiyata dönüştürülmüş.");
 
-            // Defensive: check for any existing shipment (covers flag-inconsistency edge cases)
+            // Defensive: check for any existing non-cancelled shipment (covers flag-inconsistency edge cases)
             var existingShipment = await _context.Shipments
-                .Where(s => s.IssOrderId == request.IssOrderId)
+                .Where(s => s.IssOrderId == request.IssOrderId && s.Status != ShipmentStatus.Cancelled)
                 .Select(s => new { s.NetsisTransferredAt })
                 .FirstOrDefaultAsync(cancellationToken);
 
@@ -61,30 +69,80 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands
             if (!order.Lines.Any())
                 throw new DomainException("Siparişin satırı bulunmuyor, sevkiyat oluşturulamaz.");
 
-            // Load stock mapping lookup to populate StockMasterId on shipment lines
-            var stockCodes = order.Lines.Select(l => l.StockCode).ToList();
-            var mappingLookup = await _context.StockMappings
-                .Where(m => stockCodes.Contains(m.ExternalStockCode)
-                            && m.MatchStatus == MatchStatus.Mapped
-                            && m.LocalStockId != null)
-                .ToDictionaryAsync(m => m.ExternalStockCode, m => m.LocalStockId, cancellationToken);
+            // Netsis kontrolü: sipariş zaten Netsis'te varsa aktarım engellenir
+            if (!string.IsNullOrWhiteSpace(order.ExternalOrderNumber))
+            {
+                try
+                {
+                    var (found, netsisError) = await _netsis.CheckOrdersExistInNetsisAsync(
+                        new[] { order.ExternalOrderNumber }, cancellationToken);
 
-            // Operasyon tipini stok kategorilerine göre belirle:
-            // Tüm satırların stok kategorisi Kiyafet ise → Clothing, aksi halde → Catering.
-            var mappedStockIds = mappingLookup.Values.Where(id => id.HasValue).Select(id => id!.Value).ToList();
+                    if (found.Contains(order.ExternalOrderNumber))
+                    {
+                        order.IsTransferred = true;
+                        await _context.SaveChangesAsync(cancellationToken);
+                        throw new ConflictException(
+                            $"Bu sipariş ({order.ExternalOrderNumber}) zaten Netsis'te mevcut. " +
+                            "Yeniden aktarım yapılmayacak. Sipariş aktarıldı olarak işaretlendi.");
+                    }
+
+                    if (netsisError != null)
+                        _logger.LogWarning(
+                            "CreateShipment Netsis kontrolü başarısız [{OrderNo}]: {Error} — sevkiyat yine de oluşturuluyor.",
+                            order.ExternalOrderNumber, netsisError);
+                }
+                catch (ConflictException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(
+                        "CreateShipment Netsis kontrolü exception [{OrderNo}]: {Msg} — sevkiyat yine de oluşturuluyor.",
+                        order.ExternalOrderNumber, ex.Message);
+                }
+            }
+
+            // Load all relevant stock mappings (Mapped + Ignored)
+            var stockCodes = order.Lines.Select(l => l.StockCode).Distinct().ToList();
+            var allMappings = await _context.StockMappings
+                .Where(m => stockCodes.Contains(m.ExternalStockCode) && m.ExternalSystem == "ISS-IP")
+                .ToListAsync(cancellationToken);
+
+            // Block creation if any line's stock code is explicitly ignored
+            var ignoredCodes = allMappings
+                .Where(m => m.MatchStatus == MatchStatus.Ignored)
+                .Select(m => m.ExternalStockCode)
+                .ToList();
+
+            if (ignoredCodes.Any())
+                throw new DomainException(
+                    $"Bu sipariş yoksayılan stok kodları içeriyor ve sevkiyata alınamaz: {string.Join(", ", ignoredCodes)}. " +
+                    "Lütfen eşleştirme ekranında bu stok kodlarını doğru bir yerel stokla eşleştirin.");
+
+            var mappingLookup = allMappings
+                .Where(m => m.MatchStatus == MatchStatus.Mapped && m.LocalStockId != null)
+                .ToDictionary(m => m.ExternalStockCode, m => m.LocalStockId);
+
+            // Operasyon tipini eşleşmiş stok kategorilerinden belirle.
+            // Tüm eşleşmiş satırlar StockCategory.Kiyafet ise → Clothing, aksi halde → Catering.
+            // Project.OperationType'a güvenilmez: aynı proje hem catering hem kıyafet siparişi alabilir.
+            var mappedStockIds = mappingLookup.Values
+                .Where(v => v.HasValue)
+                .Select(v => v!.Value)
+                .Distinct()
+                .ToList();
+
             var operationType = OperationType.Catering;
-            if (mappedStockIds.Count == order.Lines.Count && mappedStockIds.Count > 0)
+            if (mappedStockIds.Count > 0)
             {
                 var categories = await _context.StockMasters
                     .Where(s => mappedStockIds.Contains(s.Id))
                     .Select(s => s.Category)
                     .ToListAsync(cancellationToken);
 
-                if (categories.Count == mappedStockIds.Count
-                    && categories.All(c => c == Domain.Enums.StockCategory.Kiyafet))
-                {
+                if (categories.Count > 0 && categories.All(c => c == Akyildiz.Sevkiyat.Domain.Enums.StockCategory.Kiyafet))
                     operationType = OperationType.Clothing;
-                }
             }
 
             // 2) Yeni Shipment oluştur

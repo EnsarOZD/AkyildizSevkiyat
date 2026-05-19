@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Akyildiz.Sevkiyat.Application.Zones.Queries.GetZones
 {
-    public record ZoneDto(int Id, string Name, int Order);
+    public record ZoneDto(int Id, string Name, int Order, bool IsOutOfCity);
 
     public record GetZonesQuery : IRequest<List<ZoneDto>>;
 
@@ -24,8 +24,8 @@ namespace Akyildiz.Sevkiyat.Application.Zones.Queries.GetZones
         public async Task<List<ZoneDto>> Handle(GetZonesQuery request, CancellationToken cancellationToken)
         {
             return await _context.Zones
-                .OrderBy(z => z.Order)
-                .Select(z => new ZoneDto(z.Id, z.Name, z.Order))
+                .OrderBy(z => z.Name)
+                .Select(z => new ZoneDto(z.Id, z.Name, z.Order, z.IsOutOfCity))
                 .ToListAsync(cancellationToken);
         }
     }

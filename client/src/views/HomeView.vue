@@ -90,8 +90,8 @@
           <p class="text-3xl font-bold text-gray-900 dark:text-gray-100">{{ stats.totalActiveShipments }}</p>
         </router-link>
 
-        <!-- Bugün Teslim -->
-        <router-link to="/shipments" class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:border-green-300 hover:shadow-sm transition-all group">
+        <!-- Bugün Teslim: Dispatched(5)+Delivered(6) -->
+        <router-link :to="`/shipments?startDate=${today}&endDate=${today}&statuses=5,6`" class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:border-green-300 hover:shadow-sm transition-all group">
           <div class="flex items-center justify-between mb-3">
             <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Bugün Teslim</p>
             <div class="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center group-hover:bg-green-100 transition-colors">
@@ -102,7 +102,7 @@
         </router-link>
 
         <!-- Gecikmiş -->
-        <router-link to="/shipments" class="bg-white dark:bg-gray-900 rounded-xl border p-4 hover:shadow-sm transition-all group"
+        <router-link :to="`/shipments?startDate=${ninetyDaysAgo}&endDate=${yesterday}`" class="bg-white dark:bg-gray-900 rounded-xl border p-4 hover:shadow-sm transition-all group"
           :class="stats.shipmentsOverdue > 0 ? 'border-red-200 bg-red-50/30' : 'border-gray-200 dark:border-gray-700'"
         >
           <div class="flex items-center justify-between mb-3">
@@ -158,10 +158,10 @@
           </p>
         </router-link>
 
-        <!-- Bugün Hazır Olmayan Sevkiyat (Manager, Admin) -->
+        <!-- Bugün Hazır Olmayan: Created(0)+AssignedToWarehouse(1)+Picking(2) -->
         <router-link
           v-if="showNotReadyShipments"
-          to="/shipments"
+          :to="`/shipments?startDate=${today}&endDate=${today}&statuses=0,1,2`"
           class="rounded-xl border p-4 hover:shadow-sm transition-all group"
           :class="stats.todayShipmentsNotReadyCount > 0
             ? 'bg-red-50/40 dark:bg-red-900/10 border-red-200 dark:border-red-800'
@@ -306,6 +306,15 @@ const stats = ref<DashboardStats | null>(null);
 const loading = ref(false);
 const error = ref(false);
 
+function dateStr(offsetDays = 0) {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  return d.toISOString().slice(0, 10);
+}
+const today = dateStr(0);
+const yesterday = dateStr(-1);
+const ninetyDaysAgo = dateStr(-90);
+
 const criticalStocks = ref<CriticalStockItem[]>([]);
 const criticalStocksLoading = ref(false);
 
@@ -334,7 +343,8 @@ const statusLabelMap: Record<string, string> = {
   AssignedToWarehouse: 'Depoda',
   Picking:             'Toplama',
   ReadyForDispatch:    'Hazır',
-  AssignedToVehicle:   'Yolda',
+  AssignedToVehicle:   'Araçta',
+  Dispatched:          'Yolda',
   Delivered:           'Teslim',
   ReturnedToWarehouse: 'İade',
   Cancelled:           'İptal',
@@ -345,7 +355,8 @@ const statusClassMap: Record<string, string> = {
   AssignedToWarehouse: 'bg-blue-100 text-blue-700',
   Picking:             'bg-yellow-100 text-yellow-700',
   ReadyForDispatch:    'bg-green-100 text-green-700',
-  AssignedToVehicle:   'bg-purple-100 text-purple-700',
+  AssignedToVehicle:   'bg-indigo-100 text-indigo-700',
+  Dispatched:          'bg-orange-100 text-orange-700',
   Delivered:           'bg-emerald-100 text-emerald-700',
   ReturnedToWarehouse: 'bg-orange-100 text-orange-700',
   Cancelled:           'bg-red-100 text-red-600',

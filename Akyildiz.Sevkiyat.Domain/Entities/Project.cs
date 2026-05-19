@@ -48,7 +48,15 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
         public int? DeliveryOrder { get; set; }
         public double? Latitude { get; set; }
         public double? Longitude { get; set; }
+        public string? CityName { get; set; }
+        public string? DistrictName { get; set; }
         public TimeOnly? DeliveryWindowStart { get; set; }
         public TimeOnly? DeliveryWindowEnd { get; set; }
+
+        /// <summary>
+        /// ISS'ten gelen teslim alacak kişi boşsa kullanılacak varsayılan iletişim bilgileri.
+        /// </summary>
+        public string? DefaultContactName { get; set; }
+        public string? DefaultContactPhone { get; set; }
     }
 }

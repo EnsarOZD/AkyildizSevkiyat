@@ -279,7 +279,7 @@ const fmtDate = (d: string) => new Date(d).toLocaleDateString('tr-TR', { day: '2
 
 const statusLabelMap: Record<string, string> = {
   Created: 'Taslak', AssignedToWarehouse: 'Depoda', Picking: 'Toplama',
-  ReadyForDispatch: 'Hazır', AssignedToVehicle: 'Yolda',
+  ReadyForDispatch: 'Hazır', AssignedToVehicle: 'Araçta', Dispatched: 'Yolda',
   Delivered: 'Teslim', Cancelled: 'İptal', Passive: 'Pasif',
 };
 const statusClassMap: Record<string, string> = {
@@ -288,6 +288,7 @@ const statusClassMap: Record<string, string> = {
   Picking: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
   ReadyForDispatch: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400',
   AssignedToVehicle: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400',
+  Dispatched: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400',
   Delivered: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
   Cancelled: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400',
   Passive: 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500',

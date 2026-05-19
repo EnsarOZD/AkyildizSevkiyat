@@ -8,7 +8,7 @@
       variantClasses[variant],
       customClass
     ]"
-    @click="$emit('click', $event)"
+    @click="handleClick"
   >
     <svg
       v-if="loading"
@@ -35,7 +35,7 @@ interface Props {
   customClass?: string;
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   type: 'button',
   variant: 'primary',
   size: 'md',
@@ -44,7 +44,15 @@ withDefaults(defineProps<Props>(), {
   customClass: ''
 });
 
-defineEmits(['click']);
+const emit = defineEmits(['click']);
+
+// Android: kısa dokunma titreşimi (10ms). iOS navigator.vibrate desteklemez, sessizce geçer.
+function handleClick(event: MouseEvent) {
+  if (!props.disabled && !props.loading) {
+    navigator.vibrate?.(10);
+  }
+  emit('click', event);
+}
 
 const sizeClasses = {
   sm: 'px-3 py-1.5 text-xs',

@@ -14,7 +14,7 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.StartZonePreparation
     public record StartZonePreparationCommand(int ZonePreparationId) : IRequest<bool>, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles =>
-            new[] { "Admin", "Manager", "Warehouse", "Driver" };
+            new[] { "Admin", "Manager", "Accounting", "Warehouse", "Driver" };
     }
 
     public class StartZonePreparationCommandHandler : IRequestHandler<StartZonePreparationCommand, bool>
@@ -83,8 +83,8 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.StartZonePreparation
             // Status Update: MicroPicking involves changing shipments to Picking?
             // "Zone MicroPicking → Shipment Picking"
             
-            var shipments = await _context.Shipments
-                .Where(s => s.ZonePreparationId == zp.Id 
+            var shipments = await _context.WarehouseShipments
+                .Where(s => s.ZonePreparationId == zp.Id
                             && s.Status == ShipmentStatus.AssignedToWarehouse)
                 .ToListAsync(cancellationToken);
 
