@@ -46,8 +46,15 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.SyncWarehouseDashboar
             // 3. Process Shipments: Assign to Batch
             foreach (var shipment in shipments)
             {
-                if (shipment.Project?.ZoneId == null) continue; 
-                
+                if (shipment.Project?.ZoneId == null) continue;
+
+                // Dispatched ve sonrası: depo hazırlığı tamamlanmış. Sevkiyat eski ZP'sinde
+                // tarihsel kayıt olarak kalır; dashboard query'si Dispatched ZP'leri zaten gizler.
+                // Bu guard olmadan dispatched sevkiyatlar her sync'te kapatılmış ZP'den koparılıp
+                // yeni bir Draft batch'e yeniden yapıştırılıyordu.
+                if (shipment.Status >= ShipmentStatus.Dispatched)
+                    continue;
+
                 int zoneId = shipment.Project.ZoneId.Value;
 
                 bool isEligible = shipment.DeliveryDate.Date == date &&

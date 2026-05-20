@@ -87,10 +87,16 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetWarehouseDashboard
             // 2. Load reconciliation issue counts for all relevant zone preps in one query
             var prepIds = existingPreps.Select(p => p.Id).ToList();
 
+            // Defansif: ZP henüz Dispatched'e geçmemiş ama içindeki sevkiyat
+            // dispatched/delivered/returned olabilir (örn. mixed-state batch). Bunları
+            // proje haritasından dışla — depo hazırlığı pipeline'ı dışındalar.
             var shipmentZoneMap = await _context.WarehouseShipments
                 .Where(s => s.ZonePreparationId != null && prepIds.Contains(s.ZonePreparationId.Value)
                          && s.Status != ShipmentStatus.Cancelled
-                         && s.Status != ShipmentStatus.Passive)
+                         && s.Status != ShipmentStatus.Passive
+                         && s.Status != ShipmentStatus.Dispatched
+                         && s.Status != ShipmentStatus.Delivered
+                         && s.Status != ShipmentStatus.ReturnedToWarehouse)
                 .Select(s => new { s.Id, ZonePreparationId = s.ZonePreparationId!.Value, s.ProjectId })
                 .ToListAsync(cancellationToken);
 
