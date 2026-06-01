@@ -86,6 +86,12 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.MarkShipmentDelivered
                 {
                     throw new ForbiddenException("Bu sevkiyat size atanmamış.");
                 }
+
+                var hasAnyPhoto = request.DeliveryPhotosBase64?.Any(p => !string.IsNullOrWhiteSpace(p)) ?? false;
+                if (!hasAnyPhoto)
+                {
+                    throw new DomainException("En az bir teslim fotoğrafı zorunludur.");
+                }
             }
             else
             {
@@ -122,13 +128,16 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.MarkShipmentDelivered
                 request.DeliveryLatitude,
                 request.DeliveryLongitude);
 
-            // Save delivery photos (up to 5) to dedicated table
+            // Save delivery photos (up to 5) to dedicated table.
+            // Track saved paths so we can clean up if SaveChangesAsync rolls back.
             var photos = request.DeliveryPhotosBase64?.Where(p => !string.IsNullOrWhiteSpace(p)).Take(5).ToList()
                          ?? new List<string>();
+            var savedPhotoPaths = new List<string>(photos.Count);
             for (int i = 0; i < photos.Count; i++)
             {
                 var path = await _photos.SaveDeliveryPhotoAsync(
                     photos[i], shipment.Id, shipment.IrsaliyeNo, i + 1, cancellationToken);
+                savedPhotoPaths.Add(path);
                 _context.ShipmentDeliveryPhotos.Add(new ShipmentDeliveryPhoto
                 {
                     ShipmentId = shipment.Id,
@@ -182,8 +191,16 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.MarkShipmentDelivered
             }
             catch (DbUpdateConcurrencyException)
             {
+                foreach (var path in savedPhotoPaths)
+                    await _photos.DeleteAsync(path);
                 throw new ConflictException(
                     "Stok, aynı anda başka bir işlem tarafından güncellendi. Lütfen tekrar deneyin.");
+            }
+            catch
+            {
+                foreach (var path in savedPhotoPaths)
+                    await _photos.DeleteAsync(path);
+                throw;
             }
 
             // Tüm sevkiyatlar final duruma geçtiyse zone'u otomatik kapat

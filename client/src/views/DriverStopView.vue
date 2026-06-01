@@ -162,7 +162,18 @@
           <p v-if="shipment.deliveryNote" class="text-sm text-gray-700 dark:text-gray-300">
             <span class="text-gray-400">Not: </span>{{ shipment.deliveryNote }}
           </p>
-          <div v-if="getPhotoUrl(shipment.deliveryPhotoPath, shipment.deliveryPhotoBase64)">
+          <!-- Multi-photo (new) -->
+          <div v-if="resolvedDeliveryPhotos(shipment).length" class="grid grid-cols-3 gap-2">
+            <img
+              v-for="photo in resolvedDeliveryPhotos(shipment)"
+              :key="photo.id"
+              :src="photo.src"
+              class="w-full aspect-square object-cover rounded-lg cursor-pointer"
+              @click="lightboxSrc = photo.src"
+            />
+          </div>
+          <!-- Legacy single-photo fallback -->
+          <div v-else-if="getPhotoUrl(shipment.deliveryPhotoPath, shipment.deliveryPhotoBase64)">
             <img
               :src="getPhotoUrl(shipment.deliveryPhotoPath, shipment.deliveryPhotoBase64)!"
               class="w-full max-h-40 object-cover rounded-lg cursor-pointer"
@@ -514,7 +525,7 @@ import {
   ArrowUturnLeftIcon,
   ClipboardDocumentListIcon,
 } from '@heroicons/vue/24/outline';
-import driverService, { type DeliveryStopDto, type StopShipmentDto, type ShipmentLineDto } from '../services/driverService';
+import driverService, { type DeliveryStopDto, type StopShipmentDto, type ShipmentLineDto, type DriverDeliveryPhotoDto } from '../services/driverService';
 import shipmentService from '../services/shipmentService';
 import { useNotificationStore } from '../stores/notification';
 import { useAuthStore } from '../stores/auth';
@@ -627,39 +638,40 @@ function toggleExpand(id: number) {
   else expandedIds.add(id);
 }
 
-function compressPhoto(dataUrl: string, onDone: (base64: string, preview: string) => void) {
-  const img = new Image();
-  img.onload = () => {
-    const MAX = 1000;
-    let w = img.width, h = img.height;
-    if (w > MAX || h > MAX) {
-      if (w > h) { h = Math.round((h / w) * MAX); w = MAX; }
-      else       { w = Math.round((w / h) * MAX); h = MAX; }
-    }
-    const canvas = document.createElement('canvas');
-    canvas.width = w; canvas.height = h;
-    canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
-    const compressed = canvas.toDataURL('image/jpeg', 0.75);
-    onDone(compressed.split(',')[1] ?? '', compressed);
-  };
-  img.src = dataUrl;
+async function compressFile(file: File): Promise<{ base64: string; preview: string }> {
+  // createImageBitmap honors EXIF orientation natively → photos are upright
+  const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+  const MAX = 1000;
+  let w = bitmap.width, h = bitmap.height;
+  if (w > MAX || h > MAX) {
+    if (w > h) { h = Math.round((h / w) * MAX); w = MAX; }
+    else       { w = Math.round((w / h) * MAX); h = MAX; }
+  }
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas context unavailable');
+  ctx.drawImage(bitmap, 0, 0, w, h);
+  bitmap.close?.();
+  const compressed = canvas.toDataURL('image/jpeg', 0.75);
+  return { base64: compressed.split(',')[1] ?? '', preview: compressed };
 }
 
-function onBulkPhotoSelected(event: Event) {
+async function onBulkPhotoSelected(event: Event) {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
+  input.value = '';
   if (!file) return;
   bulkForm.photoCompressing = true;
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    compressPhoto(e.target?.result as string, (base64, preview) => {
-      bulkForm.photoBase64 = base64;
-      bulkForm.photoPreview = preview;
-      bulkForm.photoCompressing = false;
-    });
-  };
-  reader.readAsDataURL(file);
-  input.value = '';
+  try {
+    const { base64, preview } = await compressFile(file);
+    bulkForm.photoBase64 = base64;
+    bulkForm.photoPreview = preview;
+  } catch {
+    notify.add('Fotoğraf işlenemedi. Lütfen tekrar deneyin.', 'error');
+  } finally {
+    bulkForm.photoCompressing = false;
+  }
 }
 
 // Single delivery method removed, since we route to DriverDeliveryView now
@@ -694,6 +706,21 @@ async function markAllDelivered() {
   } finally {
     bulkSubmitting.value = false;
   }
+}
+
+interface ResolvedDeliveryPhoto {
+  id: number;
+  photoIndex: number;
+  src: string;
+}
+function resolvedDeliveryPhotos(shipment: StopShipmentDto): ResolvedDeliveryPhoto[] {
+  const raw: DriverDeliveryPhotoDto[] = shipment.deliveryPhotos ?? [];
+  return raw
+    .map(p => {
+      const src = getPhotoUrl(p.photoUrl?.replace(/^\/photos\//, ''), null);
+      return src ? { id: p.id, photoIndex: p.photoIndex, src } : null;
+    })
+    .filter((p): p is ResolvedDeliveryPhoto => p !== null);
 }
 
 function formatDateTime(iso: string) {

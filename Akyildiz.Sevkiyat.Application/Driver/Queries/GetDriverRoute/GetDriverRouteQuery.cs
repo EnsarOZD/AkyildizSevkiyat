@@ -1,4 +1,7 @@
+using Akyildiz.Sevkiyat.Application.Common.Interfaces;
 using Akyildiz.Sevkiyat.Application.Interfaces;
+using Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipmentDetail;
+using Akyildiz.Sevkiyat.Domain.Entities;
 using Akyildiz.Sevkiyat.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -68,6 +71,7 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Queries.GetDriverRoute
         public string? DeliveryNote { get; init; }
         public string? DeliveryPhotoBase64 { get; set; }
         public string? DeliveryPhotoPath { get; init; }
+        public IReadOnlyList<DeliveryPhotoDto> DeliveryPhotos { get; init; } = [];
         public IReadOnlyList<ShipmentLineDto> Lines { get; init; } = [];
     }
 
@@ -77,11 +81,16 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Queries.GetDriverRoute
     {
         private readonly IApplicationDbContext _context;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IPhotoStorageService _photos;
 
-        public GetDriverRouteQueryHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+        public GetDriverRouteQueryHandler(
+            IApplicationDbContext context,
+            ICurrentUserService currentUserService,
+            IPhotoStorageService photos)
         {
             _context = context;
             _currentUserService = currentUserService;
+            _photos = photos;
         }
 
         public async Task<DriverRouteDto> Handle(
@@ -139,6 +148,24 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Queries.GetDriverRoute
             }
 
             var shipments = await query.ToListAsync(cancellationToken);
+
+            // Delivery photos for all shipments in this route
+            var shipmentIds = shipments.Select(s => s.Id).ToList();
+            var photoRows = shipmentIds.Count == 0
+                ? new List<ShipmentDeliveryPhoto>()
+                : await _context.ShipmentDeliveryPhotos
+                    .Where(p => shipmentIds.Contains(p.ShipmentId))
+                    .OrderBy(p => p.PhotoIndex)
+                    .ToListAsync(cancellationToken);
+            var photoMap = photoRows
+                .GroupBy(p => p.ShipmentId)
+                .ToDictionary(g => g.Key, g => g.Select(p => new DeliveryPhotoDto
+                {
+                    Id         = p.Id,
+                    PhotoUrl   = _photos.GetUrl(p.PhotoPath),
+                    PhotoIndex = p.PhotoIndex,
+                    TakenAt    = p.TakenAt,
+                }).ToList());
 
             // Load ZonePreparationProject.RouteOrder for sorting
             var zoneIds = shipments
@@ -242,6 +269,7 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Queries.GetDriverRoute
                         DeliveryNote        = s.DeliveryNote,
                         DeliveryPhotoBase64 = s.DeliveryPhotoBase64,
                         DeliveryPhotoPath   = s.DeliveryPhotoPath,
+                        DeliveryPhotos      = photoMap.TryGetValue(s.Id, out var ph) ? ph : new List<DeliveryPhotoDto>(),
                         Lines               = s.Lines
                             .OrderBy(l => CategoryDisplayOrder((int)(l.StockMaster?.Category ?? 0)))
                             .ThenBy(l => l.StockName)

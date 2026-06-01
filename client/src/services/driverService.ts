@@ -25,6 +25,13 @@ export interface ShipmentLineDto {
   category: number; // StockCategory enum int value
 }
 
+export interface DriverDeliveryPhotoDto {
+  id: number;
+  photoUrl: string;
+  photoIndex: number;
+  takenAt: string;
+}
+
 export interface StopShipmentDto {
   id: number;
   externalOrderNumber?: string;
@@ -37,6 +44,7 @@ export interface StopShipmentDto {
   deliveryNote?: string;
   deliveryPhotoBase64?: string;
   deliveryPhotoPath?: string;
+  deliveryPhotos?: DriverDeliveryPhotoDto[];
   lines: ShipmentLineDto[];
 }
 

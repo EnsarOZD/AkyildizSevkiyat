@@ -44,8 +44,9 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Services
             var sanitizedIrsaliye = string.IsNullOrWhiteSpace(irsaliyeNo)
                 ? "noIRS"
                 : Regex.Replace(irsaliyeNo, @"[^a-zA-Z0-9\-_]", "_");
-            var shortGuid = Guid.NewGuid().ToString("N")[..8];
-            var fileName = $"{shipmentId}_{sanitizedIrsaliye}_{photoIndex}_{shortGuid}.jpg";
+            // Full 32-char GUID — 8-char was guessable given that shipmentId + irsaliyeNo are predictable
+            var randomToken = Guid.NewGuid().ToString("N");
+            var fileName = $"{shipmentId}_{sanitizedIrsaliye}_{photoIndex}_{randomToken}.jpg";
             var relativePath = $"delivery/{now:yyyy}/{now:MM}/{now:dd}/{fileName}";
             var fullPath = Path.Combine(_basePath, relativePath.Replace('/', Path.DirectorySeparatorChar));
 

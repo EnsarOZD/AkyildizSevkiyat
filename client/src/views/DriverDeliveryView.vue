@@ -86,10 +86,10 @@
         <div v-if="deliveryPhotos.length" class="mt-3 grid grid-cols-3 gap-2">
           <img
             v-for="photo in deliveryPhotos"
-            :key="photo.photoIndex"
-            :src="photo.photoUrl"
+            :key="photo.id"
+            :src="photo.src"
             class="w-full aspect-square object-cover rounded-lg cursor-pointer"
-            @click="lightboxSrc = photo.photoUrl"
+            @click="lightboxSrc = photo.src"
           />
         </div>
         <!-- Legacy single photo -->
@@ -241,8 +241,8 @@ import {
   XMarkIcon,
   ArrowLeftIcon,
 } from '@heroicons/vue/24/outline';
-import driverService, { type StopShipmentDto, type DeliveryStopDto, type ShipmentLineDto } from '../services/driverService';
-import shipmentService, { type DeliveryPhoto } from '../services/shipmentService';
+import driverService, { type StopShipmentDto, type DeliveryStopDto, type ShipmentLineDto, type DriverDeliveryPhotoDto } from '../services/driverService';
+import shipmentService from '../services/shipmentService';
 import { useNotificationStore } from '../stores/notification';
 import { useDeliveryQueue } from '../composables/useDeliveryQueue';
 import { getPhotoUrl } from '../utils/photoUrl';
@@ -302,12 +302,23 @@ const mapsUrl = computed(() => {
   return `https://www.google.com/maps/search/?api=1&query=${addr}`;
 });
 
-const deliveryPhotos = computed<DeliveryPhoto[]>(() =>
-  (shipment.value as any)?.deliveryPhotos ?? []
-);
+interface ResolvedDeliveryPhoto {
+  id: number;
+  photoIndex: number;
+  src: string;
+}
+const deliveryPhotos = computed<ResolvedDeliveryPhoto[]>(() => {
+  const raw: DriverDeliveryPhotoDto[] = shipment.value?.deliveryPhotos ?? [];
+  return raw
+    .map(p => {
+      const src = getPhotoUrl(p.photoUrl?.replace(/^\/photos\//, ''), null);
+      return src ? { id: p.id, photoIndex: p.photoIndex, src } : null;
+    })
+    .filter((p): p is ResolvedDeliveryPhoto => p !== null);
+});
 const legacyPhotoSrc = computed<string | null>(() =>
   shipment.value
-    ? getPhotoUrl((shipment.value as any).deliveryPhotoPath, shipment.value.deliveryPhotoBase64)
+    ? getPhotoUrl(shipment.value.deliveryPhotoPath, shipment.value.deliveryPhotoBase64)
     : null
 );
 
@@ -340,42 +351,41 @@ function removePhoto(idx: number) {
   form.value.photos.splice(idx, 1);
 }
 
-function onPhotoSelected(event: Event) {
+async function onPhotoSelected(event: Event) {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
+  // reset so same file can be re-selected (do this early)
+  input.value = '';
   if (!file || form.value.photos.length >= 5) return;
 
   form.value.photoCompressing = true;
-
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const dataUrl = e.target?.result as string;
-    const img = new Image();
-    img.onload = () => {
-      const MAX = 1000;
-      let w = img.width;
-      let h = img.height;
-      if (w > MAX || h > MAX) {
-        if (w > h) { h = Math.round((h / w) * MAX); w = MAX; }
-        else       { w = Math.round((w / h) * MAX); h = MAX; }
-      }
-      const canvas = document.createElement('canvas');
-      canvas.width  = w;
-      canvas.height = h;
-      canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
-      const compressed = canvas.toDataURL('image/jpeg', 0.75);
-      form.value.photos.push({
-        base64: compressed.split(',')[1] ?? '',
-        preview: compressed,
-      });
-      form.value.photoCompressing = false;
-    };
-    img.src = dataUrl;
-  };
-  reader.readAsDataURL(file);
-
-  // reset so same file can be re-selected
-  input.value = '';
+  try {
+    // createImageBitmap honors EXIF orientation natively → photos are upright on Android/iOS
+    const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+    const MAX = 1000;
+    let w = bitmap.width;
+    let h = bitmap.height;
+    if (w > MAX || h > MAX) {
+      if (w > h) { h = Math.round((h / w) * MAX); w = MAX; }
+      else       { w = Math.round((w / h) * MAX); h = MAX; }
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width  = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Canvas context unavailable');
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    bitmap.close?.();
+    const compressed = canvas.toDataURL('image/jpeg', 0.75);
+    form.value.photos.push({
+      base64: compressed.split(',')[1] ?? '',
+      preview: compressed,
+    });
+  } catch {
+    notify.add('Fotoğraf işlenemedi. Lütfen tekrar deneyin.', 'error');
+  } finally {
+    form.value.photoCompressing = false;
+  }
 }
 
 async function markDelivered() {
