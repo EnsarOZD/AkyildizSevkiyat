@@ -1,5 +1,7 @@
 using Akyildiz.Sevkiyat.Application.External.Netsis.Dtos;
 using Akyildiz.Sevkiyat.Application.Interfaces;
+using Akyildiz.Sevkiyat.Application.Warehouse.Services;
+using Akyildiz.Sevkiyat.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -76,6 +78,12 @@ public class NetsisIrsaliyeSyncBackgroundService : BackgroundService
             var context      = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
             var netsisClient = scope.ServiceProvider.GetRequiredService<INetsisClient>();
 
+            // Faz 2 (otomatik bölge ilerletme): ReadyForDriverInfo aşamasında olup henüz irsaliyesi
+            // çekilmemiş bölgeler için irsaliyeleri çek ve IrsaliyeFetched bayrağını set et. Depocular
+            // "Netsisten İrsaliye Çek" butonuna basmayı unutsa bile bölge otomatik olarak şoför/kargo
+            // atama (bekleyen) aşamasına geçer.
+            await AutoAdvanceZonesAsync(scope, context, cancellationToken);
+
             var lookback = DateTime.UtcNow.AddDays(-(_options.LookbackDays > 0 ? _options.LookbackDays : 60));
 
             var candidates = await context.Shipments
@@ -134,6 +142,53 @@ public class NetsisIrsaliyeSyncBackgroundService : BackgroundService
         {
             _logger.LogError(ex, "Netsis irsaliye sync sırasında beklenmeyen hata oluştu.");
             _tracker.Record("netsis-irsaliye", BackgroundServiceRunResult.Failure, ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// İrsaliye çekimi bekleyen (ReadyForDriverInfo + donmuş + IrsaliyeFetched=false) bölgeleri
+    /// otomatik işler: irsaliyeleri çeker, tamamlandıysa bölge bayrağını set eder.
+    /// </summary>
+    private async Task AutoAdvanceZonesAsync(
+        IServiceScope scope, IApplicationDbContext context, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var eligibleZoneIds = await context.ZonePreparations
+                .Where(z => z.Status == ZonePreparationStatus.ReadyForDriverInfo
+                         && z.IsFrozen
+                         && !z.IrsaliyeFetched)
+                .Select(z => z.Id)
+                .ToListAsync(cancellationToken);
+
+            if (eligibleZoneIds.Count == 0)
+                return;
+
+            var fetcher = scope.ServiceProvider.GetRequiredService<ZoneIrsaliyeFetcher>();
+            int advanced = 0;
+
+            foreach (var zoneId in eligibleZoneIds)
+            {
+                try
+                {
+                    await fetcher.FetchAsync(zoneId, cancellationToken);
+                    advanced++;
+                }
+                catch (OperationCanceledException) { throw; }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex,
+                        "Otomatik irsaliye: Bölge #{Id} işlenemedi — atlanıyor.", zoneId);
+                }
+            }
+
+            _logger.LogInformation(
+                "Otomatik irsaliye: {Count} bölge için irsaliye çekimi denendi.", advanced);
+        }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Otomatik bölge irsaliye ilerletme sırasında hata.");
         }
     }
 }

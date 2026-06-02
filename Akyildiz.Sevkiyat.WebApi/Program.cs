@@ -214,6 +214,7 @@ builder.Services.AddHostedService<ReconciliationSummaryEmailBackgroundService>()
 
 // Reconciliation enforcement
 builder.Services.AddScoped<Akyildiz.Sevkiyat.Application.Reconciliation.Services.ReconciliationGuard>();
+builder.Services.AddScoped<Akyildiz.Sevkiyat.Application.Warehouse.Services.ZoneIrsaliyeFetcher>();
 
 // Excel Service
 builder.Services.AddScoped<Akyildiz.Sevkiyat.Application.Interfaces.IStockCountExcelService, Akyildiz.Sevkiyat.Infrastructure.Excel.ClosedXmlStockCountExcelService>();
