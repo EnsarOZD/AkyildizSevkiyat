@@ -64,14 +64,20 @@
         >
           {{ shipment.deliveryNote }}
         </div>
-        <div v-if="photoSrc" class="col-span-2">
-          <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">Teslimat Fotoğrafı</div>
-          <img
-            :src="photoSrc"
-            alt="Teslimat fotoğrafı"
-            class="rounded-lg border border-green-200 dark:border-green-800 max-h-64 object-contain cursor-pointer hover:opacity-90 transition-opacity"
-            @click="$emit('photoClick', photoSrc)"
-          />
+        <div v-if="photos.length" class="col-span-2">
+          <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">
+            Teslimat Fotoğrafı<span v-if="photos.length > 1"> ({{ photos.length }})</span>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <img
+              v-for="(src, i) in photos"
+              :key="i"
+              :src="src"
+              alt="Teslimat fotoğrafı"
+              class="rounded-lg border border-green-200 dark:border-green-800 h-32 w-32 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+              @click="$emit('photoClick', src)"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -88,7 +94,14 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { getPhotoUrl } from '../../utils/photoUrl';
+import { getPhotoUrl, absolutePhotoUrl } from '../../utils/photoUrl';
+
+interface DeliveryPhoto {
+  id: number
+  photoUrl: string
+  photoIndex: number
+  takenAt: string
+}
 
 interface ShipmentDeliveryInfo {
   driverName?: string
@@ -101,6 +114,7 @@ interface ShipmentDeliveryInfo {
   deliveryRecipient?: string
   deliveryPhotoBase64?: string
   deliveryPhotoPath?: string
+  deliveryPhotos?: DeliveryPhoto[]
 }
 
 const props = defineProps<{ shipment: ShipmentDeliveryInfo }>()
@@ -109,7 +123,15 @@ defineEmits<{
   photoClick: [src: string]
 }>()
 
-const photoSrc = computed<string | null>(() =>
-  getPhotoUrl(props.shipment.deliveryPhotoPath, props.shipment.deliveryPhotoBase64)
-)
+// Çoklu teslim fotoğrafları (şoför/nakliye) + geriye dönük tekil foto
+const photos = computed<string[]>(() => {
+  const multi = (props.shipment.deliveryPhotos ?? [])
+    .slice()
+    .sort((a, b) => a.photoIndex - b.photoIndex)
+    .map(p => absolutePhotoUrl(p.photoUrl))
+    .filter((s): s is string => !!s)
+  if (multi.length) return multi
+  const legacy = getPhotoUrl(props.shipment.deliveryPhotoPath, props.shipment.deliveryPhotoBase64)
+  return legacy ? [legacy] : []
+})
 </script>

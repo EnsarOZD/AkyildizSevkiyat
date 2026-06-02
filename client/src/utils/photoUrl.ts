@@ -19,3 +19,13 @@ export function getPhotoUrl(
   if (photoBase64) return `data:image/jpeg;base64,${photoBase64}`;
   return null;
 }
+
+/**
+ * Make an already-/photos/-prefixed URL (e.g. from the API's GetUrl) absolute
+ * against the API origin. Pass-through for data URIs / absolute URLs.
+ */
+export function absolutePhotoUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  if (url.startsWith('http') || url.startsWith('data:')) return url;
+  return `${API_ORIGIN}${url.startsWith('/') ? '' : '/'}${url}`;
+}
