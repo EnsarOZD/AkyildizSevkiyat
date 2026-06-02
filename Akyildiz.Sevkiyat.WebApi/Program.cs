@@ -403,8 +403,13 @@ app.Use(async (context, next) =>
 });
 
 // Serve uploaded photos as static files from /photos/...
-var photoBasePath = builder.Configuration["PhotoStorage:BasePath"]
-    ?? Path.Combine(Directory.GetCurrentDirectory(), "photos");
+// PhysicalFileProvider mutlak yol ister; yapılandırma göreli verilmişse içerik köküne göre çöz.
+var configuredPhotoPath = builder.Configuration["PhotoStorage:BasePath"];
+var photoBasePath = string.IsNullOrWhiteSpace(configuredPhotoPath)
+    ? Path.Combine(app.Environment.ContentRootPath, "photos")
+    : Path.IsPathRooted(configuredPhotoPath)
+        ? configuredPhotoPath
+        : Path.Combine(app.Environment.ContentRootPath, configuredPhotoPath);
 if (!Directory.Exists(photoBasePath))
     Directory.CreateDirectory(photoBasePath);
 app.UseStaticFiles(new StaticFileOptions
