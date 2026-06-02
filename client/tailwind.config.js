@@ -9,6 +9,14 @@ export default {
   ],
   theme: {
     extend: {
+      screens: {
+        // Sidebar ↔ alt navbar geçişi için özel kırılım.
+        // < desktop  → mobil/tablet modu (gizli sidebar + alt navbar)
+        // >= desktop → masaüstü sidebar
+        // Tabletler (dikey ~800px, yatay ~1024–1194px) bu eşiğin altında kaldığından
+        // her iki yönde de mobil nav kullanır; gerçek dizüstü/masaüstü sidebar görür.
+        'desktop': '1280px',
+      },
       colors: {
         // Marka ana paleti
         brand: {

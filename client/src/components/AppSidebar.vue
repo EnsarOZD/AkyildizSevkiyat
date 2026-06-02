@@ -1,6 +1,6 @@
 <template>
   <div
-    class="fixed inset-y-0 left-0 z-50 w-64 bg-gray-900 text-white flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:inset-auto"
+    class="fixed inset-y-0 left-0 z-50 w-64 bg-gray-900 text-white flex flex-col transition-transform duration-300 ease-in-out desktop:translate-x-0 desktop:static desktop:inset-auto"
     :class="isOpen ? 'translate-x-0' : '-translate-x-full'"
   >
     <!-- Logo / Brand -->
@@ -12,7 +12,7 @@
           <p class="text-gray-400 text-xs leading-tight">Sevkiyat Yönetimi</p>
         </div>
       </div>
-      <button @click="$emit('close')" aria-label="Menüyü kapat" class="md:hidden text-gray-400 hover:text-white p-1 rounded">
+      <button @click="$emit('close')" aria-label="Menüyü kapat" class="desktop:hidden text-gray-400 hover:text-white p-1 rounded">
         <XMarkIcon class="w-5 h-5" aria-hidden="true" />
       </button>
     </div>

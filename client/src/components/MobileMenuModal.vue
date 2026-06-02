@@ -3,7 +3,7 @@
     <Transition name="mobile-menu">
       <div
         v-if="show"
-        class="fixed inset-0 z-50 flex flex-col bg-white dark:bg-gray-900 md:hidden overflow-hidden"
+        class="fixed inset-0 z-50 flex flex-col bg-white dark:bg-gray-900 desktop:hidden overflow-hidden"
       >
         <!-- Header -->
         <div class="flex items-center justify-between px-4 py-4 border-b border-gray-200 dark:border-gray-800 flex-shrink-0">

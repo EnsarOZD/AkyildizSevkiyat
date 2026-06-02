@@ -4,7 +4,7 @@
     <div
         v-if="isSidebarOpen"
         @click="isSidebarOpen = false"
-        class="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+        class="fixed inset-0 bg-black bg-opacity-50 z-40 desktop:hidden"
     ></div>
 
     <AppSidebar
@@ -15,7 +15,7 @@
     <div class="flex-1 flex flex-col overflow-hidden w-full">
       <AppHeader @toggleSidebar="isSidebarOpen = !isSidebarOpen" @openSearch="searchOpen = true" />
 
-      <main id="main-content" class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-[#0c1a2e] p-4 md:p-6 pb-20 md:pb-6 relative">
+      <main id="main-content" class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-[#0c1a2e] p-4 md:p-6 pb-20 desktop:pb-6 relative">
         <router-view v-slot="{ Component }">
           <Transition name="page" mode="out-in">
             <component :is="Component" :key="$route.path" />

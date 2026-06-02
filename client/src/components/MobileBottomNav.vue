@@ -1,6 +1,6 @@
 <template>
   <nav
-    class="fixed bottom-0 inset-x-0 z-30 md:hidden bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800"
+    class="fixed bottom-0 inset-x-0 z-30 desktop:hidden bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800"
     :style="{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }"
   >
     <div class="flex h-16">

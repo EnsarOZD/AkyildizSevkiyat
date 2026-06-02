@@ -2,7 +2,7 @@
   <header class="h-14 bg-white dark:bg-[#0c1a2e] border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-4 md:px-6 flex-shrink-0">
     <!-- Left: hamburger + breadcrumb -->
     <div class="flex items-center gap-3 min-w-0">
-      <button @click="$emit('toggleSidebar')" aria-label="Menüyü aç/kapat" class="md:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 flex-shrink-0 p-1">
+      <button @click="$emit('toggleSidebar')" aria-label="Menüyü aç/kapat" class="desktop:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 flex-shrink-0 p-1">
         <Bars3Icon class="h-5 w-5" aria-hidden="true" />
       </button>
 
