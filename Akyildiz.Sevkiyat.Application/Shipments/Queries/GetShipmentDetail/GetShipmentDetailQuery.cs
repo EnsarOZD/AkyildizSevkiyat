@@ -26,6 +26,11 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipmentDetail
         public string? DriverName { get; set; }
         public string? PlateNumber { get; set; }
 
+        // Nakliye (freight) taşıyıcı bilgisi — şoför yerine nakliyeci ile gönderildiğinde dolar
+        public string? FreightCarrierName { get; set; }
+        public string? FreightCarrierPlate { get; set; }
+        public string? FreightCarrierPhone { get; set; }
+
         // Netsis / İrsaliye
         public string? IrsaliyeNo { get; set; }
         public DateOnly? IrsaliyeDate { get; set; }

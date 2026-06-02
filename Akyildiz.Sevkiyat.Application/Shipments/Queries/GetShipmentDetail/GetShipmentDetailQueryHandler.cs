@@ -127,6 +127,9 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipmentDetail
                 DeliveryDate = shipment.DeliveryDate,
                 DriverName = shipment.AssignedDriverName,
                 PlateNumber = shipment.AssignedPlateNumber,
+                FreightCarrierName = shipment.FreightCarrierName,
+                FreightCarrierPlate = shipment.FreightCarrierPlate,
+                FreightCarrierPhone = shipment.FreightCarrierPhone,
 
                 // Netsis / İrsaliye
                 IrsaliyeNo = shipment.IrsaliyeNo,

@@ -1,17 +1,24 @@
 <template>
   <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl divide-y divide-gray-100 dark:divide-gray-700">
 
-    <!-- Araç & Sürücü -->
+    <!-- Araç & Sürücü / Taşıyıcı -->
     <div class="p-5">
-      <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Araç & Sürücü</h3>
+      <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+        Araç &amp; {{ isFreight ? 'Taşıyıcı' : 'Sürücü' }}
+        <span v-if="isFreight" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 normal-case">Nakliye</span>
+      </h3>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
         <div>
-          <div class="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Sürücü</div>
-          <div class="font-medium text-gray-800 dark:text-gray-200">{{ shipment.driverName || '—' }}</div>
+          <div class="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{{ isFreight ? 'Taşıyıcı' : 'Sürücü' }}</div>
+          <div class="font-medium text-gray-800 dark:text-gray-200">{{ displayDriver || '—' }}</div>
         </div>
         <div>
           <div class="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Plaka</div>
-          <div class="font-medium text-gray-800 dark:text-gray-200">{{ shipment.plateNumber || '—' }}</div>
+          <div class="font-medium text-gray-800 dark:text-gray-200">{{ displayPlate || '—' }}</div>
+        </div>
+        <div v-if="phone">
+          <div class="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Telefon</div>
+          <a :href="`tel:${phone}`" class="font-medium text-blue-600 dark:text-blue-400 hover:underline">{{ phone }}</a>
         </div>
       </div>
     </div>
@@ -48,7 +55,12 @@
 
     <!-- Teslim Bilgisi -->
     <div v-if="shipment.deliveredAt" class="p-5 bg-green-50 dark:bg-green-900/10 border-t border-green-100 dark:border-green-900/30">
-      <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Teslim Bilgisi</h3>
+      <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+        Teslim Bilgisi
+        <span v-if="isFreight" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 normal-case">
+          Nakliye ile teslim{{ displayDriver ? ' — ' + displayDriver : '' }}
+        </span>
+      </h3>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
         <div>
           <div class="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Teslim Zamanı</div>
@@ -106,6 +118,9 @@ interface DeliveryPhoto {
 interface ShipmentDeliveryInfo {
   driverName?: string
   plateNumber?: string
+  freightCarrierName?: string
+  freightCarrierPlate?: string
+  freightCarrierPhone?: string
   irsaliyeNo?: string
   irsaliyeDate?: string
   netsisTransferredAt?: string
@@ -122,6 +137,12 @@ defineEmits<{
   openIrsaliye: []
   photoClick: [src: string]
 }>()
+
+// Nakliye (freight) ile gönderildiğinde sürücü yerine taşıyıcı bilgisi dolu olur
+const isFreight = computed(() => !!props.shipment.freightCarrierName)
+const displayDriver = computed(() => props.shipment.driverName || props.shipment.freightCarrierName || '')
+const displayPlate = computed(() => props.shipment.plateNumber || props.shipment.freightCarrierPlate || '')
+const phone = computed(() => props.shipment.freightCarrierPhone || '')
 
 // Çoklu teslim fotoğrafları (şoför/nakliye) + geriye dönük tekil foto
 const photos = computed<string[]>(() => {
