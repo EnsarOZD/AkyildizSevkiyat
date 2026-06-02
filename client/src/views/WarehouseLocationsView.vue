@@ -155,6 +155,21 @@
 
     <!-- PickingFace Filters -->
     <div v-if="viewMode === 'pickingface'" class="bg-white dark:bg-[#0f2744] rounded-xl border border-gray-200 dark:border-white/10 p-4 flex flex-wrap gap-3">
+      <select v-model="filterKoridor"
+        class="px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+        @change="load(true)">
+        <option value="">Tüm Koridorlar</option>
+        <option v-for="k in [1,2,3,4]" :key="k" :value="k">{{ k }}. Koridor</option>
+      </select>
+
+      <select v-model="filterTaraf"
+        class="px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+        @change="load(true)">
+        <option value="">Tüm Taraflar</option>
+        <option value="K">Kuzey (K)</option>
+        <option value="G">Güney (G)</option>
+      </select>
+
       <select v-model="filterAlan"
         class="px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
         @change="load(true)">
@@ -1078,10 +1093,13 @@ async function load(resetPage = false) {
       ? 6
       : filterType.value !== '' ? (filterType.value as number) : undefined;
 
+    const usesKoridorFilters = viewMode.value === 'racks' || viewMode.value === 'pickingface';
     const res = await warehouseLocationService.getAll({
-      koridorNo:       viewMode.value === 'racks' && filterKoridor.value !== '' ? (filterKoridor.value as number) : undefined,
-      taraf:           viewMode.value === 'racks' ? filterTaraf.value || undefined : undefined,
+      koridorNo:       usesKoridorFilters && filterKoridor.value !== '' ? (filterKoridor.value as number) : undefined,
+      taraf:           usesKoridorFilters ? filterTaraf.value || undefined : undefined,
       type:            typeFilter,
+      // Raflar listesinde toplama gözleri (PickingFace = 6) görünmesin
+      excludeType:     viewMode.value === 'racks' ? 6 : undefined,
       includeInactive: filterInactive.value,
       page:            page.value,
       pageSize,

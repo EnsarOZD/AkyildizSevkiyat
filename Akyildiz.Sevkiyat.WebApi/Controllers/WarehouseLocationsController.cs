@@ -35,10 +35,11 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             [FromQuery] bool includeInactive = false,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 50,
+            [FromQuery] LocationType? excludeType = null,
             CancellationToken ct = default)
         {
             var result = await _mediator.Send(
-                new GetWarehouseLocationsQuery(koridorNo, taraf, type, includeInactive, page, pageSize), ct);
+                new GetWarehouseLocationsQuery(koridorNo, taraf, type, includeInactive, page, pageSize, excludeType), ct);
             return Ok(result);
         }
 

@@ -127,6 +127,7 @@ const warehouseLocationService = {
     includeInactive?: boolean;
     page?: number;
     pageSize?: number;
+    excludeType?: number;
   } = {}): Promise<GetLocationsResult> {
     const { data } = await apiClient.get('/warehouse-locations', { params });
     return data;

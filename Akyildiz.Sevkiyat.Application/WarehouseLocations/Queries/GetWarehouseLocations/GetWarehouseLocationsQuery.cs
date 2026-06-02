@@ -11,7 +11,8 @@ namespace Akyildiz.Sevkiyat.Application.WarehouseLocations.Queries.GetWarehouseL
         LocationType? Type           = null,
         bool         IncludeInactive = false,
         int          Page            = 1,
-        int          PageSize        = 50
+        int          PageSize        = 50,
+        LocationType? ExcludeType    = null     // Belirli bir tipi hariç tut (örn. Raflar listesinde PickingFace)
     ) : IRequest<GetWarehouseLocationsResult>;
 
     public record WarehouseLocationDto(
@@ -69,6 +70,9 @@ namespace Akyildiz.Sevkiyat.Application.WarehouseLocations.Queries.GetWarehouseL
 
             if (request.Type.HasValue)
                 query = query.Where(l => l.LocationType == request.Type.Value);
+
+            if (request.ExcludeType.HasValue)
+                query = query.Where(l => l.LocationType != request.ExcludeType.Value);
 
             var totalCount = await query.CountAsync(cancellationToken);
 
