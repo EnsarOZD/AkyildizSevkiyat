@@ -6,6 +6,9 @@ import { useSoundFeedback } from '../composables/useSoundFeedback';
 export const useNotificationsStore = defineStore('notifications', () => {
     const items = ref<NotificationDto[]>([]);
     const loading = ref(false);
+    const page = ref(1);
+    const hasMore = ref(false);
+    const PAGE_SIZE = 30;
     let eventSource: EventSource | null = null;
     const sound = useSoundFeedback();
 
@@ -14,7 +17,22 @@ export const useNotificationsStore = defineStore('notifications', () => {
     async function fetchAll() {
         loading.value = true;
         try {
-            items.value = await notificationsService.getAll();
+            page.value = 1;
+            items.value = await notificationsService.getAll(1);
+            hasMore.value = items.value.length >= PAGE_SIZE;
+        } finally {
+            loading.value = false;
+        }
+    }
+
+    async function loadMore() {
+        if (loading.value || !hasMore.value) return;
+        loading.value = true;
+        try {
+            const next = await notificationsService.getAll(page.value + 1);
+            page.value += 1;
+            items.value.push(...next);
+            hasMore.value = next.length >= PAGE_SIZE;
         } finally {
             loading.value = false;
         }
@@ -76,8 +94,10 @@ export const useNotificationsStore = defineStore('notifications', () => {
     return {
         items,
         loading,
+        hasMore,
         unreadCount,
         fetchAll,
+        loadMore,
         markAllRead,
         markRead,
         connectSSE,

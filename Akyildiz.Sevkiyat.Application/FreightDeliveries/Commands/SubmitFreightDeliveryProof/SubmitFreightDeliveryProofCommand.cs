@@ -1,5 +1,6 @@
 using Akyildiz.Sevkiyat.Application.Interfaces;
 using Akyildiz.Sevkiyat.Application.Shipments.Commands.MarkShipmentDelivered;
+using Akyildiz.Sevkiyat.Domain.Enums;
 using Akyildiz.Sevkiyat.Domain.Exceptions;
 using FluentValidation;
 using MediatR;
@@ -37,11 +38,14 @@ namespace Akyildiz.Sevkiyat.Application.FreightDeliveries.Commands.SubmitFreight
     {
         private readonly IApplicationDbContext _context;
         private readonly IMediator _mediator;
+        private readonly INotificationService _notifications;
 
-        public SubmitFreightDeliveryProofCommandHandler(IApplicationDbContext context, IMediator mediator)
+        public SubmitFreightDeliveryProofCommandHandler(
+            IApplicationDbContext context, IMediator mediator, INotificationService notifications)
         {
             _context = context;
             _mediator = mediator;
+            _notifications = notifications;
         }
 
         public async Task<SubmitFreightDeliveryProofResult> Handle(
@@ -49,6 +53,7 @@ namespace Akyildiz.Sevkiyat.Application.FreightDeliveries.Commands.SubmitFreight
             CancellationToken cancellationToken)
         {
             var delivery = await _context.FreightDeliveries
+                .Include(d => d.Project)
                 .Include(d => d.Shipments)
                 .FirstOrDefaultAsync(d => d.Token == request.Token, cancellationToken)
                 ?? throw new NotFoundException("Teslim linki bulunamadı veya geçersiz.");
@@ -80,6 +85,24 @@ namespace Akyildiz.Sevkiyat.Application.FreightDeliveries.Commands.SubmitFreight
 
             delivery.Complete(request.RecipientName, request.Note);
             await _context.SaveChangesAsync(cancellationToken);
+
+            // Yönetici / Muhasebe / Admin rollerine teslim bildirimi gönder (best-effort)
+            try
+            {
+                var firstShipmentId = delivery.Shipments.FirstOrDefault()?.ShipmentId;
+                await _notifications.SendToRolesAsync(
+                    new[] { UserRole.Admin, UserRole.Manager, UserRole.Accounting },
+                    title: "Nakliye Teslim Edildi",
+                    body: $"{delivery.Project.Name} — {deliveredCount} sevkiyat nakliye ile teslim edildi. " +
+                          $"Teslim alan: {request.RecipientName}. Taşıyıcı: {delivery.CarrierName}",
+                    url: firstShipmentId.HasValue ? $"/shipments/{firstShipmentId}" : "/shipments",
+                    eventType: "freight_delivered",
+                    ct: cancellationToken);
+            }
+            catch
+            {
+                // Bildirim hatası teslimi etkilemesin
+            }
 
             return new SubmitFreightDeliveryProofResult(deliveredCount);
         }

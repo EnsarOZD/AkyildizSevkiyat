@@ -37,6 +37,12 @@ const router = createRouter({
                     meta: { title: 'Sevkiyatlar', roles: ['Admin', 'Accounting', 'Manager', 'Driver', 'Warehouse'] }
                 },
                 {
+                    path: 'notifications',
+                    name: 'Notifications',
+                    component: () => import('../views/NotificationsView.vue'),
+                    meta: { title: 'Bildirimler' }
+                },
+                {
                     path: 'shipments/:id',
                     name: 'ShipmentDetail',
                     component: () => import('../views/ShipmentDetailView.vue'),

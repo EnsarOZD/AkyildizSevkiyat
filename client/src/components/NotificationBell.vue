@@ -75,13 +75,21 @@
             </div>
           </div>
         </div>
+
+        <!-- Footer: tüm bildirimler ekranı -->
+        <div class="border-t border-gray-100 dark:border-gray-800">
+          <button
+            @click="goToAll"
+            class="w-full text-center px-4 py-2.5 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+          >Tüm bildirimleri gör</button>
+        </div>
       </div>
     </Transition>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { BellIcon, BellSlashIcon, BellAlertIcon } from '@heroicons/vue/24/outline';
 import { useNotificationsStore } from '../stores/notifications';
@@ -92,7 +100,9 @@ const webPush = useWebPush();
 const router = useRouter();
 const open = ref(false);
 const containerRef = ref<HTMLElement | null>(null);
-const unreadCount = store.unreadCount; // computed ref, auto-unwrapped in template
+// store.unreadCount'u const'a almak Pinia'da değeri dondurur (reaktif olmaz);
+// computed ile sarmalayarak reaktif tut.
+const unreadCount = computed(() => store.unreadCount);
 
 function toggle() {
   open.value = !open.value;
@@ -100,6 +110,11 @@ function toggle() {
 
 async function markAllRead() {
   await store.markAllRead();
+}
+
+function goToAll() {
+  open.value = false;
+  router.push('/notifications');
 }
 
 async function handleClick(n: { id: number; url: string | null; isRead: boolean }) {
