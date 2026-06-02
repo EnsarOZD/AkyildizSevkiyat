@@ -31,6 +31,8 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipments
         public int? CargoProviderValue { get; set; }
         public string? FreightCarrierName { get; set; }
         public string? FreightCarrierPlate { get; set; }
+        // 0 = Iss, 1 = Manual
+        public int SourceValue { get; set; } = 0;
     }
 
     public class GetShipmentsQuery : IRequest<PaginatedList<ShipmentDto>>, IRequireRoles
@@ -55,6 +57,8 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipments
         public string? DispatchType { get; set; }
         // 0 = Catering, 1 = Clothing
         public int? OperationType { get; set; }
+        // Proje kaynağı filtresi: 0 = Iss, 1 = Manual. null = tümü.
+        public int? Source { get; set; }
     }
     
     public class GetShipmentsQueryHandler : IRequestHandler<GetShipmentsQuery, PaginatedList<ShipmentDto>>
@@ -134,6 +138,12 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipments
                 query = query.Where(s => s.OperationType == opType);
             }
 
+            if (request.Source.HasValue)
+            {
+                var src = (Domain.Enums.ProjectSource)request.Source.Value;
+                query = query.Where(s => s.Project.Source == src);
+            }
+
             // Search
             if (!string.IsNullOrWhiteSpace(request.Search))
             {
@@ -150,11 +160,11 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipments
                 }
                 else
                 {
-                    query = query.Where(x => 
-                        EF.Functions.Collate(x.Project.Name, "Turkish_CI_AS").Contains(EF.Functions.Collate(s, "Turkish_CI_AS")) || 
+                    query = query.Where(x =>
+                        EF.Functions.Collate(x.Project.Name, "Turkish_CI_AS").Contains(EF.Functions.Collate(s, "Turkish_CI_AS")) ||
                         EF.Functions.Collate(x.Project.Code, "Turkish_CI_AS").Contains(EF.Functions.Collate(s, "Turkish_CI_AS")) ||
-                        (x.IssOrder.TalepNo != null && EF.Functions.Collate(x.IssOrder.TalepNo, "Turkish_CI_AS").Contains(EF.Functions.Collate(s, "Turkish_CI_AS"))) ||
-                        (x.IssOrder.ExternalOrderNumber != null && EF.Functions.Collate(x.IssOrder.ExternalOrderNumber, "Turkish_CI_AS").Contains(EF.Functions.Collate(s, "Turkish_CI_AS"))) ||
+                        (x.IssOrder != null && x.IssOrder.TalepNo != null && EF.Functions.Collate(x.IssOrder.TalepNo, "Turkish_CI_AS").Contains(EF.Functions.Collate(s, "Turkish_CI_AS"))) ||
+                        (x.IssOrder != null && EF.Functions.Collate(x.IssOrder.ExternalOrderNumber, "Turkish_CI_AS").Contains(EF.Functions.Collate(s, "Turkish_CI_AS"))) ||
                         (x.AssignedDriverName != null && EF.Functions.Collate(x.AssignedDriverName, "Turkish_CI_AS").Contains(EF.Functions.Collate(s, "Turkish_CI_AS")))
                     );
                 }
@@ -189,6 +199,7 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipments
                     CargoProviderValue   = s.CargoProvider != null ? (int?)s.CargoProvider.Value : null,
                     FreightCarrierName   = s.FreightCarrierName,
                     FreightCarrierPlate  = s.FreightCarrierPlate,
+                    SourceValue          = (int)s.Project.Source,
                 }).ToListAsync(cancellationToken);
 
             return new PaginatedList<ShipmentDto>(items, totalCount, request.PageNumber, request.PageSize);

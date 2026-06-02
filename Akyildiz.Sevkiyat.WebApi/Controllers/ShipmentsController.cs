@@ -2,6 +2,7 @@ using Akyildiz.Sevkiyat.Application.Shipments.Commands;
 using Akyildiz.Sevkiyat.Application.Shipments.Commands.BulkDispatchAsCargo;
 using Akyildiz.Sevkiyat.Application.Shipments.Commands.BulkDispatchAsFreight;
 using Akyildiz.Sevkiyat.Application.Shipments.Commands.CreateShipment;
+using Akyildiz.Sevkiyat.Application.Shipments.Commands.CreateManualShipment;
 using Akyildiz.Sevkiyat.Application.Shipments.Queries;
 using Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipmentsByDate;
 using Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipments;
@@ -55,6 +56,14 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             var id = await _mediator.Send(command);
             // Şimdilik oluşan Shipment Id'yi döndürüyoruz
             return Ok(id);
+        }
+
+        // POST api/shipments/manual — manuel müşteri sevkiyatı
+        [HttpPost("manual")]
+        public async Task<IActionResult> CreateManual([FromBody] CreateManualShipmentCommand command)
+        {
+            var id = await _mediator.Send(command);
+            return Ok(new { Id = id });
         }
 
         [HttpPost("bulk")]

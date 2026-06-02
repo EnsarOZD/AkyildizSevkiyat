@@ -22,8 +22,8 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
 
         public ICollection<ShipmentLine> Lines { get; protected set; } = new List<ShipmentLine>();
 
-        public int IssOrderId { get; set; }
-        public IssOrder IssOrder { get; set; } = null!;
+        public int? IssOrderId { get; set; }
+        public IssOrder? IssOrder { get; set; }
 
         // Warehouse Batch Link
         public int? ZonePreparationId { get; set; }

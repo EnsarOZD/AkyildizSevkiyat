@@ -17,7 +17,8 @@
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">E-posta (Opsiyonel)</label>
-              <input v-model="form.email" type="email" class="mt-1 bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="ornek@tedarikci.com">
+              <input v-model="form.email" type="text" class="mt-1 bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="ornek@tedarikci.com, ikinci@tedarikci.com">
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Birden fazla adres için virgül veya noktalı virgülle ayırın.</p>
             </div>
           </div>
         </div>

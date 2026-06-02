@@ -446,6 +446,51 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                     b.ToTable("ImportBatchOrders");
                 });
 
+            modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.InstitutionCariMapping", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("InstitutionCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastModified")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NetsisCariKodu")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InstitutionCode")
+                        .IsUnique();
+
+                    b.ToTable("InstitutionCariMappings");
+                });
+
             modelBuilder.Entity("Akyildiz.Sevkiyat.Domain.Entities.IssOrder", b =>
                 {
                     b.Property<int>("Id")
@@ -518,12 +563,12 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                         new
                         {
                             Id = 1,
-                            DeliveryDate = new DateTime(2026, 5, 19, 0, 0, 0, 0, DateTimeKind.Local),
+                            DeliveryDate = new DateTime(2026, 6, 3, 0, 0, 0, 0, DateTimeKind.Local),
                             ExternalOrderNumber = "SO-1001",
                             ImportStatus = 0,
                             IsActive = true,
                             IsTransferred = false,
-                            OrderDate = new DateTime(2026, 5, 18, 0, 0, 0, 0, DateTimeKind.Local),
+                            OrderDate = new DateTime(2026, 6, 2, 0, 0, 0, 0, DateTimeKind.Local),
                             ProjectId = 1,
                             Status = "Imported"
                         });
@@ -859,6 +904,9 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                     b.Property<string>("Region")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("Source")
+                        .HasColumnType("int");
+
                     b.Property<int?>("ZoneId")
                         .HasColumnType("int");
 
@@ -880,7 +928,8 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                             IsActive = true,
                             Name = "Kozyatağı Yemekhanesi",
                             OperationType = 0,
-                            Region = "Anadolu-1"
+                            Region = "Anadolu-1",
+                            Source = 0
                         });
                 });
 
@@ -1309,7 +1358,7 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                     b.Property<string>("IrsaliyeNo")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("IssOrderId")
+                    b.Property<int?>("IssOrderId")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("MissingItemsMailSentAt")
@@ -1382,7 +1431,8 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
                     b.HasIndex("DeliveryDate");
 
                     b.HasIndex("IssOrderId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[IssOrderId] IS NOT NULL");
 
                     b.HasIndex("ProjectId");
 
@@ -2296,6 +2346,9 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsOutOfCity")
                         .HasColumnType("bit");
 
@@ -2744,9 +2797,7 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Migrations
 
                     b.HasOne("Akyildiz.Sevkiyat.Domain.Entities.IssOrder", "IssOrder")
                         .WithMany()
-                        .HasForeignKey("IssOrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("IssOrderId");
 
                     b.HasOne("Akyildiz.Sevkiyat.Domain.Entities.Project", "Project")
                         .WithMany("Shipments")

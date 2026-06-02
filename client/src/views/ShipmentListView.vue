@@ -39,7 +39,26 @@
         >
           Pasif / Taslaklar
         </button>
+        <button
+          @click="activeTab = 'other'; filters.status = ''; page = 1"
+          :class="activeTab === 'other'
+            ? 'border-emerald-500 text-emerald-600'
+            : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'"
+          class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition-colors"
+        >
+          Diğer
+        </button>
       </nav>
+    </div>
+
+    <!-- Manuel sevkiyat oluştur butonu — sadece Diğer sekmesinde -->
+    <div v-if="activeTab === 'other'" v-role="['Admin', 'Manager', 'Accounting']" class="mb-4 flex justify-end">
+      <button
+        @click="manualShipmentModalOpen = true"
+        class="inline-flex items-center px-4 py-2 bg-emerald-600 text-white text-sm rounded-md hover:bg-emerald-700"
+      >
+        + Manuel Sevkiyat Oluştur
+      </button>
     </div>
 
     <!-- Filters -->
@@ -693,6 +712,12 @@
     </Transition>
   </Teleport>
 
+  <CreateManualShipmentModal
+    :is-open="manualShipmentModalOpen"
+    @close="manualShipmentModalOpen = false"
+    @created="onManualShipmentCreated"
+  />
+
   </div>
 </template>
 
@@ -713,6 +738,7 @@ import BaseButton from '../components/BaseButton.vue';
 import BaseInput from '../components/base/BaseInput.vue';
 import BaseSelect from '../components/base/BaseSelect.vue';
 import ShipmentActionsDropdown from '../components/ShipmentActionsDropdown.vue';
+import CreateManualShipmentModal from '../components/CreateManualShipmentModal.vue';
 
 const notificationStore = useNotificationStore();
 const route = useRoute();
@@ -741,9 +767,14 @@ function resolveInitialQuery() {
 }
 
 const q = resolveInitialQuery();
-const activeTab = ref<'catering' | 'clothing' | 'passive'>(
-  q.tab === 'passive' ? 'passive' : q.tab === 'clothing' ? 'clothing' : 'catering'
+const activeTab = ref<'catering' | 'clothing' | 'passive' | 'other'>(
+  q.tab === 'passive' ? 'passive'
+    : q.tab === 'clothing' ? 'clothing'
+    : q.tab === 'other' ? 'other'
+    : 'catering'
 );
+
+const manualShipmentModalOpen = ref(false);
 
 interface Shipment {
   id: number;
@@ -1256,8 +1287,15 @@ const fetchShipments = async () => {
   if (activeTab.value === 'passive') {
     params.status = 10;
   } else {
-    if (activeTab.value === 'catering') params.OperationType = 0;
-    else if (activeTab.value === 'clothing') params.OperationType = 1;
+    if (activeTab.value === 'catering') {
+      params.OperationType = 0;
+      params.Source = 0; // ISS
+    } else if (activeTab.value === 'clothing') {
+      params.OperationType = 1;
+      params.Source = 0; // ISS
+    } else if (activeTab.value === 'other') {
+      params.Source = 1; // Manuel
+    }
 
     if (filters.value.status) {
       params.status = filters.value.status;
@@ -1287,6 +1325,12 @@ const handleSearch = simpleDebounce(() => {
   syncUrl();
   fetchShipments();
 }, 500);
+
+const onManualShipmentCreated = () => {
+  manualShipmentModalOpen.value = false;
+  page.value = 1;
+  fetchShipments();
+};
 
 const quickAssignToWarehouse = async (id: number) => {
   try {

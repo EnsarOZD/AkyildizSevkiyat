@@ -83,6 +83,15 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.BulkExportShipmentsToNet
                     continue;
                 }
 
+                // ISS projeleri için NetsisTeslimCariKodu zorunlu — manuel müşterilerde opsiyonel.
+                if (shipment.Project!.Source == Domain.Enums.ProjectSource.Iss
+                    && string.IsNullOrWhiteSpace(shipment.Project.NetsisTeslimCariKodu))
+                {
+                    errors.Add($"Sevkiyat #{shipment.Id}: Proje '{shipment.Project.Name}' için Netsis Teslim Cari Kodu tanımlanmamış.");
+                    skipped++;
+                    continue;
+                }
+
                 // Açık uzlaştırma hatası
                 var hasOpenError = await _context.ReconciliationIssues
                     .AnyAsync(i => i.ShipmentId == shipment.Id
@@ -140,7 +149,11 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.BulkExportShipmentsToNet
                     {
                         BelgeNo      = belgeNo ?? string.Empty,
                         CariKodu     = shipment.Project!.NetsisCariKodu!,
-                        ProjeKodu    = shipment.Project.NetsisTeslimCariKodu ?? shipment.Project.Code ?? string.Empty,
+                        // Manuel için: NetsisCariKodu fallback (Project.Code = MM-XXXX Netsis'te anlamsız).
+                        // ISS için: NetsisTeslimCariKodu (yukarıda zorunlu) → Project.Code fallback.
+                        ProjeKodu    = shipment.Project.Source == Domain.Enums.ProjectSource.Manual
+                            ? (shipment.Project.NetsisTeslimCariKodu ?? shipment.Project.NetsisCariKodu ?? string.Empty)
+                            : (shipment.Project.NetsisTeslimCariKodu ?? shipment.Project.Code ?? string.Empty),
                         TeslimTarihi = shipment.DeliveryDate,
                         SiparisId    = shipment.Id.ToString(),
                         KurumKodu    = shipment.Project.InstitutionCode,

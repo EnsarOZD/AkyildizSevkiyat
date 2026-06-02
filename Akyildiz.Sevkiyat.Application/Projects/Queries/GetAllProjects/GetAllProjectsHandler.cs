@@ -18,7 +18,10 @@ namespace Akyildiz.Sevkiyat.Application.Projects.Queries
 
         public async Task<PaginatedList<ProjectDto>> Handle(GetAllProjectsQuery request, CancellationToken cancellationToken)
         {
-            var query = _context.Projects.Include(p => p.Zone).AsQueryable();
+            var query = _context.Projects
+                .Where(p => p.Source == Domain.Enums.ProjectSource.Iss)
+                .Include(p => p.Zone)
+                .AsQueryable();
 
             if (!request.ShowInactive)
                 query = query.Where(p => p.IsActive);
@@ -37,7 +40,8 @@ namespace Akyildiz.Sevkiyat.Application.Projects.Queries
                 p.NetsisCariKodu, p.DeliveryOrder,
                 p.Latitude, p.Longitude, p.Address,
                 p.DeliveryWindowStart, p.DeliveryWindowEnd,
-                p.NetsisTeslimCariKodu
+                p.NetsisTeslimCariKodu,
+                p.Source
             ));
 
             return await PaginatedList<ProjectDto>.CreateAsync(projected, request.PageNumber, request.PageSize);

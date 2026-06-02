@@ -99,8 +99,11 @@ const purchaseOrderService = {
     await apiClient.post(`/purchase-orders/${id}/mark-email-sent`, { sentTo: sentTo || null });
   },
 
-  async sendEmail(id: string, pdfBase64?: string): Promise<{ sentTo: string }> {
-    const response = await apiClient.post(`/purchase-orders/${id}/send-email`, { pdfBase64: pdfBase64 ?? null });
+  async sendEmail(id: string, pdfBase64?: string, ccEmails?: string[]): Promise<{ sentTo: string }> {
+    const response = await apiClient.post(`/purchase-orders/${id}/send-email`, {
+      pdfBase64: pdfBase64 ?? null,
+      extraCc: ccEmails && ccEmails.length ? ccEmails : null,
+    });
     return response.data;
   },
 

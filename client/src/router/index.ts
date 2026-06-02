@@ -144,6 +144,18 @@ const router = createRouter({
                     meta: { title: 'Tedarikçi Yönetimi', roles: ['Admin', 'Accounting', 'Manager'] }
                 },
                 {
+                    path: 'customers',
+                    name: 'CustomerManagement',
+                    component: () => import('../views/CustomersView.vue'),
+                    meta: { title: 'Müşteriler', roles: ['Admin', 'Accounting', 'Manager'] }
+                },
+                {
+                    path: 'system/institution-cari-mappings',
+                    name: 'InstitutionCariMappings',
+                    component: () => import('../views/InstitutionCariMappingsView.vue'),
+                    meta: { title: 'Netsis Cari Eşleşmeleri', roles: ['Admin', 'Manager', 'Accounting'] }
+                },
+                {
                     path: 'users',
                     name: 'UserManagement',
                     component: () => import('../views/UserManagementView.vue'),

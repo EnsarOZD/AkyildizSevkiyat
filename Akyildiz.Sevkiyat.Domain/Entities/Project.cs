@@ -16,6 +16,12 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
         /// Clothing: Beden/renk bazlı picking (henüz tanımlanmadı — ileride uygulanacak).
         /// </summary>
         public OperationType OperationType { get; set; } = OperationType.Catering;
+
+        /// <summary>
+        /// Proje kaynağı — Iss (ISS-IP'den içe aktarıldı) ya da Manual (sistem içinden eklendi).
+        /// </summary>
+        public ProjectSource Source { get; set; } = ProjectSource.Iss;
+
         public string? Region { get; set; }         // Avrupa1, Anadolu2 vb.
         public string? Address { get; set; }
         public bool IsActive { get; set; } = true;

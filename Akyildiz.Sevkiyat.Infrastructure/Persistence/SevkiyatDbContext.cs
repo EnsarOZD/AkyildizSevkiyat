@@ -88,6 +88,7 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Persistence
 
         // External Email Contacts
         public DbSet<ExternalEmailContact> ExternalEmailContacts { get; set; } = null!;
+        public DbSet<InstitutionCariMapping> InstitutionCariMappings { get; set; } = null!;
 
         // Vehicle Return Tracking
         public DbSet<VehicleReturn> VehicleReturns { get; set; } = null!;
@@ -205,7 +206,9 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Persistence
             {
                 entity.HasIndex(s => s.DeliveryDate);
                 entity.HasIndex(s => s.Status);
-                entity.HasIndex(s => s.IssOrderId).IsUnique();
+                entity.HasIndex(s => s.IssOrderId)
+                    .IsUnique()
+                    .HasFilter("[IssOrderId] IS NOT NULL");
 
                 // Optimistic concurrency
                 entity.Property(s => s.RowVersion).IsRowVersion();
@@ -243,6 +246,15 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Persistence
             {
                 entity.Property(e => e.Code).HasMaxLength(100).IsRequired();
                 entity.HasIndex(e => e.Code).IsUnique();
+            });
+
+            // InstitutionCariMapping: unique InstitutionCode
+            modelBuilder.Entity<InstitutionCariMapping>(entity =>
+            {
+                entity.Property(e => e.InstitutionCode).HasMaxLength(50).IsRequired();
+                entity.Property(e => e.NetsisCariKodu).HasMaxLength(50).IsRequired();
+                entity.Property(e => e.Description).HasMaxLength(200);
+                entity.HasIndex(e => e.InstitutionCode).IsUnique();
             });
 
             // İLİŞKİLER

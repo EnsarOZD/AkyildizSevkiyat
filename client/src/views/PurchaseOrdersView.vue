@@ -317,15 +317,27 @@
       @saved="onOrderCreated"
     />
 
+    <!-- CC Seçim Modalı -->
+    <CcContactsPickerModal
+      :show="showCcModal"
+      title="Sipariş Maili — CC Seç"
+      submit-label="Gönder"
+      :submitting="sendingEmailId !== null"
+      :header-html="ccModalHeaderHtml"
+      @close="closeCcModal"
+      @submit="onCcSubmit"
+    />
+
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { ShoppingCartIcon } from '@heroicons/vue/24/outline';
 import purchaseOrderService from '../services/purchaseOrderService';
 import CreatePurchaseOrderModal from '../components/CreatePurchaseOrderModal.vue';
+import CcContactsPickerModal from '../components/CcContactsPickerModal.vue';
 import { useNotificationStore } from '../stores/notification';
 import { ApiErrorUtils } from '../utils/apiError';
 import { formatDate } from '../utils/dateFormat';
@@ -412,14 +424,42 @@ const goToMalKabul = (id: string) => {
 };
 
 const sendingEmailId = ref<string | null>(null);
+const showCcModal = ref(false);
+const ccModalOrder = ref<any | null>(null);
 
-const sendOrderEmail = async (order: any) => {
+const ccModalHeaderHtml = computed(() => {
+  const o = ccModalOrder.value;
+  if (!o) return '';
+  const supplier = escapeHtml(o.supplierNameSnapshot || o.supplierName || o.SupplierName || '—');
+  const orderNo = escapeHtml(o.orderNumber || o.OrderNumber || '');
+  return `<div class="font-semibold text-gray-800 dark:text-gray-100">${supplier}</div>
+          <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Sipariş: ${orderNo}</div>`;
+});
+
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+}
+
+const sendOrderEmail = (order: any) => {
+  if (sendingEmailId.value !== null) return;
+  ccModalOrder.value = order;
+  showCcModal.value = true;
+};
+
+const closeCcModal = () => {
+  if (sendingEmailId.value !== null) return;
+  showCcModal.value = false;
+  ccModalOrder.value = null;
+};
+
+const onCcSubmit = async (ccEmails: string[]) => {
+  const order = ccModalOrder.value;
+  if (!order) return;
   const id = order.id || order.Id;
-  if (sendingEmailId.value === id) return;
-  if (!window.confirm(`Sipariş tedarikçiye sistem üzerinden mail ile gönderilecek. Onaylıyor musunuz?`)) return;
+  showCcModal.value = false;
   sendingEmailId.value = id;
   try {
-    const result = await purchaseOrderService.sendEmail(id);
+    const result = await purchaseOrderService.sendEmail(id, undefined, ccEmails);
     order.emailSentAt = new Date().toISOString();
     order.emailSentTo = result.sentTo;
     notificationStore.add(`Mail başarıyla gönderildi → ${result.sentTo}`, 'success');
@@ -427,6 +467,7 @@ const sendOrderEmail = async (order: any) => {
     notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Mail gönderilemedi.', 'error');
   } finally {
     sendingEmailId.value = null;
+    ccModalOrder.value = null;
   }
 };
 

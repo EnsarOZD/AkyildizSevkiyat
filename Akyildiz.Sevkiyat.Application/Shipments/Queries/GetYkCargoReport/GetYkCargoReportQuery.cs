@@ -63,7 +63,7 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetYkCargoReport
                 query = query.Where(x =>
                     (x.Project.Name != null && x.Project.Name.ToLower().Contains(s)) ||
                     (x.Project.Code != null && x.Project.Code.ToLower().Contains(s)) ||
-                    (x.IssOrder.ExternalOrderNumber != null && x.IssOrder.ExternalOrderNumber.ToLower().Contains(s)) ||
+                    (x.IssOrder != null && x.IssOrder.ExternalOrderNumber != null && x.IssOrder.ExternalOrderNumber.ToLower().Contains(s)) ||
                     (x.TalepNo != null && x.TalepNo.ToLower().Contains(s)) ||
                     (x.YkCargoKey != null && x.YkCargoKey.ToLower().Contains(s)));
             }
@@ -85,7 +85,7 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetYkCargoReport
                     Id                 = s.Id,
                     ProjectCode        = s.Project.Code,
                     ProjectName        = s.Project.Name,
-                    ExternalOrderNumber = s.IssOrder.ExternalOrderNumber,
+                    ExternalOrderNumber = s.IssOrder != null ? s.IssOrder.ExternalOrderNumber : null,
                     TalepNo            = s.TalepNo,
                     ShipmentStatus     = s.Status.ToString(),
                     DeliveryDate       = s.DeliveryDate,

@@ -1,3 +1,5 @@
+using Akyildiz.Sevkiyat.Domain.Enums;
+
 namespace Akyildiz.Sevkiyat.Application.Common.Dtos
 {
     public record ProjectDto(
@@ -15,6 +17,7 @@ namespace Akyildiz.Sevkiyat.Application.Common.Dtos
         string? Address,
         TimeOnly? DeliveryWindowStart = null,
         TimeOnly? DeliveryWindowEnd = null,
-        string? NetsisTeslimCariKodu = null
+        string? NetsisTeslimCariKodu = null,
+        ProjectSource Source = ProjectSource.Iss
     );
 }

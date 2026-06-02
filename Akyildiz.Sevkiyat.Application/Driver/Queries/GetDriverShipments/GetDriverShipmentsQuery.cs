@@ -72,12 +72,12 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Queries.GetDriverShipments
                 .Select(s => new DriverShipmentDto
                 {
                     Id                  = s.Id,
-                    TalepNo             = s.TalepNo ?? s.IssOrder.TalepNo,
+                    TalepNo             = s.TalepNo ?? (s.IssOrder != null ? s.IssOrder.TalepNo : null),
                     DeliveryDate        = s.DeliveryDate,
                     ProjectName         = s.Project.Name,
                     ProjectAddress      = s.Project.Address,
-                    TeslimAlacakKisiler = s.IssOrder.TeslimAlacakKisiler,
-                    TeslimAlacakTelefon = s.IssOrder.TeslimAlacakTelefonNumaralari,
+                    TeslimAlacakKisiler = s.IssOrder != null ? s.IssOrder.TeslimAlacakKisiler : null,
+                    TeslimAlacakTelefon = s.IssOrder != null ? s.IssOrder.TeslimAlacakTelefonNumaralari : null,
                     DriverName          = s.AssignedDriverName,
                     PlateNumber         = s.AssignedPlateNumber,
                     Status              = s.Status.ToString(),

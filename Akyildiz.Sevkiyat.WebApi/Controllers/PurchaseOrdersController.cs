@@ -141,11 +141,11 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         [HttpPost("{id}/send-email")]
         public async Task<IActionResult> SendEmail(Guid id, [FromBody] SendEmailRequest body)
         {
-            var sentTo = await _mediator.Send(new SendPurchaseOrderEmailCommand(id, body.PdfBase64));
+            var sentTo = await _mediator.Send(new SendPurchaseOrderEmailCommand(id, body.PdfBase64, body.ExtraCc));
             return Ok(new { sentTo });
         }
     }
 
-    public record SendEmailRequest(string? PdfBase64);
+    public record SendEmailRequest(string? PdfBase64, List<string>? ExtraCc = null);
     public record MarkEmailSentRequest(string? SentTo);
 }

@@ -7,7 +7,7 @@ namespace Akyildiz.Sevkiyat.Application.Common.Dtos
     public record ShipmentDto(
         int Id,
         DateTime ShipmentDate,
-        int OrderId,
+        int? OrderId,
         List<ShipmentLineDto> Lines
     );
 }

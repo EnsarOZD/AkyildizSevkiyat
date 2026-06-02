@@ -77,6 +77,14 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportShipmentToNetsis
                     $"Proje '{shipment.Project.Name}' için Netsis Cari Kodu tanımlanmamış. " +
                     "Lütfen proje kaydına NetsisCariKodu ekleyin.");
 
+            // ISS projeleri için NetsisTeslimCariKodu zorunlu — ISS akışında bu kod faturadaki
+            // teslim noktasını temsil eder. Manuel müşterilerde opsiyoneldir; boşsa NetsisCariKodu'na fallback.
+            if (shipment.Project.Source == Domain.Enums.ProjectSource.Iss
+                && string.IsNullOrWhiteSpace(shipment.Project.NetsisTeslimCariKodu))
+                throw new DomainException(
+                    $"Proje '{shipment.Project.Name}' için Netsis Teslim Cari Kodu tanımlanmamış. " +
+                    "Lütfen proje kaydına Netsis Teslim Cari Kodu ekleyin.");
+
             _logger.LogInformation(
                 "Sevkiyat #{ShipmentId} Netsis'e aktarılıyor. Proje: {ProjectName}, CariKod: {CariKod}",
                 shipment.Id, shipment.Project.Name, shipment.Project.NetsisCariKodu);
@@ -112,7 +120,9 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportShipmentToNetsis
                         $"Netsis sipariş aktarımı başarısız: {result.Mesaj ?? "Bilinmeyen hata"}");
 
                 netsisOrderNo = result.NetsisOrderNo ?? siparisRequest.BelgeNo ?? string.Empty;
-                shipment.IssOrder!.NetsisOrderNumber = netsisOrderNo;
+                // Manuel sevkiyatlarda IssOrder yok; sadece ISS sevkiyatlarında NetsisOrderNumber işle.
+                if (shipment.IssOrder != null)
+                    shipment.IssOrder.NetsisOrderNumber = netsisOrderNo;
             }
 
             // Aktarım bilgilerini kaydet
@@ -138,7 +148,7 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportShipmentToNetsis
                     NewStatus       = shipment.Status,
                     ChangedAt       = DateTime.UtcNow,
                     ChangedByUserId = _currentUserService.UserId,
-                    Description     = $"Netsis'e aktarıldı. Belge No: {shipment.IssOrder.NetsisOrderNumber}",
+                    Description     = $"Netsis'e aktarıldı. Belge No: {netsisOrderNo}",
                 });
             }
 
@@ -220,7 +230,12 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportShipmentToNetsis
             {
                 BelgeNo      = belgeNo ?? string.Empty,
                 CariKodu     = shipment.Project.NetsisCariKodu!,
-                ProjeKodu    = shipment.Project.NetsisTeslimCariKodu ?? shipment.Project.Code ?? string.Empty,
+                // ISS için: NetsisTeslimCariKodu (yukarıda zorunlu olarak validate edildi) → Project.Code fallback.
+                // Manuel için: NetsisTeslimCariKodu opsiyonel, boşsa NetsisCariKodu'na fallback
+                // (Project.Code = MM-XXXX Netsis'te anlamsız olduğu için kullanılmaz).
+                ProjeKodu    = shipment.Project.Source == Domain.Enums.ProjectSource.Manual
+                    ? (shipment.Project.NetsisTeslimCariKodu ?? shipment.Project.NetsisCariKodu ?? string.Empty)
+                    : (shipment.Project.NetsisTeslimCariKodu ?? shipment.Project.Code ?? string.Empty),
                 DepoKodu     = shipment.OperationType == Domain.Enums.OperationType.Clothing ? "2" : null,
                 TeslimTarihi = shipment.DeliveryDate,
                 // EKACK alanları

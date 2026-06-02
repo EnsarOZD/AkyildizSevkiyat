@@ -121,6 +121,11 @@ public class IssOrderImportOrchestrator : IIssOrderImportOrchestrator
                .Where(m => m.ExternalSystem == "ISS-IP")
                .ToDictionaryAsync(m => m.ExternalStockCode, m => m, cancellationToken);
 
+            // KurumKodu → NetsisCariKodu eşleşmeleri — yeni proje oluştururken otomatik doldurmak için
+            var institutionCariMap = await _context.InstitutionCariMappings
+                .Where(m => m.IsActive)
+                .ToDictionaryAsync(m => m.InstitutionCode, m => m.NetsisCariKodu, cancellationToken);
+
             var allStocks = await _context.StockMasters
                 .Where(s => s.IsActive)
                 .Select(s => new { s.Id, s.StockName })
@@ -222,11 +227,20 @@ public class IssOrderImportOrchestrator : IIssOrderImportOrchestrator
 
                     if (projectEntity == null)
                     {
+                        // KurumKodu için tanımlı eşleşme varsa NetsisCariKodu'yu otomatik doldur.
+                        // Yoksa null bırakılır; operatör sonradan elle girer veya eşleşme tanımlanınca
+                        // ApplyMappingsToProjects ile toplu güncellenir.
+                        string? autoCari = null;
+                        if (!string.IsNullOrWhiteSpace(kurumKodu)
+                            && institutionCariMap.TryGetValue(kurumKodu, out var mappedCari))
+                            autoCari = mappedCari;
+
                         projectEntity = new Domain.Entities.Project
                         {
                             Code = projectCodeToUse,
                             Name = "Bilinmiyor " + projectCodeToUse,
                             InstitutionCode = kurumKodu,
+                            NetsisCariKodu = autoCari,
                             IsActive = true,
                             LastSyncedAt = null
                         };

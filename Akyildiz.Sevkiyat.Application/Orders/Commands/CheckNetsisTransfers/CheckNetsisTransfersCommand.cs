@@ -165,7 +165,8 @@ namespace Akyildiz.Sevkiyat.Application.Orders.Commands.CheckNetsisTransfers
 
                     // Bağlı sevkiyatların Netsis aktarım bilgilerini de sıfırla
                     var toResetShipments = await _context.Shipments
-                        .Where(s => deletedInNetsisIds.Contains(s.IssOrderId)
+                        .Where(s => s.IssOrderId != null
+                                 && deletedInNetsisIds.Contains(s.IssOrderId.Value)
                                  && s.NetsisTransferredAt != null)
                         .ToListAsync(cancellationToken);
 

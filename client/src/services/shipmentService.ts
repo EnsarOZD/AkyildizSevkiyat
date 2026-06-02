@@ -184,11 +184,24 @@ export interface BulkShipmentRequest {
   issOrderIds: number[];
 }
 
+export interface CreateManualShipmentLineInput {
+  stockMasterId: number;
+  qty: number;
+}
+
+export interface CreateManualShipmentRequest {
+  customerId: number;
+  deliveryDate: string;
+  requiresWarehousePreparation: boolean;
+  lines: CreateManualShipmentLineInput[];
+  notes?: string | null;
+}
+
 const shipmentService = {
   async getAll(params: ShipmentQueryParams): Promise<PaginatedResponse<Shipment>> {
     const response = await apiClient.get('/shipments', { params });
     const data = response.data;
-    
+
     // Normalize response casing
     return {
       items: data.items || data.Items || [],
@@ -198,6 +211,11 @@ const shipmentService = {
       hasPreviousPage: data.hasPreviousPage ?? data.HasPreviousPage ?? false,
       hasNextPage: data.hasNextPage ?? data.HasNextPage ?? false,
     };
+  },
+
+  async createManual(request: CreateManualShipmentRequest): Promise<number> {
+    const response = await apiClient.post('/shipments/manual', request);
+    return response.data?.id ?? response.data?.Id;
   },
 
   async getDetail(id: number): Promise<ShipmentDetail> {

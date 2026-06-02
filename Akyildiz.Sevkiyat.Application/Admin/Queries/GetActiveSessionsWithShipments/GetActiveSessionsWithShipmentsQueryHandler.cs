@@ -59,7 +59,7 @@ namespace Akyildiz.Sevkiyat.Application.Admin.Queries.GetActiveSessionsWithShipm
                         s.Id,
                         s.Project.Name,
                         s.TalepNo,
-                        s.IssOrder.ExternalOrderNumber,
+                        s.IssOrder?.ExternalOrderNumber,
                         s.Status.ToString(),
                         s.Lines.Count))
                       .ToList()

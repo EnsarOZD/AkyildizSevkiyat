@@ -55,6 +55,12 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportClothingShipmentTo
                 throw new DomainException(
                     $"Proje '{shipment.Project.Name}' için Netsis Cari Kodu tanımlanmamış.");
 
+            // ISS projeleri için NetsisTeslimCariKodu zorunlu — manuelde opsiyonel.
+            if (shipment.Project.Source == Domain.Enums.ProjectSource.Iss
+                && string.IsNullOrWhiteSpace(shipment.Project.NetsisTeslimCariKodu))
+                throw new DomainException(
+                    $"Proje '{shipment.Project.Name}' için Netsis Teslim Cari Kodu tanımlanmamış.");
+
             // NetsisStockCode doğrulaması
             var missingNetsisCode = shipment.Lines
                 .Where(l => l.StockMaster == null || string.IsNullOrWhiteSpace(l.StockMaster.NetsisStockCode))
@@ -99,7 +105,10 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportClothingShipmentTo
             {
                 BelgeNo      = belgeNo ?? string.Empty,
                 CariKodu     = shipment.Project.NetsisCariKodu!,
-                ProjeKodu    = shipment.Project.NetsisTeslimCariKodu ?? shipment.Project.Code ?? string.Empty,
+                // Manuel için: NetsisCariKodu fallback. ISS için: NetsisTeslimCariKodu → Project.Code.
+                ProjeKodu    = shipment.Project.Source == Domain.Enums.ProjectSource.Manual
+                    ? (shipment.Project.NetsisTeslimCariKodu ?? shipment.Project.NetsisCariKodu ?? string.Empty)
+                    : (shipment.Project.NetsisTeslimCariKodu ?? shipment.Project.Code ?? string.Empty),
                 DepoKodu     = "2",
                 TeslimTarihi = shipment.DeliveryDate,
                 SiparisId                     = shipment.Id.ToString(),

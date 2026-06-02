@@ -49,8 +49,11 @@
            <tr v-for="supplier in suppliers" :key="supplier.id" class="hover:bg-gray-50 dark:hover:bg-gray-800">
              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{{ supplier.name }}</td>
              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ supplier.supplierCode || '-' }}</td>
-             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden sm:table-cell">
-               <a v-if="supplier.email" :href="'mailto:' + supplier.email" class="text-blue-600 hover:underline">{{ supplier.email }}</a>
+             <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 hidden sm:table-cell">
+               <div v-if="supplier.email" class="flex flex-wrap gap-1">
+                 <a v-for="addr in splitEmails(supplier.email)" :key="addr" :href="'mailto:' + addr"
+                    class="text-blue-600 hover:underline">{{ addr }}</a>
+               </div>
                <span v-else class="text-gray-300 dark:text-gray-600">—</span>
              </td>
              <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 hidden lg:table-cell">
@@ -88,8 +91,9 @@
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">E-posta (Opsiyonel)</label>
-          <input v-model="editForm.email" type="email" placeholder="ornek@tedarikci.com"
+          <input v-model="editForm.email" type="text" placeholder="ornek@tedarikci.com, ikinci@tedarikci.com"
             class="w-full px-3 py-2 text-sm rounded-input border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500" />
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Birden fazla adres için virgül veya noktalı virgülle ayırın.</p>
         </div>
       </div>
       <template #footer>
@@ -123,6 +127,9 @@ const editForm = reactive({ name: '', supplierCode: '', email: '' });
 
 const notificationStore = useNotificationStore();
 let searchTimeout: any = null;
+
+const splitEmails = (raw: string): string[] =>
+    raw.split(/[,;]/).map(e => e.trim()).filter(e => e.includes('@'));
 
 const fetchSuppliers = async () => {
     loading.value = true;

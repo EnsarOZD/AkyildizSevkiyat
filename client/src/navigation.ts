@@ -87,6 +87,7 @@ export const NAV_ITEMS: NavGroup[] = [
         title: 'Sipariş & Sevkiyat',
         items: [
             { label: 'ISS Entegrasyon', to: '/orders/import',    icon: SignalIcon,                roles: ['Admin', 'Accounting', 'Manager', 'Driver'] },
+            { label: 'Müşteriler',      to: '/customers',         icon: BuildingOfficeIcon,        roles: ['Admin', 'Accounting', 'Manager'] },
             { label: 'Sevkiyatlar',     to: '/shipments',         icon: ClipboardDocumentListIcon },
             { label: 'Kargo Takip',     to: '/cargo-tracking',    icon: TruckIcon },
         ],
@@ -143,6 +144,7 @@ export const NAV_ITEMS: NavGroup[] = [
         title: 'Sistem',
         items: [
             { label: 'Tanımlamalar',          to: '/settings',                   icon: Cog6ToothIcon,         roles: ['Admin', 'Manager', 'Accounting'] },
+            { label: 'Netsis Cari Eşleşmeleri', to: '/system/institution-cari-mappings', icon: ArrowsRightLeftIcon, roles: ['Admin', 'Manager', 'Accounting'] },
             { label: 'Harici Mail Adresleri', to: '/external-email-contacts',    icon: EnvelopeIcon,          roles: ['Admin', 'Manager', 'Accounting'] },
             { label: 'Kullanıcı Yönetimi',    to: '/users',                      icon: UsersIcon,             roles: ['Admin'] },
             { label: 'Şoför Puantajı',        to: '/admin/driver-sessions',      icon: DevicePhoneMobileIcon, roles: ['Admin', 'Manager', 'Accounting'] },

@@ -66,6 +66,9 @@ namespace Akyildiz.Sevkiyat.Application.Interfaces
         // External Email Contacts
         DbSet<ExternalEmailContact> ExternalEmailContacts { get; }
 
+        // ISS KurumKodu → Netsis Fatura Cari Kodu eşleşmeleri
+        DbSet<InstitutionCariMapping> InstitutionCariMappings { get; }
+
         // Vehicle Return Tracking
         DbSet<VehicleReturn> VehicleReturns { get; }
         DbSet<VehicleReturnLine> VehicleReturnLines { get; }

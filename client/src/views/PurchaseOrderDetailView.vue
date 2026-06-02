@@ -428,6 +428,17 @@
         <div style="font-size:11px;">Yetkili İmza: ___________________________</div>
       </div>
     </div>
+
+    <!-- CC Seçim Modalı -->
+    <CcContactsPickerModal
+      :show="showCcModal"
+      title="Sipariş Maili — CC Seç"
+      submit-label="Gönder"
+      :submitting="actionLoading"
+      :header-html="ccModalHeaderHtml"
+      @close="closeCcModal"
+      @submit="onCcSubmit"
+    />
   </div>
 </template>
 
@@ -438,6 +449,7 @@ import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import purchaseOrderService from '../services/purchaseOrderService';
 import { supplierService } from '../services/supplierService';
+import CcContactsPickerModal from '../components/CcContactsPickerModal.vue';
 import { useNotificationStore } from '../stores/notification';
 import { useAuthStore } from '../stores/auth';
 import { ApiErrorUtils } from '../utils/apiError';
@@ -671,11 +683,28 @@ const downloadPdf = async () => {
   }
 };
 
+const showCcModal = ref(false);
+
+const ccModalHeaderHtml = computed(() => {
+  const o = order.value;
+  if (!o) return '';
+  const supplier = escapeHtml(o.supplierNameSnapshot || '—');
+  const orderNo = escapeHtml(o.orderNumber || '');
+  const email = escapeHtml(o.supplierEmail || '');
+  return `<div class="font-semibold text-gray-800 dark:text-gray-100">${supplier}</div>
+          <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Sipariş: ${orderNo}</div>
+          ${email ? `<div class="text-xs text-gray-500 dark:text-gray-400">Alıcı: ${email}</div>` : ''}`;
+});
+
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+}
+
 const openMail = async () => {
   const o = order.value;
 
   if (!o.supplierEmail) {
-    const emailStr = window.prompt('Tedarikçi mail adresi tanımlı değil. Lütfen bir e-posta girin:');
+    const emailStr = window.prompt('Tedarikçi mail adresi tanımlı değil. Lütfen bir e-posta girin (birden fazla için virgülle ayırın):');
     if (!emailStr) return;
     if (!emailStr.includes('@')) {
       notificationStore.add('Geçerli bir e-posta adresi girmediniz.', 'warning');
@@ -701,14 +730,24 @@ const openMail = async () => {
     }
   }
 
-  if (!window.confirm(`"${o.supplierEmail}" adresine sipariş maili gönderilecek. Onaylıyor musunuz?`)) return;
+  showCcModal.value = true;
+};
 
+const closeCcModal = () => {
+  if (actionLoading.value) return;
+  showCcModal.value = false;
+};
+
+const onCcSubmit = async (ccEmails: string[]) => {
+  const o = order.value;
+  if (!o) return;
+  showCcModal.value = false;
   try {
     actionLoading.value = true;
-    await purchaseOrderService.sendEmail(o.id);
+    const result = await purchaseOrderService.sendEmail(o.id, undefined, ccEmails);
     o.emailSentAt = new Date().toISOString();
-    o.emailSentTo = o.supplierEmail;
-    notificationStore.add(`Mail başarıyla gönderildi → ${o.supplierEmail}`, 'success');
+    o.emailSentTo = result.sentTo;
+    notificationStore.add(`Mail başarıyla gönderildi → ${result.sentTo}`, 'success');
   } catch (e) {
     notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Mail gönderilemedi.', 'error');
   } finally {
