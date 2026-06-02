@@ -23,6 +23,7 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetZoneVerification
     public record VerificationShipmentDto(
         int ShipmentId,
         string? TalepNo,
+        string? OrderNumber,
         string? IrsaliyeNo,
         int ProjectId,
         string ProjectName,
@@ -43,60 +44,50 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetZoneVerification
 
         public async Task<List<VerificationShipmentDto>> Handle(GetZoneVerificationQuery request, CancellationToken cancellationToken)
         {
-            var rawLines = await _context.ShipmentLines
-                .Where(sl =>
-                    sl.Shipment.ZonePreparationId == request.ZonePreparationId &&
-                    sl.Shipment.Status != ShipmentStatus.Cancelled &&
-                    sl.Shipment.Status != ShipmentStatus.Passive &&
-                    sl.OrderedQty > 0)
-                .Select(sl => new
+            // Sevkiyat-bazlı sorgu: satırı/miktarı olmayan sevkiyatlar da listede görünsün
+            // (önceki satır-bazlı sorgu OrderedQty>0 satırı olmayan sevkiyatları gizliyordu).
+            var shipments = await _context.Shipments
+                .Where(s =>
+                    s.ZonePreparationId == request.ZonePreparationId &&
+                    s.Status != ShipmentStatus.Cancelled &&
+                    s.Status != ShipmentStatus.Passive)
+                .OrderBy(s => s.ProjectId)
+                .ThenBy(s => s.Id)
+                .Select(s => new
                 {
-                    LineId          = sl.Id,
-                    sl.OrderedQty,
-                    sl.DeliveredQty,
-                    sl.DifferenceReason,
-                    StockCode       = sl.StockMaster != null ? sl.StockMaster.StockCode : sl.StockCode,
-                    StockName       = sl.StockMaster != null ? sl.StockMaster.StockName : sl.StockName,
-                    Unit            = sl.StockMaster != null ? sl.StockMaster.Unit.ToString() : sl.Unit.ToString(),
-                    ShipmentId      = sl.Shipment.Id,
-                    TalepNo         = sl.Shipment.TalepNo,
-                    IrsaliyeNo      = sl.Shipment.IrsaliyeNo,
-                    ProjectId       = sl.Shipment.ProjectId,
-                    ProjectName     = sl.Shipment.Project.Name,
-                    ProjectCode     = sl.Shipment.Project.Code
-                })
-                .OrderBy(sl => sl.ProjectId)
-                .ThenBy(sl => sl.ShipmentId)
-                .ThenBy(sl => sl.StockName)
-                .ToListAsync(cancellationToken);
-
-            var result = rawLines
-                .GroupBy(sl => sl.ShipmentId)
-                .Select(g =>
-                {
-                    var first = g.First();
-                    return new VerificationShipmentDto(
-                        first.ShipmentId,
-                        first.TalepNo,
-                        first.IrsaliyeNo,
-                        first.ProjectId,
-                        first.ProjectName,
-                        first.ProjectCode,
-                        g.Select(l => new VerificationLineDto(
-                            l.LineId,
-                            l.StockCode,
-                            l.StockName,
-                            l.Unit,
+                    ShipmentId  = s.Id,
+                    s.TalepNo,
+                    OrderNumber = s.IssOrder != null ? s.IssOrder.ExternalOrderNumber : null,
+                    s.IrsaliyeNo,
+                    s.ProjectId,
+                    ProjectName = s.Project.Name,
+                    ProjectCode = s.Project.Code,
+                    Lines = s.Lines
+                        .Where(l => l.OrderedQty > 0)
+                        .Select(l => new VerificationLineDto(
+                            l.Id,
+                            l.StockMaster != null ? l.StockMaster.StockCode : l.StockCode,
+                            l.StockMaster != null ? l.StockMaster.StockName : l.StockName,
+                            l.StockMaster != null ? l.StockMaster.Unit.ToString() : l.Unit.ToString(),
                             l.OrderedQty,
                             l.DeliveredQty,
                             l.DeliveredQty - l.OrderedQty,
-                            l.DifferenceReason
-                        )).ToList()
-                    );
+                            l.DifferenceReason))
+                        .ToList()
                 })
-                .ToList();
+                .ToListAsync(cancellationToken);
 
-            return result;
+            return shipments
+                .Select(s => new VerificationShipmentDto(
+                    s.ShipmentId,
+                    s.TalepNo,
+                    s.OrderNumber,
+                    s.IrsaliyeNo,
+                    s.ProjectId,
+                    s.ProjectName,
+                    s.ProjectCode,
+                    s.Lines.OrderBy(l => l.StockName).ToList()))
+                .ToList();
         }
     }
 }

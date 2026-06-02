@@ -64,6 +64,7 @@ export interface VerificationLineDto {
 export interface VerificationShipmentDto {
   shipmentId: number;
   talepNo: string | null;
+  orderNumber: string | null;
   irsaliyeNo: string | null;
   projectId: number;
   projectName: string;

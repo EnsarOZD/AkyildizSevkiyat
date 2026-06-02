@@ -45,9 +45,9 @@
                       :class="getItemBorderClass(item)"
                   >
                     <div @click="toggleExpand(item)" class="p-3 flex justify-between items-start cursor-pointer active:bg-gray-50 dark:active:bg-gray-800">
-                      <div class="flex-1 pr-2">
+                      <div class="flex-1 pr-2 min-w-0">
                         <div class="text-[10px] md:text-xs font-bold text-gray-400 dark:text-gray-600 font-mono mb-0.5">{{ item.stockCode }}</div>
-                        <div class="text-sm font-semibold text-gray-800 dark:text-gray-200 leading-tight mb-1">{{ item.stockName }}</div>
+                        <div class="text-sm font-semibold text-gray-800 dark:text-gray-200 leading-tight mb-1 break-words">{{ item.stockName }}</div>
                         <div class="flex items-center gap-2">
                           <div class="inline-block px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-[10px] font-bold rounded uppercase">Birim: {{ item.unit }}</div>
                           <div v-if="needsReason(item) && !item.differenceReason" class="inline-block px-1.5 py-0.5 bg-orange-100 text-orange-700 text-[10px] font-bold rounded">⚠ Neden girilmeli</div>
@@ -106,10 +106,10 @@
                       class="bg-green-50 dark:bg-green-900/20 rounded-lg shadow-sm border border-green-200 dark:border-green-800 transition-all duration-200"
                   >
                     <div @click="toggleExpand(item)" class="p-3 flex justify-between items-start cursor-pointer active:bg-gray-50 dark:active:bg-gray-800">
-                      <div class="flex-1 pr-2">
+                      <div class="flex-1 pr-2 min-w-0">
                         <div class="text-[10px] font-bold text-gray-400 dark:text-gray-600 font-mono mb-0.5">{{ item.stockCode }}</div>
-                        <div class="text-sm font-semibold text-green-800 dark:text-green-300 leading-tight mb-1 flex items-center gap-1">
-                          <span class="text-green-600">✓</span> {{ item.stockName }}
+                        <div class="text-sm font-semibold text-green-800 dark:text-green-300 leading-tight mb-1 flex items-start gap-1 break-words">
+                          <span class="text-green-600 flex-shrink-0">✓</span> <span class="min-w-0 break-words">{{ item.stockName }}</span>
                         </div>
                         <div class="inline-block px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-[10px] font-bold rounded uppercase">Birim: {{ item.unit }}</div>
                       </div>
