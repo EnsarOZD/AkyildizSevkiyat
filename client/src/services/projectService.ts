@@ -5,6 +5,7 @@ export interface Zone {
   name: string;
   order: number;
   isOutOfCity: boolean;
+  isActive: boolean;
   description?: string;
 }
 
@@ -40,8 +41,8 @@ export interface PaginatedProjects {
 }
 
 const projectService = {
-  async getZones(): Promise<Zone[]> {
-    const response = await apiClient.get('/zones');
+  async getZones(includeInactive = false): Promise<Zone[]> {
+    const response = await apiClient.get('/zones', { params: { includeInactive } });
     return response.data || [];
   },
 
@@ -81,6 +82,10 @@ const projectService = {
 
   async deleteZone(id: number): Promise<void> {
     await apiClient.delete(`/zones/${id}`);
+  },
+
+  async setZoneActive(id: number, isActive: boolean): Promise<void> {
+    await apiClient.patch(`/zones/${id}/active`, null, { params: { isActive } });
   },
 
   async updateNetsisCariKodu(projectId: number, netsisCariKodu: string | null, netsisTeslimCariKodu?: string | null): Promise<void> {

@@ -20,23 +20,30 @@
           <tr>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Bölge Adı</th>
             <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Şehir Dışı</th>
+            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Durum</th>
             <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">İşlemler</th>
           </tr>
         </thead>
         <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-          <tr v-for="zone in zones" :key="zone.id" class="hover:bg-gray-50 dark:hover:bg-gray-800">
+          <tr v-for="zone in zones" :key="zone.id" class="hover:bg-gray-50 dark:hover:bg-gray-800" :class="{ 'opacity-50': !zone.isActive }">
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{{ zone.name }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-center">
               <span v-if="zone.isOutOfCity" class="text-xs font-bold bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 px-2 py-0.5 rounded-full">Evet</span>
               <span v-else class="text-xs text-gray-400 dark:text-gray-600">—</span>
             </td>
+            <td class="px-6 py-4 whitespace-nowrap text-center">
+              <span v-if="zone.isActive" class="text-xs font-bold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full">Aktif</span>
+              <span v-else class="text-xs font-bold bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full">Pasif</span>
+            </td>
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
               <button @click="openEdit(zone)" class="text-indigo-600 hover:text-indigo-900 mr-4">Düzenle</button>
+              <button v-if="zone.isActive" @click="toggleActive(zone, false)" class="text-amber-600 hover:text-amber-800 mr-4">Pasife Al</button>
+              <button v-else @click="toggleActive(zone, true)" class="text-green-600 hover:text-green-800 mr-4">Aktif Et</button>
               <button @click="confirmDelete(zone)" class="text-red-600 hover:text-red-900">Sil</button>
             </td>
           </tr>
           <tr v-if="zones.length === 0">
-             <td colspan="3" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">Henüz bölge tanımlanmamış.</td>
+             <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">Henüz bölge tanımlanmamış.</td>
           </tr>
         </tbody>
       </table>
@@ -63,7 +70,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import projectService from '../services/projectService';
-import { ApiErrorUtils } from '../utils/apiError';
+import { ApiErrorUtils, isApiError } from '../utils/apiError';
 import { useNotificationStore } from '../stores/notification';
 import BaseModal from '../components/BaseModal.vue';
 import BaseButton from '../components/BaseButton.vue';
@@ -75,6 +82,7 @@ interface Zone {
   id: number;
   name: string;
   isOutOfCity: boolean;
+  isActive: boolean;
 }
 
 const zones = ref<Zone[]>([]);
@@ -86,7 +94,8 @@ const currentId = ref<number | null>(null);
 
 const fetchZones = async () => {
   try {
-    zones.value = await projectService.getZones();
+    // Yönetim ekranı pasif bölgeleri de gösterir
+    zones.value = await projectService.getZones(true);
   } catch (err) {
     error.value = ApiErrorUtils.getErrorMessage(err) || 'Bölgeler yüklenirken hata oluştu.';
     notificationStore.add(error.value, 'error');
@@ -125,14 +134,51 @@ const saveZone = async () => {
     }
 };
 
+const toggleActive = async (zone: Zone, isActive: boolean) => {
+    if (isActive === false) {
+        const ok = await notificationStore.promptConfirm({
+            title: 'Bölgeyi Pasife Al',
+            message: `"${zone.name}" bölgesi pasife alınacak. Pasif bölgeler seçim listelerinde görünmez ancak geçmiş kayıtlar korunur. İstediğinizde tekrar aktif edebilirsiniz.`,
+            confirmText: 'Pasife Al', type: 'warning'
+        });
+        if (!ok) return;
+    }
+    try {
+        await projectService.setZoneActive(zone.id, isActive);
+        fetchZones();
+        notificationStore.add(isActive ? 'Bölge yeniden aktif edildi.' : 'Bölge pasife alındı.', 'success');
+    } catch (err) {
+        notificationStore.add(ApiErrorUtils.getErrorMessage(err) || 'İşlem başarısız.', 'error');
+    }
+};
+
 const confirmDelete = async (zone: Zone) => {
-    const ok = await notificationStore.promptConfirm({ title: 'Bölgeyi Sil', message: `"${zone.name}" bölgesini silmek istediğinize emin misiniz?`, confirmText: 'Sil', type: 'danger' });
+    const ok = await notificationStore.promptConfirm({ title: 'Bölgeyi Sil', message: `"${zone.name}" bölgesini kalıcı olarak silmek istediğinize emin misiniz?`, confirmText: 'Sil', type: 'danger' });
     if (!ok) return;
     try {
         await projectService.deleteZone(zone.id);
         fetchZones();
         notificationStore.add('Bölge silindi.', 'success');
     } catch (err) {
+        // Hazırlık kayıtları olan bölge silinemez (409 conflict) → pasife almayı öner
+        const isConflict = isApiError(err) && (err.type === 'conflict' || err.status === 409);
+        if (isConflict && zone.isActive) {
+            const offer = await notificationStore.promptConfirm({
+                title: 'Bölge Silinemedi',
+                message: `${ApiErrorUtils.getErrorMessage(err)}\n\nBunun yerine bölgeyi pasife almak ister misiniz?`,
+                confirmText: 'Pasife Al', type: 'warning'
+            });
+            if (offer) {
+                try {
+                    await projectService.setZoneActive(zone.id, false);
+                    fetchZones();
+                    notificationStore.add('Bölge pasife alındı.', 'success');
+                } catch (e) {
+                    notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'İşlem başarısız.', 'error');
+                }
+            }
+            return;
+        }
         notificationStore.add(ApiErrorUtils.getErrorMessage(err) || 'Silme hatası.', 'error');
     }
 };

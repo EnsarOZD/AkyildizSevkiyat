@@ -1,5 +1,6 @@
 using Akyildiz.Sevkiyat.Application.Zones.Commands.CreateZone;
 using Akyildiz.Sevkiyat.Application.Zones.Commands.DeleteZone;
+using Akyildiz.Sevkiyat.Application.Zones.Commands.SetZoneActive;
 using Akyildiz.Sevkiyat.Application.Zones.Commands.UpdateZone;
 using Akyildiz.Sevkiyat.Application.Zones.Queries.GetZones;
 using MediatR;
@@ -23,9 +24,9 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         }
 
         [HttpGet]
-        public async Task<List<ZoneDto>> Get()
+        public async Task<List<ZoneDto>> Get([FromQuery] bool includeInactive = false)
         {
-            return await _mediator.Send(new GetZonesQuery());
+            return await _mediator.Send(new GetZonesQuery(includeInactive));
         }
 
         [HttpPost]
@@ -49,6 +50,14 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         public async Task<IActionResult> Delete(int id)
         {
             await _mediator.Send(new DeleteZoneCommand(id));
+            return NoContent();
+        }
+
+        [HttpPatch("{id}/active")]
+        [Authorize(Roles = "Admin,Manager,Accounting")]
+        public async Task<IActionResult> SetActive(int id, [FromQuery] bool isActive)
+        {
+            await _mediator.Send(new SetZoneActiveCommand(id, isActive));
             return NoContent();
         }
     }

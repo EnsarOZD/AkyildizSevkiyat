@@ -1,6 +1,7 @@
 using Akyildiz.Sevkiyat.Application.Interfaces;
 using Akyildiz.Sevkiyat.Domain.Exceptions;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -24,6 +25,19 @@ namespace Akyildiz.Sevkiyat.Application.Zones.Commands.DeleteZone
             if (entity == null)
             {
                 throw new NotFoundException("Zone", request.Id);
+            }
+
+            // Bu bölgeye ait sevkiyat hazırlığı kayıtları varsa FK kısıtı silmeyi engeller
+            // (ZonePreparation -> Zone ilişkisi Restrict). Ham veritabanı hatası yerine
+            // kullanıcıya anlaşılır bir mesaj döndür.
+            var preparationCount = await _context.ZonePreparations
+                .CountAsync(zp => zp.ZoneId == request.Id, cancellationToken);
+
+            if (preparationCount > 0)
+            {
+                throw new ConflictException(
+                    $"Bu bölgeye ait {preparationCount} sevkiyat hazırlığı kaydı bulunduğu için bölge silinemez. " +
+                    "Önce bu bölgeyi kullanan hazırlıkları kapatın/kaldırın.");
             }
 
             _context.Zones.Remove(entity);
