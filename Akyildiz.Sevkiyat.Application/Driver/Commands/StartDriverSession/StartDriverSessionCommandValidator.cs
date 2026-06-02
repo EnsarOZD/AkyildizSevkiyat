@@ -23,6 +23,9 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Commands.StartDriverSession
             RuleFor(x => x.StartOdometerKm)
                 .NotNull().WithMessage("Başlangıç kilometre bilgisi zorunludur.")
                 .GreaterThan(0).When(x => x.StartOdometerKm.HasValue).WithMessage("Kilometre değeri 0'dan büyük olmalıdır.");
+
+            RuleFor(x => x.IrsaliyeNo)
+                .NotEmpty().WithMessage("Sefer başlatmak için bir irsaliye QR'ı okutmalısınız.");
         }
     }
 }

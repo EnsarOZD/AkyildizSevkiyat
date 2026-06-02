@@ -53,7 +53,17 @@ namespace Akyildiz.Sevkiyat.Application.Admin.Queries.GetDriverSessions
                     ds.EndLatitude,
                     ds.EndLongitude,
                     ds.Status,
-                    ds.Notes))
+                    ds.Notes,
+                    ds.StartOdometerKm,
+                    ds.EndOdometerKm,
+                    ds.Shipments
+                        .Select(m => new SessionShipmentDto(
+                            m.Shipment.Id,
+                            m.Shipment.Project.Name,
+                            m.Shipment.TalepNo,
+                            m.Shipment.IrsaliyeNo,
+                            m.Shipment.Status.ToString()))
+                        .ToList()))
                 .ToListAsync(cancellationToken);
 
             return new GetDriverSessionsResult(items, totalCount, request.PageNumber, request.PageSize);

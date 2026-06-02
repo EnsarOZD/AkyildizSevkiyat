@@ -32,6 +32,9 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
         public Vehicle Vehicle { get; private set; } = null!;
         public ZonePreparation? ZonePreparation { get; private set; }
 
+        /// <summary>Bu seferin taşıdığı sevkiyatların manifesti.</summary>
+        public ICollection<DriverSessionShipment> Shipments { get; private set; } = new List<DriverSessionShipment>();
+
         private DriverSession() { }
 
         public static DriverSession Create(

@@ -45,40 +45,82 @@
         <button @click="requestGps" class="mt-2 text-sm text-red-600 underline">Tekrar dene</button>
       </div>
 
-      <!-- ── STEP: scan ───────────────────────────────────── -->
-      <template v-if="step === 'scan'">
-        <!-- QR camera -->
+      <!-- ── STEP: scan (araç) + irsaliye (sefer başlat) ─────────────── -->
+      <template v-if="step === 'scan' || step === 'irsaliye'">
+        <!-- QR camera (her iki adımda da aynı kamera) -->
         <div v-if="!gpsError && permissionState !== 'denied'" class="w-full">
           <div class="relative bg-black rounded-xl overflow-hidden aspect-square w-full max-w-xs mx-auto">
             <video ref="videoEl" class="w-full h-full object-cover" autoplay playsinline muted></video>
             <canvas ref="canvasEl" class="hidden"></canvas>
             <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div class="w-48 h-48 border-2 border-white rounded-lg opacity-70"></div>
+              <div class="w-48 h-48 border-2 rounded-lg opacity-70"
+                :class="step === 'irsaliye' ? 'border-emerald-400' : 'border-white'"></div>
             </div>
             <p class="absolute bottom-3 left-0 right-0 text-center text-white text-xs opacity-75">
-              QR kodu çerçeve içine hizalayın
+              {{ step === 'irsaliye' ? 'İrsaliye QR kodunu okutun' : 'Araç QR kodunu çerçeveye hizalayın' }}
             </p>
           </div>
           <div v-if="cameraLoading" class="mt-2 text-center text-sm text-gray-500">Kamera başlatılıyor...</div>
           <div v-if="cameraError" class="mt-2 text-center text-sm text-red-500">{{ cameraError }}</div>
         </div>
 
-        <!-- Plate confirmation card -->
-        <div v-if="detectedPlate" class="w-full rounded-xl border-2 bg-white dark:bg-gray-900 p-5 text-center"
+        <!-- Plate confirmation card (yalnızca araç adımı) -->
+        <div v-if="step === 'scan' && detectedPlate" class="w-full rounded-xl border-2 bg-white dark:bg-gray-900 p-5 text-center"
           :class="mode === 'end' ? 'border-red-400 dark:border-red-600' : 'border-blue-400 dark:border-blue-600'">
           <p class="text-xs text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">Araç</p>
           <p class="text-3xl font-bold tracking-widest text-gray-900 dark:text-gray-100 mb-4">{{ detectedPlate }}</p>
           <p class="text-sm text-gray-600 dark:text-gray-400 mb-5">
-            {{ mode === 'end' ? 'Bu araç ile sefer kapatılacak. Onaylıyor musunuz?' : 'Bu araç ile sefer başlatılacak. Onaylıyor musunuz?' }}
+            {{ mode === 'end' ? 'Bu araç ile sefer kapatılacak. Onaylıyor musunuz?' : 'Bu araç ile devam edilecek. İrsaliye okutmaya geçilsin mi?' }}
           </p>
           <div class="flex gap-3">
             <button @click="resetScan" class="flex-1 py-2.5 border dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm font-medium">
               İptal
             </button>
-            <button @click="goToOdometerStep"
+            <button @click="onPlateConfirmed"
               class="flex-1 py-2.5 rounded-lg text-white text-sm font-medium"
               :class="mode === 'end' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'">
-              Onayla
+              {{ mode === 'end' ? 'Onayla' : 'Devam' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- İrsaliye adımı bilgisi -->
+        <div v-if="step === 'irsaliye'" class="w-full rounded-xl border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 p-4 text-center">
+          <p class="text-sm text-emerald-800 dark:text-emerald-300 font-medium">
+            <span class="font-bold">{{ detectedPlate }}</span> aracı için herhangi bir sevkiyatın irsaliye QR'ını okutun.
+          </p>
+          <p v-if="resolving" class="mt-2 text-xs text-emerald-700 dark:text-emerald-400">Sevkiyatlar çözümleniyor...</p>
+          <p v-if="resolveError" class="mt-2 text-xs text-red-600">{{ resolveError }}</p>
+          <button @click="resetScan" class="mt-3 text-xs text-gray-500 underline">İptal</button>
+        </div>
+      </template>
+
+      <!-- ── STEP: shipments (sefer manifesti onayı) ──────────────────── -->
+      <template v-else-if="step === 'shipments'">
+        <div class="w-full rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-4 space-y-3">
+          <div class="text-center">
+            <p class="text-base font-semibold text-gray-900 dark:text-gray-100">{{ detectedPlate }}</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+              Bu sefere <span class="font-bold text-blue-600 dark:text-blue-400">{{ resolvedShipments.length }} sevkiyat</span> dahil edilecek
+            </p>
+          </div>
+          <div class="divide-y divide-gray-100 dark:divide-gray-800 max-h-72 overflow-y-auto">
+            <div v-for="s in resolvedShipments" :key="s.id" class="py-2.5 flex justify-between items-start gap-2">
+              <div class="min-w-0">
+                <p class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{{ s.projectName }}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 font-mono">
+                  {{ s.irsaliyeNo || '—' }}<span v-if="s.talepNo"> · {{ s.talepNo }}</span>
+                </p>
+              </div>
+              <span class="text-[11px] text-gray-400 whitespace-nowrap">{{ s.lineCount }} kalem</span>
+            </div>
+          </div>
+          <div class="flex gap-3 pt-1">
+            <button @click="resetScan" class="flex-1 py-2.5 border dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800">
+              İptal
+            </button>
+            <button @click="goToOdometerStep" class="flex-1 py-2.5 rounded-lg text-white text-sm font-medium bg-blue-600 hover:bg-blue-700">
+              Onayla, devam et
             </button>
           </div>
         </div>
@@ -140,7 +182,7 @@
           </div>
 
           <div class="flex gap-3 pt-1">
-            <button @click="step = 'scan'" class="flex-1 py-2.5 border dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800">
+            <button @click="backFromOdometer" class="flex-1 py-2.5 border dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800">
               Geri
             </button>
             <button @click="submitSession" :disabled="submitting"
@@ -177,13 +219,19 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import jsQR from 'jsqr';
-import driverSessionService from '../services/driverSessionService';
+import driverSessionService, { type TripShipmentDto } from '../services/driverSessionService';
 import { ApiErrorUtils } from '../utils/apiError';
 import { useLocationPermission } from '../composables/useLocationPermission';
 
 const route = useRoute();
 const mode = ref<'start' | 'end'>(route.query.mode === 'end' ? 'end' : 'start');
-const step = ref<'scan' | 'odometer' | 'success'>('scan');
+const step = ref<'scan' | 'irsaliye' | 'shipments' | 'odometer' | 'success'>('scan');
+
+// İrsaliye adımı (yalnızca sefer başlat)
+const detectedIrsaliyeNo = ref('');
+const resolvedShipments = ref<TripShipmentDto[]>([]);
+const resolving = ref(false);
+const resolveError = ref('');
 
 const { permissionState, settingsInstructions, checkPermission } = useLocationPermission();
 
@@ -244,7 +292,7 @@ const startCamera = async () => {
 
 const startScanning = () => {
   scanInterval = setInterval(() => {
-    if (detectedQr.value || !videoEl.value || !canvasEl.value) return;
+    if (!videoEl.value || !canvasEl.value) return;
     const video = videoEl.value;
     const canvas = canvasEl.value;
     if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
@@ -255,17 +303,81 @@ const startScanning = () => {
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const code = jsQR(imageData.data, imageData.width, imageData.height);
-    if (code && code.data.startsWith('AKYILDIZ_VEHICLE_')) {
-      detectedQr.value = code.data;
-      const parts = code.data.split('_');
-      detectedPlate.value = parts.slice(3).join(' ') || code.data;
+    if (!code) return;
+
+    if (step.value === 'scan') {
+      // Araç QR'ı
+      if (detectedQr.value) return;
+      if (code.data.startsWith('AKYILDIZ_VEHICLE_')) {
+        detectedQr.value = code.data;
+        const parts = code.data.split('_');
+        detectedPlate.value = parts.slice(3).join(' ') || code.data;
+      }
+    } else if (step.value === 'irsaliye') {
+      // İrsaliye QR'ı (GİB e-İrsaliye JSON: { ..., "no":"AKI...." })
+      if (detectedIrsaliyeNo.value || resolving.value) return;
+      const no = parseIrsaliyeNo(code.data);
+      if (no) {
+        detectedIrsaliyeNo.value = no;
+        resolveShipments();
+      }
     }
   }, 200);
+};
+
+function parseIrsaliyeNo(data: string): string | null {
+  try {
+    const obj = JSON.parse(data);
+    if (obj && typeof obj.no === 'string' && obj.no.trim()) return obj.no.trim();
+  } catch { /* JSON değilse regex dene */ }
+  const m = data.match(/"no"\s*:\s*"([^"]+)"/);
+  return m?.[1]?.trim() || null;
+}
+
+const onPlateConfirmed = () => {
+  if (mode.value === 'end') {
+    goToOdometerStep();
+  } else {
+    goToIrsaliyeStep();
+  }
+};
+
+const goToIrsaliyeStep = () => {
+  if (!gpsPosition.value) {
+    gpsError.value = 'Konum bilgisi alınamadı. Lütfen GPS iznini kontrol edin.';
+    return;
+  }
+  resolveError.value = '';
+  detectedIrsaliyeNo.value = '';
+  step.value = 'irsaliye'; // kamera açık kalır, döngü artık irsaliye okutur
+};
+
+const resolveShipments = async () => {
+  resolving.value = true;
+  resolveError.value = '';
+  try {
+    const res = await driverSessionService.resolveIrsaliye({
+      qrCode: detectedQr.value,
+      irsaliyeNo: detectedIrsaliyeNo.value,
+    });
+    resolvedShipments.value = res.shipments;
+    step.value = 'shipments';
+    stopCamera();
+  } catch (e) {
+    resolveError.value = ApiErrorUtils.getErrorMessage(e) || 'Sevkiyatlar çözümlenemedi.';
+    detectedIrsaliyeNo.value = ''; // tekrar okutmaya izin ver
+  } finally {
+    resolving.value = false;
+  }
 };
 
 const resetScan = () => {
   detectedQr.value = '';
   detectedPlate.value = '';
+  detectedIrsaliyeNo.value = '';
+  resolvedShipments.value = [];
+  resolveError.value = '';
+  resolving.value = false;
   submitting.value = false;
   submitError.value = '';
   successMessage.value = '';
@@ -273,6 +385,9 @@ const resetScan = () => {
   clearOdometer();
   odometerKm.value = null;
   kmError.value = '';
+  // Kamera önceki adımlarda durdurulmuş olabilir → yeniden başlat
+  stopCamera();
+  startCamera();
 };
 
 const goToOdometerStep = () => {
@@ -282,6 +397,18 @@ const goToOdometerStep = () => {
   }
   step.value = 'odometer';
   stopCamera();
+};
+
+const backFromOdometer = () => {
+  if (mode.value === 'start') {
+    // Sefer başlat: sevkiyat onay adımına dön (kamera gerekmez)
+    step.value = 'shipments';
+  } else {
+    // Sefer bitir: araç okutmaya dön
+    step.value = 'scan';
+    stopCamera();
+    startCamera();
+  }
 };
 
 function clearOdometer() {
@@ -351,8 +478,9 @@ const submitSession = async () => {
         longitude: lng,
         startOdometerPhotoBase64: odometerBase64.value,
         startOdometerKm: odometerKm.value ?? undefined,
+        irsaliyeNo: detectedIrsaliyeNo.value,
       });
-      successMessage.value = `${res.vehiclePlateNumber} aracıyla sefer başlatıldı.`;
+      successMessage.value = `${res.vehiclePlateNumber} aracıyla sefer başlatıldı. ${res.shipmentCount} sevkiyat bağlandı.`;
     } else {
       const res = await driverSessionService.endSession({
         qrCode: detectedQr.value,
@@ -366,7 +494,13 @@ const submitSession = async () => {
     step.value = 'success';
   } catch (e) {
     submitError.value = ApiErrorUtils.getErrorMessage(e) || 'İşlem başarısız.';
+    // Baştan okutmaya dön
+    detectedQr.value = '';
+    detectedPlate.value = '';
+    detectedIrsaliyeNo.value = '';
+    resolvedShipments.value = [];
     step.value = 'scan';
+    stopCamera();
     startCamera();
   } finally {
     submitting.value = false;
@@ -389,6 +523,5 @@ onUnmounted(() => {
 
 watch(mode, () => {
   resetScan();
-  if (step.value === 'scan') startCamera();
 });
 </script>

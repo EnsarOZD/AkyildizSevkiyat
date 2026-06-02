@@ -78,6 +78,30 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Commands.StartDriverSession
             if (zoneAssignment == null && !hasDirectAssignment)
                 throw new DomainException("Bu araca atamanız bulunmuyor. Yöneticinizle iletişime geçin.");
 
+            // 4c. Bu seferin sevkiyatları (manifest adayı): zone bazlı veya direkt atama.
+            var tripShipments = zoneAssignment != null
+                ? await _context.Shipments
+                    .Where(s =>
+                        s.ZonePreparationId == zoneAssignment.ZonePreparationId &&
+                        (s.Status == ShipmentStatus.AssignedToVehicle || s.Status == ShipmentStatus.Dispatched))
+                    .ToListAsync(cancellationToken)
+                : await _context.Shipments
+                    .Where(s =>
+                        s.AssignedDriverId == driver.Id &&
+                        s.AssignedPlateNumber == vehicle.PlateNumber &&
+                        (s.Status == ShipmentStatus.AssignedToVehicle || s.Status == ShipmentStatus.Dispatched))
+                    .ToListAsync(cancellationToken);
+
+            // 4d. Okutulan irsaliyenin bu sefere ait olduğunu doğrula (yanlış yük kontrolü).
+            var scannedIrsaliye = NormalizeIrsaliye(command.IrsaliyeNo);
+            if (string.IsNullOrEmpty(scannedIrsaliye))
+                throw new DomainException("İrsaliye numarası okunamadı. Lütfen irsaliye QR'ını tekrar okutun.");
+
+            if (!tripShipments.Any(s => NormalizeIrsaliye(s.IrsaliyeNo) == scannedIrsaliye))
+                throw new DomainException(
+                    "Okuttuğunuz irsaliye bu araca atanmış sevkiyatlarla eşleşmiyor. " +
+                    "Doğru aracın/seferin irsaliyesini okuttuğunuzdan emin olun.");
+
             // 5. Kadran fotoğrafı varsa kaydet
             string? odometerPath = null;
             if (!string.IsNullOrWhiteSpace(command.StartOdometerPhotoBase64))
@@ -97,25 +121,23 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Commands.StartDriverSession
             _context.DriverSessions.Add(session);
 
             // 7. AssignedToVehicle sevkiyatları Dispatched'e al (yolda)
-            var shipmentsToDispatch = zoneAssignment != null
-                ? await _context.Shipments
-                    .Where(s =>
-                        s.ZonePreparationId == zoneAssignment.ZonePreparationId &&
-                        s.Status == ShipmentStatus.AssignedToVehicle)
-                    .ToListAsync(cancellationToken)
-                : await _context.Shipments
-                    .Where(s =>
-                        s.AssignedDriverId == driver.Id &&
-                        s.AssignedPlateNumber == vehicle.PlateNumber &&
-                        s.Status == ShipmentStatus.AssignedToVehicle)
-                    .ToListAsync(cancellationToken);
-
-            foreach (var s in shipmentsToDispatch)
+            foreach (var s in tripShipments.Where(s => s.Status == ShipmentStatus.AssignedToVehicle))
                 s.ChangeStatus(ShipmentStatus.Dispatched, driver.UserId);
+
+            // 8. Sefer-sevkiyat manifestini yaz (geçmişe dönük "bu seferde bu sevkiyatlar vardı")
+            foreach (var s in tripShipments)
+                _context.DriverSessionShipments.Add(DriverSessionShipment.Create(session.Id, s.Id));
 
             await _context.SaveChangesAsync(cancellationToken);
 
-            return new StartDriverSessionResult(session.Id, vehicle.PlateNumber, session.StartTime);
+            return new StartDriverSessionResult(session.Id, vehicle.PlateNumber, session.StartTime, tripShipments.Count);
+        }
+
+        /// <summary>İrsaliye no karşılaştırması için normalize: harf/rakam dışını at, büyük harfe çevir.</summary>
+        private static string NormalizeIrsaliye(string? raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) return string.Empty;
+            return new string(raw.Where(char.IsLetterOrDigit).ToArray()).ToUpperInvariant();
         }
     }
 }

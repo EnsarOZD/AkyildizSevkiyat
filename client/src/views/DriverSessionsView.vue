@@ -73,13 +73,14 @@
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Başlangıç</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase hidden md:table-cell">Bitiş</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase hidden md:table-cell">Süre</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Sevkiyat</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Durum</th>
               <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">İşlem</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+            <template v-for="s in sessions" :key="String(s.id)">
             <tr
-              v-for="s in sessions" :key="String(s.id)"
               :class="{
                 'bg-yellow-50 dark:bg-yellow-900/10': s.status === 0,
                 'bg-red-50 dark:bg-red-900/10': s.status === 2,
@@ -90,6 +91,15 @@
               <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ fmtDateTime(s.startTime) }}</td>
               <td class="px-4 py-3 text-gray-600 dark:text-gray-400 hidden md:table-cell">{{ s.endTime ? fmtDateTime(s.endTime) : '—' }}</td>
               <td class="px-4 py-3 text-gray-600 dark:text-gray-400 hidden md:table-cell">{{ s.totalDurationMinutes != null ? s.totalDurationMinutes + ' dk' : '—' }}</td>
+              <td class="px-4 py-3">
+                <button v-if="s.shipments && s.shipments.length"
+                  @click="toggleExpand(s.id)"
+                  class="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline">
+                  {{ s.shipments.length }} sevkiyat
+                  <span class="text-[10px]">{{ expandedId === s.id ? '▲' : '▼' }}</span>
+                </button>
+                <span v-else class="text-xs text-gray-400">—</span>
+              </td>
               <td class="px-4 py-3">
                 <span class="px-2 py-0.5 rounded-full text-xs font-semibold"
                   :class="{
@@ -108,6 +118,26 @@
                 >Zorla Kapat</button>
               </td>
             </tr>
+            <!-- Sefer manifesti (genişletilmiş) -->
+            <tr v-if="expandedId === s.id">
+              <td colspan="8" class="px-4 py-3 bg-gray-50 dark:bg-gray-800/50">
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                  Bu seferde taşınan sevkiyatlar
+                  <span v-if="s.startOdometerKm != null || s.endOdometerKm != null">
+                    · KM: {{ s.startOdometerKm ?? '—' }} → {{ s.endOdometerKm ?? '—' }}
+                  </span>
+                </p>
+                <ul class="space-y-1">
+                  <li v-for="sh in s.shipments" :key="sh.id" class="flex justify-between gap-3 text-sm">
+                    <span class="text-gray-800 dark:text-gray-200 truncate">{{ sh.projectName }}</span>
+                    <span class="font-mono text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                      {{ sh.irsaliyeNo || '—' }}<span v-if="sh.talepNo"> · {{ sh.talepNo }}</span> · {{ sh.status }}
+                    </span>
+                  </li>
+                </ul>
+              </td>
+            </tr>
+            </template>
           </tbody>
         </table>
 
@@ -175,6 +205,17 @@ interface SessionDto {
   endLongitude: number | null;
   status: 0 | 1 | 2;
   notes: string | null;
+  startOdometerKm: number | null;
+  endOdometerKm: number | null;
+  shipments: SessionShipment[];
+}
+
+interface SessionShipment {
+  id: number;
+  projectName: string;
+  talepNo: string | null;
+  irsaliyeNo: string | null;
+  status: string;
 }
 
 const today = new Date().toISOString().slice(0, 10);
@@ -188,6 +229,9 @@ const pageSize = 50;
 const loading = ref(false);
 
 const totalPages = computed(() => Math.max(1, Math.ceil(totalCount.value / pageSize)));
+
+const expandedId = ref<string | null>(null);
+const toggleExpand = (id: string) => { expandedId.value = expandedId.value === id ? null : id; };
 
 // Özet hesapları
 const todayOpenCount = computed(() =>

@@ -7,6 +7,21 @@ export interface StartSessionRequest {
   deviceFingerprint?: string;
   startOdometerPhotoBase64?: string;
   startOdometerKm?: number;
+  irsaliyeNo?: string;
+}
+
+export interface TripShipmentDto {
+  id: number;
+  projectName: string;
+  talepNo?: string | null;
+  irsaliyeNo?: string | null;
+  status: string;
+  lineCount: number;
+}
+
+export interface ResolveIrsaliyeResult {
+  vehiclePlateNumber: string;
+  shipments: TripShipmentDto[];
 }
 
 export interface EndSessionRequest {
@@ -21,6 +36,7 @@ export interface StartSessionResult {
   sessionId: string;
   vehiclePlateNumber: string;
   startTime: string;
+  shipmentCount: number;
 }
 
 export interface EndSessionResult {
@@ -41,6 +57,11 @@ export interface ActiveSessionDto {
 const driverSessionService = {
   async startSession(data: StartSessionRequest): Promise<StartSessionResult> {
     const res = await apiClient.post<StartSessionResult>('/driver/sessions/start', data);
+    return res.data;
+  },
+
+  async resolveIrsaliye(data: { qrCode: string; irsaliyeNo: string }): Promise<ResolveIrsaliyeResult> {
+    const res = await apiClient.post<ResolveIrsaliyeResult>('/driver/sessions/resolve-irsaliye', data);
     return res.data;
   },
 

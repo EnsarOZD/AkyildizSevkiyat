@@ -42,6 +42,7 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Persistence
         public DbSet<Vehicle> Vehicles { get; set; } = null!;
         public DbSet<ZonePreparationDriver> ZonePreparationDrivers { get; set; } = null!;
         public DbSet<DriverSession> DriverSessions { get; set; } = null!;
+        public DbSet<DriverSessionShipment> DriverSessionShipments { get; set; } = null!;
         public DbSet<StockTransaction> StockTransactions { get; set; } = null!;
 
         // NEW MODULE: Purchase Order & Goods Receipt
@@ -594,6 +595,25 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Persistence
                     .IsUnique()
                     .HasDatabaseName("IX_DriverSessions_Driver_OneOpen")
                     .HasFilter("[Status] = 0");
+            });
+
+            // DriverSessionShipment — sefer ↔ sevkiyat manifesti
+            modelBuilder.Entity<DriverSessionShipment>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.HasOne(e => e.DriverSession)
+                    .WithMany(s => s.Shipments)
+                    .HasForeignKey(e => e.DriverSessionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Shipment)
+                    .WithMany()
+                    .HasForeignKey(e => e.ShipmentId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(e => new { e.DriverSessionId, e.ShipmentId }).IsUnique();
+                entity.HasIndex(e => e.ShipmentId);
             });
 
             // ZonePreparationDriver

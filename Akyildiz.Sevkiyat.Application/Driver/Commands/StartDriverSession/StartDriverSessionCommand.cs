@@ -8,12 +8,15 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Commands.StartDriverSession
         double Longitude,
         string? DeviceFingerprint = null,
         string? StartOdometerPhotoBase64 = null,
-        int? StartOdometerKm = null
+        int? StartOdometerKm = null,
+        // Sefere dahil sevkiyatları çözmek için okutulan irsaliye numarası (zorunlu)
+        string? IrsaliyeNo = null
     ) : IRequest<StartDriverSessionResult>;
 
     public record StartDriverSessionResult(
         Guid SessionId,
         string VehiclePlateNumber,
-        DateTime StartTime
+        DateTime StartTime,
+        int ShipmentCount
     );
 }

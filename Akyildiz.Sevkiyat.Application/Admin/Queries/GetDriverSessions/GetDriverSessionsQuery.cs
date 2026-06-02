@@ -34,6 +34,18 @@ namespace Akyildiz.Sevkiyat.Application.Admin.Queries.GetDriverSessions
         double? EndLatitude,
         double? EndLongitude,
         DriverSessionStatus Status,
-        string? Notes
+        string? Notes,
+        int? StartOdometerKm,
+        int? EndOdometerKm,
+        List<SessionShipmentDto> Shipments
+    );
+
+    /// <summary>Seferin manifestindeki tek sevkiyat (bu seferde taşınan).</summary>
+    public record SessionShipmentDto(
+        int Id,
+        string ProjectName,
+        string? TalepNo,
+        string? IrsaliyeNo,
+        string Status
     );
 }

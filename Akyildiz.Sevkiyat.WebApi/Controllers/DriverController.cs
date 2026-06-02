@@ -4,6 +4,7 @@ using Akyildiz.Sevkiyat.Application.Driver.Commands.UpdateRouteOrder;
 using Akyildiz.Sevkiyat.Application.Driver.Queries.GetActiveDriverSession;
 using Akyildiz.Sevkiyat.Application.Driver.Queries.GetDriverRoute;
 using Akyildiz.Sevkiyat.Application.Driver.Queries.GetDriverShipments;
+using Akyildiz.Sevkiyat.Application.Driver.Queries.ResolveIrsaliyeShipments;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -50,6 +51,19 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             CancellationToken cancellationToken)
         {
             return Ok(await _mediator.Send(command, cancellationToken));
+        }
+
+        /// <summary>
+        /// Sefer başlatmadan önce okutulan irsaliye QR'ından (no) o seferin sevkiyatlarını
+        /// çözer — şoför listeyi görüp onaylar. Salt-okunur, durum değiştirmez.
+        /// </summary>
+        [HttpPost("sessions/resolve-irsaliye")]
+        [Authorize(Roles = "Driver")]
+        public async Task<ActionResult<ResolveIrsaliyeShipmentsResult>> ResolveIrsaliye(
+            [FromBody] ResolveIrsaliyeShipmentsQuery query,
+            CancellationToken cancellationToken)
+        {
+            return Ok(await _mediator.Send(query, cancellationToken));
         }
 
         [HttpPost("sessions/end")]
