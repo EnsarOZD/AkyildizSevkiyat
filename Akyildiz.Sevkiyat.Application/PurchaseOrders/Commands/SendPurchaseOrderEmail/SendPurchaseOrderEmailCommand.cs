@@ -9,7 +9,10 @@ using Microsoft.Extensions.Options;
 
 namespace Akyildiz.Sevkiyat.Application.PurchaseOrders.Commands.SendPurchaseOrderEmail
 {
-    public record SendPurchaseOrderEmailCommand(Guid Id, string? PdfBase64) : IRequest<string>, IRequireRoles
+    public record SendPurchaseOrderEmailCommand(
+        Guid Id,
+        string? PdfBase64,
+        List<string>? ExtraCc = null) : IRequest<string>, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles => new[] { "Admin", "Accounting", "Manager" };
     }
@@ -57,7 +60,11 @@ namespace Akyildiz.Sevkiyat.Application.PurchaseOrders.Commands.SendPurchaseOrde
             if (string.IsNullOrWhiteSpace(order.Supplier.Email))
                 throw new DomainException("Tedarikçinin e-posta adresi tanımlı değil. Lütfen tedarikçi kaydını güncelleyin.");
 
-            var recipientEmail = order.Supplier.Email.Trim();
+            var recipients = ParseEmails(order.Supplier.Email);
+            if (recipients.Count == 0)
+                throw new DomainException("Tedarikçide geçerli bir e-posta adresi bulunamadı.");
+
+            var recipientEmail = string.Join(", ", recipients);
             var supplierName   = System.Net.WebUtility.HtmlEncode(order.SupplierNameSnapshot);
             var orderNumber    = System.Net.WebUtility.HtmlEncode(order.OrderNumber);
             var terminStr      = order.ExpectedDeliveryDate.HasValue
@@ -71,6 +78,11 @@ namespace Akyildiz.Sevkiyat.Application.PurchaseOrders.Commands.SendPurchaseOrde
 
             var sysSettings = await _context.SystemSettings.FindAsync(new object[] { 1 }, cancellationToken);
             var ccAddresses  = ParseEmails(sysSettings?.ProcurementEmailCc);
+            if (request.ExtraCc != null)
+                ccAddresses = ccAddresses
+                    .Union(request.ExtraCc.Where(e => !string.IsNullOrWhiteSpace(e) && e.Contains('@')).Select(e => e.Trim()))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
 
             var subject = $"Satın Alma Siparişi — {order.OrderNumber}";
 
@@ -93,6 +105,21 @@ namespace Akyildiz.Sevkiyat.Application.PurchaseOrders.Commands.SendPurchaseOrde
                     """);
             }
             var linesHtml = linesRows.ToString();
+
+            // Sipariş notu (varsa) — mail içeriğine ekle
+            var noteHtml = "";
+            if (!string.IsNullOrWhiteSpace(order.Note))
+            {
+                var noteText = System.Net.WebUtility.HtmlEncode(order.Note)
+                    .Replace("\r\n", "\n")
+                    .Replace("\n", "<br/>");
+                noteHtml = $"""
+                    <div style="margin:0 0 20px;padding:12px 16px;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;">
+                      <p style="margin:0 0 4px;font-weight:600;color:#92400e;font-size:12px;text-transform:uppercase;">Not</p>
+                      <p style="margin:0;color:#78350f;font-size:13px;line-height:1.6;">{noteText}</p>
+                    </div>
+                    """;
+            }
 
             var htmlBody = $"""
                 <html>
@@ -140,6 +167,8 @@ namespace Akyildiz.Sevkiyat.Application.PurchaseOrders.Commands.SendPurchaseOrde
                           <strong>Termin tarihi:</strong> {terminStr}
                         </p>
 
+                        {noteHtml}
+
                         <p style="margin:0;color:#6b7280;font-size:13px;">Saygılarımızla,<br/><strong>Akyıldız Lojistik Satınalma Departmanı</strong></p>
                       </td></tr>
 
@@ -174,7 +203,7 @@ namespace Akyildiz.Sevkiyat.Application.PurchaseOrders.Commands.SendPurchaseOrde
             }
 
             await _emailService.SendAsync(
-                new[] { recipientEmail },
+                recipients,
                 subject,
                 htmlBody,
                 fromAddress,
@@ -187,8 +216,8 @@ namespace Akyildiz.Sevkiyat.Application.PurchaseOrders.Commands.SendPurchaseOrde
             await _context.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation(
-                "Satınalma siparişi #{OrderNumber} maili {Email} adresine gönderildi.",
-                order.OrderNumber, recipientEmail);
+                "Satınalma siparişi #{OrderNumber} maili {Count} adrese gönderildi: {Email}",
+                order.OrderNumber, recipients.Count, recipientEmail);
 
             return recipientEmail;
         }
