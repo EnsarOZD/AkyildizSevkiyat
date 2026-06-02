@@ -55,14 +55,21 @@
                         </div>
                       </div>
                       <div class="flex flex-col items-end gap-1">
+                        <div class="text-right leading-none">
+                          <span class="block text-[10px] font-bold uppercase text-gray-400 dark:text-gray-500">Sipariş</span>
+                          <span class="block text-3xl font-black text-indigo-600 dark:text-indigo-400 leading-tight">{{ item.totalQty }}</span>
+                        </div>
                         <div class="flex items-baseline gap-1" :class="getQtyColorClass(item)">
-                          <span class="text-2xl font-bold tracking-tight">{{ item.localPickedQty }}</span>
-                          <span class="text-xs font-medium text-gray-400 dark:text-gray-600">/ {{ item.totalQty }}</span>
+                          <span class="text-[10px] font-bold uppercase text-gray-400 dark:text-gray-500">Toplanan</span>
+                          <span class="text-lg font-bold tracking-tight">{{ item.localPickedQty }}</span>
                         </div>
                         <div class="flex items-center gap-1 mt-1" @click.stop>
                           <button @click="changeQty(item, -1)" class="w-12 h-12 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 active:bg-gray-200 dark:active:bg-gray-700 font-bold text-2xl touch-manipulation">-</button>
                           <button @click="changeQty(item, 1)" class="w-12 h-12 flex items-center justify-center rounded-xl bg-blue-50 text-blue-600 active:bg-blue-100 font-bold text-2xl touch-manipulation border border-blue-200 shadow-sm">+</button>
                         </div>
+                        <button @click.stop="setQty(item, item.totalQty)" class="mt-1 w-full py-2 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-600 dark:text-green-400 font-bold text-xs active:bg-green-100 touch-manipulation">
+                          Tam: {{ item.totalQty }}
+                        </button>
                       </div>
                     </div>
                     <div v-if="item.isExpanded" class="bg-gray-50 dark:bg-gray-800 p-3 pt-0 border-t border-dashed border-gray-200 dark:border-gray-700 animate-fade-in-down">
@@ -82,7 +89,7 @@
                           <span v-if="needsReason(item)" class="text-red-500">*</span>
                           <span class="text-gray-400 font-normal normal-case">{{ isOverQty(item) ? '(Fazla toplama — opsiyonel)' : '(Miktar sipariş miktarından farklı)' }}</span>
                         </label>
-                        <input type="text" v-model="item.differenceReason" placeholder="Neden farklı? (ör: Stokta yok, Fazla geldi...)" class="w-full h-10 border rounded px-3 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none" :class="item.differenceReason ? 'border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100' : 'border-orange-300 bg-orange-50 dark:bg-orange-950 dark:border-orange-700'">
+                        <DifferenceReasonInput v-model="item.differenceReason" :default-reason="isOverQty(item) ? 'Fazla geldi' : 'Stokta yok'" />
                       </div>
                       <div class="mt-3">
                         <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Farklı Ürün (Opsiyonel)</label>
@@ -107,14 +114,21 @@
                         <div class="inline-block px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-[10px] font-bold rounded uppercase">Birim: {{ item.unit }}</div>
                       </div>
                       <div class="flex flex-col items-end gap-1">
+                        <div class="text-right leading-none">
+                          <span class="block text-[10px] font-bold uppercase text-gray-400 dark:text-gray-500">Sipariş</span>
+                          <span class="block text-3xl font-black text-indigo-600 dark:text-indigo-400 leading-tight">{{ item.totalQty }}</span>
+                        </div>
                         <div class="flex items-baseline gap-1 text-green-600 dark:text-green-400">
-                          <span class="text-2xl font-bold tracking-tight">{{ item.localPickedQty }}</span>
-                          <span class="text-xs font-medium text-gray-400 dark:text-gray-600">/ {{ item.totalQty }}</span>
+                          <span class="text-[10px] font-bold uppercase text-gray-400 dark:text-gray-500">Toplanan</span>
+                          <span class="text-lg font-bold tracking-tight">{{ item.localPickedQty }}</span>
                         </div>
                         <div class="flex items-center gap-1 mt-1" @click.stop>
                           <button @click="changeQty(item, -1)" class="w-12 h-12 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 active:bg-gray-200 dark:active:bg-gray-700 font-bold text-2xl touch-manipulation">-</button>
                           <button @click="changeQty(item, 1)" class="w-12 h-12 flex items-center justify-center rounded-xl bg-blue-50 text-blue-600 active:bg-blue-100 font-bold text-2xl touch-manipulation border border-blue-200 shadow-sm">+</button>
                         </div>
+                        <button @click.stop="setQty(item, item.totalQty)" class="mt-1 w-full py-2 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-600 dark:text-green-400 font-bold text-xs active:bg-green-100 touch-manipulation">
+                          Tam: {{ item.totalQty }}
+                        </button>
                       </div>
                     </div>
                     <div v-if="item.isExpanded" class="bg-gray-50 dark:bg-gray-800 p-3 pt-0 border-t border-dashed border-gray-200 dark:border-gray-700 animate-fade-in-down">
@@ -130,7 +144,7 @@
                       </div>
                       <div v-if="needsReason(item) || isOverQty(item)" class="mt-3">
                         <label class="block text-[10px] font-bold text-orange-500 uppercase tracking-wider mb-1">Fark Nedeni</label>
-                        <input type="text" v-model="item.differenceReason" placeholder="Neden farklı?" class="w-full h-10 border rounded px-3 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none" :class="item.differenceReason ? 'border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100' : 'border-orange-300 bg-orange-50 dark:bg-orange-950 dark:border-orange-700'">
+                        <DifferenceReasonInput v-model="item.differenceReason" :default-reason="isOverQty(item) ? 'Fazla geldi' : 'Stokta yok'" />
                       </div>
                       <div class="mt-3">
                         <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Farklı Ürün (Opsiyonel)</label>
@@ -201,11 +215,12 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import warehouseService from '../services/warehouseService';
+import warehouseService, { cleanDifferenceReason } from '../services/warehouseService';
 import { ApiErrorUtils } from '../utils/apiError';
 import { useNotificationStore } from '../stores/notification';
 import { useSoundFeedback } from '../composables/useSoundFeedback';
 import StockCombobox from './StockCombobox.vue';
+import DifferenceReasonInput from './DifferenceReasonInput.vue';
 
 const props = defineProps<{
     zpProjectId: number;
@@ -230,6 +245,7 @@ interface MicroItem {
     localPickedQty: number;
     localStockId: number | null;
     differenceReason: string;
+    originalReason: string;
     isExpanded: boolean;
 }
 
@@ -249,9 +265,12 @@ const showForceDialog = ref(false);
 const forceReason = ref('');
 const zeroQtyCount = computed(() => items.value.filter(i => i.localPickedQty === 0).length);
 
-const hasDirtyItems = computed(() => {
-    return items.value.some(i => i.localPickedQty !== i.originalPickedQty || (i.localStockId && i.localStockId > 0));
-});
+const isItemDirty = (i: MicroItem): boolean =>
+    i.localPickedQty !== i.originalPickedQty ||
+    !!(i.localStockId && i.localStockId > 0) ||
+    i.differenceReason.trim() !== i.originalReason.trim();
+
+const hasDirtyItems = computed(() => items.value.some(isItemDirty));
 
 const categorizedItems = computed((): MicroCategoryGroup[] => {
     const map = new Map<string, MicroItem[]>();
@@ -275,10 +294,7 @@ const isOverQty = (item: MicroItem) => item.localPickedQty > item.totalQty;
 
 // True when a dirty item has a qty mismatch but no reason filled in
 const hasUnsatisfiedReasons = computed(() => {
-    return items.value.some(i => {
-        const isDirty = i.localPickedQty !== i.originalPickedQty || (i.localStockId && i.localStockId > 0);
-        return isDirty && needsReason(i) && !i.differenceReason.trim();
-    });
+    return items.value.some(i => isItemDirty(i) && needsReason(i) && !i.differenceReason.trim());
 });
 
 const getItemBorderClass = (item: MicroItem) => {
@@ -305,7 +321,8 @@ const fetchItems = async () => {
 
             localPickedQty: d.pickedQty || 0,
             localStockId: null,
-            differenceReason: '',
+            differenceReason: cleanDifferenceReason(d.differenceReason),
+            originalReason: cleanDifferenceReason(d.differenceReason),
             isExpanded: false
         }));
     } catch (e) {
@@ -347,10 +364,7 @@ const getQtyColorClass = (item: MicroItem) => {
 
 // Auto-expand items that need a reason but don't have one, then return false if blocked
 const validateAndExpandMissingReasons = (): boolean => {
-    const blocked = items.value.filter(i => {
-        const isDirty = i.localPickedQty !== i.originalPickedQty || (i.localStockId && i.localStockId > 0);
-        return isDirty && needsReason(i) && !i.differenceReason.trim();
-    });
+    const blocked = items.value.filter(i => isItemDirty(i) && needsReason(i) && !i.differenceReason.trim());
     if (blocked.length > 0) {
         blocked.forEach(i => { i.isExpanded = true; });
         notificationStore.add(`${blocked.length} kalem için fark nedeni girilmeli.`, 'error');
@@ -363,10 +377,7 @@ const validateAndExpandMissingReasons = (): boolean => {
 const saveChanges = async (isCompleteFlow: boolean = false) => {
     if (!validateAndExpandMissingReasons()) return;
 
-    const dirtyItems = items.value.filter(i =>
-        i.localPickedQty !== i.originalPickedQty ||
-        (i.localStockId && i.localStockId > 0)
-    );
+    const dirtyItems = items.value.filter(isItemDirty);
 
     if (dirtyItems.length === 0 && !isCompleteFlow) return;
 
@@ -379,7 +390,7 @@ const saveChanges = async (isCompleteFlow: boolean = false) => {
                     shipmentLineId: i.shipmentLineId,
                     deliveredQty: i.localPickedQty,
                     newLocalStockId: i.localStockId,
-                    differenceReason: needsReason(i) ? i.differenceReason.trim() || undefined : undefined
+                    differenceReason: i.localPickedQty !== i.totalQty ? (i.differenceReason.trim() || undefined) : undefined
                 }))
             };
 
@@ -387,6 +398,7 @@ const saveChanges = async (isCompleteFlow: boolean = false) => {
 
             dirtyItems.forEach(i => {
                 i.originalPickedQty = i.localPickedQty;
+                i.originalReason = i.differenceReason;
                 i.localStockId = null;
             });
             if (!isCompleteFlow) {

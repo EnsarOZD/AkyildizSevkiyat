@@ -154,13 +154,11 @@
               <!-- Difference reason -->
               <div v-if="needsReason(item)" class="px-3 pb-3"
                    :class="{ 'pt-2 border-t border-dashed border-gray-200 dark:border-gray-700': !expandedSubstitute.has(groupKey(item)) }">
-                <input
-                  :value="getReasonForItem(item)"
-                  @input="setReasonForItem(item, ($event.target as HTMLInputElement).value)"
-                  type="text"
-                  placeholder="Fark nedeni (zorunlu)..."
-                  class="w-full text-xs border rounded px-2 py-1.5 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-1 focus:ring-orange-400 outline-none"
-                  :class="!getReasonForItem(item) ? 'border-orange-400 bg-orange-50 dark:bg-orange-900/10' : 'border-gray-300'"
+                <label class="block text-[10px] font-bold text-orange-500 dark:text-orange-400 uppercase tracking-wide mb-1">Fark Nedeni</label>
+                <DifferenceReasonInput
+                  :model-value="getReasonForItem(item)"
+                  @update:model-value="setReasonForItem(item, $event)"
+                  :default-reason="getPickedQty(item) > item.totalOrderedQty ? 'Fazla geldi' : 'Stokta yok'"
                 />
               </div>
             </div>
@@ -192,7 +190,7 @@
             : 'bg-amber-500 hover:bg-amber-600 text-white shadow-sm'"
         >
           <span v-if="completing" class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
-          <span>{{ completing ? 'İşleniyor...' : allCompleted ? '✓ Gıda Hazırlığını Tamamla' : `Eksikle Tamamla (${unfilledCount} kalem)` }}</span>
+          <span>{{ completing ? 'İşleniyor...' : allCompleted ? '✓ Gıda Hazırlığını Tamamla' : `Eksikle Tamamla (${unfilledCount} satır)` }}</span>
         </button>
       </div>
     </div>
@@ -215,11 +213,12 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import warehouseService, { type FoodPickItemDto } from '../services/warehouseService';
+import warehouseService, { cleanDifferenceReason, type FoodPickItemDto } from '../services/warehouseService';
 import { useNotificationStore } from '../stores/notification';
 import { ApiErrorUtils } from '../utils/apiError';
 import { useSoundFeedback } from '../composables/useSoundFeedback';
 import StockCombobox from './StockCombobox.vue';
+import DifferenceReasonInput from './DifferenceReasonInput.vue';
 import MacroAllocationModal from './MacroAllocationModal.vue';
 
 const props = defineProps<{
@@ -375,7 +374,10 @@ const completedCount = computed(() =>
 );
 const allCompleted = computed(() => completedCount.value === items.value.length && items.value.length > 0);
 const progress = computed(() => items.value.length ? Math.round(completedCount.value / items.value.length * 100) : 0);
-const unfilledCount = computed(() => items.value.filter(i => getPickedQty(i) === 0).length);
+// Backend ile aynı seviyede: shipment satırı bazında DeliveredQty=0 olan satır sayısı.
+const unfilledCount = computed(() =>
+  items.value.reduce((sum, i) => sum + i.lines.filter(l => l.pickedQty === 0).length, 0)
+);
 const isBusy = computed(() => saving.value || completing.value);
 
 const canComplete = computed(() => {
@@ -421,6 +423,8 @@ const loadItems = async () => {
       if (item.totalPickedQty > 0) {
         pickedQtyMap.value[groupKey(item)] = item.totalPickedQty;
       }
+      const savedReason = cleanDifferenceReason(item.differenceReason);
+      if (savedReason) reasonMap.value[groupKey(item)] = savedReason;
     }
   } catch (e) {
     notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Gıda listesi yüklenemedi.', 'error');
@@ -479,10 +483,20 @@ const saveProgress = async () => {
 };
 
 const doMarkReady = async () => {
-  const unfilled = items.value.filter(i => getPickedQty(i) === 0);
-  if (unfilled.length > 0) {
+  // Backend tek tek shipment satırı seviyesinde DeliveredQty=0 kontrolü yapıyor;
+  // grup toplamı dolu olsa bile multi-line bir grupta tek satır 0 kalmışsa
+  // ForceComplete gönderilmezse "henüz toplanmadı" hatası atıyor.
+  const unfilledLineCount = items.value.reduce(
+    (sum, item) => sum + item.lines.filter(l => l.pickedQty === 0).length,
+    0
+  );
+  const unfilledItemNames = items.value
+    .filter(i => i.lines.some(l => l.pickedQty === 0))
+    .map(i => i.stockName);
+
+  if (unfilledLineCount > 0) {
     const ok = confirm(
-      `${unfilled.length} gıda kalemi henüz toplanmadı:\n${unfilled.slice(0, 5).map(i => '• ' + i.stockName).join('\n')}${unfilled.length > 5 ? '\n…' : ''}\n\nYine de tamamlamak istiyor musunuz?`
+      `${unfilledLineCount} gıda satırı henüz toplanmadı:\n${unfilledItemNames.slice(0, 5).map(n => '• ' + n).join('\n')}${unfilledItemNames.length > 5 ? '\n…' : ''}\n\nYine de tamamlamak istiyor musunuz?`
     );
     if (!ok) return;
   }
@@ -492,8 +506,8 @@ const doMarkReady = async () => {
     const result = await warehouseService.markFoodPreparationReady({
       zoneId: props.zoneId,
       deliveryDate: props.deliveryDate,
-      forceComplete: unfilled.length > 0,
-      forceReason: unfilled.length > 0 ? 'Depo tarafından onaylandı.' : undefined,
+      forceComplete: unfilledLineCount > 0,
+      forceReason: unfilledLineCount > 0 ? 'Depo tarafından onaylandı.' : undefined,
     });
     notificationStore.add(
       `Gıda hazırlığı tamamlandı. ${result.advancedBatchCount} batch irsaliye aşamasına geçirildi.`,

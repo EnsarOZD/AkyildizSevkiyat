@@ -111,14 +111,21 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.UpdateFoodPickLines
                         qtyToDistribute = 0;
                     }
 
-                    if (line.DeliveredQty != qtyForLine)
+                    var reason = qtyForLine != line.OrderedQty
+                        ? (update.DifferenceReason ?? "Gıda Toplu Toplama")
+                        : null;
+
+                    var qtyChanged = line.DeliveredQty != qtyForLine;
+                    // Miktar aynı kalsa bile neden değiştiyse kaydet.
+                    var reasonChanged = reason != null && line.DifferenceReason != reason;
+
+                    if (qtyChanged || reasonChanged)
                     {
-                        var reason = qtyForLine != line.OrderedQty
-                            ? (update.DifferenceReason ?? "Gıda Toplu Toplama")
-                            : null;
-
                         line.SetDeliveredQty(qtyForLine, reason, "Gıda Hazırlık Otomatik Dağıtım");
+                    }
 
+                    if (qtyChanged)
+                    {
                         _context.ShipmentHistories.Add(new Domain.Entities.ShipmentHistory
                         {
                             ShipmentId      = line.ShipmentId,

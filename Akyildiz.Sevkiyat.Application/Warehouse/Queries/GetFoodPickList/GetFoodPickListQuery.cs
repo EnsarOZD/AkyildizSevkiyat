@@ -33,7 +33,8 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetFoodPickList
         bool IsCompleted,
         int PickingOrder,
         /// <summary>Toplam ağırlık (kg). WeightKg tanımlı değilse null.</summary>
-        decimal? TotalWeightKg
+        decimal? TotalWeightKg,
+        string? DifferenceReason
     );
 
     /// <summary>
@@ -82,6 +83,7 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetFoodPickList
                     sl.Id,
                     sl.OrderedQty,
                     sl.DeliveredQty,
+                    sl.DifferenceReason,
                     sl.StockCode,
                     sl.StockName,
                     sl.Unit,
@@ -121,7 +123,7 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetFoodPickList
                 decimal OrderedQty, decimal PickedQty,
                 string StockCode, string StockName, string Unit,
                 int? LocalStockId, string GroupKey,
-                int PickingOrder, decimal? WeightKg)>();
+                int PickingOrder, decimal? WeightKg, string? DifferenceReason)>();
 
             foreach (var line in lines)
             {
@@ -183,7 +185,8 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetFoodPickList
                     localStockId,
                     groupKey,
                     pickingOrder,
-                    weightKg
+                    weightKg,
+                    line.DifferenceReason
                 ));
             }
 
@@ -212,7 +215,8 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetFoodPickList
                         BatchCount:     g.Select(x => x.ZpId).Distinct().Count(),
                         IsCompleted:    totalPicked >= totalOrdered && totalPicked > 0,
                         PickingOrder:   first.PickingOrder,
-                        TotalWeightKg:  totalWeight
+                        TotalWeightKg:  totalWeight,
+                        DifferenceReason: g.Select(x => x.DifferenceReason).FirstOrDefault(r => !string.IsNullOrWhiteSpace(r))
                     );
                 })
                 .OrderBy(r => r.PickingOrder)

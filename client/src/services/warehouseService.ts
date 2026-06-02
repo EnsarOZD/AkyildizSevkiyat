@@ -1,5 +1,13 @@
 import apiClient from './apiClient';
 
+/**
+ * Eski kayıtlarda backend bazı satırlara otomatik (sistem) fark nedeni yazmış olabilir.
+ * Bu değerleri kullanıcıya gösterme — boş kabul et ki ekranda anlamsız teknik metin çıkmasın.
+ */
+const SYSTEM_REASON_TOKENS = ['BulkEdit', 'Macro Dağıtım', 'Gıda Toplu Toplama', 'Gıda Dağıtım'];
+export const cleanDifferenceReason = (r: string | null | undefined): string =>
+  r && !SYSTEM_REASON_TOKENS.includes(r.trim()) ? r : '';
+
 export interface PreDispatchSummaryDto {
   zonePreparationId: number;
   totalShipments: number;
@@ -101,6 +109,7 @@ export interface OutOfCityPickItemDto {
   isCompleted: boolean;
   category: string | null;
   pickingType: string | null;
+  differenceReason: string | null;
 }
 
 export interface OutOfCityLineUpdateDto {
@@ -133,6 +142,7 @@ export interface MicroPickItemDto {
   isCompleted: boolean;
   category: string | null;
   pickingOrder: number;
+  differenceReason: string | null;
 }
 
 export interface MacroSubLineDto {
@@ -153,6 +163,7 @@ export interface MacroPickItemDto {
   isCompleted: boolean;
   category: string | null;
   pickingOrder: number;
+  differenceReason: string | null;
 }
 
 // ── Gıda Hazırlık ────────────────────────────────────────────────────────────
@@ -179,6 +190,7 @@ export interface FoodPickItemDto {
   isCompleted: boolean;
   pickingOrder: number;
   totalWeightKg: number | null;
+  differenceReason: string | null;
 }
 
 export interface FoodPickLineUpdateDto {
@@ -422,7 +434,7 @@ const warehouseService = {
     return response.data;
   },
 
-  async saveOutOfCityProgress(data: { zonePreparationId: number; projectId?: number | null; lines: { shipmentLineId: number; deliveredQty: number; newLocalStockId?: number | null }[] }): Promise<void> {
+  async saveOutOfCityProgress(data: { zonePreparationId: number; projectId?: number | null; lines: { shipmentLineId: number; deliveredQty: number; newLocalStockId?: number | null; differenceReason?: string | null }[] }): Promise<void> {
     await apiClient.post('/warehouse/save-out-of-city-progress', data);
   },
 

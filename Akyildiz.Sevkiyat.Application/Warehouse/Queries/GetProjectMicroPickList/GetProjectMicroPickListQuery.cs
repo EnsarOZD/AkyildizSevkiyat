@@ -18,7 +18,8 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetProjectMicroPickLis
         decimal PickedQty,
         bool IsCompleted,
         string Category,
-        int PickingOrder
+        int PickingOrder,
+        string? DifferenceReason
     );
 
     public record GetProjectMicroPickListQuery(int ZonePreparationProjectId) : IRequest<List<MicroPickItemDto>>;
@@ -66,6 +67,7 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetProjectMicroPickLis
                     sl.Id,
                     sl.OrderedQty,
                     sl.DeliveredQty,
+                    sl.DifferenceReason,
                     sl.StockCode,
                     sl.StockName,
                     sl.Unit,
@@ -139,7 +141,8 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetProjectMicroPickLis
                         line.DeliveredQty,
                         isCompleted,
                         category,
-                        pickingOrder
+                        pickingOrder,
+                        line.DifferenceReason
                     ));
                 }
             }

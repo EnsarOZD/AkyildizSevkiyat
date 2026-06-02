@@ -21,7 +21,8 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetZoneMacroPickList
         int ProjectCount,
         bool IsCompleted,
         string? Category,
-        int PickingOrder
+        int PickingOrder,
+        string? DifferenceReason
     );
 
     public record GetZoneMacroPickListQuery(int ZonePreparationId) : IRequest<List<MacroPickItemDto>>;
@@ -49,6 +50,7 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetZoneMacroPickList
             public int? LocalStockId { get; set; }
             public string OriginalStockCode { get; set; } = string.Empty;
             public string ProjectName { get; set; } = string.Empty;
+            public string? DifferenceReason { get; set; }
         }
 
         public async Task<List<MacroPickItemDto>> Handle(GetZoneMacroPickListQuery request, CancellationToken cancellationToken)
@@ -78,6 +80,7 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetZoneMacroPickList
                     sl.Id,
                     sl.OrderedQty,
                     sl.DeliveredQty,
+                    sl.DifferenceReason,
                     // ISS kodu sadece doğrudan StockMaster bağlantısı yoksa kullan
                     ExternalStockCode = sl.IssOrderLine != null ? sl.IssOrderLine.StockCode : sl.StockCode,
                     sl.StockCode,
@@ -167,7 +170,8 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetZoneMacroPickList
                         PickingOrder      = pickingOrder,
                         LocalStockId      = localStockId,
                         OriginalStockCode = line.ExternalStockCode,
-                        ProjectName       = line.ProjectName
+                        ProjectName       = line.ProjectName,
+                        DifferenceReason  = line.DifferenceReason
                     });
                 }
             }
@@ -184,7 +188,8 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetZoneMacroPickList
                     g.Select(x => x.ProjectId).Distinct().Count(),
                     g.Sum(x => x.PickedQty) >= g.Sum(x => x.OrderedQty),
                     g.First().Category,
-                    g.First().PickingOrder
+                    g.First().PickingOrder,
+                    g.Select(x => x.DifferenceReason).FirstOrDefault(r => !string.IsNullOrWhiteSpace(r))
                 ))
                 .OrderBy(r => r.Category).ThenBy(r => r.PickingOrder).ThenBy(r => r.StockName)
                 .ToList();

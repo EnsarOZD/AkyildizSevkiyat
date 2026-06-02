@@ -105,14 +105,21 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.UpdateAggregatedLines
                     }
                 }
 
-                if (line.DeliveredQty != qtyForThisLine)
+                var effectiveReason = qtyForThisLine != line.OrderedQty
+                    ? (request.DifferenceReason ?? "Macro Dağıtım")
+                    : null;
+
+                var qtyChanged = line.DeliveredQty != qtyForThisLine;
+                // Miktar aynı kalsa bile neden değiştiyse kaydet (ekran tekrar açıldığında kaybolmasın).
+                var reasonChanged = effectiveReason != null && line.DifferenceReason != effectiveReason;
+
+                if (qtyChanged || reasonChanged)
                 {
-                    var effectiveReason = qtyForThisLine != line.OrderedQty
-                        ? (request.DifferenceReason ?? "Macro Dağıtım")
-                        : null;
-
                     line.SetDeliveredQty(qtyForThisLine, effectiveReason, "Macro Toplama Otomatik Dağıtım");
+                }
 
+                if (qtyChanged)
+                {
                     _context.ShipmentHistories.Add(new ShipmentHistory {
                         ShipmentId      = line.ShipmentId,
                         OldStatus       = line.Shipment.Status,

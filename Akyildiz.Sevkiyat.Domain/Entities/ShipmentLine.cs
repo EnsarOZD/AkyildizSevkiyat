@@ -106,12 +106,16 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
         /// <summary>
         /// Toplama ilerlemesini taslak olarak kaydeder — gerekçe zorunluluğu uygulanmaz.
         /// Finalizasyon SetDeliveredQty ile yapılır.
+        /// İsteğe bağlı fark nedeni de saklanır (boş geçilirse mevcut neden korunur).
         /// </summary>
-        public void SavePickingProgress(decimal qty)
+        public void SavePickingProgress(decimal qty, string? differenceReason = null)
         {
             if (qty < 0)
                 throw new DomainException("Toplama miktarı negatif olamaz.");
             DeliveredQty = qty;
+
+            if (!string.IsNullOrWhiteSpace(differenceReason))
+                DifferenceReason = differenceReason;
         }
 
         /// <summary>

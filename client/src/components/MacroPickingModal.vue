@@ -137,13 +137,7 @@
                         {{ item.localPickedQty > item.totalOrderedQty ? '(Fazla toplama — opsiyonel)' : '(Miktar sipariş miktarından farklı)' }}
                       </span>
                     </label>
-                    <input type="text"
-                           v-model="item.differenceReason"
-                           placeholder="Neden farklı? (ör: Stokta yok, Fazla geldi...)"
-                           class="w-full h-10 border rounded px-3 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none"
-                           :class="item.differenceReason ? 'border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100' : 'border-orange-300 bg-orange-50 dark:bg-orange-950 dark:border-orange-700'"
-                           @click.stop
-                    >
+                    <DifferenceReasonInput v-model="item.differenceReason" :default-reason="item.localPickedQty > item.totalOrderedQty ? 'Fazla geldi' : 'Stokta yok'" />
                   </div>
 
                   <div class="mt-3">
@@ -207,7 +201,7 @@
                     <label class="block text-[10px] font-bold text-orange-500 uppercase tracking-wider mb-1">Fark Nedeni
                       <span v-if="item.localPickedQty < item.totalOrderedQty" class="text-red-500">*</span>
                     </label>
-                    <input type="text" v-model="item.differenceReason" placeholder="Neden farklı? (ör: Stokta yok, Fazla geldi...)" class="w-full h-10 border rounded px-3 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none" :class="item.differenceReason ? 'border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100' : 'border-orange-300 bg-orange-50 dark:bg-orange-950 dark:border-orange-700'" @click.stop>
+                    <DifferenceReasonInput v-model="item.differenceReason" :default-reason="item.localPickedQty > item.totalOrderedQty ? 'Fazla geldi' : 'Stokta yok'" />
                   </div>
                   <div class="mt-3">
                     <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Stok Değişimi (Opsiyonel)</label>
@@ -302,11 +296,12 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import warehouseService from '../services/warehouseService';
+import warehouseService, { cleanDifferenceReason } from '../services/warehouseService';
 import { ApiErrorUtils } from '../utils/apiError';
 import { useNotificationStore } from '../stores/notification';
 import { useSoundFeedback } from '../composables/useSoundFeedback';
 import StockCombobox from './StockCombobox.vue';
+import DifferenceReasonInput from './DifferenceReasonInput.vue';
 import MacroAllocationModal from './MacroAllocationModal.vue';
 
 interface MacroItem {
@@ -403,7 +398,7 @@ async function fetchItems() {
 
       localPickedQty:  d.totalPickedQty ?? 0,
       localStockId:    null,
-      differenceReason: '',
+      differenceReason: cleanDifferenceReason(d.differenceReason),
 
       savedPickedQty:  d.totalPickedQty ?? 0,
       isSaved:         (d.totalPickedQty ?? 0) > 0,

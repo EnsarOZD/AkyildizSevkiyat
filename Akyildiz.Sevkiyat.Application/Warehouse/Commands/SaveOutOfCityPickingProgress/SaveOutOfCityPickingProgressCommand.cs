@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.SaveOutOfCityPickingProgress
 {
-    public record OutOfCityProgressLineDto(int ShipmentLineId, decimal DeliveredQty, int? NewLocalStockId = null);
+    public record OutOfCityProgressLineDto(int ShipmentLineId, decimal DeliveredQty, int? NewLocalStockId = null, string? DifferenceReason = null);
 
     public record SaveOutOfCityPickingProgressCommand : IRequest<Unit>, IRequireRoles
     {
@@ -73,7 +73,9 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.SaveOutOfCityPickingP
                         line.UpdateStockInfo(stock.StockCode, stock.StockName, stock.Unit, stock.Id, true);
                 }
 
-                line.SavePickingProgress(update.DeliveredQty);
+                // Fark varsa nedeni de sakla; miktar sipariş ile aynıysa neden gönderilmemeli.
+                var reason = update.DeliveredQty != line.OrderedQty ? update.DifferenceReason : null;
+                line.SavePickingProgress(update.DeliveredQty, reason);
             }
 
             await _context.SaveChangesAsync(cancellationToken);

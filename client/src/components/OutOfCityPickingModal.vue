@@ -141,13 +141,11 @@
 
             <!-- Difference reason (shown when qty differs from ordered) -->
             <div v-if="needsReason(item)" class="px-3 pb-3" :class="{ 'pt-2 border-t border-dashed border-gray-200 dark:border-gray-700': !expandedSubstitute.has(groupKey(item)) }">
-              <input
-                :value="getReasonForItem(item)"
-                @input="setReasonForItem(item, ($event.target as HTMLInputElement).value)"
-                type="text"
-                placeholder="Fark nedeni (zorunlu)..."
-                class="w-full text-xs border rounded px-2 py-1.5 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-1 focus:ring-orange-400 outline-none"
-                :class="!getReasonForItem(item) ? 'border-orange-400 bg-orange-50 dark:bg-orange-900/10' : 'border-gray-300'"
+              <label class="block text-[10px] font-bold text-orange-500 dark:text-orange-400 uppercase tracking-wide mb-1">Fark Nedeni</label>
+              <DifferenceReasonInput
+                :model-value="getReasonForItem(item)"
+                @update:model-value="setReasonForItem(item, $event)"
+                :default-reason="getPickedQty(item) > item.totalOrderedQty ? 'Fazla geldi' : 'Stokta yok'"
               />
             </div>
           </div>
@@ -191,11 +189,12 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import warehouseService, { type OutOfCityPickItemDto } from '../services/warehouseService';
+import warehouseService, { cleanDifferenceReason, type OutOfCityPickItemDto } from '../services/warehouseService';
 import { ApiErrorUtils } from '../utils/apiError';
 import { useNotificationStore } from '../stores/notification';
 import { useSoundFeedback } from '../composables/useSoundFeedback';
 import StockCombobox from './StockCombobox.vue';
+import DifferenceReasonInput from './DifferenceReasonInput.vue';
 
 const props = defineProps<{
   zonePreparationId: number;
@@ -342,6 +341,8 @@ onMounted(async () => {
       if (item.totalPickedQty > 0) {
         pickedQtyMap.value[groupKey(item)] = item.totalPickedQty;
       }
+      const savedReason = cleanDifferenceReason(item.differenceReason);
+      if (savedReason) reasonMap.value[groupKey(item)] = savedReason;
     }
   } catch (e) {
     notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Ürün listesi yüklenemedi.', 'error');
@@ -350,13 +351,14 @@ onMounted(async () => {
   }
 });
 
-const buildLineUpdates = (withReason: boolean) => {
+const buildLineUpdates = () => {
   const result: { shipmentLineId: number; deliveredQty: number; differenceReason?: string | null; newLocalStockId?: number | null }[] = [];
 
   for (const item of items.value) {
     const totalPicked = getPickedQty(item);
     const totalOrdered = item.totalOrderedQty;
-    const reason = withReason ? (getReasonForItem(item) || null) : undefined;
+    // Hem "Kaydet" hem "Tamamla" akışında nedeni gönder ki ekran tekrar açıldığında kalsın.
+    const reason = getReasonForItem(item) || null;
     const newLocalStockId = getSubstituteId(item) || null;
 
     if (item.lines.length === 1) {
@@ -381,7 +383,7 @@ const saveProgress = async (markComplete = false) => {
   if (isSavingProgress.value) return;
   isSavingProgress.value = true;
   try {
-    const lines = buildLineUpdates(markComplete);
+    const lines = buildLineUpdates();
     await warehouseService.saveOutOfCityProgress({ zonePreparationId: props.zonePreparationId, projectId: props.projectId, lines });
     notificationStore.add(markComplete ? `${props.projectName} tamamlandı.` : 'İlerleme kaydedildi.', 'success');
     if (markComplete) { sound.complete(); emit('completed'); } else { sound.success(); }

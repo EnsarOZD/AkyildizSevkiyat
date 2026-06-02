@@ -20,7 +20,8 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetZoneOutOfCityPickLi
         decimal TotalPickedQty,
         bool IsCompleted,
         string? Category,
-        string? PickingType
+        string? PickingType,
+        string? DifferenceReason
     );
 
     public record GetZoneOutOfCityPickListQuery(int ZonePreparationId, int? ProjectId = null) : IRequest<List<OutOfCityPickItemDto>>;
@@ -48,6 +49,7 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetZoneOutOfCityPickLi
             public PickingType? PickingType { get; set; }
             public int? LocalStockId { get; set; }
             public string OriginalStockCode { get; set; } = string.Empty;
+            public string? DifferenceReason { get; set; }
         }
 
         public async Task<List<OutOfCityPickItemDto>> Handle(GetZoneOutOfCityPickListQuery request, CancellationToken cancellationToken)
@@ -75,6 +77,7 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetZoneOutOfCityPickLi
                     sl.Id,
                     sl.OrderedQty,
                     sl.DeliveredQty,
+                    sl.DifferenceReason,
                     ExternalStockCode = sl.IssOrderLine != null ? sl.IssOrderLine.StockCode : sl.StockCode,
                     sl.StockCode,
                     sl.StockName,
@@ -152,7 +155,8 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetZoneOutOfCityPickLi
                     Category = category,
                     PickingType = pickingType,
                     LocalStockId = localStockId,
-                    OriginalStockCode = line.StockCode
+                    OriginalStockCode = line.StockCode,
+                    DifferenceReason = line.DifferenceReason
                 });
             }
 
@@ -167,7 +171,8 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Queries.GetZoneOutOfCityPickLi
                     g.Sum(x => x.PickedQty),
                     g.Sum(x => x.PickedQty) >= g.Sum(x => x.OrderedQty),
                     g.First().Category,
-                    g.First().PickingType?.ToString()
+                    g.First().PickingType?.ToString(),
+                    g.Select(x => x.DifferenceReason).FirstOrDefault(r => !string.IsNullOrWhiteSpace(r))
                 ))
                 .OrderBy(r => r.Category).ThenBy(r => r.StockName)
                 .ToList();

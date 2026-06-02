@@ -113,23 +113,29 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.UpdateMicroLinesBulk
                 string historyDesc = "";
                 var previousQty = line.DeliveredQty;
 
-                // Update Delivered Qty
-                if (line.DeliveredQty != update.DeliveredQty)
+                // Update Delivered Qty / Difference Reason
+                var newQty = update.DeliveredQty;
+
+                if (newQty < 0)
+                    throw new DomainException(
+                        $"'{line.StockName}': Toplama miktarı negatif olamaz.");
+
+                // Fazla toplama operasyonel olarak geçerlidir (koli tamamlama vb.).
+                // Fark varsa DifferenceReason zorunlu — UI'dan gelmesi bekleniyor.
+                var effectiveReason = newQty != line.OrderedQty
+                    ? (update.DifferenceReason ?? "BulkEdit")
+                    : null;
+
+                var qtyChanged = line.DeliveredQty != newQty;
+                // Sadece neden değişse bile (miktar aynı kalsa da) kaydet — kullanıcı
+                // ekranı tekrar açıp nedeni düzenlediğinde kaybolmaması için.
+                var reasonChanged = effectiveReason != null && line.DifferenceReason != effectiveReason;
+
+                if (qtyChanged || reasonChanged)
                 {
-                    var newQty = update.DeliveredQty;
-
-                    if (newQty < 0)
-                        throw new DomainException(
-                            $"'{line.StockName}': Toplama miktarı negatif olamaz.");
-
-                    // Fazla toplama operasyonel olarak geçerlidir (koli tamamlama vb.).
-                    // Fark varsa DifferenceReason zorunlu — UI'dan gelmesi bekleniyor.
-                    var effectiveReason = newQty != line.OrderedQty
-                        ? (update.DifferenceReason ?? "BulkEdit")
-                        : null;
-
                     line.SetDeliveredQty(newQty, effectiveReason, "Micro Toplama");
-                    historyDesc += $"{line.StockName}: {previousQty} → {newQty} (Sipariş: {line.OrderedQty}). ";
+                    if (qtyChanged)
+                        historyDesc += $"{line.StockName}: {previousQty} → {newQty} (Sipariş: {line.OrderedQty}). ";
                     changed = true;
                 }
 
@@ -150,7 +156,7 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.UpdateMicroLinesBulk
                     }
                 }
 
-                if (changed)
+                if (changed && !string.IsNullOrWhiteSpace(historyDesc))
                 {
                     _context.ShipmentHistories.Add(new ShipmentHistory
                     {
