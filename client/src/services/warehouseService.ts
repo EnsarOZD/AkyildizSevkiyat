@@ -319,6 +319,18 @@ export interface DispatchAsFreightRequest {
   carrierPhone?: string | null;
 }
 
+export interface FreightDeliveryLink {
+  projectId: number;
+  projectName: string;
+  token: string;
+  carrierPhone: string | null;
+  shipmentCount: number;
+}
+
+export interface DispatchAsFreightResult {
+  links: FreightDeliveryLink[];
+}
+
 export interface YkShipmentStatus {
   cargoKey: string;
   statusCode?: string | null;
@@ -420,8 +432,9 @@ const warehouseService = {
     await apiClient.post('/warehouse/dispatch-as-cargo', data);
   },
 
-  async dispatchAsFreight(data: DispatchAsFreightRequest): Promise<void> {
-    await apiClient.post('/warehouse/dispatch-as-freight', data);
+  async dispatchAsFreight(data: DispatchAsFreightRequest): Promise<DispatchAsFreightResult> {
+    const res = await apiClient.post<DispatchAsFreightResult>('/warehouse/dispatch-as-freight', data);
+    return res.data;
   },
 
   async getOutOfCityPickList(zonePreparationId: number, projectId?: number | null): Promise<OutOfCityPickItemDto[]> {

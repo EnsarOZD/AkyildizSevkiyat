@@ -43,6 +43,8 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Persistence
         public DbSet<ZonePreparationDriver> ZonePreparationDrivers { get; set; } = null!;
         public DbSet<DriverSession> DriverSessions { get; set; } = null!;
         public DbSet<DriverSessionShipment> DriverSessionShipments { get; set; } = null!;
+        public DbSet<FreightDelivery> FreightDeliveries { get; set; } = null!;
+        public DbSet<FreightDeliveryShipment> FreightDeliveryShipments { get; set; } = null!;
         public DbSet<StockTransaction> StockTransactions { get; set; } = null!;
 
         // NEW MODULE: Purchase Order & Goods Receipt
@@ -613,6 +615,41 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Persistence
                     .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasIndex(e => new { e.DriverSessionId, e.ShipmentId }).IsUnique();
+                entity.HasIndex(e => e.ShipmentId);
+            });
+
+            // FreightDelivery — nakliye teslim public yükleme linki (proje bazında)
+            modelBuilder.Entity<FreightDelivery>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Token).HasMaxLength(64).IsRequired();
+                entity.Property(e => e.CarrierName).HasMaxLength(200).IsRequired();
+                entity.Property(e => e.CarrierPhone).HasMaxLength(30);
+                entity.Property(e => e.RecipientName).HasMaxLength(200);
+                entity.Property(e => e.Note).HasMaxLength(1000);
+                entity.HasIndex(e => e.Token).IsUnique();
+
+                entity.HasOne(e => e.Project)
+                    .WithMany()
+                    .HasForeignKey(e => e.ProjectId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<FreightDeliveryShipment>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.HasOne(e => e.FreightDelivery)
+                    .WithMany(f => f.Shipments)
+                    .HasForeignKey(e => e.FreightDeliveryId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Shipment)
+                    .WithMany()
+                    .HasForeignKey(e => e.ShipmentId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(e => new { e.FreightDeliveryId, e.ShipmentId }).IsUnique();
                 entity.HasIndex(e => e.ShipmentId);
             });
 

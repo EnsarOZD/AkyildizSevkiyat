@@ -13,6 +13,13 @@ const router = createRouter({
             meta: { title: 'Giriş' }
         },
         {
+            // Nakliyeci teslim fotoğrafı yükleme — login gerektirmeyen public sayfa
+            path: '/teslim/:token',
+            name: 'FreightDeliveryUpload',
+            component: () => import('../views/FreightDeliveryUploadView.vue'),
+            meta: { title: 'Teslim Fotoğrafı' }
+        },
+        {
             path: '/',
             component: () => import('../layouts/DefaultLayout.vue'),
             meta: { requiresAuth: true },

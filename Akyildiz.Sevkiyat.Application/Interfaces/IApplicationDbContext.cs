@@ -24,6 +24,8 @@ namespace Akyildiz.Sevkiyat.Application.Interfaces
         DbSet<ZonePreparationDriver> ZonePreparationDrivers { get; }
         DbSet<DriverSession> DriverSessions { get; }
         DbSet<DriverSessionShipment> DriverSessionShipments { get; }
+        DbSet<FreightDelivery> FreightDeliveries { get; }
+        DbSet<FreightDeliveryShipment> FreightDeliveryShipments { get; }
         DbSet<StockTransaction> StockTransactions { get; }
         
         // PurchaseOrder & GoodsReceipt Module

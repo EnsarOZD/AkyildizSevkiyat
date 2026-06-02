@@ -14,6 +14,7 @@
         </div>
       </div>
 
+      <template v-if="phase === 'form'">
       <!-- Zone summary -->
       <div class="mb-5 bg-teal-50 dark:bg-teal-900/10 border border-teal-200 dark:border-teal-800 rounded-lg p-3 flex items-center gap-3">
         <svg class="h-5 w-5 text-teal-600 dark:text-teal-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -86,13 +87,45 @@
           <span>{{ isSaving ? 'Kaydediliyor...' : 'Nakliyeye Ver' }}</span>
         </button>
       </div>
+      </template>
+
+      <!-- Links phase: proje bazında WhatsApp teslim linkleri -->
+      <template v-else>
+        <div class="mb-4 bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded-lg p-3 text-sm text-green-800 dark:text-green-300">
+          Nakliyeye verildi. Aşağıdaki teslim linklerini nakliyeciye WhatsApp ile gönderin (proje bazında). Linkler 72 saat geçerlidir.
+        </div>
+        <div class="space-y-2 max-h-80 overflow-y-auto">
+          <div v-for="link in links" :key="link.token" class="border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+            <div class="flex justify-between items-start gap-2 mb-2">
+              <div class="min-w-0">
+                <p class="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">{{ link.projectName }}</p>
+                <p class="text-xs text-gray-500">{{ link.shipmentCount }} sevkiyat</p>
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <a :href="waHref(link)" target="_blank" rel="noopener"
+                class="flex-1 text-center py-2 rounded-lg text-white text-sm font-medium bg-green-600 hover:bg-green-700">
+                WhatsApp ile Gönder
+              </a>
+              <button @click="copyLink(link)"
+                class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
+                Kopyala
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="mt-5 flex justify-end">
+          <button @click="$emit('close')"
+            class="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold text-sm">Kapat</button>
+        </div>
+      </template>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onUnmounted } from 'vue';
-import warehouseService from '../services/warehouseService';
+import warehouseService, { type FreightDeliveryLink } from '../services/warehouseService';
 import { ApiErrorUtils } from '../utils/apiError';
 import { useNotificationStore } from '../stores/notification';
 
@@ -110,6 +143,32 @@ const carrierPlate = ref('');
 const carrierPhone = ref('');
 const isSaving = ref(false);
 
+const phase = ref<'form' | 'links'>('form');
+const links = ref<FreightDeliveryLink[]>([]);
+
+const uploadUrl = (token: string) => `${window.location.origin}/teslim/${token}`;
+
+const waHref = (link: FreightDeliveryLink) => {
+  const text = `${link.projectName} teslimatı için fotoğraf yükleme linki: ${uploadUrl(link.token)}`;
+  // Telefonu uluslararası formata çevir (905XXXXXXXXX). Numara yoksa genel wa.me.
+  const digits = (link.carrierPhone || carrierPhone.value || '').replace(/\D/g, '');
+  let intl = digits;
+  if (digits.startsWith('0')) intl = '90' + digits.slice(1);
+  else if (digits.length === 10) intl = '90' + digits;
+  return intl
+    ? `https://wa.me/${intl}?text=${encodeURIComponent(text)}`
+    : `https://wa.me/?text=${encodeURIComponent(text)}`;
+};
+
+const copyLink = async (link: FreightDeliveryLink) => {
+  try {
+    await navigator.clipboard.writeText(uploadUrl(link.token));
+    notificationStore.add('Link kopyalandı.', 'success');
+  } catch {
+    notificationStore.add('Kopyalanamadı, linki elle seçin.', 'warning');
+  }
+};
+
 document.body.style.overflow = 'hidden';
 onUnmounted(() => { document.body.style.overflow = ''; });
 
@@ -118,7 +177,7 @@ const save = async () => {
 
   isSaving.value = true;
   try {
-    await Promise.all(props.zonePreparationIds.map(id =>
+    const results = await Promise.all(props.zonePreparationIds.map(id =>
       warehouseService.dispatchAsFreight({
         zonePreparationId: id,
         carrierName: carrierName.value.trim(),
@@ -127,10 +186,12 @@ const save = async () => {
       })
     ));
 
+    links.value = results.flatMap(r => r.links ?? []);
     const detail = carrierPlate.value.trim() ? ` (${carrierPlate.value.trim()})` : '';
     notificationStore.add(`${props.shipmentCount} sevkiyat ${carrierName.value.trim()}${detail} nakliyecisine verildi.`, 'success');
     emit('completed');
-    emit('close');
+    // Modalı kapatma — proje bazında teslim linklerini göster
+    phase.value = 'links';
   } catch (e) {
     notificationStore.add(ApiErrorUtils.getErrorMessage(e) || 'Nakliye ataması başarısız.', 'error');
   } finally {

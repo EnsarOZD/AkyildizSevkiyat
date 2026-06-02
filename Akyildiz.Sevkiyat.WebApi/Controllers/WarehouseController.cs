@@ -160,8 +160,8 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         [HttpPost("dispatch-as-freight")]
         public async Task<IActionResult> DispatchAsFreight([FromBody] DispatchZoneAsFreightCommand command)
         {
-            await _mediator.Send(command);
-            return Ok();
+            var result = await _mediator.Send(command);
+            return Ok(result);
         }
 
         [HttpGet("out-of-city-pick-list")]

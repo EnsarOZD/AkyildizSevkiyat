@@ -1,4 +1,6 @@
+using Akyildiz.Sevkiyat.Application.Common.Dtos;
 using Akyildiz.Sevkiyat.Application.Common.Interfaces;
+using Akyildiz.Sevkiyat.Application.Common.Services;
 using Akyildiz.Sevkiyat.Application.Interfaces;
 using Akyildiz.Sevkiyat.Domain.Enums;
 using Akyildiz.Sevkiyat.Domain.Exceptions;
@@ -8,7 +10,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.DispatchZoneAsFreight
 {
-    public record DispatchZoneAsFreightCommand : IRequest<Unit>, IRequireRoles
+    public record DispatchZoneAsFreightResult(List<FreightDeliveryLinkDto> Links);
+
+    public record DispatchZoneAsFreightCommand : IRequest<DispatchZoneAsFreightResult>, IRequireRoles
     {
         public int ZonePreparationId { get; init; }
         public string CarrierName { get; init; } = string.Empty;
@@ -30,7 +34,7 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.DispatchZoneAsFreight
         }
     }
 
-    public class DispatchZoneAsFreightCommandHandler : IRequestHandler<DispatchZoneAsFreightCommand, Unit>
+    public class DispatchZoneAsFreightCommandHandler : IRequestHandler<DispatchZoneAsFreightCommand, DispatchZoneAsFreightResult>
     {
         private readonly IApplicationDbContext _context;
         private readonly ICurrentUserService _currentUserService;
@@ -43,7 +47,7 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.DispatchZoneAsFreight
             _currentUserService = currentUserService;
         }
 
-        public async Task<Unit> Handle(DispatchZoneAsFreightCommand request, CancellationToken cancellationToken)
+        public async Task<DispatchZoneAsFreightResult> Handle(DispatchZoneAsFreightCommand request, CancellationToken cancellationToken)
         {
             var zp = await _context.ZonePreparations
                 .FirstOrDefaultAsync(z => z.Id == request.ZonePreparationId, cancellationToken)
@@ -74,8 +78,12 @@ namespace Akyildiz.Sevkiyat.Application.Warehouse.Commands.DispatchZoneAsFreight
 
             zp.Status = ZonePreparationStatus.Dispatched;
 
+            // Proje bazında public teslim linkleri oluştur
+            var links = await FreightDeliveryFactory.CreateForShipmentsAsync(
+                _context, shipments, request.CarrierName, request.CarrierPhone, cancellationToken);
+
             await _context.SaveChangesAsync(cancellationToken);
-            return Unit.Value;
+            return new DispatchZoneAsFreightResult(links);
         }
     }
 }

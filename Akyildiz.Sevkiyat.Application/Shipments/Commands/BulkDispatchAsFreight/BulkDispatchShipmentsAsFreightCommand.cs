@@ -1,4 +1,6 @@
+using Akyildiz.Sevkiyat.Application.Common.Dtos;
 using Akyildiz.Sevkiyat.Application.Common.Interfaces;
+using Akyildiz.Sevkiyat.Application.Common.Services;
 using Akyildiz.Sevkiyat.Application.Interfaces;
 using Akyildiz.Sevkiyat.Domain.Enums;
 using FluentValidation;
@@ -18,7 +20,7 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.BulkDispatchAsFreight
             new[] { "Admin", "Manager", "Accounting" };
     }
 
-    public record BulkDispatchAsFreightResult(int SuccessCount, List<string> Errors);
+    public record BulkDispatchAsFreightResult(int SuccessCount, List<string> Errors, List<FreightDeliveryLinkDto> Links);
 
     public class BulkDispatchShipmentsAsFreightCommandValidator : AbstractValidator<BulkDispatchShipmentsAsFreightCommand>
     {
@@ -56,6 +58,7 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.BulkDispatchAsFreight
                 .ToListAsync(cancellationToken);
 
             int successCount = 0;
+            var dispatchedShipments = new List<Domain.Entities.Shipment>();
 
             foreach (var shipment in shipments)
             {
@@ -69,6 +72,7 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.BulkDispatchAsFreight
 
                     shipment.SetFreightDispatch(request.CarrierName, request.CarrierPlate, request.CarrierPhone);
                     shipment.ChangeStatus(ShipmentStatus.Dispatched, _currentUserService.UserId);
+                    dispatchedShipments.Add(shipment);
                     successCount++;
                 }
                 catch (Exception ex)
@@ -81,10 +85,15 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.BulkDispatchAsFreight
             foreach (var id in request.ShipmentIds.Where(id => !foundIds.Contains(id)))
                 errors.Add($"#{id}: Sevkiyat bulunamadı.");
 
+            var links = new List<FreightDeliveryLinkDto>();
             if (successCount > 0)
+            {
+                links = await FreightDeliveryFactory.CreateForShipmentsAsync(
+                    _context, dispatchedShipments, request.CarrierName, request.CarrierPhone, cancellationToken);
                 await _context.SaveChangesAsync(cancellationToken);
+            }
 
-            return new BulkDispatchAsFreightResult(successCount, errors);
+            return new BulkDispatchAsFreightResult(successCount, errors, links);
         }
     }
 }
