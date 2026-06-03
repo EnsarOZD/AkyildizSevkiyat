@@ -72,6 +72,7 @@ export interface DriverRouteDto {
   completedShipments: number;
   mapsRouteUrl?: string;
   zonePreparationId?: number;
+  hasActiveSession: boolean;
 }
 
 export interface RouteOrderItemDto {

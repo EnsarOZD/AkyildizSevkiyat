@@ -87,6 +87,29 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.MarkShipmentDelivered
                     throw new ForbiddenException("Bu sevkiyat size atanmamış.");
                 }
 
+                // Şoför, QR ile sefer başlatmadan teslim yapamaz; sevkiyat o seferin manifestinde olmalı.
+                var openSessionId = await _context.DriverSessions
+                    .Where(ds => ds.DriverId == driver.Id && ds.Status == DriverSessionStatus.Open)
+                    .Select(ds => (Guid?)ds.Id)
+                    .FirstOrDefaultAsync(cancellationToken);
+
+                if (!openSessionId.HasValue)
+                {
+                    throw new DomainException("Teslim yapabilmek için önce QR okutarak sefer başlatmalısınız.");
+                }
+
+                var manifestShipmentIds = await _context.DriverSessionShipments
+                    .Where(m => m.DriverSessionId == openSessionId.Value)
+                    .Select(m => m.ShipmentId)
+                    .ToListAsync(cancellationToken);
+
+                // Manifest doluysa (yeni seferler) sevkiyat manifeste bağlı olmalı.
+                // Eski/boş manifestli seferlerde (geçiş dönemi) bu kontrol atlanır.
+                if (manifestShipmentIds.Count > 0 && !manifestShipmentIds.Contains(shipment.Id))
+                {
+                    throw new DomainException("Bu sevkiyat aktif seferinize bağlı değil. Doğru seferi başlattığınızdan emin olun.");
+                }
+
                 var hasAnyPhoto = request.DeliveryPhotosBase64?.Any(p => !string.IsNullOrWhiteSpace(p)) ?? false;
                 if (!hasAnyPhoto)
                 {

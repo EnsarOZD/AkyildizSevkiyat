@@ -30,6 +30,10 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Queries.GetDriverRoute
         public string? MapsRouteUrl { get; init; }
         /// <summary>Şoförün aktif bölge hazırlık ID'si — rota sıralaması güncellemek için kullanılır.</summary>
         public int? ZonePreparationId { get; init; }
+
+        /// <summary>Şoförün açık (devam eden) bir seferi var mı? Yoksa liste boş gelir ve
+        /// kullanıcıya QR ile sefer başlatması gerektiği gösterilir.</summary>
+        public bool HasActiveSession { get; init; }
     }
 
     public class DeliveryStopDto
@@ -113,6 +117,8 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Queries.GetDriverRoute
                 .Include(s => s.Lines).ThenInclude(l => l.StockMaster)
                 .AsQueryable();
 
+            bool hasActiveSession = true; // driver dışı (yönetici) görünüm için kısıt yok
+
             if (driverId.HasValue)
             {
                 // Açık (devam eden) sefer var mı?
@@ -121,37 +127,45 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Queries.GetDriverRoute
                     .Select(ds => (Guid?)ds.Id)
                     .FirstOrDefaultAsync(cancellationToken);
 
-                // Açık sefer varsa o seferin manifestindeki sevkiyatlar (çok zone'u tam kapsar)
-                var manifestIds = openSessionId.HasValue
-                    ? await _context.DriverSessionShipments
-                        .Where(m => m.DriverSessionId == openSessionId.Value)
-                        .Select(m => m.ShipmentId)
-                        .ToListAsync(cancellationToken)
-                    : new List<int>();
+                hasActiveSession = openSessionId.HasValue;
 
-                if (openSessionId.HasValue && manifestIds.Count > 0)
+                if (!hasActiveSession)
                 {
-                    // Açık sefer: tam olarak bu seferin manifestindeki sevkiyatlar; teslim
-                    // edilenler dahil (ilerleme görünsün), tüm atanmış zone'ları kapsar.
-                    query = query.Where(s => manifestIds.Contains(s.Id));
+                    // Açık sefer yok → liste pasif. Şoför önce QR ile sefer başlatmalı.
+                    query = query.Where(s => false);
                 }
                 else
                 {
-                    // Sefer yok (veya eski/boş manifest): yalnızca bekleyen Dispatched sevkiyatlar.
-                    // Çok zone desteği: şoföre atanmış tüm aktif zone'lar + doğrudan atananlar.
-                    var assignedZoneIds = await _context.ZonePreparationDrivers
-                        .Where(zpd =>
-                            zpd.DriverId == driverId.Value &&
-                            zpd.ZonePreparation.DeliveryDate.Date >= today &&
-                            zpd.ZonePreparation.Status <= ZonePreparationStatus.Dispatched)
-                        .Select(zpd => zpd.ZonePreparationId)
-                        .Distinct()
+                    var manifestIds = await _context.DriverSessionShipments
+                        .Where(m => m.DriverSessionId == openSessionId!.Value)
+                        .Select(m => m.ShipmentId)
                         .ToListAsync(cancellationToken);
 
-                    query = query.Where(s =>
-                        s.Status == ShipmentStatus.Dispatched &&
-                        (s.AssignedDriverId == driverId.Value ||
-                         (s.ZonePreparationId != null && assignedZoneIds.Contains(s.ZonePreparationId.Value))));
+                    if (manifestIds.Count > 0)
+                    {
+                        // Açık sefer: tam olarak bu seferin manifestindeki sevkiyatlar
+                        // (teslim edilenler dahil — ilerleme görünsün, çok zone'u kapsar).
+                        query = query.Where(s => manifestIds.Contains(s.Id));
+                    }
+                    else
+                    {
+                        // Eski/boş manifestli açık sefer (geçiş dönemi): atanmış zone'lardaki
+                        // Dispatched sevkiyatlar + bugün teslim edilenler.
+                        var assignedZoneIds = await _context.ZonePreparationDrivers
+                            .Where(zpd =>
+                                zpd.DriverId == driverId.Value &&
+                                zpd.ZonePreparation.DeliveryDate.Date >= today &&
+                                zpd.ZonePreparation.Status <= ZonePreparationStatus.Dispatched)
+                            .Select(zpd => zpd.ZonePreparationId)
+                            .Distinct()
+                            .ToListAsync(cancellationToken);
+
+                        query = query.Where(s =>
+                            (s.Status == ShipmentStatus.Dispatched ||
+                             (s.Status == ShipmentStatus.Delivered && s.DeliveredAt.HasValue && s.DeliveredAt.Value.Date == today)) &&
+                            (s.AssignedDriverId == driverId.Value ||
+                             (s.ZonePreparationId != null && assignedZoneIds.Contains(s.ZonePreparationId.Value))));
+                    }
                 }
             }
             else
@@ -329,6 +343,7 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Queries.GetDriverRoute
                 CompletedShipments = shipments.Count(s => s.Status == ShipmentStatus.Delivered),
                 MapsRouteUrl       = mapsUrl,
                 ZonePreparationId  = primaryZoneId,
+                HasActiveSession   = hasActiveSession,
             };
         }
     }
