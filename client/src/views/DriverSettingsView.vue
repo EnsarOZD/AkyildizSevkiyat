@@ -1,6 +1,6 @@
 <template>
-  <div class="space-y-4 pb-8">
-    <p class="text-xs text-gray-500 dark:text-gray-400">
+  <div class="space-y-3 pb-8">
+    <p class="text-xs text-white/45 px-1 leading-relaxed">
       Uygulamanın düzgün çalışması için aşağıdaki izinlerin verilmesi gerekir.
       İzin reddedilmişse tarayıcı ayarlarından manuel olarak açmanız gerekir.
     </p>
@@ -33,7 +33,7 @@
     />
 
     <!-- Platform note -->
-    <p class="text-[11px] text-gray-400 dark:text-gray-500 text-center leading-relaxed">
+    <p class="text-[11px] text-white/30 text-center leading-relaxed px-4 pt-1">
       {{ platformInstructions }}
     </p>
   </div>

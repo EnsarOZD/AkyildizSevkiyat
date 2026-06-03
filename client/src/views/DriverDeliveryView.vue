@@ -105,14 +105,14 @@
       <!-- Delivery form (only when Dispatched) -->
       <template v-else>
         <!-- Teslim edilecek kalemler -->
-        <div v-if="shipment.lines?.length" class="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
-          <div class="px-4 py-2 bg-gray-50 dark:bg-gray-800 text-sm font-medium text-gray-600 dark:text-gray-400">
+        <div v-if="shipment.lines?.length" class="rounded-lg overflow-hidden border border-gray-200 dark:border-white/10">
+          <div class="px-4 py-2 bg-gray-50 dark:bg-white/5 text-sm font-medium text-gray-600 dark:text-gray-400">
             Teslim Edilecek Kalemler
           </div>
           <div
             v-for="line in shipment.lines"
             :key="line.stockCode"
-            class="flex justify-between px-4 py-2.5 border-t border-gray-100 dark:border-gray-700"
+            class="flex justify-between px-4 py-2.5 border-t border-gray-100 dark:border-white/10"
           >
             <span class="text-gray-900 dark:text-gray-100 text-sm">{{ line.stockName }}</span>
             <span class="text-gray-500 dark:text-gray-400 text-sm font-medium whitespace-nowrap ml-2">{{ line.orderedQty }} {{ line.unit }}</span>
@@ -207,7 +207,7 @@
         <button
           @click="markDelivered"
           :disabled="submitting"
-          class="w-full py-3.5 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+          class="w-full py-3.5 bg-gradient-to-br from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 disabled:bg-green-400 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
         >
           <span v-if="submitting" class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
           <CheckCircleIcon v-else class="w-5 h-5" />

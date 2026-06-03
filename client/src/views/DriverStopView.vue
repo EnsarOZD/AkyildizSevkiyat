@@ -16,21 +16,21 @@
     <template v-else-if="stop">
 
       <!-- Stop header card -->
-      <div class="bg-white dark:bg-[#0f2744] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 p-4 space-y-3">
+      <div class="rounded-3xl shadow-lg shadow-blue-600/20 border border-blue-400/40 p-4 space-y-3" style="background: linear-gradient(160deg,#16335f,#0f2240);">
         <div class="flex items-start gap-3">
           <!-- Stop number badge -->
           <div
-            class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold"
+            class="flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center text-base font-extrabold shadow-lg"
             :class="stop.isFullyDelivered
-              ? 'bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400'
-              : 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300'"
+              ? 'bg-emerald-500/16 text-emerald-300'
+              : 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-blue-600/50'"
           >
             <CheckCircleIcon v-if="stop.isFullyDelivered" class="w-5 h-5" aria-hidden="true" />
             <span v-else>{{ stop.stopNumber }}</span>
           </div>
           <div>
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white leading-tight">{{ stop.projectName }}</h2>
-            <p v-if="stop.zoneName" class="text-xs text-gray-400 mt-0.5">{{ stop.zoneName }}</p>
+            <h2 class="text-lg font-extrabold text-white leading-tight">{{ stop.projectName }}</h2>
+            <p v-if="stop.zoneName" class="text-xs text-white/45 mt-0.5">{{ stop.zoneName }}</p>
           </div>
         </div>
 
@@ -54,19 +54,17 @@
         <div class="flex items-start gap-2">
           <MapPinIcon class="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" aria-hidden="true" />
           <div class="flex-1 min-w-0">
-            <a
+            <button
               v-if="stop.projectAddress || stop.projectLatitude"
-              :href="mapsUrl"
-              target="_blank"
-              rel="noopener"
-              class="text-sm text-blue-600 dark:text-blue-400 hover:underline leading-snug block"
+              @click="openMaps(mapsUrl)"
+              class="text-sm text-blue-600 dark:text-blue-400 hover:underline leading-snug block text-left"
             >
               <span v-if="stop.projectLatitude">
                 📍 {{ stop.projectLatitude?.toFixed(5) }}, {{ stop.projectLongitude?.toFixed(5) }}
                 <span v-if="stop.projectAddress" class="text-gray-400 text-xs ml-1">({{ stop.projectAddress }})</span>
               </span>
               <span v-else>{{ stop.projectAddress }}</span>
-            </a>
+            </button>
             <span v-else class="text-sm text-gray-400 italic">Adres tanımsız</span>
           </div>
           <button
@@ -84,18 +82,28 @@
           </button>
         </div>
 
-        <!-- Contact (ISS data, falls back to project defaults) -->
-        <div v-if="stop.contactName" class="flex items-center gap-2">
-          <UserIcon class="w-4 h-4 text-gray-400 flex-shrink-0" aria-hidden="true" />
-          <span class="text-sm text-gray-700 dark:text-gray-300">{{ stop.contactName }}</span>
-        </div>
-        <div v-if="stop.contactPhone" class="flex items-center gap-2">
-          <PhoneIcon class="w-4 h-4 text-gray-400 flex-shrink-0" aria-hidden="true" />
+        <!-- Teslim alacak kişi + Ara (ISS verisi, yoksa proje varsayılan iletişimi) -->
+        <div
+          v-if="stop.contactName || stop.contactPhone"
+          class="flex items-center justify-between gap-3 rounded-lg bg-gray-50 dark:bg-white/5 px-3 py-2"
+        >
+          <div class="min-w-0">
+            <p v-if="stop.contactName" class="text-sm font-medium text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
+              <UserIcon class="w-4 h-4 text-gray-400 flex-shrink-0" aria-hidden="true" />
+              <span class="break-words">{{ stop.contactName }}</span>
+            </p>
+            <p v-if="stop.contactPhone" class="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1.5 mt-0.5">
+              <PhoneIcon class="w-4 h-4 text-gray-400 flex-shrink-0" aria-hidden="true" />
+              {{ stop.contactPhone }}
+            </p>
+          </div>
           <a
+            v-if="stop.contactPhone"
             :href="`tel:${stop.contactPhone}`"
-            class="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+            class="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 bg-gradient-to-br from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 active:bg-green-800 text-white text-sm font-semibold rounded-xl transition-colors"
           >
-            {{ stop.contactPhone }}
+            <PhoneIcon class="w-4 h-4" aria-hidden="true" />
+            Ara
           </a>
         </div>
       </div>
@@ -180,6 +188,13 @@
               @click="lightboxSrc = getPhotoUrl(shipment.deliveryPhotoPath, shipment.deliveryPhotoBase64)"
             />
           </div>
+          <button
+            @click.stop="openNoteModal(shipment.id)"
+            class="w-full flex items-center justify-center gap-1.5 py-2 mt-1 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 text-sm font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+          >
+            <PencilSquareIcon class="w-4 h-4" aria-hidden="true" />
+            Not Ekle
+          </button>
         </div>
 
         <!-- Expanded: ReturnedToWarehouse -->
@@ -188,41 +203,48 @@
             <ArrowUturnLeftIcon class="w-4 h-4" aria-hidden="true" />
             İade Edildi
           </div>
-          <div v-if="shipment.lines?.length" class="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
-            <div class="px-3 py-2 bg-gray-50 dark:bg-gray-800 text-xs font-medium text-gray-500 dark:text-gray-400">
+          <div v-if="shipment.lines?.length" class="rounded-lg overflow-hidden border border-gray-200 dark:border-white/10">
+            <div class="px-3 py-2 bg-gray-50 dark:bg-white/5 text-xs font-medium text-gray-500 dark:text-gray-400">
               Kalemler ({{ shipment.lines.length }})
             </div>
             <template v-for="group in groupedLines(shipment.lines)" :key="group.label">
-              <div class="px-3 py-1 bg-gray-100 dark:bg-gray-700/60 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide border-t border-gray-200 dark:border-gray-600">
+              <div class="px-3 py-1 bg-gray-100 dark:bg-white/[0.07] text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide border-t border-gray-200 dark:border-white/10">
                 {{ group.label }}
               </div>
               <div
                 v-for="line in group.lines"
                 :key="line.stockCode"
-                class="flex justify-between px-3 py-2 border-t border-gray-100 dark:border-gray-700 text-sm"
+                class="flex justify-between px-3 py-2 border-t border-gray-100 dark:border-white/10 text-sm"
               >
                 <span class="text-gray-700 dark:text-gray-300">{{ line.stockName }}</span>
                 <span class="text-gray-500 dark:text-gray-400 font-medium ml-2 whitespace-nowrap">{{ line.orderedQty }} {{ line.unit }}</span>
               </div>
             </template>
           </div>
+          <button
+            @click.stop="openNoteModal(shipment.id)"
+            class="w-full flex items-center justify-center gap-1.5 py-2 mt-1 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 text-sm font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+          >
+            <PencilSquareIcon class="w-4 h-4" aria-hidden="true" />
+            Not Ekle
+          </button>
         </div>
 
         <!-- Expanded: Action Buttons (Pending/Dispatched) -->
         <div v-if="expandedIds.has(shipment.id) && shipment.status !== 'Delivered' && shipment.status !== 'ReturnedToWarehouse'" class="px-4 pb-4 space-y-3 border-t border-gray-100 dark:border-white/10 pt-3">
           <!-- Kalem listesi (kategoriye ve isme göre sıralı) -->
-          <div v-if="shipment.lines?.length" class="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
-            <div class="px-3 py-2 bg-gray-50 dark:bg-gray-800 text-xs font-medium text-gray-500 dark:text-gray-400">
+          <div v-if="shipment.lines?.length" class="rounded-lg overflow-hidden border border-gray-200 dark:border-white/10">
+            <div class="px-3 py-2 bg-gray-50 dark:bg-white/5 text-xs font-medium text-gray-500 dark:text-gray-400">
               Kalemler ({{ shipment.lines.length }})
             </div>
             <template v-for="group in groupedLines(shipment.lines)" :key="group.label">
-              <div class="px-3 py-1 bg-gray-100 dark:bg-gray-700/60 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide border-t border-gray-200 dark:border-gray-600">
+              <div class="px-3 py-1 bg-gray-100 dark:bg-white/[0.07] text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide border-t border-gray-200 dark:border-white/10">
                 {{ group.label }}
               </div>
               <div
                 v-for="line in group.lines"
                 :key="line.stockCode"
-                class="flex justify-between px-3 py-2 border-t border-gray-100 dark:border-gray-700 text-sm"
+                class="flex justify-between px-3 py-2 border-t border-gray-100 dark:border-white/10 text-sm"
               >
                 <span class="text-gray-900 dark:text-gray-100">{{ line.stockName }}</span>
                 <span class="text-gray-500 dark:text-gray-400 font-medium ml-2 whitespace-nowrap">{{ line.orderedQty }} {{ line.unit }}</span>
@@ -232,14 +254,14 @@
           <div class="flex gap-3">
             <button
               @click.stop="router.push({ name: 'DriverDelivery', params: { id: shipment.id } })"
-              class="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+              class="flex-1 py-3 bg-gradient-to-br from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
             >
               <CheckCircleIcon class="w-4 h-4" aria-hidden="true" />
               Teslim Et
             </button>
             <button
               @click.stop="openReturnModal(shipment.id)"
-              class="flex-1 py-3 bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+              class="flex-1 py-3 bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-400 hover:to-orange-500 text-white text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
             >
               <ArrowUturnLeftIcon class="w-4 h-4" aria-hidden="true" />
               İade Et
@@ -253,7 +275,7 @@
         <button
           @click="showBulkModal = true"
           :disabled="bulkSubmitting"
-          class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2"
+          class="w-full py-3.5 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 disabled:bg-blue-400 text-white font-semibold rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2"
         >
           <CheckCircleIcon class="w-5 h-5" aria-hidden="true" />
           Tümünü Teslim Et ({{ pendingShipments.length }} irsaliye)
@@ -348,7 +370,7 @@
             <button
               @click="markAllDelivered"
               :disabled="bulkSubmitting || !bulkForm.deliveryRecipient.trim() || !bulkForm.photoBase64"
-              class="flex-2 flex-1 py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+              class="flex-2 flex-1 py-3 bg-gradient-to-br from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 disabled:bg-green-400 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
             >
               <span v-if="bulkSubmitting" class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
               <CheckCircleIcon v-else class="w-5 h-5" aria-hidden="true" />
@@ -414,7 +436,7 @@
             </div>
             <button
               @click="fillAllLines"
-              class="flex-shrink-0 mt-5 px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold rounded-lg transition-colors whitespace-nowrap"
+              class="flex-shrink-0 mt-5 px-3 py-1.5 bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-400 hover:to-orange-500 text-white text-sm font-semibold rounded-lg transition-colors whitespace-nowrap"
             >
               Tamamını İade Et
             </button>
@@ -495,11 +517,44 @@
           <button
             @click="submitReturn"
             :disabled="returnSubmitting || returnLines.every(l => l.returnedQty === 0)"
-            class="flex-2 flex-1 py-3 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-300 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2 text-sm"
+            class="flex-2 flex-1 py-3 bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-400 hover:to-orange-500 disabled:bg-orange-300 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2 text-sm"
           >
             <span v-if="returnSubmitting" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
             <ArrowUturnLeftIcon v-else class="w-4 h-4" aria-hidden="true" />
             {{ returnSubmitting ? 'Kaydediliyor...' : `İade Kaydet (${returnLines.filter(l => l.returnedQty > 0).length} kalem)` }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
+
+  <!-- Not ekleme modalı (teslim edilmiş / iade edilmiş sevkiyatlar) -->
+  <Teleport to="body">
+    <div v-if="showNoteModal" class="fixed inset-0 z-50 flex items-end justify-center">
+      <div class="absolute inset-0 bg-black/60" @click="closeNoteModal"></div>
+      <div class="relative w-full max-w-lg bg-white dark:bg-[#0f2744] rounded-t-2xl p-5 space-y-4">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Not Ekle</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          Bu not sevkiyat geçmişine eklenir; mevcut teslim notunu değiştirmez.
+        </p>
+        <textarea
+          v-model="noteText"
+          rows="3"
+          placeholder="Notunuzu yazın..."
+          class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+        ></textarea>
+        <div class="flex gap-3">
+          <button
+            @click="closeNoteModal"
+            class="flex-1 py-3 border border-gray-300 dark:border-white/20 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-sm"
+          >İptal</button>
+          <button
+            @click="submitNote"
+            :disabled="noteSubmitting || !noteText.trim()"
+            class="flex-1 py-3 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 disabled:bg-blue-400 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2 text-sm"
+          >
+            <span v-if="noteSubmitting" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            {{ noteSubmitting ? 'Kaydediliyor...' : 'Kaydet' }}
           </button>
         </div>
       </div>
@@ -524,11 +579,13 @@ import {
   XMarkIcon,
   ArrowUturnLeftIcon,
   ClipboardDocumentListIcon,
+  PencilSquareIcon,
 } from '@heroicons/vue/24/outline';
 import driverService, { type DeliveryStopDto, type StopShipmentDto, type ShipmentLineDto, type DriverDeliveryPhotoDto } from '../services/driverService';
 import shipmentService from '../services/shipmentService';
 import { useNotificationStore } from '../stores/notification';
 import { useAuthStore } from '../stores/auth';
+import { useOpenMaps } from '../composables/useOpenMaps';
 import { getPhotoUrl } from '../utils/photoUrl';
 
 interface ShipmentForm {
@@ -543,6 +600,7 @@ const route  = useRoute();
 const router = useRouter();
 const notify = useNotificationStore();
 const authStore = useAuthStore();
+const { openMaps } = useOpenMaps();
 const isDriver = computed(() => authStore.userRole === 'Driver');
 
 const projectId = Number(route.params.projectId);
@@ -851,6 +909,38 @@ function groupedLines(lines: ShipmentLineDto[]) {
     else groups.push({ label, lines: [line] });
   }
   return groups;
+}
+
+// ── Not Ekleme ──────────────────────────────────────────────────────────────
+const showNoteModal  = ref(false);
+const noteSubmitting = ref(false);
+const noteText       = ref('');
+let   noteShipmentId = 0;
+
+function openNoteModal(shipmentId: number) {
+  noteShipmentId = shipmentId;
+  noteText.value = '';
+  showNoteModal.value = true;
+}
+
+function closeNoteModal() {
+  if (noteSubmitting.value) return;
+  showNoteModal.value = false;
+}
+
+async function submitNote() {
+  const text = noteText.value.trim();
+  if (!text) return;
+  noteSubmitting.value = true;
+  try {
+    await shipmentService.addNote(noteShipmentId, text);
+    notify.add('Not eklendi.', 'success');
+    showNoteModal.value = false;
+  } catch {
+    notify.add('Not eklenemedi. Lütfen tekrar deneyin.', 'error');
+  } finally {
+    noteSubmitting.value = false;
+  }
 }
 
 onMounted(load);

@@ -1,8 +1,8 @@
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col">
+  <div class="min-h-screen bg-gray-50 dark:bg-[#0a1626] flex flex-col">
 
     <!-- Header -->
-    <div class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center gap-3">
+    <div class="bg-white dark:bg-[#0f2038] border-b border-gray-200 dark:border-white/10 px-4 py-3 flex items-center gap-3">
       <router-link to="/driver" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
@@ -16,16 +16,16 @@
     <div class="flex-1 flex flex-col items-center justify-start p-4 gap-4 max-w-md mx-auto w-full">
 
       <!-- Mode Tabs -->
-      <div v-if="step === 'scan'" class="flex w-full rounded-lg border border-gray-300 dark:border-gray-700 overflow-hidden text-sm">
+      <div v-if="step === 'scan'" class="flex w-full rounded-lg border border-gray-300 dark:border-white/10 overflow-hidden text-sm">
         <button
           @click="mode = 'start'"
           class="flex-1 py-2.5 font-medium transition-colors"
-          :class="mode === 'start' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400'"
+          :class="mode === 'start' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-white/5 text-gray-600 dark:text-gray-400'"
         >Sefer Başlat</button>
         <button
           @click="mode = 'end'"
           class="flex-1 py-2.5 font-medium transition-colors"
-          :class="mode === 'end' ? 'bg-red-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400'"
+          :class="mode === 'end' ? 'bg-red-600 text-white' : 'bg-white dark:bg-white/5 text-gray-600 dark:text-gray-400'"
         >Sefer Bitir</button>
       </div>
 
@@ -65,7 +65,7 @@
         </div>
 
         <!-- Plate confirmation card (yalnızca araç adımı) -->
-        <div v-if="step === 'scan' && detectedPlate" class="w-full rounded-xl border-2 bg-white dark:bg-gray-900 p-5 text-center"
+        <div v-if="step === 'scan' && detectedPlate" class="w-full rounded-xl border-2 bg-white dark:bg-[#0f2038] p-5 text-center"
           :class="mode === 'end' ? 'border-red-400 dark:border-red-600' : 'border-blue-400 dark:border-blue-600'">
           <p class="text-xs text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">Araç</p>
           <p class="text-3xl font-bold tracking-widest text-gray-900 dark:text-gray-100 mb-4">{{ detectedPlate }}</p>
@@ -73,12 +73,12 @@
             {{ mode === 'end' ? 'Bu araç ile sefer kapatılacak. Onaylıyor musunuz?' : 'Bu araç ile devam edilecek. İrsaliye okutmaya geçilsin mi?' }}
           </p>
           <div class="flex gap-3">
-            <button @click="resetScan" class="flex-1 py-2.5 border dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm font-medium">
+            <button @click="resetScan" class="flex-1 py-2.5 border dark:border-white/10 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm font-medium">
               İptal
             </button>
             <button @click="onPlateConfirmed"
               class="flex-1 py-2.5 rounded-lg text-white text-sm font-medium"
-              :class="mode === 'end' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'">
+              :class="mode === 'end' ? 'bg-gradient-to-br from-red-500 to-red-600 hover:from-red-400 hover:to-red-500' : 'bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500'">
               {{ mode === 'end' ? 'Onayla' : 'Devam' }}
             </button>
           </div>
@@ -97,7 +97,7 @@
 
       <!-- ── STEP: shipments (sefer manifesti onayı) ──────────────────── -->
       <template v-else-if="step === 'shipments'">
-        <div class="w-full rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-4 space-y-3">
+        <div class="w-full rounded-xl bg-white dark:bg-[#0f2038] border border-gray-200 dark:border-white/10 p-4 space-y-3">
           <div class="text-center">
             <p class="text-base font-semibold text-gray-900 dark:text-gray-100">{{ detectedPlate }}</p>
             <p class="text-sm text-gray-500 dark:text-gray-400">
@@ -116,10 +116,10 @@
             </div>
           </div>
           <div class="flex gap-3 pt-1">
-            <button @click="resetScan" class="flex-1 py-2.5 border dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800">
+            <button @click="resetScan" class="flex-1 py-2.5 border dark:border-white/10 rounded-lg text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800">
               İptal
             </button>
-            <button @click="goToOdometerStep" class="flex-1 py-2.5 rounded-lg text-white text-sm font-medium bg-blue-600 hover:bg-blue-700">
+            <button @click="goToOdometerStep" class="flex-1 py-2.5 rounded-lg text-white text-sm font-medium bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500">
               Onayla, devam et
             </button>
           </div>
@@ -128,7 +128,7 @@
 
       <!-- ── STEP: odometer ─────────────────────────────── -->
       <template v-else-if="step === 'odometer'">
-        <div class="w-full rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-5 space-y-4">
+        <div class="w-full rounded-xl bg-white dark:bg-[#0f2038] border border-gray-200 dark:border-white/10 p-5 space-y-4">
           <div class="text-center">
             <p class="text-base font-semibold text-gray-900 dark:text-gray-100">
               {{ mode === 'end' ? 'Bitiş Bilgileri' : 'Başlangıç Bilgileri' }}
@@ -149,8 +149,8 @@
               min="1"
               inputmode="numeric"
               placeholder="Örn: 125430"
-              class="w-full px-4 py-3 rounded-xl border text-base text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 placeholder-gray-400"
-              :class="kmError ? 'border-red-400 focus:ring-red-400' : 'border-gray-300 dark:border-gray-600 focus:ring-blue-400'"
+              class="w-full px-4 py-3 rounded-xl border text-base text-gray-900 dark:text-gray-100 bg-white dark:bg-white/5 placeholder-gray-400"
+              :class="kmError ? 'border-red-400 focus:ring-red-400' : 'border-gray-300 dark:border-white/10 focus:ring-blue-400'"
             />
             <p v-if="kmError" class="mt-1 text-xs text-red-600">{{ kmError }}</p>
           </div>
@@ -182,12 +182,12 @@
           </div>
 
           <div class="flex gap-3 pt-1">
-            <button @click="backFromOdometer" class="flex-1 py-2.5 border dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800">
+            <button @click="backFromOdometer" class="flex-1 py-2.5 border dark:border-white/10 rounded-lg text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800">
               Geri
             </button>
             <button @click="submitSession" :disabled="submitting"
               class="flex-1 py-2.5 rounded-lg text-white text-sm font-medium disabled:opacity-50"
-              :class="mode === 'end' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'">
+              :class="mode === 'end' ? 'bg-gradient-to-br from-red-500 to-red-600 hover:from-red-400 hover:to-red-500' : 'bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500'">
               {{ submitting ? 'İşleniyor...' : (mode === 'end' ? 'Seferi Bitir' : 'Seferi Başlat') }}
             </button>
           </div>

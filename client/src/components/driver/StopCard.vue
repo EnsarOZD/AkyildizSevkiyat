@@ -4,12 +4,12 @@
     <div class="flex items-center gap-3 mb-2">
       <!-- Stop indicator -->
       <div
-        class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+        class="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-sm font-extrabold"
         :class="stop.isFullyDelivered
-          ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
+          ? 'bg-emerald-500/16 text-emerald-300'
           : isActive
-            ? 'bg-blue-600 text-white'
-            : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'"
+            ? 'text-white shadow-lg shadow-blue-600/40 bg-gradient-to-br from-blue-500 to-blue-600'
+            : 'bg-blue-500/15 text-blue-300'"
       >
         <CheckIcon v-if="stop.isFullyDelivered" class="w-4 h-4" />
         <span v-else>{{ stop.stopNumber }}</span>
@@ -17,13 +17,11 @@
 
       <div class="flex-1 min-w-0">
         <p
-          class="font-semibold leading-tight truncate"
-          :class="stop.isFullyDelivered
-            ? 'text-gray-400 dark:text-gray-500'
-            : 'text-gray-900 dark:text-white'"
+          class="font-bold leading-tight break-words"
+          :class="stop.isFullyDelivered ? 'text-emerald-300/90' : 'text-white'"
         >{{ stop.projectName }}</p>
-        <p v-if="stop.projectAddress" class="text-xs text-gray-400 dark:text-gray-500 truncate mt-0.5 flex items-center gap-1">
-          <MapPinIcon class="w-3 h-3 flex-shrink-0" />
+        <p v-if="stop.projectAddress" class="text-xs text-white/40 break-words mt-0.5 flex items-start gap-1">
+          <MapPinIcon class="w-3 h-3 flex-shrink-0 mt-0.5" />
           {{ stop.projectAddress }}
         </p>
       </div>
@@ -32,35 +30,35 @@
       <div class="flex-shrink-0">
         <span
           v-if="isActive"
-          class="px-2 py-0.5 text-[11px] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 rounded-full border border-amber-200 dark:border-amber-700"
+          class="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-bold bg-amber-400/16 text-amber-300 rounded-full"
         >ŞİMDİ</span>
-        <CheckIcon
+        <CheckCircleIcon
           v-else-if="stop.isFullyDelivered"
-          class="w-4 h-4 text-green-500 dark:text-green-400"
+          class="w-5 h-5 text-emerald-400"
         />
       </div>
     </div>
 
     <!-- Row 2: Meta info (kalem count + TLP) -->
-    <div class="flex items-center gap-3 ml-11 mb-2">
-      <span class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-        <ArchiveBoxIcon class="w-3.5 h-3.5 text-gray-400" />
+    <div class="flex items-center gap-3 ml-12 mb-2">
+      <span class="flex items-center gap-1 text-xs text-white/50">
+        <ArchiveBoxIcon class="w-3.5 h-3.5 text-white/40" />
         {{ stop.totalLineCount }} kalem
       </span>
-      <span v-if="tlpCode" class="text-xs font-mono text-gray-400 dark:text-gray-500 truncate">
+      <span v-if="tlpCode" class="text-xs font-mono text-white/30 truncate">
         {{ tlpCode }}
       </span>
-      <span v-if="stop.shipments.length > 1" class="text-xs text-gray-400">
+      <span v-if="stop.shipments.length > 1" class="text-xs text-white/40">
         {{ stop.shipments.length }} irsaliye
       </span>
     </div>
 
     <!-- Active stop action buttons -->
-    <div v-if="isActive" class="ml-11 mt-3 space-y-2">
+    <div v-if="isActive" class="ml-12 mt-3 space-y-2">
       <!-- Teslimat Gir — primary CTA -->
       <router-link
         :to="{ name: 'DriverStop', params: { projectId: stop.projectId } }"
-        class="flex items-center justify-center gap-2 w-full py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-semibold rounded-xl transition-colors"
+        class="flex items-center justify-center gap-2 w-full h-12 bg-gradient-to-br from-blue-500 to-blue-600 active:from-blue-600 active:to-blue-700 text-white text-sm font-bold rounded-2xl transition-colors shadow-lg shadow-blue-600/30"
       >
         <ClipboardDocumentListIcon class="w-4 h-4" />
         Teslimat Gir
@@ -72,22 +70,19 @@
           v-if="stop.contactPhone"
           :href="`tel:${stop.contactPhone}`"
           @click.stop
-          class="flex-1 flex items-center justify-center gap-1.5 py-2 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/15 text-gray-700 dark:text-gray-300 text-xs font-medium rounded-xl transition-colors"
+          class="flex-1 flex items-center justify-center gap-1.5 h-11 bg-emerald-500/16 ring-1 ring-emerald-400/30 text-emerald-300 text-xs font-bold rounded-2xl transition-colors"
         >
           <PhoneIcon class="w-4 h-4" />
           Ara
         </a>
-        <a
+        <button
           v-if="mapsUrl"
-          :href="mapsUrl"
-          target="_blank"
-          rel="noopener"
-          @click.stop
-          class="flex-1 flex items-center justify-center gap-1.5 py-2 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/15 text-gray-700 dark:text-gray-300 text-xs font-medium rounded-xl transition-colors"
+          @click.stop="openMaps(mapsUrl)"
+          class="flex-1 flex items-center justify-center gap-1.5 h-11 bg-white/[0.08] hover:bg-white/[0.12] text-white text-xs font-bold rounded-2xl transition-colors"
         >
           <MapIcon class="w-4 h-4" />
           Yol Tarifi
-        </a>
+        </button>
       </div>
     </div>
   </div>
@@ -98,17 +93,21 @@ import { computed } from 'vue';
 import {
   MapPinIcon,
   CheckIcon,
+  CheckCircleIcon,
   ArchiveBoxIcon,
   PhoneIcon,
   MapIcon,
   ClipboardDocumentListIcon,
 } from '@heroicons/vue/24/outline';
 import type { DeliveryStopDto } from '../../services/driverService';
+import { useOpenMaps } from '../../composables/useOpenMaps';
 
 const props = defineProps<{
   stop: DeliveryStopDto;
   isActive?: boolean;
 }>();
+
+const { openMaps } = useOpenMaps();
 
 const tlpCode = computed(() => props.stop.shipments[0]?.externalOrderNumber ?? null);
 
