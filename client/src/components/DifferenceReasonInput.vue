@@ -7,6 +7,7 @@
       :class="modelValue ? 'border-gray-300 dark:border-gray-700' : 'border-orange-300 bg-orange-50 dark:bg-orange-950 dark:border-orange-700'"
       @click.stop
     >
+      <option value="" disabled>Sebep seçiniz…</option>
       <option v-for="p in PRESETS" :key="p" :value="p">{{ p }}</option>
       <option :value="OTHER">Diğer…</option>
     </select>
@@ -24,15 +25,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch } from 'vue';
 
 const props = withDefaults(defineProps<{
   modelValue: string;
-  /** Boş geldiğinde otomatik seçilecek varsayılan neden. */
+  /**
+   * Geriye dönük uyumluluk için kabul edilir ama ARTIK OTOMATİK UYGULANMAZ.
+   * Sebep boş başlar; depocu bilinçli olarak seçmek zorundadır (yanlışlıkla
+   * varsayılan sebep girmeyi önlemek için).
+   */
   defaultReason?: string;
   placeholder?: string;
 }>(), {
-  defaultReason: 'Stokta yok',
+  defaultReason: '',
   placeholder: 'Nedeni yazın…',
 });
 
@@ -56,11 +61,6 @@ function syncFromModel(v: string) {
 }
 
 syncFromModel(props.modelValue);
-
-// Alan ilk göründüğünde değer boşsa varsayılan nedeni uygula.
-onMounted(() => {
-  if (!props.modelValue) emit('update:modelValue', props.defaultReason);
-});
 
 watch(() => props.modelValue, (v) => {
   const current = isCustom.value ? customText.value : props.modelValue;
