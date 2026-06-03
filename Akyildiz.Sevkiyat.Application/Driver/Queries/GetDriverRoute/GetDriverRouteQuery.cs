@@ -115,42 +115,44 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Queries.GetDriverRoute
 
             if (driverId.HasValue)
             {
-                // Açık (devam eden) sefer var mı + hangi zone?
-                var openSession = await _context.DriverSessions
+                // Açık (devam eden) sefer var mı?
+                var openSessionId = await _context.DriverSessions
                     .Where(ds => ds.DriverId == driverId.Value && ds.Status == DriverSessionStatus.Open)
-                    .Select(ds => new { ds.ZonePreparationId })
+                    .Select(ds => (Guid?)ds.Id)
                     .FirstOrDefaultAsync(cancellationToken);
-                bool hasOpenSession = openSession != null;
 
-                // Açık sefer yoksa en son atanan zone'u al (ZonePreparation.CreatedAt'e göre)
-                int? activeZoneId = openSession?.ZonePreparationId;
-                if (!hasOpenSession)
+                // Açık sefer varsa o seferin manifestindeki sevkiyatlar (çok zone'u tam kapsar)
+                var manifestIds = openSessionId.HasValue
+                    ? await _context.DriverSessionShipments
+                        .Where(m => m.DriverSessionId == openSessionId.Value)
+                        .Select(m => m.ShipmentId)
+                        .ToListAsync(cancellationToken)
+                    : new List<int>();
+
+                if (openSessionId.HasValue && manifestIds.Count > 0)
                 {
-                    activeZoneId = await _context.ZonePreparationDrivers
-                        .Where(zpd => zpd.DriverId == driverId.Value)
-                        .Join(_context.ZonePreparations,
-                              zpd => zpd.ZonePreparationId,
-                              zp  => zp.Id,
-                              (zpd, zp) => new { zpd.ZonePreparationId, zp.CreatedAt })
-                        .OrderByDescending(x => x.CreatedAt)
-                        .Select(x => (int?)x.ZonePreparationId)
-                        .FirstOrDefaultAsync(cancellationToken);
+                    // Açık sefer: tam olarak bu seferin manifestindeki sevkiyatlar; teslim
+                    // edilenler dahil (ilerleme görünsün), tüm atanmış zone'ları kapsar.
+                    query = query.Where(s => manifestIds.Contains(s.Id));
                 }
+                else
+                {
+                    // Sefer yok (veya eski/boş manifest): yalnızca bekleyen Dispatched sevkiyatlar.
+                    // Çok zone desteği: şoföre atanmış tüm aktif zone'lar + doğrudan atananlar.
+                    var assignedZoneIds = await _context.ZonePreparationDrivers
+                        .Where(zpd =>
+                            zpd.DriverId == driverId.Value &&
+                            zpd.ZonePreparation.DeliveryDate.Date >= today &&
+                            zpd.ZonePreparation.Status <= ZonePreparationStatus.Dispatched)
+                        .Select(zpd => zpd.ZonePreparationId)
+                        .Distinct()
+                        .ToListAsync(cancellationToken);
 
-                // Durum filtresi: Dispatched her zaman; teslim edilenler (bugün) YALNIZCA açık
-                // sefer varken gösterilir. Böylece sefer başlatılmadığında panel önceki
-                // teslim edilmiş sevkiyatlarla dolu kalmaz.
-                query = query.Where(s =>
-                    s.Status == ShipmentStatus.Dispatched ||
-                    (hasOpenSession &&
-                     s.Status == ShipmentStatus.Delivered &&
-                     s.DeliveredAt.HasValue &&
-                     s.DeliveredAt.Value.Date == today));
-
-                // Yalnızca aktif zone'un sevkiyatları + doğrudan atananlar (zone'suz)
-                query = query.Where(s =>
-                    s.AssignedDriverId == driverId.Value ||
-                    (activeZoneId.HasValue && s.ZonePreparationId == activeZoneId.Value));
+                    query = query.Where(s =>
+                        s.Status == ShipmentStatus.Dispatched &&
+                        (s.AssignedDriverId == driverId.Value ||
+                         (s.ZonePreparationId != null && assignedZoneIds.Contains(s.ZonePreparationId.Value))));
+                }
             }
             else
             {

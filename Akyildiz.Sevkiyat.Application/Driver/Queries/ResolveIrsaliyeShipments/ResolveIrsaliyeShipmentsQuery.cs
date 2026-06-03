@@ -54,18 +54,21 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Queries.ResolveIrsaliyeShipments
 
             var today = DateTime.UtcNow.Date;
 
-            var zoneAssignment = await _context.ZonePreparationDrivers
-                .Include(zpd => zpd.ZonePreparation)
-                .FirstOrDefaultAsync(zpd =>
+            // Bu araç+şoföre atanmış TÜM aktif zone'lar (çok zone tek araca atanabilir)
+            var zoneIds = await _context.ZonePreparationDrivers
+                .Where(zpd =>
                     zpd.DriverId == driver.Id &&
                     zpd.ZonePreparation.VehicleId == vehicle.Id &&
                     zpd.ZonePreparation.DeliveryDate.Date >= today &&
-                    zpd.ZonePreparation.Status <= ZonePreparationStatus.Dispatched,
-                    cancellationToken);
+                    zpd.ZonePreparation.Status <= ZonePreparationStatus.Dispatched)
+                .Select(zpd => zpd.ZonePreparationId)
+                .Distinct()
+                .ToListAsync(cancellationToken);
 
-            var tripQuery = zoneAssignment != null
+            var tripQuery = zoneIds.Count > 0
                 ? _context.Shipments.Where(s =>
-                    s.ZonePreparationId == zoneAssignment.ZonePreparationId &&
+                    s.ZonePreparationId != null &&
+                    zoneIds.Contains(s.ZonePreparationId.Value) &&
                     (s.Status == ShipmentStatus.AssignedToVehicle || s.Status == ShipmentStatus.Dispatched))
                 : _context.Shipments.Where(s =>
                     s.AssignedDriverId == driver.Id &&

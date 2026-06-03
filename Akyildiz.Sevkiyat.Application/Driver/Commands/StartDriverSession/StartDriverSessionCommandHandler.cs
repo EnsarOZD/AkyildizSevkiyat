@@ -51,20 +51,22 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Commands.StartDriverSession
 
             var today = DateTime.UtcNow.Date;
 
-            // 4a. Depo akışı: ZonePreparationDrivers tablosunda atama var mı?
-            var zoneAssignment = await _context.ZonePreparationDrivers
-                .Include(zpd => zpd.ZonePreparation)
-                .FirstOrDefaultAsync(zpd =>
+            // 4a. Depo akışı: ZonePreparationDrivers — bu araç+şoföre atanmış TÜM aktif zone'lar.
+            //     Bir araca aynı gün birden fazla zone atanabilir; hepsini kapsa.
+            var zoneIds = await _context.ZonePreparationDrivers
+                .Where(zpd =>
                     zpd.DriverId == driver.Id &&
                     zpd.ZonePreparation.VehicleId == vehicle.Id &&
                     zpd.ZonePreparation.DeliveryDate.Date >= today &&
-                    zpd.ZonePreparation.Status <= ZonePreparationStatus.Dispatched,
-                    cancellationToken);
+                    zpd.ZonePreparation.Status <= ZonePreparationStatus.Dispatched)
+                .Select(zpd => zpd.ZonePreparationId)
+                .Distinct()
+                .ToListAsync(cancellationToken);
 
             // 4b. Direkt atama: Sevkiyatlar sayfasından AssignVehicle ile atanmış mı?
             // Sevkiyatlar ekranından atanan sevkiyatlar zaten Dispatched olarak gelir (zone onayı yok).
             bool hasDirectAssignment = false;
-            if (zoneAssignment == null)
+            if (zoneIds.Count == 0)
             {
                 hasDirectAssignment = await _context.Shipments
                     .AnyAsync(s =>
@@ -75,14 +77,15 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Commands.StartDriverSession
                         cancellationToken);
             }
 
-            if (zoneAssignment == null && !hasDirectAssignment)
+            if (zoneIds.Count == 0 && !hasDirectAssignment)
                 throw new DomainException("Bu araca atamanız bulunmuyor. Yöneticinizle iletişime geçin.");
 
-            // 4c. Bu seferin sevkiyatları (manifest adayı): zone bazlı veya direkt atama.
-            var tripShipments = zoneAssignment != null
+            // 4c. Bu seferin sevkiyatları (manifest adayı): tüm atanmış zone'lar veya direkt atama.
+            var tripShipments = zoneIds.Count > 0
                 ? await _context.Shipments
                     .Where(s =>
-                        s.ZonePreparationId == zoneAssignment.ZonePreparationId &&
+                        s.ZonePreparationId != null &&
+                        zoneIds.Contains(s.ZonePreparationId.Value) &&
                         (s.Status == ShipmentStatus.AssignedToVehicle || s.Status == ShipmentStatus.Dispatched))
                     .ToListAsync(cancellationToken)
                 : await _context.Shipments
@@ -107,11 +110,12 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Commands.StartDriverSession
             if (!string.IsNullOrWhiteSpace(command.StartOdometerPhotoBase64))
                 odometerPath = await _photos.SaveAsync(command.StartOdometerPhotoBase64, "odometer", cancellationToken);
 
-            // 6. Session oluştur (zone'suz direkt atamada ZonePreparationId = null)
+            // 6. Session oluştur — birincil zone (varsa ilk zone); manifest tüm zone'ları kapsar.
+            //    Zone'suz direkt atamada ZonePreparationId = null.
             var session = DriverSession.Create(
                 driver.Id,
                 vehicle.Id,
-                zoneAssignment?.ZonePreparationId,
+                zoneIds.Count > 0 ? zoneIds.First() : (int?)null,
                 command.Latitude,
                 command.Longitude,
                 command.DeviceFingerprint,
