@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Akyildiz.Sevkiyat.Application.Common.Interfaces;
+using Akyildiz.Sevkiyat.Application.Common.Services;
 using Akyildiz.Sevkiyat.Application.Interfaces;
 using Akyildiz.Sevkiyat.Domain.Entities;
 using Akyildiz.Sevkiyat.Domain.Enums;
@@ -96,11 +97,10 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Commands.StartDriverSession
                     .ToListAsync(cancellationToken);
 
             // 4d. Okutulan irsaliyenin bu sefere ait olduğunu doğrula (yanlış yük kontrolü).
-            var scannedIrsaliye = NormalizeIrsaliye(command.IrsaliyeNo);
-            if (string.IsNullOrEmpty(scannedIrsaliye))
+            if (string.IsNullOrEmpty(IrsaliyeMatcher.Normalize(command.IrsaliyeNo)))
                 throw new DomainException("İrsaliye numarası okunamadı. Lütfen irsaliye QR'ını tekrar okutun.");
 
-            if (!tripShipments.Any(s => NormalizeIrsaliye(s.IrsaliyeNo) == scannedIrsaliye))
+            if (!tripShipments.Any(s => IrsaliyeMatcher.Matches(s.IrsaliyeNo, command.IrsaliyeNo)))
                 throw new DomainException(
                     "Okuttuğunuz irsaliye bu araca atanmış sevkiyatlarla eşleşmiyor. " +
                     "Doğru aracın/seferin irsaliyesini okuttuğunuzdan emin olun.");
@@ -135,13 +135,6 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Commands.StartDriverSession
             await _context.SaveChangesAsync(cancellationToken);
 
             return new StartDriverSessionResult(session.Id, vehicle.PlateNumber, session.StartTime, tripShipments.Count);
-        }
-
-        /// <summary>İrsaliye no karşılaştırması için normalize: harf/rakam dışını at, büyük harfe çevir.</summary>
-        private static string NormalizeIrsaliye(string? raw)
-        {
-            if (string.IsNullOrWhiteSpace(raw)) return string.Empty;
-            return new string(raw.Where(char.IsLetterOrDigit).ToArray()).ToUpperInvariant();
         }
     }
 }

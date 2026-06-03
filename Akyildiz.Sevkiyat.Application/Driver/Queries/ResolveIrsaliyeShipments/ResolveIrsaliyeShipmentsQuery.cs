@@ -1,4 +1,5 @@
 using Akyildiz.Sevkiyat.Application.Common.Interfaces;
+using Akyildiz.Sevkiyat.Application.Common.Services;
 using Akyildiz.Sevkiyat.Application.Interfaces;
 using Akyildiz.Sevkiyat.Domain.Enums;
 using Akyildiz.Sevkiyat.Domain.Exceptions;
@@ -91,11 +92,10 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Queries.ResolveIrsaliyeShipments
             if (tripShipments.Count == 0)
                 throw new DomainException("Bu araca atanmış aktif sevkiyat bulunamadı.");
 
-            var scanned = NormalizeIrsaliye(request.IrsaliyeNo);
-            if (string.IsNullOrEmpty(scanned))
+            if (string.IsNullOrEmpty(IrsaliyeMatcher.Normalize(request.IrsaliyeNo)))
                 throw new DomainException("İrsaliye numarası okunamadı.");
 
-            if (!tripShipments.Any(s => NormalizeIrsaliye(s.IrsaliyeNo) == scanned))
+            if (!tripShipments.Any(s => IrsaliyeMatcher.Matches(s.IrsaliyeNo, request.IrsaliyeNo)))
                 throw new DomainException(
                     "Okuttuğunuz irsaliye bu araca atanmış sevkiyatlarla eşleşmiyor.");
 
@@ -105,12 +105,6 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Queries.ResolveIrsaliyeShipments
                     .Select(s => new TripShipmentDto(
                         s.Id, s.ProjectName, s.TalepNo, s.IrsaliyeNo, s.Status.ToString(), s.LineCount))
                     .ToList());
-        }
-
-        private static string NormalizeIrsaliye(string? raw)
-        {
-            if (string.IsNullOrWhiteSpace(raw)) return string.Empty;
-            return new string(raw.Where(char.IsLetterOrDigit).ToArray()).ToUpperInvariant();
         }
     }
 }
