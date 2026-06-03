@@ -17,7 +17,27 @@ export interface FreightDeliveryInfo {
   shipments: FreightDeliveryShipmentInfo[];
 }
 
+export interface FreightDeliveryListItem {
+  token: string;
+  projectId: number;
+  projectName: string;
+  carrierName: string;
+  carrierPhone: string | null;
+  shipmentCount: number;
+  createdAt: string;
+  expiresAt: string;
+  isCompleted: boolean;
+  isExpired: boolean;
+  completedAt: string | null;
+  recipientName: string | null;
+}
+
 const freightDeliveryService = {
+  async list(includeInactive = false): Promise<FreightDeliveryListItem[]> {
+    const res = await apiClient.get<FreightDeliveryListItem[]>('/freight-deliveries', { params: { includeInactive } });
+    return res.data;
+  },
+
   async getInfo(token: string): Promise<FreightDeliveryInfo> {
     const res = await apiClient.get<FreightDeliveryInfo>(`/public/freight-delivery/${token}`);
     return res.data;

@@ -128,6 +128,7 @@ import { ref, onUnmounted } from 'vue';
 import warehouseService, { type FreightDeliveryLink } from '../services/warehouseService';
 import { ApiErrorUtils } from '../utils/apiError';
 import { useNotificationStore } from '../stores/notification';
+import { uploadUrl, waHref as buildWaHref } from '../utils/freightLink';
 
 const props = defineProps<{
   zonePreparationIds: number[];
@@ -146,19 +147,8 @@ const isSaving = ref(false);
 const phase = ref<'form' | 'links'>('form');
 const links = ref<FreightDeliveryLink[]>([]);
 
-const uploadUrl = (token: string) => `${window.location.origin}/teslim/${token}`;
-
-const waHref = (link: FreightDeliveryLink) => {
-  const text = `${link.projectName} teslimatı için fotoğraf yükleme linki: ${uploadUrl(link.token)}`;
-  // Telefonu uluslararası formata çevir (905XXXXXXXXX). Numara yoksa genel wa.me.
-  const digits = (link.carrierPhone || carrierPhone.value || '').replace(/\D/g, '');
-  let intl = digits;
-  if (digits.startsWith('0')) intl = '90' + digits.slice(1);
-  else if (digits.length === 10) intl = '90' + digits;
-  return intl
-    ? `https://wa.me/${intl}?text=${encodeURIComponent(text)}`
-    : `https://wa.me/?text=${encodeURIComponent(text)}`;
-};
+const waHref = (link: FreightDeliveryLink) =>
+  buildWaHref(link.carrierPhone || carrierPhone.value, link.projectName, link.token);
 
 const copyLink = async (link: FreightDeliveryLink) => {
   try {

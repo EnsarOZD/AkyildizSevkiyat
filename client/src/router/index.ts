@@ -43,6 +43,12 @@ const router = createRouter({
                     meta: { title: 'Bildirimler' }
                 },
                 {
+                    path: 'freight-deliveries',
+                    name: 'FreightDeliveries',
+                    component: () => import('../views/FreightDeliveriesView.vue'),
+                    meta: { title: 'Nakliye Teslim Linkleri', roles: ['Admin', 'Manager', 'Accounting', 'Warehouse'] }
+                },
+                {
                     path: 'shipments/:id',
                     name: 'ShipmentDetail',
                     component: () => import('../views/ShipmentDetailView.vue'),
