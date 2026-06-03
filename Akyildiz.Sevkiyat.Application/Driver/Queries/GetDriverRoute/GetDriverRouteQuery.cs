@@ -111,24 +111,20 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Queries.GetDriverRoute
                 .Include(s => s.Project).ThenInclude(p => p.Zone)
                 .Include(s => s.IssOrder)
                 .Include(s => s.Lines).ThenInclude(l => l.StockMaster)
-                .Where(s =>
-                    // Yalnızca yükleme onayı verilmiş (Dispatched) veya bugün teslim edilmiş sevkiyatlar
-                    s.Status == ShipmentStatus.Dispatched ||
-                    (s.Status == ShipmentStatus.Delivered &&
-                     s.DeliveredAt.HasValue &&
-                     s.DeliveredAt.Value.Date == today));
+                .AsQueryable();
 
             if (driverId.HasValue)
             {
-                // 1. Önce açık session'ın zone'una bak
-                var openSessionZoneId = await _context.DriverSessions
+                // Açık (devam eden) sefer var mı + hangi zone?
+                var openSession = await _context.DriverSessions
                     .Where(ds => ds.DriverId == driverId.Value && ds.Status == DriverSessionStatus.Open)
-                    .Select(ds => ds.ZonePreparationId)
+                    .Select(ds => new { ds.ZonePreparationId })
                     .FirstOrDefaultAsync(cancellationToken);
+                bool hasOpenSession = openSession != null;
 
-                // 2. Açık session yoksa en son atanan zone'u al (ZonePreparation.CreatedAt'e göre)
-                int? activeZoneId = openSessionZoneId;
-                if (activeZoneId == null)
+                // Açık sefer yoksa en son atanan zone'u al (ZonePreparation.CreatedAt'e göre)
+                int? activeZoneId = openSession?.ZonePreparationId;
+                if (!hasOpenSession)
                 {
                     activeZoneId = await _context.ZonePreparationDrivers
                         .Where(zpd => zpd.DriverId == driverId.Value)
@@ -141,10 +137,29 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Queries.GetDriverRoute
                         .FirstOrDefaultAsync(cancellationToken);
                 }
 
+                // Durum filtresi: Dispatched her zaman; teslim edilenler (bugün) YALNIZCA açık
+                // sefer varken gösterilir. Böylece sefer başlatılmadığında panel önceki
+                // teslim edilmiş sevkiyatlarla dolu kalmaz.
+                query = query.Where(s =>
+                    s.Status == ShipmentStatus.Dispatched ||
+                    (hasOpenSession &&
+                     s.Status == ShipmentStatus.Delivered &&
+                     s.DeliveredAt.HasValue &&
+                     s.DeliveredAt.Value.Date == today));
+
                 // Yalnızca aktif zone'un sevkiyatları + doğrudan atananlar (zone'suz)
                 query = query.Where(s =>
                     s.AssignedDriverId == driverId.Value ||
                     (activeZoneId.HasValue && s.ZonePreparationId == activeZoneId.Value));
+            }
+            else
+            {
+                // Yönetici/operasyon görünümü: Dispatched + bugün teslim edilenler
+                query = query.Where(s =>
+                    s.Status == ShipmentStatus.Dispatched ||
+                    (s.Status == ShipmentStatus.Delivered &&
+                     s.DeliveredAt.HasValue &&
+                     s.DeliveredAt.Value.Date == today));
             }
 
             var shipments = await query.ToListAsync(cancellationToken);
