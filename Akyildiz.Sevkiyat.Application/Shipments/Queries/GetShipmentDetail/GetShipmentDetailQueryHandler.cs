@@ -113,6 +113,22 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipmentDetail
             var zoneName = shipment.Project.Zone?.Name ?? "Tanımsız";
             var zoneOrder = shipment.Project.Zone?.Order ?? 9999;
 
+            // Bu sevkiyata ait stok hareketleri (teslim çıkışı / araç iadesi → Reference = "SHP-{id}")
+            var stockReference = $"SHP-{request.Id}";
+            var stockMovements = await _context.StockTransactions
+                .Where(t => t.Reference == stockReference)
+                .OrderByDescending(t => t.Date)
+                .Select(t => new ShipmentStockMovementDto
+                {
+                    Date      = t.Date,
+                    Type      = StockTxnLabel(t.Type),
+                    Qty       = t.Qty,
+                    StockCode = t.StockMaster.StockCode,
+                    StockName = t.StockMaster.StockName,
+                    Note      = t.Note
+                })
+                .ToListAsync(cancellationToken);
+
             return new ShipmentDetailDto
             {
                 Id = shipment.Id,
@@ -214,8 +230,21 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipmentDetail
                     Id = l.Id,
                     PrintedAt = l.PrintedAt,
                     PrintedByName = l.PrintedByName,
-                }).ToList()
+                }).ToList(),
+                StockMovements = stockMovements
             };
         }
+
+        private static string StockTxnLabel(Domain.Enums.StockTransactionType type) => type switch
+        {
+            Domain.Enums.StockTransactionType.GoodsIn            => "Mal Girişi",
+            Domain.Enums.StockTransactionType.ShipmentOut        => "Teslim Çıkışı",
+            Domain.Enums.StockTransactionType.ManualAdjust       => "Manuel Düzeltme",
+            Domain.Enums.StockTransactionType.Reserve            => "Rezervasyon",
+            Domain.Enums.StockTransactionType.ReleaseReserve     => "Rezervasyon İptali",
+            Domain.Enums.StockTransactionType.VehicleReturn      => "Araç İadesi",
+            Domain.Enums.StockTransactionType.GoodsInCorrection  => "Mal Giriş Düzeltmesi",
+            _                                                    => type.ToString()
+        };
     }
 }

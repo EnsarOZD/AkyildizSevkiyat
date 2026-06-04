@@ -9,6 +9,19 @@ export interface Zone {
   description?: string;
 }
 
+export interface ProjectAddressChange {
+  projectId: number;
+  projectCode: string;
+  projectName: string;
+  oldAddress?: string | null;
+  newAddress?: string | null;
+}
+
+export interface SyncProjectsResult {
+  count: number;
+  addressChanges: ProjectAddressChange[];
+}
+
 export interface ProjectCoordinateValidationDto {
   projectId: number;
   projectCode: string;
@@ -22,6 +35,19 @@ export interface ProjectCoordinateValidationDto {
   cityName?: string | null;
   districtName?: string | null;
   status: 'Compatible' | 'Suspicious' | 'Incompatible' | 'NoAddress' | 'NoCoordinate';
+  // Veri kalitesi
+  recordedSource: 'None' | 'Geocoded' | 'DriverVerified' | 'Manual';
+  verifiedAt?: string | null;
+  storedCityName?: string | null;
+  storedDistrictName?: string | null;
+  detectedCityName?: string | null;
+  detectedDistrictName?: string | null;
+  cityDistrictStatus: 'Compatible' | 'Mismatch' | 'Unknown';
+  // İsim bazlı (Places) çapraz kontrol
+  placeLat?: number | null;
+  placeLng?: number | null;
+  placeDistanceKm?: number | null;   // isim-koordinatı ↔ kayıtlı koordinat
+  placeVsAddressKm?: number | null;  // isim-koordinatı ↔ adres-geocode
 }
 
 export interface ProjectQueryParams {
@@ -92,7 +118,7 @@ const projectService = {
     await apiClient.patch(`/projects/${projectId}/netsis-cari-kodu`, { netsisCariKodu, netsisTeslimCariKodu });
   },
 
-  async syncProjects(params: { forceAll: boolean } = { forceAll: false }, config?: { timeout?: number }): Promise<{ count: number }> {
+  async syncProjects(params: { forceAll: boolean } = { forceAll: false }, config?: { timeout?: number }): Promise<SyncProjectsResult> {
     const response = await apiClient.post('/projects/sync', params, config);
     return response.data;
   },
@@ -141,8 +167,8 @@ const projectService = {
     return response.data;
   },
 
-  async updateLocation(id: number, lat: number | null, lng: number | null, cityName?: string | null, districtName?: string | null): Promise<void> {
-    await apiClient.patch(`/projects/${id}/location`, { latitude: lat, longitude: lng, cityName, districtName });
+  async updateLocation(id: number, lat: number | null, lng: number | null, cityName?: string | null, districtName?: string | null, source?: 'Geocoded' | 'Manual' | 'DriverVerified'): Promise<void> {
+    await apiClient.patch(`/projects/${id}/location`, { latitude: lat, longitude: lng, cityName, districtName, source });
   },
 
   async resetLocation(id: number): Promise<void> {

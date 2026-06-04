@@ -1,5 +1,6 @@
 <template>
   <div class="space-y-6">
+    <template v-if="!simplified">
     <!-- KPI row 1: Sevkiyat odaklı -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
       <router-link to="/shipments"
@@ -145,7 +146,146 @@
           {{ stats.criticalStockCount }}
         </p>
       </div>
+
+      <router-link to="/freight-deliveries"
+        class="rounded-xl border p-4 hover:shadow-sm transition-all"
+        :class="pendingFreightCount > 0
+          ? 'bg-teal-50 dark:bg-teal-900/10 border-teal-300 dark:border-teal-700'
+          : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'">
+        <div class="flex items-center justify-between mb-3">
+          <p class="text-xs font-medium uppercase tracking-wide"
+            :class="pendingFreightCount > 0 ? 'text-teal-700 dark:text-teal-400' : 'text-gray-500 dark:text-gray-400'">
+            Nakliye Teslim Bekleniyor
+          </p>
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+            :class="pendingFreightCount > 0 ? 'bg-teal-100 dark:bg-teal-900/30' : 'bg-gray-50 dark:bg-gray-800'">
+            <PhoneIcon class="w-4 h-4"
+              :class="pendingFreightCount > 0 ? 'text-teal-600' : 'text-gray-400'" />
+          </div>
+        </div>
+        <p class="text-3xl font-bold"
+          :class="pendingFreightCount > 0 ? 'text-teal-700 dark:text-teal-300' : 'text-gray-900 dark:text-gray-100'">
+          {{ pendingFreightCount }}
+        </p>
+      </router-link>
     </div>
+    </template>
+
+    <!-- ════════ Manager sadeleştirilmiş düzen: Sevkiyatlar + Satınalma ════════ -->
+    <template v-else>
+      <!-- Sevkiyatlar -->
+      <section>
+        <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Sevkiyatlar</h2>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Gecikmiş -->
+          <router-link :to="`/shipments?startDate=${ninetyDaysAgo}&endDate=${yesterday}`"
+            class="rounded-xl border p-4 hover:shadow-sm transition-all"
+            :class="stats.shipmentsOverdue > 0
+              ? 'bg-red-50/30 dark:bg-red-900/10 border-red-200 dark:border-red-800'
+              : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'">
+            <div class="flex items-center justify-between mb-3">
+              <p class="text-xs font-medium uppercase tracking-wide"
+                :class="stats.shipmentsOverdue > 0 ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'">Gecikmiş</p>
+              <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+                :class="stats.shipmentsOverdue > 0 ? 'bg-red-100 dark:bg-red-900/30' : 'bg-gray-50 dark:bg-gray-800'">
+                <ExclamationCircleIcon class="w-4 h-4" :class="stats.shipmentsOverdue > 0 ? 'text-red-500' : 'text-gray-400'" />
+              </div>
+            </div>
+            <p class="text-3xl font-bold" :class="stats.shipmentsOverdue > 0 ? 'text-red-600' : 'text-gray-900 dark:text-gray-100'">{{ stats.shipmentsOverdue }}</p>
+          </router-link>
+
+          <!-- Bugün Hazır Değil -->
+          <router-link :to="`/shipments?startDate=${today}&endDate=${today}&statuses=0,1,2`"
+            class="rounded-xl border p-4 hover:shadow-sm transition-all"
+            :class="stats.todayShipmentsNotReadyCount > 0
+              ? 'bg-red-50/40 dark:bg-red-900/10 border-red-200 dark:border-red-800'
+              : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'">
+            <div class="flex items-center justify-between mb-3">
+              <p class="text-xs font-medium uppercase tracking-wide"
+                :class="stats.todayShipmentsNotReadyCount > 0 ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'">Bugün Hazır Değil</p>
+              <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+                :class="stats.todayShipmentsNotReadyCount > 0 ? 'bg-red-100 dark:bg-red-900/30' : 'bg-gray-50 dark:bg-gray-800'">
+                <XCircleIcon class="w-4 h-4" :class="stats.todayShipmentsNotReadyCount > 0 ? 'text-red-500' : 'text-gray-400'" />
+              </div>
+            </div>
+            <p class="text-3xl font-bold" :class="stats.todayShipmentsNotReadyCount > 0 ? 'text-red-600' : 'text-gray-900 dark:text-gray-100'">{{ stats.todayShipmentsNotReadyCount }}</p>
+          </router-link>
+
+          <!-- Belirsiz İade -->
+          <router-link to="/floating-returns"
+            class="rounded-xl border p-4 hover:shadow-sm transition-all"
+            :class="stats.pendingFloatingReturns > 0
+              ? 'bg-orange-50 dark:bg-orange-900/10 border-orange-300 dark:border-orange-700'
+              : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'">
+            <div class="flex items-center justify-between mb-3">
+              <p class="text-xs font-medium uppercase tracking-wide"
+                :class="stats.pendingFloatingReturns > 0 ? 'text-orange-700 dark:text-orange-400' : 'text-gray-500 dark:text-gray-400'">Belirsiz İade</p>
+              <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+                :class="stats.pendingFloatingReturns > 0 ? 'bg-orange-100 dark:bg-orange-900/30' : 'bg-gray-50 dark:bg-gray-800'">
+                <ExclamationCircleIcon class="w-4 h-4" :class="stats.pendingFloatingReturns > 0 ? 'text-orange-600' : 'text-gray-400'" />
+              </div>
+            </div>
+            <p class="text-3xl font-bold" :class="stats.pendingFloatingReturns > 0 ? 'text-orange-700 dark:text-orange-300' : 'text-gray-900 dark:text-gray-100'">{{ stats.pendingFloatingReturns }}</p>
+          </router-link>
+
+          <!-- Nakliye Teslim Bekleniyor -->
+          <router-link to="/freight-deliveries"
+            class="rounded-xl border p-4 hover:shadow-sm transition-all"
+            :class="pendingFreightCount > 0
+              ? 'bg-teal-50 dark:bg-teal-900/10 border-teal-300 dark:border-teal-700'
+              : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'">
+            <div class="flex items-center justify-between mb-3">
+              <p class="text-xs font-medium uppercase tracking-wide"
+                :class="pendingFreightCount > 0 ? 'text-teal-700 dark:text-teal-400' : 'text-gray-500 dark:text-gray-400'">Nakliye Teslim Bekleniyor</p>
+              <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+                :class="pendingFreightCount > 0 ? 'bg-teal-100 dark:bg-teal-900/30' : 'bg-gray-50 dark:bg-gray-800'">
+                <PhoneIcon class="w-4 h-4" :class="pendingFreightCount > 0 ? 'text-teal-600' : 'text-gray-400'" />
+              </div>
+            </div>
+            <p class="text-3xl font-bold" :class="pendingFreightCount > 0 ? 'text-teal-700 dark:text-teal-300' : 'text-gray-900 dark:text-gray-100'">{{ pendingFreightCount }}</p>
+          </router-link>
+        </div>
+      </section>
+
+      <!-- Satınalma -->
+      <section>
+        <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Satınalma</h2>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Onay Bekleyen PO -->
+          <router-link to="/purchase-orders"
+            class="rounded-xl border p-4 hover:shadow-sm transition-all"
+            :class="stats.pendingPOApprovalCount > 0
+              ? 'bg-yellow-50 dark:bg-yellow-900/10 border-yellow-300 dark:border-yellow-700'
+              : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'">
+            <div class="flex items-center justify-between mb-3">
+              <p class="text-xs font-medium uppercase tracking-wide"
+                :class="stats.pendingPOApprovalCount > 0 ? 'text-yellow-700 dark:text-yellow-400' : 'text-gray-500 dark:text-gray-400'">Onay Bekleyen PO</p>
+              <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+                :class="stats.pendingPOApprovalCount > 0 ? 'bg-yellow-100 dark:bg-yellow-900/30' : 'bg-gray-50 dark:bg-gray-800'">
+                <ShoppingCartIcon class="w-4 h-4" :class="stats.pendingPOApprovalCount > 0 ? 'text-yellow-600' : 'text-gray-400'" />
+              </div>
+            </div>
+            <p class="text-3xl font-bold" :class="stats.pendingPOApprovalCount > 0 ? 'text-yellow-700 dark:text-yellow-300' : 'text-gray-900 dark:text-gray-100'">{{ stats.pendingPOApprovalCount }}</p>
+          </router-link>
+
+          <!-- Kritik Stok -->
+          <div class="rounded-xl border p-4"
+            :class="stats.criticalStockCount > 0
+              ? 'bg-red-50 dark:bg-red-900/10 border-red-300 dark:border-red-700'
+              : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'">
+            <div class="flex items-center justify-between mb-3">
+              <p class="text-xs font-medium uppercase tracking-wide"
+                :class="stats.criticalStockCount > 0 ? 'text-red-700 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'">Kritik Stok</p>
+              <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+                :class="stats.criticalStockCount > 0 ? 'bg-red-100 dark:bg-red-900/30' : 'bg-gray-50 dark:bg-gray-800'">
+                <ArchiveBoxIcon class="w-4 h-4" :class="stats.criticalStockCount > 0 ? 'text-red-600' : 'text-gray-400'" />
+              </div>
+            </div>
+            <p class="text-3xl font-bold" :class="stats.criticalStockCount > 0 ? 'text-red-700 dark:text-red-300' : 'text-gray-900 dark:text-gray-100'">{{ stats.criticalStockCount }}</p>
+          </div>
+        </div>
+      </section>
+    </template>
 
     <!-- Pipeline akışı -->
     <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
@@ -242,20 +382,35 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import {
   ClipboardDocumentListIcon, TruckIcon, ExclamationCircleIcon, CheckCircleIcon,
-  ArchiveBoxIcon, ShoppingCartIcon, XCircleIcon, ChevronRightIcon,
+  ArchiveBoxIcon, ShoppingCartIcon, XCircleIcon, ChevronRightIcon, PhoneIcon,
 } from '@heroicons/vue/24/outline';
 import type { DashboardStats, CriticalStockItem } from '../../services/dashboardService';
 import { statusLabel, statusBadge, formatShortDate } from '../../utils/shipmentStatusUi';
 import CriticalStockWidget from '../CriticalStockWidget.vue';
+import freightDeliveryService from '../../services/freightDeliveryService';
 
 const props = defineProps<{
   stats: DashboardStats;
   criticalStocks: CriticalStockItem[];
   criticalStocksLoading: boolean;
+  /** Manager için sadeleştirilmiş düzen: Aktif/Bugün/Bu Hafta kartları gizli,
+   *  kartlar "Sevkiyatlar" ve "Satınalma" başlıkları altında gruplanır. */
+  simplified?: boolean;
 }>();
+
+// Nakliyeden teslim bekleyen (tamamlanmamış, süresi geçmemiş) link sayısı
+const pendingFreightCount = ref(0);
+onMounted(async () => {
+  try {
+    const list = await freightDeliveryService.list(false);
+    pendingFreightCount.value = list.filter(f => !f.isCompleted && !f.isExpired).length;
+  } catch {
+    pendingFreightCount.value = 0;
+  }
+});
 
 function dateStr(offsetDays = 0) {
   const d = new Date();

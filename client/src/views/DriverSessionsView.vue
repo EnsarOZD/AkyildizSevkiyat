@@ -73,6 +73,9 @@
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Başlangıç</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase hidden md:table-cell">Bitiş</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase hidden md:table-cell">Süre</th>
+              <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase hidden lg:table-cell">Baş. KM</th>
+              <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase hidden lg:table-cell">Bitiş KM</th>
+              <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase hidden lg:table-cell">Gidilen KM</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Sevkiyat</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Durum</th>
               <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">İşlem</th>
@@ -91,6 +94,9 @@
               <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ fmtDateTime(s.startTime) }}</td>
               <td class="px-4 py-3 text-gray-600 dark:text-gray-400 hidden md:table-cell">{{ s.endTime ? fmtDateTime(s.endTime) : '—' }}</td>
               <td class="px-4 py-3 text-gray-600 dark:text-gray-400 hidden md:table-cell">{{ s.totalDurationMinutes != null ? s.totalDurationMinutes + ' dk' : '—' }}</td>
+              <td class="px-4 py-3 text-right text-gray-600 dark:text-gray-400 hidden lg:table-cell">{{ s.startOdometerKm != null ? s.startOdometerKm.toLocaleString('tr-TR') : '—' }}</td>
+              <td class="px-4 py-3 text-right text-gray-600 dark:text-gray-400 hidden lg:table-cell">{{ s.endOdometerKm != null ? s.endOdometerKm.toLocaleString('tr-TR') : '—' }}</td>
+              <td class="px-4 py-3 text-right font-medium hidden lg:table-cell" :class="distanceKm(s) != null ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400'">{{ distanceKm(s) != null ? distanceKm(s)!.toLocaleString('tr-TR') + ' km' : '—' }}</td>
               <td class="px-4 py-3">
                 <button v-if="s.shipments && s.shipments.length"
                   @click="toggleExpand(s.id)"
@@ -120,7 +126,7 @@
             </tr>
             <!-- Sefer manifesti (genişletilmiş) -->
             <tr v-if="expandedId === s.id">
-              <td colspan="8" class="px-4 py-3 bg-gray-50 dark:bg-gray-800/50">
+              <td colspan="11" class="px-4 py-3 bg-gray-50 dark:bg-gray-800/50">
                 <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
                   Bu seferde taşınan sevkiyatlar
                   <span v-if="s.startOdometerKm != null || s.endOdometerKm != null">
@@ -295,6 +301,12 @@ const submitForceClose = async () => {
     forceCloseLoading.value = false;
   }
 };
+
+// Gidilen toplam km — başlangıç ve bitiş km'si girildiyse fark
+const distanceKm = (s: SessionDto): number | null =>
+  s.startOdometerKm != null && s.endOdometerKm != null && s.endOdometerKm >= s.startOdometerKm
+    ? s.endOdometerKm - s.startOdometerKm
+    : null;
 
 const fmtDateTime = (iso: string) =>
   new Date(iso).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });

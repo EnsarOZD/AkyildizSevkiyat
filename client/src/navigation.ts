@@ -91,6 +91,7 @@ export const NAV_ITEMS: NavGroup[] = [
             { label: 'Sevkiyatlar',     to: '/shipments',         icon: ClipboardDocumentListIcon },
             { label: 'Kargo Takip',     to: '/cargo-tracking',    icon: TruckIcon },
             { label: 'Nakliye Linkleri', to: '/freight-deliveries', icon: PhoneIcon,               roles: ['Admin', 'Manager', 'Accounting', 'Warehouse'] },
+            { label: 'Nakliyeciler',     to: '/carriers',           icon: TruckIcon,               roles: ['Admin', 'Manager', 'Accounting'] },
         ],
     },
     {

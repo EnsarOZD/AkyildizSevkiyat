@@ -44,40 +44,52 @@
         :key="session.sessionId"
         class="bg-white dark:bg-[#0f2744] rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm overflow-hidden"
       >
-        <!-- Session header -->
-        <div class="px-4 pt-4 pb-3 border-b border-gray-100 dark:border-white/10 flex items-start justify-between gap-3">
-          <div>
-            <div class="flex items-center gap-2">
-              <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse flex-shrink-0"></span>
-              <p class="font-semibold text-gray-900 dark:text-white">{{ session.driverFullName }}</p>
-            </div>
-            <div class="flex items-center gap-3 mt-1 text-xs text-gray-500 dark:text-gray-400">
-              <span class="flex items-center gap-1">
-                <TruckIcon class="w-3.5 h-3.5" />
-                {{ session.plateNumber }}
-              </span>
-              <span class="flex items-center gap-1">
-                <ClockIcon class="w-3.5 h-3.5" />
-                {{ formatTime(session.startTime) }}
-              </span>
-              <span
-                class="px-1.5 py-0.5 rounded font-mono"
-                :class="session.elapsedMinutes > 480
-                  ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
-                  : 'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400'"
-              >{{ formatElapsed(session.elapsedMinutes) }}</span>
+        <!-- Session header (accordion toggle) -->
+        <div
+          @click="toggle(session.sessionId)"
+          class="px-4 pt-4 pb-3 border-b border-gray-100 dark:border-white/10 flex items-start justify-between gap-3 cursor-pointer select-none hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+        >
+          <div class="flex items-start gap-2 min-w-0">
+            <ChevronDownIcon
+              class="w-4 h-4 mt-1 text-gray-400 transition-transform flex-shrink-0"
+              :class="{ 'rotate-180': isExpanded(session.sessionId) }"
+            />
+            <div class="min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse flex-shrink-0"></span>
+                <p class="font-semibold text-gray-900 dark:text-white truncate">{{ session.driverFullName }}</p>
+              </div>
+              <div class="flex items-center flex-wrap gap-3 mt-1 text-xs text-gray-500 dark:text-gray-400">
+                <span class="flex items-center gap-1">
+                  <TruckIcon class="w-3.5 h-3.5" />
+                  {{ session.plateNumber }}
+                </span>
+                <span class="flex items-center gap-1">
+                  <ClockIcon class="w-3.5 h-3.5" />
+                  {{ formatTime(session.startTime) }}
+                </span>
+                <span
+                  class="px-1.5 py-0.5 rounded font-mono"
+                  :class="session.elapsedMinutes > 480
+                    ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
+                    : 'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400'"
+                >{{ formatElapsed(session.elapsedMinutes) }}</span>
+                <span class="px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-medium">
+                  {{ session.deliveredProjects }}/{{ session.totalProjects }} teslim
+                </span>
+              </div>
             </div>
           </div>
           <button
-            @click="openForceClose(session)"
+            @click.stop="openForceClose(session)"
             class="shrink-0 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors border border-red-200 dark:border-red-700/50"
           >
             Seferi Kapat
           </button>
         </div>
 
-        <!-- Shipments section -->
-        <div class="p-4">
+        <!-- Shipments section (genişletilince) -->
+        <div v-show="isExpanded(session.sessionId)" class="p-4">
           <div v-if="session.shipments.length === 0" class="text-sm text-gray-400 dark:text-gray-500 italic">
             Bu şoföre ait takılı sevkiyat yok.
           </div>
@@ -92,7 +104,7 @@
                   :indeterminate="isSomeSelected(session) && !isAllSelected(session)"
                   @change="toggleAll(session)"
                 />
-                Tümünü seç ({{ session.shipments.length }} irsaliye)
+                Tümünü seç ({{ points(session).length }} nokta · {{ session.shipments.length }} irsaliye)
               </label>
               <button
                 v-if="selectedForSession(session.sessionId).length > 0"
@@ -103,36 +115,36 @@
               </button>
             </div>
 
-            <!-- Shipment rows -->
+            <!-- Teslim noktası (proje) satırları -->
             <div class="space-y-1.5">
               <label
-                v-for="shp in session.shipments"
-                :key="shp.id"
+                v-for="pt in points(session)"
+                :key="pt.projectId"
                 class="flex items-center gap-3 p-2.5 rounded-xl border cursor-pointer select-none transition-colors"
-                :class="isSelected(session.sessionId, shp.id)
+                :class="isPointSelected(session.sessionId, pt)
                   ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700'
                   : 'bg-gray-50 dark:bg-white/5 border-gray-100 dark:border-white/5 hover:bg-gray-100 dark:hover:bg-white/10'"
               >
                 <input
                   type="checkbox"
-                  :checked="isSelected(session.sessionId, shp.id)"
-                  @change="toggleShipment(session.sessionId, shp.id)"
+                  :checked="isPointSelected(session.sessionId, pt)"
+                  :indeterminate="isPointPartiallySelected(session.sessionId, pt)"
+                  @change="togglePoint(session.sessionId, pt)"
                   class="rounded border-gray-300 dark:border-gray-600 text-blue-600 flex-shrink-0"
                 />
                 <div class="flex-1 min-w-0">
-                  <p class="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{{ shp.projectName }}</p>
+                  <p class="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{{ pt.projectName }}</p>
                   <div class="flex items-center gap-2 mt-0.5">
-                    <span v-if="shp.talepNo" class="text-xs text-gray-500 dark:text-gray-400">{{ shp.talepNo }}</span>
-                    <span v-if="shp.externalOrderNumber" class="text-xs font-mono text-gray-400 dark:text-gray-500">{{ shp.externalOrderNumber }}</span>
-                    <span class="text-xs text-gray-400">{{ shp.lineCount }} kalem</span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">{{ pt.shipmentIds.length }} irsaliye</span>
+                    <span class="text-xs text-gray-400">{{ pt.totalLines }} kalem</span>
                   </div>
                 </div>
                 <span
                   class="shrink-0 text-[11px] font-semibold px-2 py-0.5 rounded-full"
-                  :class="shp.status === 'Dispatched'
+                  :class="pt.allDispatched
                     ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
                     : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'"
-                >{{ statusLabel(shp.status) }}</span>
+                >{{ pt.allDispatched ? 'Yolda' : 'Araçta' }}</span>
               </label>
             </div>
           </template>
@@ -266,6 +278,7 @@ import {
   TruckIcon,
   ClockIcon,
   CheckCircleIcon,
+  ChevronDownIcon,
 } from '@heroicons/vue/24/outline';
 import adminService, { type ActiveSessionWithShipmentsDto } from '../services/adminService';
 import { useNotificationStore } from '../stores/notification';
@@ -275,6 +288,14 @@ const notify = useNotificationStore();
 const sessions = ref<ActiveSessionWithShipmentsDto[]>([]);
 const loading = ref(false);
 const error = ref('');
+
+// Accordion: açık session id'leri
+const expandedSessions = reactive(new Set<string>());
+const isExpanded = (id: string) => expandedSessions.has(id);
+const toggle = (id: string) => {
+  if (expandedSessions.has(id)) expandedSessions.delete(id);
+  else expandedSessions.add(id);
+};
 
 // sessionId → Set<shipmentId>
 const selections = reactive<Record<string, Set<number>>>({});
@@ -310,10 +331,48 @@ function formatElapsed(minutes: number): string {
   return h > 0 ? `${h}s ${m}d` : `${m}d`;
 }
 
-function statusLabel(status: string): string {
-  if (status === 'Dispatched') return 'Yolda';
-  if (status === 'AssignedToVehicle') return 'Araçta';
-  return status;
+// ── Teslim noktaları (proje bazlı gruplama) ───────────────────────────────────
+
+interface DeliveryPoint {
+  projectId: number;
+  projectName: string;
+  shipmentIds: number[];
+  totalLines: number;
+  allDispatched: boolean;
+}
+
+function points(session: ActiveSessionWithShipmentsDto): DeliveryPoint[] {
+  const map = new Map<number, DeliveryPoint>();
+  for (const s of session.shipments) {
+    let p = map.get(s.projectId);
+    if (!p) {
+      p = { projectId: s.projectId, projectName: s.projectName, shipmentIds: [], totalLines: 0, allDispatched: true };
+      map.set(s.projectId, p);
+    }
+    p.shipmentIds.push(s.id);
+    p.totalLines += s.lineCount;
+    if (s.status !== 'Dispatched') p.allDispatched = false;
+  }
+  return Array.from(map.values());
+}
+
+function isPointSelected(sessionId: string, pt: DeliveryPoint): boolean {
+  return pt.shipmentIds.length > 0 && pt.shipmentIds.every(id => isSelected(sessionId, id));
+}
+
+function isPointPartiallySelected(sessionId: string, pt: DeliveryPoint): boolean {
+  const sel = pt.shipmentIds.filter(id => isSelected(sessionId, id)).length;
+  return sel > 0 && sel < pt.shipmentIds.length;
+}
+
+function togglePoint(sessionId: string, pt: DeliveryPoint) {
+  ensureSet(sessionId);
+  const set = selections[sessionId]!;
+  if (isPointSelected(sessionId, pt)) {
+    pt.shipmentIds.forEach(id => set.delete(id));
+  } else {
+    pt.shipmentIds.forEach(id => set.add(id));
+  }
 }
 
 // ── Selection ────────────────────────────────────────────────────────────────
@@ -324,16 +383,6 @@ function ensureSet(sessionId: string) {
 
 function isSelected(sessionId: string, shipmentId: number): boolean {
   return selections[sessionId]?.has(shipmentId) ?? false;
-}
-
-function toggleShipment(sessionId: string, shipmentId: number) {
-  ensureSet(sessionId);
-  const set = selections[sessionId]!;
-  if (set.has(shipmentId)) {
-    set.delete(shipmentId);
-  } else {
-    set.add(shipmentId);
-  }
 }
 
 function isAllSelected(session: ActiveSessionWithShipmentsDto): boolean {
@@ -441,6 +490,12 @@ async function load() {
     const ids = new Set(sessions.value.map(s => s.sessionId));
     for (const key of Object.keys(selections)) {
       if (!ids.has(key)) delete selections[key];
+    }
+    // Tek sefer varsa otomatik aç; ilk yüklemede hiç açık yoksa ilkini aç
+    if (sessions.value.length === 1) {
+      expandedSessions.add(sessions.value[0]!.sessionId);
+    } else if (expandedSessions.size === 0 && sessions.value.length > 0) {
+      expandedSessions.add(sessions.value[0]!.sessionId);
     }
   } catch {
     error.value = 'Veriler yüklenemedi. Lütfen tekrar deneyin.';

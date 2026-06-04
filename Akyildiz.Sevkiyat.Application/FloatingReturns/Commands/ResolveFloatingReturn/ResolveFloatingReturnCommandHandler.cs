@@ -45,13 +45,20 @@ namespace Akyildiz.Sevkiyat.Application.FloatingReturns.Commands.ResolveFloating
                     break;
 
                 case ResolveAction.AddToStock:
-                    if (!floatingReturn.StockMasterId.HasValue)
-                        throw new DomainException("Stoğa ekleme için floating return'ün bir StockMaster ile eşleşmiş olması gerekir.");
+                    // Kayıt bir stok kartıyla eşleşmemişse (serbest), çözüm anında seçilen
+                    // StockMasterId ile karta bağlanıp eklenebilir.
+                    var stockMasterId = floatingReturn.StockMasterId ?? request.StockMasterId;
+                    if (!stockMasterId.HasValue)
+                        throw new DomainException("Stoğa ekleme için bir stok kartı seçilmelidir.");
 
                     var stock = await _context.StockMasters
-                        .FirstOrDefaultAsync(s => s.Id == floatingReturn.StockMasterId.Value, cancellationToken);
+                        .FirstOrDefaultAsync(s => s.Id == stockMasterId.Value, cancellationToken);
                     if (stock == null)
-                        throw new NotFoundException("StockMaster", floatingReturn.StockMasterId.Value);
+                        throw new NotFoundException("StockMaster", stockMasterId.Value);
+
+                    // Serbest iadeyi seçilen karta kalıcı olarak bağla
+                    if (!floatingReturn.StockMasterId.HasValue)
+                        floatingReturn.StockMasterId = stock.Id;
 
                     stock.Increase(floatingReturn.Qty);
 

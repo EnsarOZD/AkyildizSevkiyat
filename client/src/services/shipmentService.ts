@@ -53,10 +53,20 @@ export interface ShipmentPrintLog {
   printedByName: string;
 }
 
+export interface ShipmentStockMovement {
+  date: string;
+  type: string;
+  qty: number;
+  stockCode?: string | null;
+  stockName?: string | null;
+  note?: string | null;
+}
+
 export interface ShipmentDetail extends Shipment {
   history: any[];
   lines: ShipmentLine[];
   printLogs: ShipmentPrintLog[];
+  stockMovements?: ShipmentStockMovement[];
   projectCode?: string;
   projectName?: string;
   projectAddress?: string;
@@ -292,6 +302,10 @@ const shipmentService = {
 
   async recordVehicleReturn(id: number, request: RecordVehicleReturnRequest): Promise<void> {
     await apiClient.post(`/shipments/${id}/record-vehicle-return`, request);
+  },
+
+  async addNote(id: number, note: string): Promise<void> {
+    await apiClient.post(`/shipments/${id}/note`, { note });
   },
 
   async bulkAssignVehicle(request: BulkAssignVehicleRequest): Promise<BulkAssignVehicleResult> {

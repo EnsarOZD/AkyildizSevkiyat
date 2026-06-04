@@ -9,6 +9,10 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Email
 {
     public class SmtpEmailService : IEmailService
     {
+        // Tüm gönderimleri tek sıraya alır — aynı anda birden çok SMTP bağlantısı/oturum
+        // açılmasını engeller (sağlayıcı hız limiti / "too many connections" → 500 sebebi).
+        private static readonly SemaphoreSlim _sendGate = new(1, 1);
+
         private readonly SmtpOptions _options;
         private readonly ILogger<SmtpEmailService> _logger;
 
@@ -60,25 +64,50 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Email
                     bodyBuilder.Attachments.Add(att.FileName, att.Data, MimeKit.ContentType.Parse(att.MimeType));
             message.Body = bodyBuilder.ToMessageBody();
 
+            // Gönderimleri serialize et — aynı anda tek SMTP bağlantısı; ardışık gönderimlerde
+            // sağlayıcı throttle'ını (bağlantı/oturum limiti) tetikleme.
+            await _sendGate.WaitAsync(cancellationToken);
             try
             {
-                using var client = new SmtpClient();
+                const int maxAttempts = 3;
+                for (int attempt = 1; ; attempt++)
+                {
+                    try
+                    {
+                        using var client = new SmtpClient();
 
-                if (_options.SkipCertificateValidation)
-                    client.ServerCertificateValidationCallback = (s, c, h, e) => true;
+                        if (_options.SkipCertificateValidation)
+                            client.ServerCertificateValidationCallback = (s, c, h, e) => true;
 
-                var sslOptions = _options.EnableSsl ? SecureSocketOptions.StartTls : SecureSocketOptions.None;
-                await client.ConnectAsync(_options.Host, _options.Port, sslOptions, cancellationToken);
-                await client.AuthenticateAsync(userName, password, cancellationToken);
-                await client.SendAsync(message, cancellationToken);
-                await client.DisconnectAsync(true, cancellationToken);
+                        var sslOptions = _options.EnableSsl ? SecureSocketOptions.StartTls : SecureSocketOptions.None;
+                        await client.ConnectAsync(_options.Host, _options.Port, sslOptions, cancellationToken);
+                        await client.AuthenticateAsync(userName, password, cancellationToken);
+                        await client.SendAsync(message, cancellationToken);
+                        await client.DisconnectAsync(true, cancellationToken);
 
-                _logger.LogInformation("Email sent to {Recipients} | Subject: {Subject}", string.Join(", ", recipients), subject);
+                        _logger.LogInformation("Email sent to {Recipients} | Subject: {Subject}", string.Join(", ", recipients), subject);
+                        return;
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        throw;
+                    }
+                    catch (Exception ex)
+                    {
+                        if (attempt >= maxAttempts)
+                        {
+                            _logger.LogError(ex, "Failed to send email after {Max} attempts to {Recipients} | Subject: {Subject}", maxAttempts, string.Join(", ", recipients), subject);
+                            throw;
+                        }
+                        // Geçici hata (büyük olasılıkla SMTP hız limiti) → bekleyip yeniden dene
+                        _logger.LogWarning(ex, "SMTP send attempt {Attempt}/{Max} failed, retrying… | Subject: {Subject}", attempt, maxAttempts, subject);
+                        await Task.Delay(TimeSpan.FromSeconds(attempt * 3), cancellationToken); // 3s, 6s
+                    }
+                }
             }
-            catch (Exception ex)
+            finally
             {
-                _logger.LogError(ex, "Failed to send email to {Recipients} | Subject: {Subject}", string.Join(", ", recipients), subject);
-                throw;
+                _sendGate.Release();
             }
         }
     }

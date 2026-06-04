@@ -332,7 +332,17 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             await _mediator.Send(new RecordVehicleReturnCommand(id, lines, request.ReturnNote, request.OverrideNote));
             return NoContent();
         }
+
+        [HttpPost("{id:int}/note")]
+        [Authorize(Roles = "Admin,Manager,Accounting,Driver")]
+        public async Task<IActionResult> AddNote(int id, [FromBody] AddShipmentNoteRequest request)
+        {
+            await _mediator.Send(new Akyildiz.Sevkiyat.Application.Shipments.Commands.AddShipmentNote.AddShipmentNoteCommand(id, request.Note));
+            return NoContent();
+        }
     }
 
     public record SendComparisonEmailRequest(List<string>? CcEmails);
+
+    public record AddShipmentNoteRequest(string Note);
 }

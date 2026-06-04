@@ -25,6 +25,23 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
 
         public decimal DifferenceQty => DeliveredQty - OrderedQty;
 
+        /// <summary>
+        /// Teslimde stoktan düşülecek net miktar: araca yüklenen (toplanan; toplama yoksa
+        /// sipariş) miktardan, teslimden önce kaydedilmiş iadeler düşülür. İade edilen kalem
+        /// teslim/çıkış sayılmaz. Negatife düşmez (tamamı iade edilmişse 0).
+        /// Hem tekli (MarkShipmentDelivered) hem toplu (BulkMarkShipmentsDelivered) teslim
+        /// akışında kullanılır.
+        /// </summary>
+        public decimal NetDeliveredQty
+        {
+            get
+            {
+                var loaded = DeliveredQty > 0 ? DeliveredQty : OrderedQty;
+                var net = loaded - (ReturnedQty ?? 0);
+                return net > 0 ? net : 0;
+            }
+        }
+
         public string? DifferenceReason { get; private set; }
         public string? Note { get; private set; }
 

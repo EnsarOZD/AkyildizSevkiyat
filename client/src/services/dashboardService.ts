@@ -1,4 +1,5 @@
 import apiClient from './apiClient';
+import type { ActiveSessionWithShipmentsDto } from './adminService';
 
 export interface RecentShipment {
     id: number;
@@ -87,5 +88,9 @@ export const dashboardService = {
 
     getCriticalStocks(): Promise<CriticalStockItem[]> {
         return apiClient.get('/dashboard/critical-stocks').then(r => r.data);
+    },
+
+    getActiveTrips(): Promise<ActiveSessionWithShipmentsDto[]> {
+        return apiClient.get('/dashboard/active-trips').then(r => r.data);
     },
 };

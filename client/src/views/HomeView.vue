@@ -33,9 +33,13 @@
 
     <!-- Role-specific dashboards -->
     <template v-else-if="stats">
+      <!-- Aktif seferler özeti (Manager/Admin/Accounting/Dispatcher) -->
+      <ActiveTripsSummary v-if="showActiveTrips" />
+
       <ManagerDashboard
         v-if="dashboardKind === 'manager'"
         :stats="stats"
+        :simplified="authStore.userRole === 'Manager'"
         :critical-stocks="criticalStocks"
         :critical-stocks-loading="criticalStocksLoading"
       />
@@ -75,6 +79,7 @@ import { ArrowPathIcon, ExclamationCircleIcon } from '@heroicons/vue/24/outline'
 import ManagerDashboard from '../components/dashboard/ManagerDashboard.vue';
 import AccountingDashboard from '../components/dashboard/AccountingDashboard.vue';
 import WarehouseDashboard from '../components/dashboard/WarehouseDashboard.vue';
+import ActiveTripsSummary from '../components/dashboard/ActiveTripsSummary.vue';
 
 const authStore = useAuthStore();
 const stats = ref<DashboardStats | null>(null);
@@ -112,6 +117,11 @@ const pageTitle = computed(() => {
 
 const needsCriticalStocks = computed(() =>
   dashboardKind.value === 'manager' || dashboardKind.value === 'warehouse'
+);
+
+// Aktif seferler: yönetim + muhasebe görür (depo hariç)
+const showActiveTrips = computed(() =>
+  dashboardKind.value === 'manager' || dashboardKind.value === 'accounting'
 );
 
 async function loadCriticalStocks() {

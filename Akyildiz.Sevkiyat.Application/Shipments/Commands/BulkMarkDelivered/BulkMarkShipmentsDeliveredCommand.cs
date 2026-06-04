@@ -102,7 +102,10 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.BulkMarkDelivered
 
                     foreach (var line in shipment.Lines.Where(l => l.StockMasterId.HasValue))
                     {
-                        var qty = line.DeliveredQty > 0 ? line.DeliveredQty : line.OrderedQty;
+                        // İade edilen kalemler teslim/çıkış sayılmaz (bkz. ShipmentLine.NetDeliveredQty)
+                        var qty = line.NetDeliveredQty;
+                        if (qty <= 0) continue; // tamamı iade edilmişse stok çıkışı yok
+
                         var smId = line.StockMasterId!.Value;
                         stockDeductions[smId] = stockDeductions.GetValueOrDefault(smId) + qty;
                         stockTransactions.Add((smId, qty, shipment.Id));

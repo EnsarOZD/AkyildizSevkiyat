@@ -156,6 +156,7 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 font-mono text-xs hidden lg:table-cell">{{ stock.warehouseLocation || '-' }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 font-mono text-xs hidden lg:table-cell">{{ stock.netsisStockCode || '-' }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-end gap-2">
+                        <button v-role="['Admin','Manager','Warehouse']" @click="openAdjustModal(stock)" class="text-amber-600 hover:text-amber-900">Sayım</button>
                         <button @click="openThresholdModal(stock)" class="text-emerald-600 hover:text-emerald-900">Eşik</button>
                         <button @click="openModal(stock)" class="text-indigo-600 hover:text-indigo-900">Düzenle</button>
                         <button @click="deleteStock(stock)" class="text-red-600 hover:text-red-900">Sil</button>
@@ -325,6 +326,53 @@
                 <button @click="showThresholdModal = false" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">İptal</button>
                 <button @click="saveThresholds" class="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700" :disabled="savingThresholds">
                     {{ savingThresholds ? 'Kaydediliyor...' : 'Kaydet' }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sayım / Giriş Modal -->
+    <div v-if="showAdjustModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white dark:bg-gray-900 rounded-lg p-6 w-full max-w-sm max-h-[90vh] overflow-y-auto">
+            <h3 class="text-lg font-bold mb-1">Stok Sayım / Giriş</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ adjustForm.stockName }}</p>
+            <div class="space-y-4">
+                <div class="text-sm bg-gray-50 dark:bg-gray-800 rounded p-3 border dark:border-gray-700 text-gray-700 dark:text-gray-300">
+                    Mevcut stok: <span class="font-bold">{{ adjustForm.currentOnHand }}</span>
+                </div>
+                <div class="flex gap-2">
+                    <button
+                        @click="adjustForm.mode = 0"
+                        class="flex-1 py-2 rounded text-sm font-medium border transition"
+                        :class="adjustForm.mode === 0 ? 'bg-amber-600 text-white border-amber-600' : 'text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-700'"
+                    >Sayım (yeni mevcut)</button>
+                    <button
+                        @click="adjustForm.mode = 1"
+                        class="flex-1 py-2 rounded text-sm font-medium border transition"
+                        :class="adjustForm.mode === 1 ? 'bg-amber-600 text-white border-amber-600' : 'text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-700'"
+                    >Giriş (ekle)</button>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {{ adjustForm.mode === 0 ? 'Sayılan Miktar (yeni mevcut)' : 'Eklenecek Miktar' }}
+                    </label>
+                    <input v-model.number="adjustForm.quantity" type="number" min="0" step="any" inputmode="decimal" class="w-full border p-2 rounded dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100" />
+                    <p v-if="adjustForm.mode === 0 && adjustForm.quantity != null" class="text-xs mt-1" :class="adjustDiff === 0 ? 'text-gray-400' : adjustDiff > 0 ? 'text-green-600' : 'text-red-600'">
+                        Fark: {{ adjustDiff > 0 ? '+' : '' }}{{ adjustDiff }} → yeni mevcut {{ adjustForm.quantity }}
+                    </p>
+                    <p v-else-if="adjustForm.mode === 1 && adjustForm.quantity != null" class="text-xs mt-1 text-green-600">
+                        Yeni mevcut: {{ adjustForm.currentOnHand + (adjustForm.quantity || 0) }}
+                    </p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Not <span class="text-gray-400 font-normal">(isteğe bağlı)</span></label>
+                    <textarea v-model="adjustForm.note" rows="2" maxlength="500" class="w-full border p-2 rounded resize-none dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100" placeholder="Sayım/giriş açıklaması..."></textarea>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end gap-3">
+                <button @click="showAdjustModal = false" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">İptal</button>
+                <button @click="saveAdjust" class="px-4 py-2 bg-amber-600 text-white rounded hover:bg-amber-700" :disabled="savingAdjust || adjustForm.quantity == null">
+                    {{ savingAdjust ? 'Kaydediliyor...' : 'Kaydet' }}
                 </button>
             </div>
         </div>
@@ -614,6 +662,58 @@ const saveThresholds = async () => {
         notify.error(ApiErrorUtils.getErrorMessage(e, 'Eşik değerleri güncellenemedi.'));
     } finally {
         savingThresholds.value = false;
+    }
+};
+
+// Sayım / Giriş Logic
+const showAdjustModal = ref(false);
+const savingAdjust = ref(false);
+const adjustForm = ref<{ id: number; stockName: string; currentOnHand: number; mode: 0 | 1; quantity: number | null; note: string }>({
+    id: 0,
+    stockName: '',
+    currentOnHand: 0,
+    mode: 0,
+    quantity: null,
+    note: '',
+});
+
+const adjustDiff = computed(() =>
+    adjustForm.value.mode === 0 && adjustForm.value.quantity != null
+        ? adjustForm.value.quantity - adjustForm.value.currentOnHand
+        : 0
+);
+
+const openAdjustModal = (stock: Stock) => {
+    adjustForm.value = {
+        id: stock.id,
+        stockName: stock.stockName,
+        currentOnHand: stock.onHandQty ?? 0,
+        mode: 0,
+        quantity: null,
+        note: '',
+    };
+    showAdjustModal.value = true;
+};
+
+const saveAdjust = async () => {
+    if (adjustForm.value.quantity == null) {
+        notify.error('Lütfen miktar giriniz.');
+        return;
+    }
+    savingAdjust.value = true;
+    try {
+        const newQty = await stockService.adjustOnHand(adjustForm.value.id, {
+            quantity: adjustForm.value.quantity,
+            mode: adjustForm.value.mode,
+            note: adjustForm.value.note || null,
+        });
+        notify.success(`Stok güncellendi. Yeni mevcut: ${newQty}`);
+        showAdjustModal.value = false;
+        fetchStocks(currentPage.value);
+    } catch (e) {
+        notify.error(ApiErrorUtils.getErrorMessage(e, 'Stok güncellenemedi.'));
+    } finally {
+        savingAdjust.value = false;
     }
 };
 

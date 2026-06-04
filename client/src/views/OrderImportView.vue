@@ -558,6 +558,41 @@
                 </div>
             </div>
         </div>
+
+        <!-- Adres değişikliği uyarı modalı (proje senkronizasyonu) -->
+        <div v-if="showAddressChanges" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white dark:bg-gray-900 rounded-xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-xl">
+                <div class="px-5 py-4 border-b dark:border-gray-700 flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">Adres Değişiklikleri</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ addressChanges.length }} projenin adresi ISS'te değişmiş</p>
+                    </div>
+                    <button @click="showAddressChanges = false" class="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800">✕</button>
+                </div>
+                <div class="overflow-y-auto p-5 space-y-3">
+                    <div v-for="c in addressChanges" :key="c.projectId" class="border dark:border-gray-700 rounded-lg p-3">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="font-mono text-xs font-bold text-gray-800 dark:text-gray-200">{{ c.projectCode }}</span>
+                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">{{ c.projectName }}</span>
+                        </div>
+                        <div class="text-xs space-y-1">
+                            <div class="flex gap-2">
+                                <span class="shrink-0 text-gray-400 w-12">Eski:</span>
+                                <span class="text-red-600 dark:text-red-400 line-through">{{ c.oldAddress || '(boş)' }}</span>
+                            </div>
+                            <div class="flex gap-2">
+                                <span class="shrink-0 text-gray-400 w-12">Yeni:</span>
+                                <span class="text-green-700 dark:text-green-400 font-medium">{{ c.newAddress || '(boş)' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="px-5 py-3 border-t dark:border-gray-700 flex justify-between items-center">
+                    <p class="text-xs text-gray-400">Adresi değişen projelerin koordinatlarını Koordinat Doğrulama'dan kontrol edin.</p>
+                    <button @click="showAddressChanges = false" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">Tamam</button>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -565,7 +600,7 @@
 import { ref, watch, onMounted, computed, onUnmounted } from 'vue';
 import PageHeader from '../components/PageHeader.vue';
 import shipmentService from '../services/shipmentService';
-import projectService from '../services/projectService';
+import projectService, { type ProjectAddressChange } from '../services/projectService';
 import apiClient from '../services/apiClient';
 import { useNotificationStore } from '../stores/notification';
 import { ApiErrorUtils } from '../utils/apiError';
@@ -794,6 +829,8 @@ const importOrders = async () => {
 onUnmounted(stopImportPolling);
 
 const syncing = ref(false);
+const addressChanges = ref<ProjectAddressChange[]>([]);
+const showAddressChanges = ref(false);
 const syncProjects = () => {
     if (syncing.value) return;
     syncing.value = true;
@@ -801,6 +838,11 @@ const syncProjects = () => {
     projectService.syncProjects({ forceAll: false }, { timeout: 0 })
         .then(res => {
             notificationStore.add(`${res.count} proje senkronize edildi.`, 'success');
+            addressChanges.value = res.addressChanges ?? [];
+            if (addressChanges.value.length > 0) {
+                showAddressChanges.value = true;
+                notificationStore.add(`${addressChanges.value.length} projenin adresi değişti.`, 'warning');
+            }
             loadOrders();
         })
         .catch(e => {

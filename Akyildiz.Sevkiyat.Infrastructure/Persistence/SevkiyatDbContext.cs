@@ -45,6 +45,9 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Persistence
         public DbSet<DriverSessionShipment> DriverSessionShipments { get; set; } = null!;
         public DbSet<FreightDelivery> FreightDeliveries { get; set; } = null!;
         public DbSet<FreightDeliveryShipment> FreightDeliveryShipments { get; set; } = null!;
+        public DbSet<Carrier> Carriers { get; set; } = null!;
+        public DbSet<CarrierVehicle> CarrierVehicles { get; set; } = null!;
+        public DbSet<ProjectAddressChange> ProjectAddressChanges { get; set; } = null!;
         public DbSet<StockTransaction> StockTransactions { get; set; } = null!;
 
         // NEW MODULE: Purchase Order & Goods Receipt
@@ -651,6 +654,37 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Persistence
 
                 entity.HasIndex(e => new { e.FreightDeliveryId, e.ShipmentId }).IsUnique();
                 entity.HasIndex(e => e.ShipmentId);
+            });
+
+            // ProjectAddressChange — ISS sync adres değişikliği denetim kaydı
+            modelBuilder.Entity<ProjectAddressChange>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.ProjectCode).HasMaxLength(50);
+                entity.Property(e => e.ProjectName).HasMaxLength(300);
+                entity.HasIndex(e => e.ChangedAt);
+                entity.HasIndex(e => e.ProjectId);
+            });
+
+            // Carrier — nakliyeci tanımı + plakaları
+            modelBuilder.Entity<Carrier>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
+                entity.Property(e => e.Phone).HasMaxLength(30);
+                entity.Property(e => e.City).HasMaxLength(100);
+                entity.HasIndex(e => e.Name);
+            });
+
+            modelBuilder.Entity<CarrierVehicle>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.PlateNumber).HasMaxLength(20).IsRequired();
+                entity.HasOne(e => e.Carrier)
+                    .WithMany(c => c.Vehicles)
+                    .HasForeignKey(e => e.CarrierId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasIndex(e => e.CarrierId);
             });
 
             // ZonePreparationDriver

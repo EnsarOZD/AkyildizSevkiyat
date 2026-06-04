@@ -2,11 +2,21 @@ import apiClient from './apiClient';
 
 export interface StuckShipmentDto {
   id: number;
+  projectId: number;
   projectName: string;
   talepNo: string | null;
   externalOrderNumber: string | null;
   status: string;
   lineCount: number;
+}
+
+export interface ActiveSessionStopDto {
+  projectId: number;
+  projectName: string;
+  projectAddress: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  isDelivered: boolean;
 }
 
 export interface ActiveSessionWithShipmentsDto {
@@ -18,6 +28,9 @@ export interface ActiveSessionWithShipmentsDto {
   startTime: string;
   elapsedMinutes: number;
   shipments: StuckShipmentDto[];
+  totalProjects: number;
+  deliveredProjects: number;
+  stops: ActiveSessionStopDto[];
 }
 
 export interface MarkDeliveredRequest {

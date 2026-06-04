@@ -115,12 +115,18 @@
               <span class="text-[11px] text-gray-400 whitespace-nowrap">{{ s.lineCount }} kalem</span>
             </div>
           </div>
+          <!-- İlk şoför kadranı girmişse bilgilendir -->
+          <div v-if="odometerAlreadyRecorded" class="rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 px-3 py-2 text-center">
+            <p class="text-xs text-emerald-700 dark:text-emerald-300">
+              Kadran bilgisi bu araç için başka bir şoför tarafından girilmiş. Tekrar sorulmayacak.
+            </p>
+          </div>
           <div class="flex gap-3 pt-1">
             <button @click="resetScan" class="flex-1 py-2.5 border dark:border-white/10 rounded-lg text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800">
               İptal
             </button>
-            <button @click="goToOdometerStep" class="flex-1 py-2.5 rounded-lg text-white text-sm font-medium bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500">
-              Onayla, devam et
+            <button @click="goToOdometerStep" :disabled="submitting" class="flex-1 py-2.5 rounded-lg text-white text-sm font-medium disabled:opacity-50 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500">
+              {{ odometerAlreadyRecorded ? (submitting ? 'İşleniyor...' : 'Onayla, seferi başlat') : 'Onayla, devam et' }}
             </button>
           </div>
         </div>
@@ -232,6 +238,8 @@ const detectedIrsaliyeNo = ref('');
 const resolvedShipments = ref<TripShipmentDto[]>([]);
 const resolving = ref(false);
 const resolveError = ref('');
+// Aynı araçta ilk şoför kadran girmişse, sonraki şoföre kadran adımı sorulmaz.
+const odometerAlreadyRecorded = ref(false);
 
 const { permissionState, settingsInstructions, checkPermission } = useLocationPermission();
 
@@ -334,8 +342,14 @@ function parseIrsaliyeNo(data: string): string | null {
   return m?.[1]?.trim() || null;
 }
 
-const onPlateConfirmed = () => {
+const onPlateConfirmed = async () => {
   if (mode.value === 'end') {
+    // Bitiş kadranı bu araç için başka bir şoför tarafından girilmiş mi?
+    try {
+      odometerAlreadyRecorded.value = await driverSessionService.getEndOdometerStatus(detectedQr.value);
+    } catch {
+      odometerAlreadyRecorded.value = false; // hata → güvenli varsayılan: kadran iste
+    }
     goToOdometerStep();
   } else {
     goToIrsaliyeStep();
@@ -361,6 +375,7 @@ const resolveShipments = async () => {
       irsaliyeNo: detectedIrsaliyeNo.value,
     });
     resolvedShipments.value = res.shipments;
+    odometerAlreadyRecorded.value = res.odometerAlreadyRecorded;
     step.value = 'shipments';
     stopCamera();
   } catch (e) {
@@ -376,6 +391,7 @@ const resetScan = () => {
   detectedPlate.value = '';
   detectedIrsaliyeNo.value = '';
   resolvedShipments.value = [];
+  odometerAlreadyRecorded.value = false;
   resolveError.value = '';
   resolving.value = false;
   submitting.value = false;
@@ -393,6 +409,11 @@ const resetScan = () => {
 const goToOdometerStep = () => {
   if (!gpsPosition.value) {
     gpsError.value = 'Konum bilgisi alınamadı. Lütfen GPS iznini kontrol edin.';
+    return;
+  }
+  // İlk şoför kadranı girmişse (başlat veya bitir): tekrar sorma, doğrudan işle.
+  if (odometerAlreadyRecorded.value) {
+    submitSession();
     return;
   }
   step.value = 'odometer';
@@ -464,7 +485,9 @@ function onOdometerSelected(event: Event) {
 
 const submitSession = async () => {
   if (submitting.value) return;
-  if (!validateOdometerStep()) return;
+  // İlk şoför kadranı girmişse (başlat veya bitir) kadran zorunlu değil.
+  const skipOdometer = odometerAlreadyRecorded.value;
+  if (!skipOdometer && !validateOdometerStep()) return;
   submitting.value = true;
   submitError.value = '';
   try {
@@ -476,7 +499,7 @@ const submitSession = async () => {
         qrCode: detectedQr.value,
         latitude: lat,
         longitude: lng,
-        startOdometerPhotoBase64: odometerBase64.value,
+        startOdometerPhotoBase64: odometerBase64.value || undefined,
         startOdometerKm: odometerKm.value ?? undefined,
         irsaliyeNo: detectedIrsaliyeNo.value,
       });
@@ -486,7 +509,7 @@ const submitSession = async () => {
         qrCode: detectedQr.value,
         latitude: lat,
         longitude: lng,
-        endOdometerPhotoBase64: odometerBase64.value,
+        endOdometerPhotoBase64: odometerBase64.value || undefined,
         endOdometerKm: odometerKm.value ?? undefined,
       });
       successMessage.value = `Sefer kapatıldı. Süre: ${res.totalDurationMinutes} dakika.`;
@@ -499,6 +522,7 @@ const submitSession = async () => {
     detectedPlate.value = '';
     detectedIrsaliyeNo.value = '';
     resolvedShipments.value = [];
+    odometerAlreadyRecorded.value = false;
     step.value = 'scan';
     stopCamera();
     startCamera();

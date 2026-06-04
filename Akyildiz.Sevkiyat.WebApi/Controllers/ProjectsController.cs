@@ -112,18 +112,30 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         [HttpPost("sync")]
         public async Task<IActionResult> Sync([FromBody] SyncProjectsCommand command)
         {
-            var count = await _mediator.Send(command);
-            return Ok(new { Count = count });
+            var result = await _mediator.Send(command);
+            return Ok(new { Count = result.SyncedCount, result.AddressChanges });
         }
 
         [HttpPatch("{id}/location")]
         public async Task<IActionResult> UpdateLocation(int id, [FromBody] UpdateLocationBody body)
         {
-            await _mediator.Send(new UpdateProjectLocationCommand(id, body.Latitude, body.Longitude, body.CityName, body.DistrictName));
+            // Kaynak: body'de belirtilmişse onu kullan; yoksa şoför ise "doğrulandı" kabul et.
+            Akyildiz.Sevkiyat.Domain.Enums.LocationSource? source = null;
+            if (!string.IsNullOrWhiteSpace(body.Source)
+                && System.Enum.TryParse<Akyildiz.Sevkiyat.Domain.Enums.LocationSource>(body.Source, true, out var parsed))
+            {
+                source = parsed;
+            }
+            else if (User.IsInRole("Driver"))
+            {
+                source = Akyildiz.Sevkiyat.Domain.Enums.LocationSource.DriverVerified;
+            }
+
+            await _mediator.Send(new UpdateProjectLocationCommand(id, body.Latitude, body.Longitude, body.CityName, body.DistrictName, source));
             return NoContent();
         }
 
-        public record UpdateLocationBody(double? Latitude, double? Longitude, string? CityName = null, string? DistrictName = null);
+        public record UpdateLocationBody(double? Latitude, double? Longitude, string? CityName = null, string? DistrictName = null, string? Source = null);
 
         [HttpPost("validate-coordinates")]
         public async Task<IActionResult> ValidateCoordinates([FromBody] ValidateCoordinatesBody body)

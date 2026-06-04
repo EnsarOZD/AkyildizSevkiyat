@@ -18,6 +18,7 @@ namespace Akyildiz.Sevkiyat.Application.Common.Dtos
         TimeOnly? DeliveryWindowStart = null,
         TimeOnly? DeliveryWindowEnd = null,
         string? NetsisTeslimCariKodu = null,
-        ProjectSource Source = ProjectSource.Iss
+        ProjectSource Source = ProjectSource.Iss,
+        bool LocationNeedsRecheck = false
     );
 }

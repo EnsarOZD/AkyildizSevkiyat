@@ -26,49 +26,84 @@
       </div>
 
       <div class="space-y-4">
-        <!-- Ad Soyad -->
+        <!-- Nakliyeci seçimi -->
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Nakliyeci Ad Soyad <span class="text-red-500">*</span>
+            Nakliyeci <span class="text-red-500">*</span>
           </label>
-          <input
-            v-model="carrierName"
-            type="text"
-            placeholder="Ad Soyad..."
+          <select
+            v-model="carrierChoice"
+            @change="onCarrierChange"
             class="block w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
-          />
+          >
+            <option value="" disabled>Seçiniz...</option>
+            <option v-for="c in carriers" :key="c.id" :value="String(c.id)">
+              {{ c.name }}{{ c.city ? ' · ' + c.city : '' }}
+            </option>
+            <option value="other">Diğer (manuel giriş)</option>
+          </select>
         </div>
 
-        <!-- Plaka -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Araç Plakası
-            <span class="text-gray-400 font-normal ml-1">(opsiyonel)</span>
-          </label>
-          <input
-            v-model="carrierPlate"
-            type="text"
-            placeholder="34 ABC 123"
-            maxlength="20"
-            class="block w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none uppercase"
-            @input="carrierPlate = ($event.target as HTMLInputElement).value.toUpperCase()"
-          />
-        </div>
+        <!-- Tanımlı nakliyeci: plaka seçimi -->
+        <template v-if="selectedCarrier">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Araç Plakası</label>
+            <select
+              v-if="selectedCarrier.vehicles.filter(v => v.isActive).length"
+              v-model="carrierPlate"
+              class="block w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
+            >
+              <option value="">Plaka seçiniz... (opsiyonel)</option>
+              <option v-for="v in selectedCarrier.vehicles.filter(v => v.isActive)" :key="v.id" :value="v.plateNumber">
+                {{ v.plateNumber }}
+              </option>
+            </select>
+            <p v-else class="text-xs text-gray-400 italic py-1">Bu nakliyeciye tanımlı plaka yok.</p>
+          </div>
+          <div v-if="carrierPhone" class="text-sm text-gray-500 dark:text-gray-400">
+            <span class="text-gray-400">Telefon: </span>{{ carrierPhone }}
+          </div>
+        </template>
 
-        <!-- Telefon -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Telefon
-            <span class="text-gray-400 font-normal ml-1">(opsiyonel)</span>
-          </label>
-          <input
-            v-model="carrierPhone"
-            type="tel"
-            placeholder="05XX XXX XX XX"
-            maxlength="30"
-            class="block w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
-          />
-        </div>
+        <!-- Diğer: manuel giriş -->
+        <template v-else-if="carrierChoice === 'other'">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Nakliyeci Ad Soyad <span class="text-red-500">*</span>
+            </label>
+            <input
+              v-model="carrierName"
+              type="text"
+              placeholder="Ad Soyad..."
+              class="block w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Araç Plakası <span class="text-gray-400 font-normal ml-1">(opsiyonel)</span>
+            </label>
+            <input
+              v-model="carrierPlate"
+              type="text"
+              placeholder="34 ABC 123"
+              maxlength="20"
+              class="block w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none uppercase"
+              @input="carrierPlate = ($event.target as HTMLInputElement).value.toUpperCase()"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Telefon <span class="text-gray-400 font-normal ml-1">(opsiyonel)</span>
+            </label>
+            <input
+              v-model="carrierPhone"
+              type="tel"
+              placeholder="05XX XXX XX XX"
+              maxlength="30"
+              class="block w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
+            />
+          </div>
+        </template>
       </div>
 
       <div class="mt-6 flex justify-end gap-3">
@@ -124,8 +159,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import warehouseService, { type FreightDeliveryLink } from '../services/warehouseService';
+import carrierService, { type Carrier } from '../services/carrierService';
 import { ApiErrorUtils } from '../utils/apiError';
 import { useNotificationStore } from '../stores/notification';
 import { uploadUrl, waHref as buildWaHref } from '../utils/freightLink';
@@ -143,6 +179,35 @@ const carrierName = ref('');
 const carrierPlate = ref('');
 const carrierPhone = ref('');
 const isSaving = ref(false);
+
+// Nakliyeci seçimi: '' (seçilmedi) | carrierId (string) | 'other' (manuel)
+const carriers = ref<Carrier[]>([]);
+const carrierChoice = ref<string>('');
+const selectedCarrier = computed<Carrier | null>(() => {
+  const id = Number(carrierChoice.value);
+  return Number.isNaN(id) ? null : carriers.value.find(c => c.id === id) ?? null;
+});
+
+function onCarrierChange() {
+  carrierPlate.value = '';
+  const c = selectedCarrier.value;
+  if (c) {
+    carrierName.value = c.name;
+    carrierPhone.value = c.phone ?? '';
+  } else {
+    // 'other' veya boş → manuel alanları temizle
+    carrierName.value = '';
+    carrierPhone.value = '';
+  }
+}
+
+onMounted(async () => {
+  try {
+    carriers.value = await carrierService.list({ isActive: true });
+  } catch {
+    carriers.value = [];
+  }
+});
 
 const phase = ref<'form' | 'links'>('form');
 const links = ref<FreightDeliveryLink[]>([]);

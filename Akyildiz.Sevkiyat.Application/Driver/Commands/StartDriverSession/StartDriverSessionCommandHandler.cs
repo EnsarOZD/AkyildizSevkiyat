@@ -52,6 +52,21 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Commands.StartDriverSession
 
             var today = DateTime.UtcNow.Date;
 
+            // 3b. Aynı araç için bugün başka bir şoför zaten kadran (km + foto) girdiyse,
+            //     bu şoföre tekrar sorma — ilk okuma tüm seferi temsil eder. Araca birden
+            //     fazla şoför atandığında her şoför kendi seferini başlatır ama kadranı
+            //     yalnızca ilk başlatan girer.
+            var existingOdometerSession = await _context.DriverSessions
+                .Where(ds =>
+                    ds.VehicleId == vehicle.Id &&
+                    ds.Status == DriverSessionStatus.Open &&
+                    ds.StartTime >= today &&
+                    ds.StartOdometerKm != null)
+                .OrderBy(ds => ds.StartTime)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            var odometerAlreadyRecorded = existingOdometerSession != null;
+
             // 4a. Depo akışı: ZonePreparationDrivers — bu araç+şoföre atanmış TÜM aktif zone'lar.
             //     Bir araca aynı gün birden fazla zone atanabilir; hepsini kapsa.
             var zoneIds = await _context.ZonePreparationDrivers
@@ -105,10 +120,25 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Commands.StartDriverSession
                     "Okuttuğunuz irsaliye bu araca atanmış sevkiyatlarla eşleşmiyor. " +
                     "Doğru aracın/seferin irsaliyesini okuttuğunuzdan emin olun.");
 
-            // 5. Kadran fotoğrafı varsa kaydet
-            string? odometerPath = null;
-            if (!string.IsNullOrWhiteSpace(command.StartOdometerPhotoBase64))
+            // 5. Kadran (km + foto): ilk şoför için zorunlu, sonraki şoförler için ilk
+            //    okumadan miras alınır.
+            string? odometerPath;
+            int? odometerKm;
+            if (!string.IsNullOrWhiteSpace(command.StartOdometerPhotoBase64) && command.StartOdometerKm is > 0)
+            {
                 odometerPath = await _photos.SaveAsync(command.StartOdometerPhotoBase64, "odometer", cancellationToken);
+                odometerKm = command.StartOdometerKm;
+            }
+            else if (odometerAlreadyRecorded)
+            {
+                // Aynı araçta ilk şoför kadranı girmiş → kayıt tutarlılığı için miras al.
+                odometerPath = existingOdometerSession!.StartOdometerPhotoPath;
+                odometerKm = existingOdometerSession.StartOdometerKm;
+            }
+            else
+            {
+                throw new DomainException("Başlangıç kilometre ve kadran fotoğrafı zorunludur.");
+            }
 
             // 6. Session oluştur — birincil zone (varsa ilk zone); manifest tüm zone'ları kapsar.
             //    Zone'suz direkt atamada ZonePreparationId = null.
@@ -120,7 +150,7 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Commands.StartDriverSession
                 command.Longitude,
                 command.DeviceFingerprint,
                 odometerPath,
-                command.StartOdometerKm);
+                odometerKm);
 
             _context.DriverSessions.Add(session);
 

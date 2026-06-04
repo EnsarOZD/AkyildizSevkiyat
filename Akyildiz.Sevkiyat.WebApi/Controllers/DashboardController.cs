@@ -1,3 +1,4 @@
+using Akyildiz.Sevkiyat.Application.Admin.Queries.GetActiveSessionsWithShipments;
 using Akyildiz.Sevkiyat.Application.Dashboard.Queries.GetDashboardStats;
 using Akyildiz.Sevkiyat.Application.Stocks.Queries.GetCriticalStocks;
 using MediatR;
@@ -30,6 +31,16 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         public async Task<IActionResult> GetCriticalStocks(CancellationToken cancellationToken)
         {
             var result = await _mediator.Send(new GetCriticalStocksQuery(), cancellationToken);
+            return Ok(result);
+        }
+
+        // Dashboard "Aktif Seferler" özeti — yalnızca okuma. Muhasebe de görebilir
+        // (admin/active-operations controller seviyesinde Admin/Manager ile sınırlı olduğundan ayrı endpoint).
+        [HttpGet("active-trips")]
+        [Authorize(Roles = "Admin,Manager,Accounting,Dispatcher")]
+        public async Task<IActionResult> GetActiveTrips(CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(new GetActiveSessionsWithShipmentsQuery(), cancellationToken);
             return Ok(result);
         }
     }

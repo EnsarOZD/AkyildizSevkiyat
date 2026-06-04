@@ -17,7 +17,10 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Queries.ResolveIrsaliyeShipments
 
     public record ResolveIrsaliyeShipmentsResult(
         string VehiclePlateNumber,
-        List<TripShipmentDto> Shipments
+        List<TripShipmentDto> Shipments,
+        // Aynı araç için bugün başka bir şoför kadran (km + foto) girdiyse true →
+        // bu şoföre kadran adımı sorulmaz.
+        bool OdometerAlreadyRecorded
     );
 
     public record TripShipmentDto(
@@ -99,12 +102,21 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Queries.ResolveIrsaliyeShipments
                 throw new DomainException(
                     "Okuttuğunuz irsaliye bu araca atanmış sevkiyatlarla eşleşmiyor.");
 
+            // Bu araç için bugün başka bir şoför zaten kadran girmiş mi?
+            var odometerAlreadyRecorded = await _context.DriverSessions
+                .AnyAsync(ds =>
+                    ds.VehicleId == vehicle.Id &&
+                    ds.Status == DriverSessionStatus.Open &&
+                    ds.StartTime >= today &&
+                    ds.StartOdometerKm != null, cancellationToken);
+
             return new ResolveIrsaliyeShipmentsResult(
                 vehicle.PlateNumber,
                 tripShipments
                     .Select(s => new TripShipmentDto(
                         s.Id, s.ProjectName, s.TalepNo, s.IrsaliyeNo, s.Status.ToString(), s.LineCount))
-                    .ToList());
+                    .ToList(),
+                odometerAlreadyRecorded);
         }
     }
 }

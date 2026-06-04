@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Şoför Paneli Kullanım Rehberi</title>
+<style>
+  @page { size: A4 portrait; margin: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  html, body { font-family: "Segoe UI", Arial, sans-serif; color: #1f2937; }
+  .page {
+    width: 210mm; height: 297mm; padding: 9mm 10mm 7mm; position: relative;
+    display: flex; flex-direction: column;
+  }
+  /* ---- Header ---- */
+  .head {
+    display: flex; align-items: center; justify-content: space-between;
+    background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 60%, #3b82f6 100%);
+    color: #fff; border-radius: 12px; padding: 11px 18px; margin-bottom: 9px;
+  }
+  .head .brand { font-size: 11px; letter-spacing: 2px; opacity: .85; font-weight: 600; text-transform: uppercase; }
+  .head h1 { font-size: 21px; font-weight: 800; line-height: 1.1; margin-top: 2px; }
+  .head .sub { font-size: 10.5px; line-height: 1.45; opacity: .95; margin-top: 4px; }
+  .head .sub b { color: #fff; }
+  .head .qrbox { text-align: center; background: #fff; border-radius: 10px; padding: 7px 7px 4px; }
+  .head .qrbox img { width: 78px; height: 78px; display: block; }
+  .head .qrbox span { display: block; font-size: 8.6px; font-weight: 700; color: #1d4ed8; margin-top: 3px; letter-spacing: .2px; }
+
+  /* ---- Section title ---- */
+  .sec-title { display: flex; align-items: center; gap: 7px; margin: 7px 0 5px; }
+  .sec-title .bar { width: 4px; height: 15px; background: #2563eb; border-radius: 3px; }
+  .sec-title h2 { font-size: 13px; font-weight: 800; color: #111827; text-transform: uppercase; letter-spacing: .4px; }
+
+  /* ---- Steps grid ---- */
+  .steps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .step {
+    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 9px; padding: 8px 8px 9px;
+    position: relative; display: flex; flex-direction: column;
+  }
+  .step .n {
+    width: 21px; height: 21px; border-radius: 50%; background: #2563eb; color: #fff;
+    font-size: 11.5px; font-weight: 800; display: flex; align-items: center; justify-content: center; margin-bottom: 5px;
+  }
+  .step .ic { position: absolute; top: 7px; right: 8px; font-size: 16px; }
+  .step h3 { font-size: 11px; font-weight: 800; color: #1e3a8a; line-height: 1.15; margin-bottom: 3px; }
+  .step p { font-size: 9.3px; line-height: 1.32; color: #475569; }
+  .step.green .n { background: #16a34a; }
+  .step.green h3 { color: #166534; }
+  .step.amber .n { background: #d97706; }
+  .step.amber h3 { color: #92400e; }
+
+  /* ---- Two-column band ---- */
+  .cols { display: grid; grid-template-columns: 1.15fr 1fr; gap: 9px; }
+  .card { border: 1px solid #e2e8f0; border-radius: 9px; padding: 9px 11px; }
+  .card.delivery { background: #f0fdf4; border-color: #bbf7d0; }
+  .card.return  { background: #fff7ed; border-color: #fed7aa; }
+  .card h3 { font-size: 12px; font-weight: 800; margin-bottom: 5px; display: flex; align-items: center; gap: 6px; }
+  .card.delivery h3 { color: #15803d; }
+  .card.return h3 { color: #c2410c; }
+  ol.flow { list-style: none; counter-reset: f; }
+  ol.flow li { counter-increment: f; font-size: 9.6px; line-height: 1.4; color: #374151; padding-left: 19px; position: relative; margin-bottom: 3.5px; }
+  ol.flow li::before {
+    content: counter(f); position: absolute; left: 0; top: 0.5px;
+    width: 14px; height: 14px; border-radius: 50%; font-size: 9px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center; color: #fff;
+  }
+  .card.delivery ol.flow li::before { background: #16a34a; }
+  .card.return  ol.flow li::before { background: #ea580c; }
+  .card b { color: #111827; }
+
+  /* ---- Note section ---- */
+  .card.note { background: #eff6ff; border-color: #bfdbfe; padding: 9px 12px; }
+  .note-lead { font-size: 9.8px; color: #1e3a8a; margin-bottom: 7px; }
+  .note-steps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; }
+  .note-steps .ns { display: flex; align-items: flex-start; gap: 6px; }
+  .note-steps .ns .b {
+    flex-shrink: 0; width: 16px; height: 16px; border-radius: 50%; background: #2563eb; color: #fff;
+    font-size: 9.5px; font-weight: 800; display: flex; align-items: center; justify-content: center; margin-top: 1px;
+  }
+  .note-steps .ns p { font-size: 9.2px; line-height: 1.3; color: #374151; }
+  .note-foot { font-size: 9px; color: #1d4ed8; margin-top: 7px; }
+  .note b, .note-steps b { color: #111827; }
+
+  /* ---- Bottom nav legend ---- */
+  .navbar {
+    margin-top: 9px; background: #0f2744; border-radius: 10px; padding: 9px 12px;
+    display: flex; align-items: center; justify-content: space-around; color: #cbd5e1;
+  }
+  .navbar .nav-it { text-align: center; font-size: 9px; line-height: 1.3; }
+  .navbar .nav-it .gi { font-size: 17px; display: block; margin-bottom: 2px; }
+  .navbar .nav-it.center .gi {
+    background: #2563eb; color: #fff; width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; margin: 0 auto 2px; font-size: 16px;
+  }
+  .navbar .nav-it b { color: #fff; display: block; font-size: 9.5px; }
+
+  /* ---- Tips ---- */
+  .tips { margin-top: 9px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px 14px; }
+  .tip { font-size: 9.5px; line-height: 1.35; color: #374151; padding-left: 17px; position: relative; }
+  .tip::before { content: "✓"; position: absolute; left: 0; top: 0; color: #16a34a; font-weight: 900; font-size: 11px; }
+  .tip.warn::before { content: "!"; color: #d97706; }
+  .tip b { color: #111827; }
+
+  .foot { margin-top: auto; padding-top: 8px; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; font-size: 8.7px; color: #94a3b8; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="head">
+    <div>
+      <div class="brand">Akyıldız Lojistik · Sevkiyat 🚚</div>
+      <h1>Şoför Paneli — Hızlı Kullanım Rehberi</h1>
+      <div class="sub">Telefonla <b>sevkiyat.akyildizlojistik.com</b> · Şoför rolüyle giriş → otomatik şoför ekranı</div>
+    </div>
+    <div class="qrbox">
+      <img src="app-qr.png" alt="Uygulama QR">
+      <span>OKUT → UYGULAMAYI AÇ</span>
+    </div>
+  </div>
+
+  <!-- SECTION 1: SEFER BAŞLATMA -->
+  <div class="sec-title"><span class="bar"></span><h2>1 · Sefere Başlama (QR ile)</h2></div>
+  <div class="steps">
+    <div class="step">
+      <div class="n">1</div><span class="ic">📍</span>
+      <h3>Konum İznini Aç</h3>
+      <p>Uygulama açılınca konum izni ister. <b>İzin Ver</b> deyin — GPS olmadan sefer başlatılamaz.</p>
+    </div>
+    <div class="step">
+      <div class="n">2</div><span class="ic">🔳</span>
+      <h3>QR Butonuna Bas</h3>
+      <p>Alt menüdeki ortadaki <b>mavi QR</b> butonuna dokunun, <b>Sefer Başlat</b> sekmesini seçin.</p>
+    </div>
+    <div class="step">
+      <div class="n">3</div><span class="ic">🚛</span>
+      <h3>Araç QR'ını Okut</h3>
+      <p>Araçtaki QR kodu kameraya tutun. Çıkan <b>plakayı kontrol edin</b> ve onaylayın.</p>
+    </div>
+    <div class="step">
+      <div class="n">4</div><span class="ic">📄</span>
+      <h3>İrsaliye QR'ını Okut</h3>
+      <p>Araçtaki sevkiyatlardan <b>herhangi birinin irsaliye QR'ını</b> okutun. Sefere dahil sevkiyatlar listelenir → onaylayın.</p>
+    </div>
+    <div class="step">
+      <div class="n">5</div><span class="ic">📷</span>
+      <h3>Kilometre + Fotoğraf</h3>
+      <p>Başlangıç <b>km'sini girin</b> ve <b>kadran fotoğrafı</b> çekin. <b>Seferi Başlat</b>'a basın.</p>
+    </div>
+  </div>
+
+  <!-- SECTION 2: TESLİMAT -->
+  <div class="sec-title"><span class="bar"></span><h2>2 · Teslimat / Rota</h2></div>
+  <div class="cols">
+    <div class="card delivery">
+      <h3>✅ Bir Durağı Teslim Etme</h3>
+      <ol class="flow">
+        <li><b>Ana</b> sekmesinde sıradaki durağa dokunun. <b>Rota</b> butonu Google Haritalar'da yol tarifini açar.</li>
+        <li>Durakta <b>Ara</b> ile müşteriyi arayabilir, adrese <b>navigasyon</b> başlatabilirsiniz.</li>
+        <li>İlgili irsaliyede <b>Teslim Alan Kişi</b> adını yazın (varsa hazır gelir).</li>
+        <li><b>En az 1 teslim fotoğrafı</b> çekin (en çok 5). İsterseniz not ekleyin.</li>
+        <li><b>"Teslim Edildi Olarak İşaretle"</b> butonuna basın. Durak yeşile döner.</li>
+      </ol>
+    </div>
+    <div class="card return">
+      <h3>↩️ Eksik / Hasarlı → İade</h3>
+      <ol class="flow">
+        <li>Teslim edilemeyen veya geri dönen ürünler için durak ekranında <b>İade</b>'yi açın.</li>
+        <li><b>İade sebebini</b> seçin: Hasarlı, Yanlış/Eksik/Fazla Ürün, Müşteri İptali, Diğer.</li>
+        <li>Gerekirse <b>açıklama</b> yazıp iadeyi kaydedin — depo tarafında otomatik işlenir.</li>
+      </ol>
+      <p style="font-size:9px; color:#9a3412; margin-top:5px; line-height:1.35;"><b>Not:</b> Üst şeritteki sayaç (Tamamlanan / İrsaliye) ilerlemenizi gösterir.</p>
+    </div>
+  </div>
+
+  <!-- SECTION 3: SEFER KAPATMA -->
+  <div class="sec-title"><span class="bar"></span><h2>3 · Seferi Kapatma</h2></div>
+  <div class="steps">
+    <div class="step green">
+      <div class="n">1</div><span class="ic">🟢</span>
+      <h3>Hepsi Tamamlanınca</h3>
+      <p>Tüm teslimatlar bitince yeşil bir uyarı çıkar ve ortadaki <b>QR butonu yeşile</b> döner.</p>
+    </div>
+    <div class="step green">
+      <div class="n">2</div><span class="ic">🚛</span>
+      <h3>Araç QR'ını Okut</h3>
+      <p>Yeşil QR butonuna basın, <b>aynı aracın QR</b> kodunu tekrar okutup onaylayın.</p>
+    </div>
+    <div class="step green">
+      <div class="n">3</div><span class="ic">📷</span>
+      <h3>Bitiş Km + Fotoğraf</h3>
+      <p>Bitiş <b>kilometresini girin</b>, kadran <b>fotoğrafını</b> çekin.</p>
+    </div>
+    <div class="step green">
+      <div class="n">4</div><span class="ic">🏁</span>
+      <h3>Seferi Bitir</h3>
+      <p><b>"Seferi Bitir"</b>e basın. Sefer süreniz kaydedilir ve sefer kapanır.</p>
+    </div>
+    <div class="step amber">
+      <div class="n">i</div><span class="ic">🔁</span>
+      <h3>Erken Kapatma</h3>
+      <p>Gerekirse <b>Diğer → Seferi Kapat (QR)</b> menüsünden de kapatabilirsiniz.</p>
+    </div>
+  </div>
+
+  <!-- SECTION 4: TESLİM EDİLMİŞ PROJEYE NOT EKLEME -->
+  <div class="sec-title"><span class="bar"></span><h2>4 · Teslim Edilmiş Bir Projeye Sonradan Not Ekleme</h2></div>
+  <div class="card note">
+    <p class="note-lead">Bir durağı teslim ettikten sonra ek bilgi (eksik kalan, müşteri talebi, açıklama vb.) yazmak isterseniz:</p>
+    <div class="note-steps">
+      <div class="ns"><span class="b">1</span><p>Alt menüden <b>Tamamlanan</b> sekmesine geçin.</p></div>
+      <div class="ns"><span class="b">2</span><p>İlgili <b>teslim edilmiş durağa</b> dokunun.</p></div>
+      <div class="ns"><span class="b">3</span><p>Açılan ekranda <b>irsaliye kartına</b> dokunarak detayını genişletin.</p></div>
+      <div class="ns"><span class="b">4</span><p><b>✏️ Not Ekle</b> butonuna basın.</p></div>
+      <div class="ns"><span class="b">5</span><p>Notu yazıp <b>Kaydet</b>'e basın — anında kaydedilir.</p></div>
+    </div>
+    <p class="note-foot">İade edilmiş irsaliyelerde de aynı şekilde <b>Not Ekle</b> ile açıklama bırakabilirsiniz.</p>
+  </div>
+
+  <!-- BOTTOM NAV LEGEND -->
+  <div class="sec-title" style="margin-bottom:4px;"><span class="bar"></span><h2>Alt Menü Ne İşe Yarar?</h2></div>
+  <div class="navbar">
+    <div class="nav-it"><span class="gi">🏠</span><b>Ana</b>Bugünün rotası ve duraklar</div>
+    <div class="nav-it"><span class="gi">🗺️</span><b>Rota</b>Haritada çoklu durak yolu</div>
+    <div class="nav-it center"><span class="gi">🔳</span><b>QR</b>Sefer Başlat / Kapat</div>
+    <div class="nav-it"><span class="gi">✔️</span><b>Tamamlanan</b>Teslim edilen duraklar</div>
+    <div class="nav-it"><span class="gi">⋯</span><b>Diğer</b>Ayarlar · İzinler · Çıkış</div>
+  </div>
+
+  <!-- TIPS -->
+  <div class="sec-title" style="margin-bottom:4px;"><span class="bar"></span><h2>Önemli İpuçları</h2></div>
+  <div class="tips">
+    <div class="tip"><b>Konum izni şart:</b> kırmızı uyarı çıkarsa Diğer → İzinler & Ayarlar'dan açın.</div>
+    <div class="tip warn"><b>İnternet yoksa</b> teslimatlar telefonda kaydedilir, bağlantı gelince otomatik gönderilir.</div>
+    <div class="tip"><b>Sefer açık değilken</b> teslim listesi pasiftir — önce QR ile sefer başlatın.</div>
+    <div class="tip warn"><b>QR ortadaki buton</b> yalnızca sefer başında ve sonunda aktiftir; teslimat sırasında griye döner.</div>
+    <div class="tip"><b>Sırayı düzenle:</b> durakları kendi gitme sıranıza göre yukarı/aşağı taşıyabilirsiniz.</div>
+    <div class="tip"><b>Fotoğraf zorunlu:</b> teslim ve km kadranı için fotoğrafsız işlem tamamlanmaz.</div>
+  </div>
+
+  <div class="foot">
+    <span>Akyıldız Lojistik — Sevkiyat Sistemi · Şoför Rehberi</span>
+    <span>Sorun yaşarsanız operasyon yetkilinizle iletişime geçin.</span>
+  </div>
+
+</div>
+</body>
+</html>

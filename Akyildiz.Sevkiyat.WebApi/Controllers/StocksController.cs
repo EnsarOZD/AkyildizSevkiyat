@@ -1,4 +1,5 @@
 using Akyildiz.Sevkiyat.Application.Common.Models;
+using Akyildiz.Sevkiyat.Application.Stocks.Commands.AdjustStockOnHand;
 using Akyildiz.Sevkiyat.Application.Stocks.Commands.CreateStock;
 using Akyildiz.Sevkiyat.Application.Stocks.Commands.DeleteStock;
 using Akyildiz.Sevkiyat.Application.Stocks.Commands.ImportStocks;
@@ -100,6 +101,15 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             if (id != command.StockMasterId) return BadRequest();
             await _mediator.Send(command);
             return NoContent();
+        }
+
+        [HttpPost("{id}/adjust-onhand")]
+        [Authorize(Roles = "Admin,Manager,Warehouse")]
+        public async Task<ActionResult<decimal>> AdjustOnHand(int id, AdjustStockOnHandCommand command)
+        {
+            if (id != command.StockMasterId) return BadRequest();
+            var newOnHand = await _mediator.Send(command);
+            return Ok(newOnHand);
         }
     }
 }

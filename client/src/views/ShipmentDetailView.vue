@@ -139,6 +139,16 @@
               Tarihçe
               <span class="ml-1 text-xs text-gray-400">({{ shipment.history.length }})</span>
             </button>
+            <button
+              @click="activeDetailTab = 'stock'"
+              :class="activeDetailTab === 'stock'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'"
+              class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition-colors"
+            >
+              Stok Hareketleri
+              <span class="ml-1 text-xs text-gray-400">({{ shipment.stockMovements?.length ?? 0 }})</span>
+            </button>
           </nav>
         </div>
 
@@ -160,6 +170,40 @@
           :history="shipment.history"
           :printLogs="shipment.printLogs ?? []"
         />
+
+        <!-- Stok Hareketleri sekmesi -->
+        <div v-if="activeDetailTab === 'stock'">
+          <div v-if="!shipment.stockMovements?.length" class="text-center py-10 text-gray-400 text-sm">
+            Bu sevkiyata ait stok hareketi bulunmuyor.
+          </div>
+          <div v-else class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+              <thead class="bg-gray-50 dark:bg-gray-800">
+                <tr>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Tarih</th>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">İşlem</th>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Stok</th>
+                  <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Miktar</th>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase hidden md:table-cell">Not</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                <tr v-for="(m, i) in shipment.stockMovements" :key="i">
+                  <td class="px-4 py-2 text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ formatStockDate(m.date) }}</td>
+                  <td class="px-4 py-2 text-gray-700 dark:text-gray-300">{{ m.type }}</td>
+                  <td class="px-4 py-2 text-gray-700 dark:text-gray-300">
+                    <span class="font-mono text-xs">{{ m.stockCode }}</span>
+                    <span class="text-gray-400"> · {{ m.stockName }}</span>
+                  </td>
+                  <td class="px-4 py-2 text-right font-semibold" :class="m.qty < 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'">
+                    {{ m.qty > 0 ? '+' : '' }}{{ m.qty }}
+                  </td>
+                  <td class="px-4 py-2 text-gray-500 dark:text-gray-400 hidden md:table-cell">{{ m.note || '—' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       <!-- RIGHT: sticky sidebar -->
@@ -710,6 +754,14 @@ interface ShipmentDetail {
     printedAt: string;
     printedByName: string;
   }>;
+  stockMovements?: Array<{
+    date: string;
+    type: string;
+    qty: number;
+    stockCode?: string | null;
+    stockName?: string | null;
+    note?: string | null;
+  }>;
 }
 
 const route = useRoute();
@@ -797,7 +849,13 @@ const showMarkReadyConfirm = ref(false);
 const pendingMarkReadyWarnings = ref<string[]>([]);
 
 // Tab state
-const activeDetailTab = ref<'lines' | 'delivery' | 'history'>('lines');
+const activeDetailTab = ref<'lines' | 'delivery' | 'history' | 'stock'>('lines');
+
+function formatStockDate(iso: string) {
+  return new Date(iso).toLocaleString('tr-TR', {
+    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+  });
+}
 
 // Photo lightbox
 const photoLightboxSrc = ref<string | null>(null);

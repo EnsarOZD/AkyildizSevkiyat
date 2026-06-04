@@ -7,12 +7,21 @@ using Microsoft.Extensions.Logging;
 
 namespace Akyildiz.Sevkiyat.Application.Projects.Commands.SyncProjects
 {
-    public class SyncProjectsCommand : IRequest<int>
+    public class SyncProjectsCommand : IRequest<SyncProjectsResult>
     {
         public bool ForceAll { get; set; } = false;
     }
 
-    public class SyncProjectsCommandHandler : IRequestHandler<SyncProjectsCommand, int>
+    public record SyncProjectsResult(int SyncedCount, List<ProjectAddressChangeDto> AddressChanges);
+
+    public record ProjectAddressChangeDto(
+        int ProjectId,
+        string ProjectCode,
+        string ProjectName,
+        string? OldAddress,
+        string? NewAddress);
+
+    public class SyncProjectsCommandHandler : IRequestHandler<SyncProjectsCommand, SyncProjectsResult>
     {
         private readonly IApplicationDbContext _context;
         private readonly IISSIpClient _issClient;
@@ -25,7 +34,7 @@ namespace Akyildiz.Sevkiyat.Application.Projects.Commands.SyncProjects
             _logger = logger;
         }
 
-        public async Task<int> Handle(SyncProjectsCommand request, CancellationToken cancellationToken)
+        public async Task<SyncProjectsResult> Handle(SyncProjectsCommand request, CancellationToken cancellationToken)
         {
             var query = _context.Projects.AsQueryable();
 
@@ -39,7 +48,7 @@ namespace Akyildiz.Sevkiyat.Application.Projects.Commands.SyncProjects
             _logger.LogInformation("SyncProjects started: {Count} projects, ForceAll={ForceAll}", projectsToSync.Count, request.ForceAll);
 
             if (projectsToSync.Count == 0)
-                return 0;
+                return new SyncProjectsResult(0, new());
 
             var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 
@@ -88,6 +97,8 @@ namespace Akyildiz.Sevkiyat.Application.Projects.Commands.SyncProjects
 
             // EF Core context'i tek thread'de güncelle
             int syncedCount = 0;
+            var addressChanges = new List<ProjectAddressChangeDto>();
+            var now = DateTime.UtcNow;
             foreach (var project in projectsToSync)
             {
                 var dto = results.GetValueOrDefault(project.Code ?? "");
@@ -95,15 +106,53 @@ namespace Akyildiz.Sevkiyat.Application.Projects.Commands.SyncProjects
                 {
                     project.Name = dto.ProjeAdi ?? project.Name;
                     project.InstitutionCode = dto.KurumKodu ?? project.InstitutionCode;
-                    project.Address = dto.MalzemeTeslimAdresi ?? project.Address;
+
+                    // Adres değişikliği tespiti — yeni adres geldiyse ve eskiyle anlamlı farklıysa kaydet
+                    var newAddress = dto.MalzemeTeslimAdresi;
+                    if (!string.IsNullOrWhiteSpace(newAddress) && !AddressEquals(project.Address, newAddress))
+                    {
+                        var change = new ProjectAddressChange
+                        {
+                            ProjectId   = project.Id,
+                            ProjectCode = project.Code ?? string.Empty,
+                            ProjectName = project.Name,
+                            OldAddress  = project.Address,
+                            NewAddress  = newAddress,
+                            ChangedAt   = now
+                        };
+                        _context.ProjectAddressChanges.Add(change);
+                        addressChanges.Add(new ProjectAddressChangeDto(
+                            project.Id, project.Code ?? string.Empty, project.Name, project.Address, newAddress));
+
+                        project.Address = newAddress;
+
+                        // Adres değişti → mevcut koordinat artık şüpheli olabilir; yeniden kontrol işaretle.
+                        if (project.Latitude.HasValue && project.Longitude.HasValue)
+                            project.LocationNeedsRecheck = true;
+                    }
+                    else if (!string.IsNullOrWhiteSpace(newAddress))
+                    {
+                        project.Address = newAddress;
+                    }
+
                     syncedCount++;
                 }
-                project.LastSyncedAt = DateTime.UtcNow;
+                project.LastSyncedAt = now;
             }
 
             await _context.SaveChangesAsync(cancellationToken);
-            _logger.LogInformation("SyncProjects completed: {SyncedCount}/{TotalCount} projects updated", syncedCount, projectsToSync.Count);
-            return syncedCount;
+            _logger.LogInformation("SyncProjects completed: {SyncedCount}/{TotalCount} projects updated, {ChangeCount} address changes",
+                syncedCount, projectsToSync.Count, addressChanges.Count);
+            return new SyncProjectsResult(syncedCount, addressChanges);
+        }
+
+        private static readonly System.Globalization.CultureInfo TrCulture = new("tr-TR");
+        /// <summary>Adresleri boşluk/büyük-küçük harf duyarsız karşılaştırır (gürültüyü azaltmak için).</summary>
+        private static bool AddressEquals(string? a, string? b)
+        {
+            static string Norm(string? s) =>
+                System.Text.RegularExpressions.Regex.Replace((s ?? string.Empty).Trim(), @"\s+", " ").ToLower(TrCulture);
+            return Norm(a) == Norm(b);
         }
 
         // --- Helper Methods (Duplicated from ImportIssOrdersCommand for speed, should be refactored to Shared/Utils later) ---

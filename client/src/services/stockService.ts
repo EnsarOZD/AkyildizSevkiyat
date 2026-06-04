@@ -160,5 +160,20 @@ export const stockService = {
             ...data,
             stockMasterId: id
         });
+    },
+
+    /**
+     * Tek ürün için manuel stok sayımı/girişi.
+     * mode 0 = Count (girilen = yeni mevcut), 1 = Add (mevcuda ekle).
+     * Yeni OnHandQty değerini döner.
+     */
+    async adjustOnHand(id: number, data: { quantity: number; mode: 0 | 1; note?: string | null }): Promise<number> {
+        const response = await apiClient.post<number>(`/stocks/${id}/adjust-onhand`, {
+            stockMasterId: id,
+            quantity: data.quantity,
+            mode: data.mode,
+            note: data.note ?? null
+        });
+        return response.data;
     }
 };

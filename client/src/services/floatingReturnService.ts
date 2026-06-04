@@ -37,6 +37,8 @@ export interface ResolveFloatingReturnRequest {
   action: ResolveAction;
   linkedShipmentId?: number;
   note?: string;
+  /** Serbest (stok kartına bağlı olmayan) iadeyi stoğa eklerken seçilen kart. */
+  stockMasterId?: number;
 }
 
 const floatingReturnService = {

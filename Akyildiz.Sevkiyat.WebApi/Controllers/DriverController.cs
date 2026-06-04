@@ -3,6 +3,7 @@ using Akyildiz.Sevkiyat.Application.Driver.Commands.StartDriverSession;
 using Akyildiz.Sevkiyat.Application.Driver.Commands.UpdateRouteOrder;
 using Akyildiz.Sevkiyat.Application.Driver.Queries.GetActiveDriverSession;
 using Akyildiz.Sevkiyat.Application.Driver.Queries.GetDriverRoute;
+using Akyildiz.Sevkiyat.Application.Driver.Queries.GetEndOdometerStatus;
 using Akyildiz.Sevkiyat.Application.Driver.Queries.GetDriverShipments;
 using Akyildiz.Sevkiyat.Application.Driver.Queries.ResolveIrsaliyeShipments;
 using MediatR;
@@ -73,6 +74,19 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             CancellationToken cancellationToken)
         {
             return Ok(await _mediator.Send(command, cancellationToken));
+        }
+
+        /// <summary>
+        /// Sefer bitirmeden önce: bu araç için bugün başka bir şoför zaten bitiş
+        /// kadranını girdi mi? Girdiyse şoföre kadran adımı sorulmaz. Salt-okunur.
+        /// </summary>
+        [HttpPost("sessions/end-odometer-status")]
+        [Authorize(Roles = "Driver")]
+        public async Task<ActionResult<EndOdometerStatusResult>> GetEndOdometerStatus(
+            [FromBody] GetEndOdometerStatusQuery query,
+            CancellationToken cancellationToken)
+        {
+            return Ok(await _mediator.Send(query, cancellationToken));
         }
 
         [HttpGet("sessions/active")]

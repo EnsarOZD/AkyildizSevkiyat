@@ -41,7 +41,8 @@ namespace Akyildiz.Sevkiyat.Application.Projects.Queries
                 p.Latitude, p.Longitude, p.Address,
                 p.DeliveryWindowStart, p.DeliveryWindowEnd,
                 p.NetsisTeslimCariKodu,
-                p.Source
+                p.Source,
+                p.LocationNeedsRecheck
             ));
 
             return await PaginatedList<ProjectDto>.CreateAsync(projected, request.PageNumber, request.PageSize);

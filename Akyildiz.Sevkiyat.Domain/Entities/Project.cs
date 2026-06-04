@@ -56,6 +56,18 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
         public double? Longitude { get; set; }
         public string? CityName { get; set; }
         public string? DistrictName { get; set; }
+
+        /// <summary>Kayıtlı koordinatın kaynağı — veri kalitesi/güven için.</summary>
+        public LocationSource LocationSource { get; set; } = LocationSource.None;
+        /// <summary>Koordinatın en son doğrulandığı/güncellendiği an.</summary>
+        public DateTime? LocationVerifiedAt { get; set; }
+        /// <summary>Koordinatı en son doğrulayan/güncelleyen kullanıcı.</summary>
+        public int? LocationVerifiedByUserId { get; set; }
+        /// <summary>
+        /// Adres değiştiği (ISS sync) için koordinatın yeniden kontrol edilmesi gerekiyor.
+        /// Koordinat yeniden kaydedildiğinde (şoför doğrulama / uygula) sıfırlanır.
+        /// </summary>
+        public bool LocationNeedsRecheck { get; set; } = false;
         public TimeOnly? DeliveryWindowStart { get; set; }
         public TimeOnly? DeliveryWindowEnd { get; set; }
 

@@ -69,7 +69,7 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-          <tr v-for="r in returns" :key="r.id" :class="{ 'bg-orange-50': r.status === 'Pending' }">
+          <tr v-for="r in returns" :key="r.id" :class="{ 'bg-orange-50 dark:bg-orange-900/10': r.status === 'Pending' }">
             <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ formatDate(r.returnDate) }}</td>
             <td class="px-4 py-3 font-mono text-gray-800 dark:text-gray-200">
               {{ r.stockCode }}
@@ -190,7 +190,7 @@
           <div class="space-y-2">
             <label class="flex items-center gap-2 cursor-pointer">
               <input type="radio" v-model.number="resolveForm.action" :value="1" />
-              <span class="text-sm">Sevkiyata Eşleştir</span>
+              <span class="text-sm text-gray-700 dark:text-gray-200">Sevkiyata Eşleştir</span>
             </label>
             <div v-if="resolveForm.action === 1" class="ml-6 relative">
               <input
@@ -217,15 +217,19 @@
               </div>
             </div>
             <label class="flex items-center gap-2 cursor-pointer">
-              <input type="radio" v-model.number="resolveForm.action" :value="2" :disabled="!resolveTarget.isLinkedToStock" />
-              <span class="text-sm" :class="{ 'text-gray-400': !resolveTarget.isLinkedToStock }">
-                Stoğa Ekle
-                <span v-if="!resolveTarget.isLinkedToStock" class="text-xs text-red-400">(stok kartı eşleşmesi gerekli)</span>
-              </span>
+              <input type="radio" v-model.number="resolveForm.action" :value="2" />
+              <span class="text-sm text-gray-700 dark:text-gray-200">Stoğa Ekle</span>
             </label>
+            <div v-if="resolveForm.action === 2 && !resolveTarget.isLinkedToStock" class="ml-6">
+              <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Bu iade serbest — eklenecek stok kartını seçin:</p>
+              <StockCombobox :operationType="0" placeholder="Stok kodu veya adı ara..." @select="onResolveStockSelect" />
+              <div v-if="resolveStockName" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Seçili: <span class="font-medium text-gray-700 dark:text-gray-200">{{ resolveStockName }}</span>
+              </div>
+            </div>
             <label class="flex items-center gap-2 cursor-pointer">
               <input type="radio" v-model.number="resolveForm.action" :value="3" />
-              <span class="text-sm">Hariç Tut (Yazı Sil)</span>
+              <span class="text-sm text-gray-700 dark:text-gray-200">Hariç Tut (Yazı Sil)</span>
             </label>
           </div>
         </div>
@@ -406,10 +410,22 @@ const resolveForm = ref<{ action: number; linkedShipmentId?: number; note: strin
   linkedShipmentId: undefined,
   note: '',
 });
+// Serbest iadeyi stoğa eklerken seçilen stok kartı
+const resolveStockMasterId = ref<number | undefined>(undefined);
+const resolveStockName = ref('');
+
+const onResolveStockSelect = (item: any) => {
+  resolveStockMasterId.value = item.id ?? item.Id;
+  const code = item.stockCode ?? item.StockCode ?? '';
+  const name = item.stockName ?? item.StockName ?? '';
+  resolveStockName.value = `${code} — ${name}`;
+};
 
 const openResolveModal = (r: FloatingReturnDto) => {
   resolveTarget.value = r;
   resolveForm.value = { action: 1, linkedShipmentId: undefined, note: '' };
+  resolveStockMasterId.value = undefined;
+  resolveStockName.value = '';
   shipmentSearch.value = '';
   shipmentResults.value = [];
   showResolveModal.value = true;
@@ -417,11 +433,19 @@ const openResolveModal = (r: FloatingReturnDto) => {
 
 const submitResolve = async () => {
   if (!resolveTarget.value) return;
+  // Serbest iade stoğa eklenecekse stok kartı seçimi zorunlu
+  if (resolveForm.value.action === ResolveAction.AddToStock
+      && !resolveTarget.value.isLinkedToStock
+      && !resolveStockMasterId.value) {
+    notificationStore.add('Stoğa eklemek için bir stok kartı seçiniz.', 'warning');
+    return;
+  }
   try {
     await floatingReturnService.resolve(resolveTarget.value.id, {
       action: resolveForm.value.action as ResolveAction,
       linkedShipmentId: resolveForm.value.linkedShipmentId,
       note: resolveForm.value.note || undefined,
+      stockMasterId: resolveForm.value.action === ResolveAction.AddToStock ? resolveStockMasterId.value : undefined,
     });
     showResolveModal.value = false;
     await loadData();

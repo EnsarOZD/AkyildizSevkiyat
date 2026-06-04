@@ -192,7 +192,10 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.MarkShipmentDelivered
                 {
                     if (!stockMap.TryGetValue(line.StockMasterId!.Value, out var stock)) continue;
 
-                    var actualQty = line.DeliveredQty > 0 ? line.DeliveredQty : line.OrderedQty;
+                    // İade edilen kalem teslim/çıkış sayılmaz (bkz. ShipmentLine.NetDeliveredQty)
+                    var actualQty = line.NetDeliveredQty;
+
+                    if (actualQty <= 0) continue; // tamamı iade edilmişse stok çıkışı yok
 
                     stock.Deduct(actualQty);
 

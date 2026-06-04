@@ -22,6 +22,8 @@ export interface TripShipmentDto {
 export interface ResolveIrsaliyeResult {
   vehiclePlateNumber: string;
   shipments: TripShipmentDto[];
+  /** Aynı araç için bugün başka bir şoför kadran (km + foto) girdiyse true. */
+  odometerAlreadyRecorded: boolean;
 }
 
 export interface EndSessionRequest {
@@ -68,6 +70,13 @@ const driverSessionService = {
   async endSession(req: EndSessionRequest): Promise<EndSessionResult> {
     const res = await apiClient.post<EndSessionResult>('/driver/sessions/end', req);
     return res.data;
+  },
+
+  /** Bu araç için bugün başka bir şoför zaten bitiş kadranını girdi mi? */
+  async getEndOdometerStatus(qrCode: string): Promise<boolean> {
+    const res = await apiClient.post<{ odometerAlreadyRecorded: boolean }>(
+      '/driver/sessions/end-odometer-status', { qrCode });
+    return res.data.odometerAlreadyRecorded;
   },
 
   async getActiveSession(): Promise<ActiveSessionDto | null> {

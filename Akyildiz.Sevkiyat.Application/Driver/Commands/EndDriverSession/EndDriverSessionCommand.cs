@@ -31,11 +31,9 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Commands.EndDriverSession
             RuleFor(x => x.Longitude)
                 .InclusiveBetween(-180, 180).WithMessage("Geçersiz boylam değeri.");
 
-            RuleFor(x => x.EndOdometerPhotoBase64)
-                .NotEmpty().WithMessage("Bitiş kadran fotoğrafı zorunludur.");
-
+            // Bitiş kadranı + km zorunluluğu handler'da koşullu uygulanır:
+            // araçta ilk kapatan şoför girer, sonraki şoförler ilk okumadan miras alır.
             RuleFor(x => x.EndOdometerKm)
-                .NotNull().WithMessage("Bitiş kilometre bilgisi zorunludur.")
                 .GreaterThan(0).When(x => x.EndOdometerKm.HasValue).WithMessage("Kilometre değeri 0'dan büyük olmalıdır.");
         }
     }

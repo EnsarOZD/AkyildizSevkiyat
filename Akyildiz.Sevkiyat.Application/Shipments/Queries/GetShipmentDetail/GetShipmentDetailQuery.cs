@@ -71,6 +71,8 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipmentDetail
         public List<ShipmentLineDetailDto> Lines { get; set; } = new();
         public List<ShipmentHistoryDto> History { get; set; } = new();
         public List<ShipmentPrintLogDto> PrintLogs { get; set; } = new();
+        /// <summary>Bu sevkiyata ait stok hareketleri (teslim çıkışı, araç iadesi vb.).</summary>
+        public List<ShipmentStockMovementDto> StockMovements { get; set; } = new();
     }
 
     public class DeliveryPhotoDto
@@ -114,5 +116,15 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipmentDetail
         public int Id { get; set; }
         public DateTime PrintedAt { get; set; }
         public string PrintedByName { get; set; } = string.Empty;
+    }
+
+    public class ShipmentStockMovementDto
+    {
+        public DateTime Date { get; set; }
+        public string Type { get; set; } = string.Empty;     // okunabilir etiket
+        public decimal Qty { get; set; }                      // + giriş / − çıkış
+        public string? StockCode { get; set; }
+        public string? StockName { get; set; }
+        public string? Note { get; set; }
     }
 }

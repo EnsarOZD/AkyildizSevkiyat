@@ -55,7 +55,8 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
                 id,
                 request.Action,
                 request.LinkedShipmentId,
-                request.Note
+                request.Note,
+                request.StockMasterId
             ));
             return NoContent();
         }
@@ -74,6 +75,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
     public record ResolveFloatingReturnRequest(
         ResolveAction Action,
         int? LinkedShipmentId,
-        string? Note
+        string? Note,
+        int? StockMasterId
     );
 }
