@@ -94,6 +94,10 @@
                     </div>
                     <div class="flex items-center gap-1 mt-1" @click.stop>
                       <button
+                        @click="setFull(item)"
+                        class="h-12 px-3 flex items-center justify-center rounded-xl bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 active:bg-green-100 font-bold text-sm touch-manipulation border border-green-200 dark:border-green-800 shadow-sm"
+                      >TAM</button>
+                      <button
                         @click="changeQty(item, -1)"
                         class="w-12 h-12 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 active:bg-gray-200 dark:active:bg-gray-700 font-bold text-2xl touch-manipulation"
                       >−</button>
@@ -420,6 +424,13 @@ function changeQty(item: MacroItem, delta: number) {
   item.localPickedQty = Math.max(0, next);
   if (delta > 0) sound.success();
   else navigator.vibrate?.(15);
+}
+
+// Kalemi tek dokunuşla sipariş miktarına eşitle (satırı genişletmeden "tam topla").
+function setFull(item: MacroItem) {
+  item.localPickedQty = item.totalOrderedQty;
+  item.differenceReason = '';
+  sound.success();
 }
 
 function clampQty(item: MacroItem) {

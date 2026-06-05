@@ -317,10 +317,12 @@
                                                     class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                                                 />
                                             </th>
-                                            <th class="p-4">Sipariş / Talep</th>
+                                            <th class="p-4">Sipariş No</th>
+                                            <th class="p-4">Talep No</th>
                                             <th class="p-4">Proje Bilgisi</th>
                                             <th class="p-4">Bölge</th>
-                                            <th class="p-4">Tarih</th>
+                                            <th class="p-4">Sipariş T.</th>
+                                            <th class="p-4">Termin</th>
                                             <th class="p-4">Kalem</th>
                                             <th class="p-4 text-right">İşlem</th>
                                         </tr>
@@ -340,7 +342,11 @@
                                             </td>
                                             <td class="p-4">
                                                 <div class="font-bold text-gray-900 dark:text-gray-100">{{ order.externalOrderNumber || order.ExternalOrderNumber }}</div>
-                                                <div class="text-xs text-gray-500 dark:text-gray-400">T: {{ (order.talepNo || order.TalepNo) || '-' }}</div>
+                                            </td>
+                                            <td class="p-4">
+                                                <span class="inline-block px-2 py-1 rounded-md bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-extrabold text-sm tracking-tight">
+                                                    {{ (order.talepNo || order.TalepNo) || '-' }}
+                                                </span>
                                             </td>
                                             <td class="p-4">
                                                 <div class="text-[10px] text-gray-400 uppercase font-bold">{{ order.institutionCode || order.InstitutionCode }}</div>
@@ -352,6 +358,7 @@
                                             </td>
                                             <td class="p-4 text-xs font-medium dark:text-gray-300">{{ order.region || order.Region }}</td>
                                             <td class="p-4 text-xs dark:text-gray-400">{{ formatDate(order.orderDate || order.OrderDate) }}</td>
+                                            <td class="p-4 text-xs font-semibold text-emerald-700 dark:text-emerald-400">{{ formatDate(order.deliveryDate || order.DeliveryDate) }}</td>
                                             <td class="p-4">
                                                 <span class="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-full text-[10px] font-bold text-gray-600 dark:text-gray-400">
                                                     {{ order.lineCount || order.LineCount }} Kalem
@@ -393,9 +400,9 @@
                                                 class="mt-1 h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                                             />
                                             <div>
-                                                <div class="font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                                                <div class="font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2 flex-wrap">
                                                     {{ order.externalOrderNumber || order.ExternalOrderNumber }}
-                                                    <span class="text-[10px] bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-gray-500">T: {{ order.talepNo || order.TalepNo || '-' }}</span>
+                                                    <span class="text-sm font-extrabold bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-md tracking-tight">T: {{ order.talepNo || order.TalepNo || '-' }}</span>
                                                 </div>
                                                 <div class="text-[11px] text-gray-500 dark:text-gray-400 mt-1 font-medium">
                                                     {{ order.projectCode || order.ProjectCode }} — {{ order.projectName || order.ProjectName }}
@@ -407,14 +414,18 @@
                                         </div>
                                     </div>
                                     
-                                    <div class="grid grid-cols-2 gap-3 mb-4">
+                                    <div class="grid grid-cols-3 gap-2 mb-4">
                                         <div class="bg-gray-50 dark:bg-gray-900/50 p-2 rounded-lg">
                                             <div class="text-[9px] text-gray-400 uppercase font-bold mb-0.5">Bölge</div>
                                             <div class="text-[11px] font-semibold dark:text-gray-300 truncate">{{ order.region || order.Region }}</div>
                                         </div>
                                         <div class="bg-gray-50 dark:bg-gray-900/50 p-2 rounded-lg">
-                                            <div class="text-[9px] text-gray-400 uppercase font-bold mb-0.5">Tarih</div>
+                                            <div class="text-[9px] text-gray-400 uppercase font-bold mb-0.5">Sipariş T.</div>
                                             <div class="text-[11px] font-semibold dark:text-gray-300">{{ formatDate(order.orderDate || order.OrderDate) }}</div>
+                                        </div>
+                                        <div class="bg-gray-50 dark:bg-gray-900/50 p-2 rounded-lg">
+                                            <div class="text-[9px] text-gray-400 uppercase font-bold mb-0.5">Termin</div>
+                                            <div class="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">{{ formatDate(order.deliveryDate || order.DeliveryDate) }}</div>
                                         </div>
                                     </div>
 
@@ -474,8 +485,13 @@
                              <span class="text-xs text-gray-500">{{ selectedOrder.projectCode }}</span>
                          </div>
                          <div class="col-span-full">
-                             <span class="block text-gray-400 text-[10px] font-bold uppercase mb-1">Açıklama</span>
-                             <div class="bg-indigo-50/30 dark:bg-indigo-900/10 p-3 rounded-xl dark:text-gray-300 text-xs leading-relaxed italic border border-indigo-100/50 dark:border-indigo-800/50 min-h-[60px]">
+                             <span class="block text-amber-600 dark:text-amber-400 text-xs font-extrabold uppercase tracking-wider mb-1">Açıklama / Not</span>
+                             <div
+                                 class="p-4 rounded-xl leading-relaxed border-2 min-h-[64px] whitespace-pre-wrap break-words"
+                                 :class="selectedOrder.aciklama
+                                     ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 text-base font-semibold'
+                                     : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 text-gray-400 text-sm italic'"
+                             >
                                  {{ selectedOrder.aciklama || 'Açıklama bulunmuyor.' }}
                              </div>
                          </div>
@@ -687,7 +703,21 @@ const createBulkShipments = async () => {
         const res = await shipmentService.bulkCreateFromIss({
             issOrderIds: Array.from(selectedIds.value)
         });
-        notificationStore.add(`${res.createdCount} adet sevkiyat başarıyla oluşturuldu.`, 'success');
+
+        if (res.successCount > 0) {
+            notificationStore.add(`${res.successCount} adet sevkiyat başarıyla oluşturuldu.`, 'success');
+        }
+        if (res.failureCount > 0) {
+            const sampleReason = res.failures[0]?.reason || 'Bilinmeyen hata';
+            notificationStore.add(
+                `${res.failureCount} sipariş aktarılamadı. Örn: ${sampleReason}`,
+                res.successCount > 0 ? 'warning' : 'error'
+            );
+        }
+        if (res.successCount === 0 && res.failureCount === 0) {
+            notificationStore.add('İşlenecek uygun sipariş bulunamadı.', 'info');
+        }
+
         // Reload and clear selection
         await loadOrders();
         clearSelection();

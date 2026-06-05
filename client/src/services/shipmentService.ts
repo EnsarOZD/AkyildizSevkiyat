@@ -194,6 +194,49 @@ export interface BulkShipmentRequest {
   issOrderIds: number[];
 }
 
+export interface DeliverStopLineInput {
+  shipmentLineId: number;
+  deliveredQty: number;
+  returnReason?: number | null;
+  returnReasonText?: string | null;
+}
+
+export interface DeliverStopExternalReturnInput {
+  stockMasterId?: number | null;
+  stockCodeFree?: string | null;
+  stockNameFree?: string | null;
+  qty: number;
+  returnReason: number;
+  note?: string | null;
+}
+
+export interface DeliverStopRequest {
+  deliveryRecipient: string;
+  deliveryNote?: string | null;
+  photosBase64: string[];
+  latitude?: number | null;
+  longitude?: number | null;
+  lines: DeliverStopLineInput[];
+  externalReturns?: DeliverStopExternalReturnInput[];
+}
+
+export interface DeliverStopResult {
+  deliveredShipments: number;
+  returnedShipments: number;
+  floatingReturns: number;
+}
+
+export interface BulkShipmentFailure {
+  issOrderId: number;
+  reason: string;
+}
+
+export interface BulkShipmentResult {
+  successCount: number;
+  failureCount: number;
+  failures: BulkShipmentFailure[];
+}
+
 export interface CreateManualShipmentLineInput {
   stockMasterId: number;
   qty: number;
@@ -235,6 +278,15 @@ const shipmentService = {
 
   async toggleStatus(id: number, setPassive: boolean, reason?: string): Promise<void> {
     await apiClient.post(`/shipments/${id}/toggle-status?setPassive=${setPassive}`, { reason });
+  },
+
+  async cancelShipment(id: number, reason: string, notifyOutOfStock: boolean): Promise<{ emailSent: boolean; emailError?: string | null }> {
+    const res = await apiClient.post(`/shipments/${id}/cancel`, { reason, notifyOutOfStock });
+    const d = res.data ?? {};
+    return {
+      emailSent: d.emailSent ?? d.EmailSent ?? false,
+      emailError: d.emailError ?? d.EmailError ?? null,
+    };
   },
 
   async assignToWarehouse(id: number): Promise<{ warnings?: string[] } | null> {
@@ -397,9 +449,27 @@ const shipmentService = {
     await apiClient.post('/shipments', { issOrderId });
   },
 
-  async bulkCreateFromIss(request: BulkShipmentRequest): Promise<{ createdCount: number }> {
+  async deliverStop(projectId: number, payload: DeliverStopRequest): Promise<DeliverStopResult> {
+    const res = await apiClient.post(`/shipments/stops/${projectId}/deliver`, payload);
+    const d = res.data ?? {};
+    return {
+      deliveredShipments: d.deliveredShipments ?? d.DeliveredShipments ?? 0,
+      returnedShipments: d.returnedShipments ?? d.ReturnedShipments ?? 0,
+      floatingReturns: d.floatingReturns ?? d.FloatingReturns ?? 0,
+    };
+  },
+
+  async bulkCreateFromIss(request: BulkShipmentRequest): Promise<BulkShipmentResult> {
     const response = await apiClient.post('/shipments/bulk', request);
-    return response.data;
+    const d = response.data ?? {};
+    return {
+      successCount: d.successCount ?? d.SuccessCount ?? 0,
+      failureCount: d.failureCount ?? d.FailureCount ?? 0,
+      failures: (d.failures ?? d.Failures ?? []).map((f: any) => ({
+        issOrderId: f.issOrderId ?? f.IssOrderId,
+        reason: f.reason ?? f.Reason ?? 'Bilinmeyen hata',
+      })),
+    };
   },
 
   async toggleIssActive(id: number, isActive: boolean): Promise<void> {

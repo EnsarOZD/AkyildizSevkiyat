@@ -46,9 +46,13 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands
             if (order.IsTransferred)
                 throw new ConflictException("Bu sipariş zaten bir sevkiyata dönüştürülmüş.");
 
-            // Defensive: check for any existing non-cancelled shipment (covers flag-inconsistency edge cases)
+            // Bir ISS siparişi için zaten bir sevkiyat varsa (iptal edilmiş olsa bile) yeni
+            // sevkiyat oluşturulamaz. DB'deki unique index (IX_Shipments_IssOrderId) iptal
+            // edilmiş sevkiyatları da kapsadığından, iptal edilenleri burada hariç tutmak
+            // INSERT sırasında duplicate-key (2601) → 500 hatasına yol açıyordu. Bu kontrolü
+            // statüden bağımsız yaparak temiz bir Conflict (409) mesajı döndürüyoruz.
             var existingShipment = await _context.Shipments
-                .Where(s => s.IssOrderId == request.IssOrderId && s.Status != ShipmentStatus.Cancelled)
+                .Where(s => s.IssOrderId == request.IssOrderId)
                 .Select(s => new { s.NetsisTransferredAt })
                 .FirstOrDefaultAsync(cancellationToken);
 
@@ -56,7 +60,7 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands
             {
                 var msg = existingShipment.NetsisTransferredAt != null
                     ? "Bu siparişin sevkiyatı daha önce Netsis'e aktarılmış. Yeni sevkiyat oluşturulamaz."
-                    : "Bu sipariş zaten bir sevkiyata dönüştürülmüş.";
+                    : "Bu sipariş zaten içeri aktarılmış (mevcut bir sevkiyatı var). Yeni sevkiyat oluşturulamaz.";
                 throw new ConflictException(msg);
             }
 

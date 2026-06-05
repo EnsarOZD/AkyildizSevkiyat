@@ -90,7 +90,7 @@
                       </span>
                     </template>
                     <template v-else-if="item.lines.length === 1">
-                      <span class="text-[10px] text-gray-400 dark:text-gray-600 truncate max-w-[12rem]">
+                      <span class="text-[10px] text-gray-400 dark:text-gray-600 break-words">
                         {{ item.lines[0]!.projectName }}
                       </span>
                     </template>

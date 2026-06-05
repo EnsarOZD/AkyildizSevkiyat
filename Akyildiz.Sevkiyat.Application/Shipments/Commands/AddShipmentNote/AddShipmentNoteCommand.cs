@@ -51,7 +51,15 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.AddShipmentNote
                     .FirstOrDefaultAsync(d => d.UserId == _currentUserService.UserId, cancellationToken)
                     ?? throw new ForbiddenException("Kullanıcıya tanımlı bir şoför kaydı bulunamadı.");
 
-                if (shipment.AssignedDriverId != driver.Id)
+                // Doğrudan atama VEYA sevkiyatın zone'una atanmış şoför (çok şoförlü sefer).
+                bool isAssignedDriver = shipment.AssignedDriverId == driver.Id;
+                bool isZoneDriver = shipment.ZonePreparationId.HasValue
+                    && await _context.ZonePreparationDrivers.AnyAsync(
+                        zpd => zpd.ZonePreparationId == shipment.ZonePreparationId.Value
+                            && zpd.DriverId == driver.Id,
+                        cancellationToken);
+
+                if (!isAssignedDriver && !isZoneDriver)
                     throw new ForbiddenException("Bu sevkiyat size atanmamış.");
             }
 

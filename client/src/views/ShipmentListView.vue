@@ -282,7 +282,7 @@
                       @delete-draft="deleteDraft(shipment.id)"
                       @passive-on="confirmToggleStatus(shipment.id, true)"
                       @passive-off="confirmToggleStatus(shipment.id, false)"
-                      @cancel="confirmToggleStatus(shipment.id, true)"
+                      @cancel="openCancelModal(shipment.id)"
                     />
                   </div>
                 </td>
@@ -359,7 +359,7 @@
                   @delete-draft="deleteDraft(shipment.id)"
                   @passive-on="confirmToggleStatus(shipment.id, true)"
                   @passive-off="confirmToggleStatus(shipment.id, false)"
-                  @cancel="confirmToggleStatus(shipment.id, true)"
+                  @cancel="openCancelModal(shipment.id)"
                 />
               </div>
             </div>
@@ -710,6 +710,61 @@
         </div>
       </div>
     </Transition>
+  </Teleport>
+
+  <!-- İptal (sebepli) modalı -->
+  <Teleport to="body">
+    <div v-if="cancelModal.open" class="fixed inset-0 z-50 flex items-center justify-center p-4" @click.self="cancelModal.open = false">
+      <div class="absolute inset-0 bg-black/50"></div>
+      <div class="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-5 space-y-4">
+        <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">Sevkiyatı İptal Et</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          Sevkiyat pasife alınacak ve rezerve edilen stok serbest bırakılacak. Lütfen iptal sebebini seçin.
+        </p>
+
+        <div class="space-y-2">
+          <label
+            v-for="opt in cancelReasonOptions"
+            :key="opt"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-lg border cursor-pointer transition-colors"
+            :class="cancelModal.reason === opt
+              ? 'border-red-400 bg-red-50 dark:bg-red-900/20 dark:border-red-700'
+              : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'"
+          >
+            <input type="radio" :value="opt" v-model="cancelModal.reason" class="text-red-600 focus:ring-red-500" />
+            <span class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ opt }}</span>
+            <span v-if="opt === 'Stokta yok'" class="ml-auto text-[10px] font-bold text-red-600 bg-red-100 dark:bg-red-900/30 px-2 py-0.5 rounded">MÜŞTERİYE MAİL</span>
+          </label>
+        </div>
+
+        <div v-if="cancelModal.reason === 'Diğer'">
+          <input
+            v-model="cancelModal.customReason"
+            type="text"
+            placeholder="İptal sebebini yazın..."
+            class="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+          />
+        </div>
+
+        <p v-if="cancelModal.reason === 'Stokta yok'" class="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg px-3 py-2">
+          Bu seçimde projeye "stokta olmadığı için gönderilememiştir" bildirimi e-postası gönderilecektir.
+        </p>
+
+        <div class="flex gap-3 pt-1">
+          <button @click="cancelModal.open = false" class="flex-1 py-2.5 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+            Vazgeç
+          </button>
+          <button
+            @click="confirmCancel"
+            :disabled="cancelModal.submitting || !effectiveCancelReason"
+            class="flex-1 py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+          >
+            <span v-if="cancelModal.submitting" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            {{ cancelModal.submitting ? 'İptal ediliyor...' : 'İptal Et' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </Teleport>
 
   <CreateManualShipmentModal
@@ -1373,6 +1428,51 @@ const deleteDraft = async (id: number) => {
     notificationStore.add('Taslak sevkiyat silindi. ISS siparişi aktarım listesine geri döndü.', 'success');
   } catch (error) {
     notificationStore.add(ApiErrorUtils.getErrorMessage(error) || 'Silme işlemi başarısız.', 'error');
+  }
+};
+
+// İptal (sebepli) modalı
+const cancelReasonOptions = ['Stokta yok', 'Müşteri iptal etti', 'Diğer'];
+const cancelModal = reactive({
+  open: false,
+  shipmentId: 0,
+  reason: 'Stokta yok',
+  customReason: '',
+  submitting: false,
+});
+
+const effectiveCancelReason = computed(() =>
+  cancelModal.reason === 'Diğer' ? cancelModal.customReason.trim() : cancelModal.reason
+);
+
+const openCancelModal = (id: number) => {
+  cancelModal.shipmentId = id;
+  cancelModal.reason = 'Stokta yok';
+  cancelModal.customReason = '';
+  cancelModal.submitting = false;
+  cancelModal.open = true;
+};
+
+const confirmCancel = async () => {
+  const reason = effectiveCancelReason.value;
+  if (!reason) return;
+  const notifyOutOfStock = cancelModal.reason === 'Stokta yok';
+  cancelModal.submitting = true;
+  try {
+    const res = await shipmentService.cancelShipment(cancelModal.shipmentId, reason, notifyOutOfStock);
+    cancelModal.open = false;
+    if (notifyOutOfStock && res.emailSent) {
+      notificationStore.add('Sevkiyat iptal edildi ve projeye bilgilendirme e-postası gönderildi.', 'success');
+    } else if (notifyOutOfStock && !res.emailSent) {
+      notificationStore.add(`Sevkiyat iptal edildi ancak e-posta gönderilemedi: ${res.emailError || 'bilinmeyen hata'}`, 'warning');
+    } else {
+      notificationStore.add('Sevkiyat iptal edildi.', 'success');
+    }
+    fetchShipments();
+  } catch (error) {
+    notificationStore.add(ApiErrorUtils.getErrorMessage(error) || 'İptal işlemi başarısız.', 'error');
+  } finally {
+    cancelModal.submitting = false;
   }
 };
 

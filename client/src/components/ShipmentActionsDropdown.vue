@@ -219,7 +219,11 @@ const can = (action: string): boolean => {
     case 'passiveOn':
       return st === 'Created' && hasRole(['Admin', 'Accounting']);
     case 'cancel':
-      return !!nt && st !== 'Passive' && st !== 'Created' && hasRole(['Admin', 'Manager', 'Accounting']);
+      // Sebep girilerek iptal — Netsis'e aktarılmamış (nt yok) ön-sevk aşamaları.
+      // Depo hazırlık aşamasında rezervasyon backend'de otomatik serbest bırakılır.
+      return !nt
+        && ['Created', 'AssignedToWarehouse', 'Picking', 'ReadyForDispatch'].includes(st)
+        && hasRole(['Admin', 'Manager', 'Accounting']);
     case 'passiveOff':
       return st === 'Passive' && hasRole(['Admin', 'Accounting']);
     default:

@@ -43,7 +43,17 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipmentDetail
             {
                 var driver = await _context.Drivers.FirstOrDefaultAsync(d => d.UserId == _currentUserService.UserId, cancellationToken)
                     ?? throw new ForbiddenException("Kullanıcıya tanımlı bir şoför kaydı bulunamadı.");
-                if (shipment.AssignedDriverId != driver.Id)
+
+                // Sevkiyat doğrudan bu şoföre atanmış olabilir veya sevkiyatın zone'una
+                // atanmış şoförlerden biri olabilir (çok şoförlü/birincil değişen seferler).
+                bool isAssignedDriver = shipment.AssignedDriverId == driver.Id;
+                bool isZoneDriver = shipment.ZonePreparationId.HasValue
+                    && await _context.ZonePreparationDrivers.AnyAsync(
+                        zpd => zpd.ZonePreparationId == shipment.ZonePreparationId.Value
+                            && zpd.DriverId == driver.Id,
+                        cancellationToken);
+
+                if (!isAssignedDriver && !isZoneDriver)
                     throw new ForbiddenException("Bu sevkiyata erişim yetkiniz yok.");
             }
 

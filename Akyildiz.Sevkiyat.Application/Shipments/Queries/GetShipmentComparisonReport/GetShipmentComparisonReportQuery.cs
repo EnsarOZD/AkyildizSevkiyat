@@ -41,6 +41,7 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipmentComparisonR
         public string? ZoneName { get; init; }
         public DateTime DeliveryDate { get; init; }
         public string ShipmentStatus { get; init; } = string.Empty;
+        public string? CancelReason { get; init; }
         public string OverallStatus { get; init; } = string.Empty;
         // "full_match" | "has_substitutions" | "has_shortfalls" | "has_missing" | "critical"
         public IReadOnlyList<LineComparisonDto> Lines { get; init; } = [];
@@ -85,9 +86,10 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipmentComparisonR
             var fromDt = dateFrom.ToDateTime(TimeOnly.MinValue);
             var toDt   = dateTo.ToDateTime(TimeOnly.MaxValue);
 
-            // Only show ReadyForDispatch and beyond; exclude passive / cancelled
-            var excluded = new[] { ShipmentStatus.Passive, ShipmentStatus.Cancelled };
-
+            // ReadyForDispatch ve sonrası gösterilir. Cancelled tamamen hariç tutulur.
+            // Passive sevkiyatlar normalde gizlidir; ANCAK sebep girilerek iptal edilenler
+            // (CancelReason dolu) raporda görünür ki depo karşılayamadığı siparişler için
+            // müşteriye bildirim e-postası gönderilebilsin.
             var query = _context.Shipments
                 .Include(s => s.Project)
                     .ThenInclude(p => p.Zone)
@@ -98,7 +100,8 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipmentComparisonR
                 .Where(s => s.DeliveryDate >= fromDt
                          && s.DeliveryDate <= toDt
                          && s.Status >= ShipmentStatus.ReadyForDispatch
-                         && !excluded.Contains(s.Status));
+                         && s.Status != ShipmentStatus.Cancelled
+                         && (s.Status != ShipmentStatus.Passive || s.CancelReason != null));
 
             if (request.ProjectId.HasValue)
                 query = query.Where(s => s.ProjectId == request.ProjectId.Value);
@@ -296,6 +299,7 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipmentComparisonR
                 ZoneName       = shipment.Project.Zone?.Name,
                 DeliveryDate   = shipment.DeliveryDate,
                 ShipmentStatus = shipment.Status.ToString(),
+                CancelReason   = shipment.CancelReason,
                 OverallStatus  = overallStatus,
                 Lines          = lineResults,
             };

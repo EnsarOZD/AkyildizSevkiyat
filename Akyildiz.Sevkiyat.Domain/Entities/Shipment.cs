@@ -62,6 +62,10 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
         public DateTime? ReturnedAt { get; private set; }
         public string? ReturnNote { get; private set; }
 
+        // İptal / pasife alma sebebi (depo karşılayamadığında girilir).
+        // Karşılaştırma sayfasında yalnızca bu alanı dolu olan pasif sevkiyatlar görünür.
+        public string? CancelReason { get; private set; }
+
         // Dispatch Confirmation (yükleme onayı)
         public DateTime? DispatchedAt { get; private set; }
         public string? DispatchConfirmedByName { get; private set; }
@@ -183,12 +187,13 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
                 AssignedDriverId = driverId.Value;
         }
 
-        public void SetPassive(int? userId)
+        public void SetPassive(int? userId, string? cancelReason = null)
         {
             if (Status != ShipmentStatus.Created)
                 throw new DomainException("Only 'Created' (Draft) shipments can be set to Passive.");
 
-            ChangeStatus(ShipmentStatus.Passive, userId);
+            CancelReason = cancelReason;
+            ChangeStatus(ShipmentStatus.Passive, userId, cancelReason);
         }
 
         public void SetActive(int? userId, string? reason = null)
@@ -196,6 +201,7 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
             if (Status != ShipmentStatus.Passive)
                 throw new DomainException("Only 'Passive' shipments can be set to Active.");
 
+            CancelReason = null;
             ChangeStatus(ShipmentStatus.Created, userId, reason);
         }
 

@@ -323,13 +323,8 @@ const router = createRouter({
                     component: () => import('../views/DriverSettingsView.vue'),
                     meta: { title: 'İzinler & Ayarlar' }
                 },
-                {
-                    path: ':id',
-                    name: 'DriverDelivery',
-                    component: () => import('../views/DriverDeliveryView.vue'),
-                    meta: { title: 'Teslimat' }
-                },
-                // DriverReturn route kaldırıldı — iade işlemleri DriverStopView içindeki modal üzerinden yapılıyor
+                // İrsaliye-bazı teslim (DriverDelivery) ve iade route'ları kaldırıldı —
+                // teslim ve iade artık durak (proje) bazlı DriverStopView içinde yapılıyor.
             ]
         },
         {

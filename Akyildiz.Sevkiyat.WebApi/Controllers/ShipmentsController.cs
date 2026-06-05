@@ -23,6 +23,8 @@ using Akyildiz.Sevkiyat.Application.Shipments.Commands.AssignVehicle;
 using Akyildiz.Sevkiyat.Domain.Enums;
 using Akyildiz.Sevkiyat.Application.Shipments.Commands.UpdateShipmentQuantities;
 using Akyildiz.Sevkiyat.Application.Shipments.Commands.ToggleShipmentStatus;
+using Akyildiz.Sevkiyat.Application.Shipments.Commands.CancelShipment;
+using Akyildiz.Sevkiyat.Application.Shipments.Commands.DeliverStop;
 using Akyildiz.Sevkiyat.Application.Shipments.Commands.UpdateShipmentDetails;
 using Akyildiz.Sevkiyat.Application.Shipments.Commands.UpdateIrsaliyeNo;
 using Akyildiz.Sevkiyat.Application.Shipments.Commands.RecordVehicleReturn;
@@ -141,6 +143,33 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         {
             await _mediator.Send(new ToggleShipmentStatusCommand(id, setPassive, request?.Reason));
             return NoContent();
+        }
+
+        // POST api/shipments/stops/{projectId}/deliver — durak (proje) bazlı toplu teslim + iade
+        [HttpPost("stops/{projectId:int}/deliver")]
+        [Authorize(Roles = "Admin,Accounting,Manager,Driver")]
+        public async Task<IActionResult> DeliverStop(int projectId, [FromBody] DeliverStopRequest request)
+        {
+            var result = await _mediator.Send(new DeliverStopCommand(
+                projectId,
+                request.DeliveryRecipient,
+                request.DeliveryNote,
+                request.PhotosBase64,
+                request.Latitude,
+                request.Longitude,
+                request.Lines ?? new List<DeliverStopLineInput>(),
+                request.ExternalReturns));
+            return Ok(result);
+        }
+
+        // POST api/shipments/{id}/cancel — sebep girilerek iptal (pasife alma) + koşullu bildirim e-postası
+        [HttpPost("{id:int}/cancel")]
+        [Authorize(Roles = "Admin,Accounting,Manager")]
+        public async Task<IActionResult> Cancel(int id, [FromBody] CancelShipmentRequest request)
+        {
+            var result = await _mediator.Send(
+                new CancelShipmentCommand(id, request.Reason, request.NotifyOutOfStock));
+            return Ok(result);
         }
 
         [HttpPut("{id:int}/details")]
@@ -343,6 +372,17 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
     }
 
     public record SendComparisonEmailRequest(List<string>? CcEmails);
+
+    public record CancelShipmentRequest(string Reason, bool NotifyOutOfStock = false);
+
+    public record DeliverStopRequest(
+        string DeliveryRecipient,
+        string? DeliveryNote,
+        List<string>? PhotosBase64,
+        double? Latitude,
+        double? Longitude,
+        List<DeliverStopLineInput>? Lines,
+        List<DeliverStopExternalReturnInput>? ExternalReturns);
 
     public record AddShipmentNoteRequest(string Note);
 }

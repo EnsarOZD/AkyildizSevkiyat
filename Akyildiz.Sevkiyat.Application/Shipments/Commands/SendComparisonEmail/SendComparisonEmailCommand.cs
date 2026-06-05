@@ -12,7 +12,10 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.SendComparisonEmail
     /// Sevkiyat karşılaştırma raporundan "Eksik Ürün" veya "Kısmi Gönderim"
     /// bildirimi e-postasını SMTP üzerinden gönderir ve gönderim tarihini kaydeder.
     /// </summary>
-    public record SendComparisonEmailCommand(int ShipmentId, List<string>? ExtraCc = null) : IRequest<string>;
+    public record SendComparisonEmailCommand(
+        int ShipmentId,
+        List<string>? ExtraCc = null,
+        string? CancellationReason = null) : IRequest<string>;
 
     public class SendComparisonEmailCommandHandler : IRequestHandler<SendComparisonEmailCommand, string>
     {
@@ -111,12 +114,20 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.SendComparisonEmail
             var talepNo         = shipment.TalepNo ?? shipment.IssOrder?.TalepNo ?? "—";
             var orderRef        = shipment.IssOrder?.ExternalOrderNumber ?? talepNo;
 
-            var subject     = $"Eksik / Farklı Ürün Bildirimi — {projectName} / {deliveryDateStr}";
-            var headerColor = hasMissing ? "#dc2626" : "#d97706";
-            var headerTitle = "Eksik / Farklı Ürün Bildirimi";
-            var headerSubtitle = hasMissing
-                ? "Aşağıdaki ürünler eksik veya farklı olarak gönderilmiştir."
-                : "Aşağıdaki ürünler talep edilen miktarın altında veya farklı olarak gönderilmiştir.";
+            bool isCancellation = !string.IsNullOrWhiteSpace(request.CancellationReason);
+
+            var subject     = isCancellation
+                ? $"Sipariş İptal Bildirimi — {projectName} / {deliveryDateStr}"
+                : $"Eksik / Farklı Ürün Bildirimi — {projectName} / {deliveryDateStr}";
+            var headerColor = (hasMissing || isCancellation) ? "#dc2626" : "#d97706";
+            var headerTitle = isCancellation
+                ? "Sipariş İptal / Gönderilemedi Bildirimi"
+                : "Eksik / Farklı Ürün Bildirimi";
+            var headerSubtitle = isCancellation
+                ? "Talebiniz stokta olmadığı için gönderilememiştir."
+                : hasMissing
+                    ? "Aşağıdaki ürünler eksik veya farklı olarak gönderilmiştir."
+                    : "Aşağıdaki ürünler talep edilen miktarın altında veya farklı olarak gönderilmiştir.";
 
             // Eksik / kısmi satır tablosu
             var problemRowsHtml = problemLines.Count > 0
@@ -188,9 +199,12 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.SendComparisonEmail
 
             var rowsHtml = problemTableHtml + extraTableHtml;
 
-            var closingNote = hasMissing
-                ? "Eksik ürünler bir daha gönderilmeyecektir. İhtiyaç duyulması halinde yeni bir sipariş oluşturmanız gerekmektedir."
-                : "Eksik miktar için talep oluşturmanız gerekebilir.";
+            var closingNote = isCancellation
+                ? $"Bu sipariş depo tarafından karşılanamadığı için iptal edilmiştir (Sebep: {System.Net.WebUtility.HtmlEncode(request.CancellationReason)}). " +
+                  "İhtiyaç duyulması halinde yeni bir sipariş oluşturmanız gerekmektedir."
+                : hasMissing
+                    ? "Eksik ürünler bir daha gönderilmeyecektir. İhtiyaç duyulması halinde yeni bir sipariş oluşturmanız gerekmektedir."
+                    : "Eksik miktar için talep oluşturmanız gerekebilir.";
 
             var fromAddress     = !string.IsNullOrWhiteSpace(_smtpOptions.FromAddress)
                                     ? _smtpOptions.FromAddress

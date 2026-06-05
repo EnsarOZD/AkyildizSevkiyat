@@ -152,6 +152,9 @@
                     <span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="statusBadgeClass(item.shipmentStatus)">
                       {{ statusLabel(item.shipmentStatus) }}
                     </span>
+                    <div v-if="item.cancelReason" class="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold text-red-700 bg-red-100 dark:bg-red-900/30 dark:text-red-300" :title="`İptal sebebi: ${item.cancelReason}`">
+                      İPTAL · {{ item.cancelReason }}
+                    </div>
                   </td>
                   <td class="px-4 py-3">
                     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold" :class="overallBadgeClass(item.overallStatus)">
@@ -461,7 +464,7 @@ function statusLabel(s: string) {
   const m: Record<string, string> = {
     Created: 'Oluşturuldu', AssignedToWarehouse: 'Depoda', Picking: 'Toplama',
     ReadyForDispatch: 'Sevke Hazır', AssignedToVehicle: 'Araçta',
-    Dispatched: 'Yolda', Delivered: 'Teslim', Cancelled: 'İptal',
+    Dispatched: 'Yolda', Delivered: 'Teslim', Cancelled: 'İptal', Passive: 'İptal/Pasif',
   };
   return m[s] || s;
 }
@@ -475,6 +478,7 @@ function statusBadgeClass(s: string) {
     AssignedToVehicle: 'bg-purple-100 text-purple-700',
     Dispatched: 'bg-orange-100 text-orange-700',
     Delivered: 'bg-green-100 text-green-700',
+    Passive: 'bg-red-100 text-red-700',
   };
   return m[s] || 'bg-gray-100 text-gray-600';
 }

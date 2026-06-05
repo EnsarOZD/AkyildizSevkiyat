@@ -24,6 +24,7 @@ export interface ShipmentComparisonDto {
   zoneName: string | null;
   deliveryDate: string;
   shipmentStatus: string;
+  cancelReason: string | null;
   /** "full_match" | "has_substitutions" | "has_shortfalls" | "has_missing" | "critical" */
   overallStatus: string;
   lines: LineComparisonDto[];

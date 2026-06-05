@@ -44,7 +44,10 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{ (e: 'update:modelValue', value: string): void }>();
 
 // Hızlı seçim için hazır nedenler. "Diğer" seçilince serbest metin alanı açılır.
-const PRESETS = ['Stokta yok', 'Kısmi stok', 'Hasarlı / Bozuk', 'Yanlış ürün', 'Fazla geldi'];
+// Bu alan yalnızca sevkiyat/depo toplama akışlarında kullanılır; bu nedenle sadece
+// sevkiyatta anlamlı sebepler tutulur (Hasarlı/Yanlış ürün/Fazla geldi gibi
+// satınalma odaklı sebepler buradan çıkarıldı).
+const PRESETS = ['Stokta yok', 'Kısmi stok', 'Koli tamamlaması'];
 const OTHER = '__other__';
 
 const isCustom = ref(false);

@@ -55,9 +55,11 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Queries.GetDriverRoute
     }
 
     public record ShipmentLineDto(
+        int Id,
         string StockCode,
         string StockName,
         decimal OrderedQty,
+        decimal LoadedQty,   // Araca yüklenen miktar (DeliveredQty>0 ? DeliveredQty : OrderedQty)
         string Unit,
         int Category
     );
@@ -305,9 +307,11 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Queries.GetDriverRoute
                             .OrderBy(l => CategoryDisplayOrder((int)(l.StockMaster?.Category ?? 0)))
                             .ThenBy(l => l.StockName)
                             .Select(l => new ShipmentLineDto(
+                                l.Id,
                                 l.StockCode,
                                 l.StockName,
                                 l.OrderedQty,
+                                l.DeliveredQty > 0 ? l.DeliveredQty : l.OrderedQty,
                                 l.Unit.ToString(),
                                 (int)(l.StockMaster?.Category ?? 0)
                             )).ToList(),

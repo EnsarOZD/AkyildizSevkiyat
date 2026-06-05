@@ -18,9 +18,11 @@ export interface DriverShipmentDto {
 }
 
 export interface ShipmentLineDto {
+  id: number;
   stockCode: string;
   stockName: string;
   orderedQty: number;
+  loadedQty: number; // araca yüklenen miktar
   unit: string;
   category: number; // StockCategory enum int value
 }
