@@ -13,8 +13,8 @@ export default defineConfig({
       filename: 'sw.ts',
       includeAssets: ['logo-icon.png', 'logo-icon.svg', 'favicon.ico'],
       manifest: {
-        name: 'Akyıldız Lojistik',
-        short_name: 'Sevkiyat',
+        name: 'Akyıldız Sevkiyat',
+        short_name: 'Akyıldız Sevkiyat',
         description: 'Akyıldız Sevkiyat ve Lojistik Yönetim Sistemi',
         theme_color: '#0a1626',
         background_color: '#0a1626',
