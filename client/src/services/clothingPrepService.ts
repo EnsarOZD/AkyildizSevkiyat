@@ -58,6 +58,38 @@ const clothingPrepService = {
   async complete(shipmentId: number, koliCount: string | null, lines: ClothingCompleteLineInput[]): Promise<void> {
     await apiClient.post(`/clothing-prep/${shipmentId}/complete`, { koliCount, lines });
   },
+
+  async aggregatePickList(shipmentIds: number[]): Promise<ClothingAggregatePickList> {
+    const res = await apiClient.post('/clothing-prep/aggregate/pick-list', { shipmentIds });
+    return res.data;
+  },
+  async distributeAggregate(shipmentIds: number[], lines: AggPickInput[]): Promise<void> {
+    await apiClient.post('/clothing-prep/aggregate/distribute', { shipmentIds, lines });
+  },
 };
+
+export interface AggLineRef { shipmentId: number; lineId: number; orderedQty: number; }
+export interface ClothingAggProduct {
+  stockCode: string;
+  stockName: string;
+  unit: string;
+  clothingType?: number | null;
+  totalOrderedQty: number;
+  totalDeliveredQty: number;
+  refs: AggLineRef[];
+}
+export interface ClothingAggShipment {
+  shipmentId: number;
+  externalOrderNumber?: string | null;
+  talepNo?: string | null;
+  projectName: string;
+  koliCount?: string | null;
+  status: string;
+}
+export interface ClothingAggregatePickList {
+  shipments: ClothingAggShipment[];
+  products: ClothingAggProduct[];
+}
+export interface AggPickInput { stockCode: string; pickedQty: number; differenceReason?: string | null; }
 
 export default clothingPrepService;

@@ -31,8 +31,21 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             await _mediator.Send(new CompleteClothingPreparationCommand(id, request.KoliCount, request.Lines ?? new()));
             return Ok();
         }
+
+        // ── Konsolide toplama ───────────────────────────────────────────────
+        [HttpPost("aggregate/pick-list")]
+        public async Task<IActionResult> AggregatePickList([FromBody] StartClothingPreparationRequest request)
+            => Ok(await _mediator.Send(new GetClothingAggregatePickListQuery(request.ShipmentIds)));
+
+        [HttpPost("aggregate/distribute")]
+        public async Task<IActionResult> Distribute([FromBody] DistributeAggregateRequest request)
+        {
+            await _mediator.Send(new UpdateClothingAggregatedLinesCommand(request.ShipmentIds, request.Lines ?? new()));
+            return Ok();
+        }
     }
 
     public record StartClothingPreparationRequest(List<int> ShipmentIds);
     public record CompleteClothingPrepRequest(string? KoliCount, List<ClothingPickLineDto>? Lines);
+    public record DistributeAggregateRequest(List<int> ShipmentIds, List<AggPickInput>? Lines);
 }

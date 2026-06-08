@@ -9,7 +9,11 @@
 
     <div v-else class="space-y-2">
       <div v-for="r in rows" :key="r.shipmentId"
-           class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-3 flex flex-wrap items-center gap-3">
+           class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-3 flex flex-wrap items-center gap-3"
+           :class="{ 'ring-2 ring-purple-400': selected.has(r.shipmentId) }">
+        <input v-if="r.status === 'Created' || r.status === 'Picking'" type="checkbox"
+               :checked="selected.has(r.shipmentId)" @change="toggleSel(r.shipmentId)"
+               class="h-5 w-5 rounded border-gray-300 text-purple-600 focus:ring-purple-500" />
         <div class="flex-1 min-w-[200px]">
           <div class="flex items-center gap-2">
             <span class="font-semibold text-gray-900 dark:text-gray-100">{{ r.externalOrderNumber || ('#' + r.shipmentId) }}</span>
@@ -38,8 +42,19 @@
       </div>
     </div>
 
+    <!-- Konsolide toplama çubuğu -->
+    <div v-if="selected.size >= 2" class="sticky bottom-4">
+      <button @click="openConsolidated" :disabled="consolidating"
+              class="w-full py-3.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-bold rounded-xl shadow-lg text-sm">
+        Konsolide Topla ({{ selected.size }} irsaliye)
+      </button>
+    </div>
+
     <ClothingPickingModal v-if="modalShipmentId" :shipment-id="modalShipmentId"
                           @close="modalShipmentId = null" @completed="onCompleted" />
+
+    <ClothingConsolidatedPickModal v-if="consolidatedIds.length" :shipment-ids="consolidatedIds"
+                          @close="consolidatedIds = []" @completed="onConsolidatedDone" />
   </div>
 </template>
 
@@ -47,6 +62,7 @@
 import { ref, onMounted } from 'vue';
 import PageHeader from '../components/PageHeader.vue';
 import ClothingPickingModal from '../components/ClothingPickingModal.vue';
+import ClothingConsolidatedPickModal from '../components/ClothingConsolidatedPickModal.vue';
 import clothingPrepService, { type ClothingPrepShipment } from '../services/clothingPrepService';
 import shipmentService from '../services/shipmentService';
 import { useNotificationStore } from '../stores/notification';
@@ -57,6 +73,37 @@ const rows = ref<ClothingPrepShipment[]>([]);
 const loading = ref(false);
 const busyId = ref<number | null>(null);
 const modalShipmentId = ref<number | null>(null);
+const selected = ref<Set<number>>(new Set());
+const consolidatedIds = ref<number[]>([]);
+const consolidating = ref(false);
+
+function toggleSel(id: number) {
+  if (selected.value.has(id)) selected.value.delete(id);
+  else selected.value.add(id);
+  selected.value = new Set(selected.value); // reactivity
+}
+
+async function openConsolidated() {
+  const ids = Array.from(selected.value);
+  if (ids.length < 2) return;
+  consolidating.value = true;
+  try {
+    // Taslak (Created) olanları önce hazırlığa al (Picking), sonra konsolide ekranı aç.
+    const createdIds = rows.value.filter(r => ids.includes(r.shipmentId) && r.status === 'Created').map(r => r.shipmentId);
+    if (createdIds.length) await clothingPrepService.start(createdIds);
+    consolidatedIds.value = ids;
+  } catch (e) {
+    notify.add(ApiErrorUtils.getErrorMessage(e) || 'İşlem başarısız.', 'error');
+  } finally {
+    consolidating.value = false;
+  }
+}
+
+async function onConsolidatedDone() {
+  consolidatedIds.value = [];
+  selected.value = new Set();
+  await load();
+}
 
 function statusLabel(s: string) {
   return s === 'Created' ? 'Hazırlanacak' : s === 'Picking' ? 'Hazırlanıyor' : s === 'ReadyForDispatch' ? 'Sevke Hazır' : s;
