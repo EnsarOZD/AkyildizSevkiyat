@@ -88,8 +88,8 @@
             @click="openDetail(receipt.id)"
           >
             <td class="px-5 py-3 text-sm font-semibold text-purple-600 dark:text-purple-400 whitespace-nowrap">{{ receipt.waybillNo }}</td>
-            <td class="px-5 py-3 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-              <span v-if="receipt.purchaseOrderNumber" class="font-semibold">{{ receipt.purchaseOrderNumber }}</span>
+            <td class="px-5 py-3 text-sm text-gray-500 dark:text-gray-400">
+              <span v-if="poNumbersText(receipt)" class="font-semibold">{{ poNumbersText(receipt) }}</span>
               <span v-else class="text-gray-300 dark:text-gray-600">—</span>
             </td>
             <td class="px-5 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">{{ receipt.supplierNameSnapshot }}</td>
@@ -125,7 +125,7 @@
         </div>
         <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mt-2 pt-2 border-t border-gray-100 dark:border-gray-800">
           <span>{{ formatDate(receipt.waybillDate) }}</span>
-          <span v-if="receipt.purchaseOrderNumber" class="font-semibold text-indigo-600 dark:text-indigo-400">{{ receipt.purchaseOrderNumber }}</span>
+          <span v-if="poNumbersText(receipt)" class="font-semibold text-indigo-600 dark:text-indigo-400 text-right">{{ poNumbersText(receipt) }}</span>
           <span v-else class="text-gray-300 dark:text-gray-600">—</span>
           <span class="bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded font-semibold">{{ receipt.lineCount }} kalem</span>
         </div>
@@ -189,7 +189,7 @@
               <thead class="bg-gray-50 dark:bg-gray-800">
                 <tr>
                   <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Stok</th>
-                  <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-gray-400">Sipariş</th>
+                  <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-gray-400">Sip. Mik.</th>
                   <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-gray-400">Gelen</th>
                   <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-gray-400">Kabul</th>
                   <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-gray-400">İşlem</th>
@@ -200,6 +200,7 @@
                   <td class="px-4 py-3">
                     <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ line.stockNameSnapshot }}</p>
                     <p class="text-[10px] text-gray-400 dark:text-gray-600 font-mono">{{ line.unitSnapshot }}</p>
+                    <p v-if="line.purchaseOrderNumber" class="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 mt-0.5">Sipariş: {{ line.purchaseOrderNumber }}</p>
                   </td>
                   <td class="px-4 py-3 text-right text-sm text-gray-500 dark:text-gray-400 font-medium">{{ line.orderedQty }}</td>
                   <td class="px-4 py-3">
@@ -268,6 +269,7 @@
               <div class="px-3 py-2.5 border-b border-gray-200 dark:border-gray-700">
                 <p class="font-semibold text-sm text-gray-900 dark:text-gray-100 leading-tight">{{ line.stockNameSnapshot }}</p>
                 <p class="text-[11px] font-mono text-gray-400 dark:text-gray-600">{{ line.unitSnapshot }}</p>
+                <p v-if="line.purchaseOrderNumber" class="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 mt-0.5">Sipariş: {{ line.purchaseOrderNumber }}</p>
               </div>
 
               <!-- Qty row -->
@@ -389,7 +391,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { InboxArrowDownIcon } from '@heroicons/vue/24/outline';
 
-import goodsReceiptService from '../services/goodsReceiptService';
+import goodsReceiptService, { type GoodsReceipt } from '../services/goodsReceiptService';
 import { ApiErrorUtils } from '../utils/apiError';
 import { formatDate } from '../utils/dateFormat';
 import { useNotificationStore } from '../stores/notification';
@@ -406,6 +408,17 @@ const notificationStore = useNotificationStore();
 const authStore = useAuthStore();
 const receipts = ref<any[]>([]);
 const loading = ref(false);
+
+// Bir mal kabulün sipariş no'larını gösterilebilir metne çevir.
+// Çok-PO'lu mal kabullerde başlık PO'su olmaz; no'lar satırlardan türetilir (purchaseOrderNumbers).
+function poNumbersText(receipt: GoodsReceipt): string {
+  const nums = receipt.purchaseOrderNumbers && receipt.purchaseOrderNumbers.length
+    ? receipt.purchaseOrderNumbers
+    : (receipt.purchaseOrderNumber ? [receipt.purchaseOrderNumber] : []);
+  if (nums.length === 0) return '';
+  if (nums.length <= 2) return nums.join(', ');
+  return `${nums.slice(0, 2).join(', ')} +${nums.length - 2}`;
+}
 const error = ref('');
 const filters = ref({ status: '', supplierName: '' });
 

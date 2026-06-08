@@ -18,6 +18,8 @@ namespace Akyildiz.Sevkiyat.Application.GoodsReceipts.Queries.GetGoodsReceipts
         public Guid Id { get; set; }
         public Guid? PurchaseOrderId { get; set; }
         public string? PurchaseOrderNumber { get; set; }
+        // Çok-PO'lu mal kabullerde başlık PO'su NULL olur; sipariş no'ları satırlardan türetilir.
+        public List<string> PurchaseOrderNumbers { get; set; } = new();
         public Guid SupplierId { get; set; }
         public string SupplierNameSnapshot { get; set; } = string.Empty;
         public DateOnly ReceiptDate { get; set; }
@@ -81,6 +83,31 @@ namespace Akyildiz.Sevkiyat.Application.GoodsReceipts.Queries.GetGoodsReceipts
                     LineCount = x.Lines.Count
                 })
                 .ToListAsync(cancellationToken);
+
+            // Her mal kabul için satırlardan türetilmiş benzersiz sipariş no'ları
+            // (tekli PO + çok-PO'lu mal kabuller dahil) — liste ekranında gösterilir.
+            var receiptIds = list.Select(r => r.Id).ToList();
+            if (receiptIds.Count > 0)
+            {
+                var poNumbersByReceipt = await (
+                        from grl in _context.GoodsReceiptLines
+                        join pol in _context.PurchaseOrderLines on grl.PurchaseOrderLineId equals pol.Id
+                        join po in _context.PurchaseOrders on pol.PurchaseOrderId equals po.Id
+                        where receiptIds.Contains(grl.GoodsReceiptId)
+                        select new { grl.GoodsReceiptId, po.OrderNumber })
+                    .Distinct()
+                    .ToListAsync(cancellationToken);
+
+                var byReceipt = poNumbersByReceipt
+                    .GroupBy(x => x.GoodsReceiptId)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.Select(x => x.OrderNumber).Distinct().OrderBy(s => s).ToList());
+
+                foreach (var r in list)
+                    if (byReceipt.TryGetValue(r.Id, out var nums))
+                        r.PurchaseOrderNumbers = nums;
+            }
 
             return list;
         }

@@ -227,7 +227,14 @@
       "Bash(cp docs/vue-redesign/views/DriverShipmentListView.vue         client/src/views/DriverShipmentListView.vue)",
       "Bash(cp docs/vue-redesign/views/DriverStopView.vue                 client/src/views/DriverStopView.vue)",
       "Bash(cp docs/vue-redesign/views/DriverDeliveryView.vue             client/src/views/DriverDeliveryView.vue)",
-      "Bash(cp docs/vue-redesign/views/DriverQrScanView.vue               client/src/views/DriverQrScanView.vue)"
+      "Bash(cp docs/vue-redesign/views/DriverQrScanView.vue               client/src/views/DriverQrScanView.vue)",
+      "Bash(cp -f docs/code/public/logo-icon.svg client/public/logo-icon.svg)",
+      "Bash(cp -f docs/code/public/logo-icon.png client/public/logo-icon.png)",
+      "Bash(cp -f docs/code/public/logo-icon-maskable.png client/public/logo-icon-maskable.png)",
+      "Bash(cp -f docs/code/public/logo.svg client/public/logo.svg)",
+      "Bash(cp -f docs/code/index.html client/index.html)",
+      "Bash(cp -f docs/code/LoginView.vue client/src/views/LoginView.vue)",
+      "Bash(cd *)"
     ]
   }
 }

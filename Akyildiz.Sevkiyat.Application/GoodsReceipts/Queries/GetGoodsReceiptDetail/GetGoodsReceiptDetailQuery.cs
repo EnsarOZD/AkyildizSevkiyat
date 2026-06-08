@@ -29,6 +29,7 @@ namespace Akyildiz.Sevkiyat.Application.GoodsReceipts.Queries.GetGoodsReceiptDet
     {
         public Guid Id { get; set; }
         public Guid? PurchaseOrderLineId { get; set; }
+        public string? PurchaseOrderNumber { get; set; }   // Bu kalemin işlendiği sipariş no
         public int StockMasterId { get; set; }
         public string StockNameSnapshot { get; set; } = string.Empty;
         public string UnitSnapshot { get; set; } = string.Empty;
@@ -58,6 +59,21 @@ namespace Akyildiz.Sevkiyat.Application.GoodsReceipts.Queries.GetGoodsReceiptDet
             
             if (gr == null) throw new NotFoundException("GoodsReceipt", request.Id);
 
+            // Her satırın bağlı olduğu PO satırı → sipariş numarası eşlemesi
+            var poLineIds = gr.Lines
+                .Where(l => l.PurchaseOrderLineId.HasValue)
+                .Select(l => l.PurchaseOrderLineId!.Value)
+                .Distinct()
+                .ToList();
+
+            var poLineToOrderNo = poLineIds.Count == 0
+                ? new Dictionary<Guid, string>()
+                : await (from pol in _context.PurchaseOrderLines
+                         join po in _context.PurchaseOrders on pol.PurchaseOrderId equals po.Id
+                         where poLineIds.Contains(pol.Id)
+                         select new { pol.Id, po.OrderNumber })
+                        .ToDictionaryAsync(x => x.Id, x => x.OrderNumber, cancellationToken);
+
             var dto = new GoodsReceiptDetailDto
             {
                 Id = gr.Id,
@@ -77,6 +93,8 @@ namespace Akyildiz.Sevkiyat.Application.GoodsReceipts.Queries.GetGoodsReceiptDet
                 {
                     Id = l.Id,
                     PurchaseOrderLineId = l.PurchaseOrderLineId,
+                    PurchaseOrderNumber = l.PurchaseOrderLineId.HasValue
+                        && poLineToOrderNo.TryGetValue(l.PurchaseOrderLineId.Value, out var on) ? on : null,
                     StockMasterId = l.StockMasterId,
                     StockNameSnapshot = l.StockNameSnapshot ?? "",
                     UnitSnapshot = l.UnitSnapshot.ToString(),

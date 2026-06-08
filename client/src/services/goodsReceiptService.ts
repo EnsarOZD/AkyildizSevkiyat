@@ -4,6 +4,7 @@ export interface GoodsReceipt {
   id: string;
   waybillNo: string;
   purchaseOrderNumber?: string;
+  purchaseOrderNumbers?: string[];
   supplierNameSnapshot: string;
   receiptDate: string;
   status: string;
@@ -13,6 +14,7 @@ export interface GoodsReceipt {
 export interface GoodsReceiptLine {
   id: string;
   purchaseOrderLineId?: string;
+  purchaseOrderNumber?: string;
   stockMasterId: number;
   stockNameSnapshot?: string;
   unitSnapshot: string;

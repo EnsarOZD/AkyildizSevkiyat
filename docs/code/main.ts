@@ -44,11 +44,11 @@ app.mount('#app')
 
 // ════════ Açılış (splash) ekranını kaldır ════════
 // index.html'deki #ak-splash anında görünür; app mount olduktan sonra
-// (en az ~1100ms gösterip) yumuşakça kaybolur ve DOM'dan silinir.
+// (en az ~700ms gösterip) yumuşakça kaybolur ve DOM'dan silinir.
 ;(() => {
   const splash = document.getElementById('ak-splash')
   if (!splash) return
-  const MIN_MS = 1100           // çok hızlı açılışlarda flaş gibi geçmesin; açılış aksiyonu belli olsun
+  const MIN_MS = 700            // çok hızlı açılışlarda flaş gibi geçmesin
   const start = Number((window as any).__akSplashStart || performance.timing?.navigationStart || Date.now())
   const elapsed = Date.now() - start
   const wait = Math.max(0, MIN_MS - elapsed)

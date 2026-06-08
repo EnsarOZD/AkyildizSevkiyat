@@ -43,6 +43,22 @@ namespace Akyildiz.Sevkiyat.Application.GoodsReceipts.Commands.PostGoodsReceipt
             if (!entity.Lines.Any())
                 throw new DomainException("Cannot post an empty Goods Receipt.");
 
+            // Boş satırları (hiç teslim alınmamış ve reddedilmemiş) postalamadan ÖNCE kaldır.
+            // Çok-PO'lu mal kabulde, miktar girilmeyen PO satırları için oluşan 0'lık kayıtlar
+            // hem irsaliye detayını kirletiyor hem de ilgili PO'yu gereksiz yere "kısmen alındı"
+            // durumuna düşürüyordu (PO kapanmıyor gibi görünüyordu).
+            var emptyLines = entity.Lines
+                .Where(l => l.ReceivedQty == 0 && (l.RejectedQty ?? 0) == 0 && (l.AcceptedQty ?? 0) == 0)
+                .ToList();
+            foreach (var el in emptyLines)
+            {
+                entity.Lines.Remove(el);
+                _context.GoodsReceiptLines.Remove(el);
+            }
+
+            if (!entity.Lines.Any())
+                throw new DomainException("Postalanacak dolu satır yok. En az bir kalemde teslim miktarı girilmelidir.");
+
             // Kabul miktarı teslim alınan miktarı aşamaz
             var overAcceptedLines = entity.Lines
                 .Where(l => l.AcceptedQty.HasValue && l.AcceptedQty > l.ReceivedQty)

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="tr">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/logo-icon.svg" />
+  <link rel="icon" type="image/png" href="/logo-icon.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a1626" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Sevkiyat" />
+  <link rel="apple-touch-icon" href="/logo-icon.png" />
+
+  <!-- ▼▼ Şoför paneli yazı tipi ▼▼ -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <!-- ▲▲ Şoför paneli yazı tipi ▲▲ -->
+
+  <title>Akyıldız Lojistik</title>
+
+  <!-- ════════ Açılış (splash) ekranı — Vue yüklenmeden ÖNCE anında görünür ════════ -->
+  <style>
+    #ak-splash {
+      position: fixed; inset: 0; z-index: 9999;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: linear-gradient(160deg, #1b3e74 0%, #15315c 45%, #0a1d3a 100%);
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      transition: opacity .45s ease; opacity: 1;
+    }
+    #ak-splash.ak-hide { opacity: 0; pointer-events: none; }
+    #ak-splash .ak-glow {
+      position: absolute; top: -12%; left: 50%; transform: translateX(-50%);
+      width: 460px; height: 460px; border-radius: 999px; pointer-events: none;
+      background: radial-gradient(circle, rgba(59,130,246,0.34), transparent 68%);
+    }
+    #ak-splash .ak-chev { width: 118px; height: 118px; }
+    #ak-splash .ak-chev .b { animation: akRise .6s cubic-bezier(.16,1,.3,1) .15s both; transform-origin: center; }
+    #ak-splash .ak-chev .t { animation: akRise .6s cubic-bezier(.16,1,.3,1) .42s both, akGlow 2.6s ease 1.1s infinite; transform-origin: center; }
+    #ak-splash .ak-word { margin-top: 30px; text-align: center; }
+    #ak-splash .ak-word .n { font-size: 25px; font-weight: 700; letter-spacing: .30em; color: #fff; padding-left: .30em; opacity: 0; animation: akUp .7s cubic-bezier(.16,1,.3,1) .95s both; }
+    #ak-splash .ak-word .s { font-size: 10.5px; font-weight: 500; letter-spacing: .44em; color: rgba(255,255,255,.32); margin-top: 12px; padding-left: .44em; opacity: 0; animation: akUp .7s cubic-bezier(.16,1,.3,1) 1.12s both; }
+    #ak-splash .ak-bar { position: absolute; left: 60px; right: 60px; bottom: 92px; height: 3px; border-radius: 999px; background: rgba(255,255,255,.10); overflow: hidden; }
+    #ak-splash .ak-bar i { position: absolute; top: 0; bottom: 0; width: 32%; border-radius: 999px; background: linear-gradient(90deg, transparent, #60a5fa, transparent); animation: akSlide 1.5s ease-in-out 1.1s infinite; }
+    #ak-splash .ak-cap { position: absolute; left: 0; right: 0; bottom: 64px; text-align: center; font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: rgba(255,255,255,.32); }
+    @keyframes akRise { 0% { opacity: 0; transform: translateY(16px); } 100% { opacity: 1; transform: translateY(0); } }
+    @keyframes akUp   { 0% { opacity: 0; transform: translateY(14px); } 100% { opacity: 1; transform: translateY(0); } }
+    @keyframes akGlow { 0%,100% { filter: drop-shadow(0 0 5px rgba(96,165,250,.35)); } 50% { filter: drop-shadow(0 0 16px rgba(96,165,250,.8)); } }
+    @keyframes akSlide { 0% { transform: translateX(-100%); } 100% { transform: translateX(320%); } }
+    @media (prefers-reduced-motion: reduce) {
+      #ak-splash .ak-chev .b, #ak-splash .ak-chev .t, #ak-splash .ak-word .n, #ak-splash .ak-word .s { animation: none; opacity: 1; }
+      #ak-splash .ak-bar i { animation: none; }
+    }
+  </style>
+</head>
+
+<body>
+  <a href="#main-content" class="skip-link">Ana içeriğe geç</a>
+  <div id="app"></div>
+
+  <!-- Açılış ekranı (app mount olunca main.ts kaldırır) -->
+  <div id="ak-splash">
+    <div class="ak-glow"></div>
+    <svg class="ak-chev" viewBox="0 0 100 100" aria-label="Akyıldız Sevkiyat">
+      <path class="b" d="M28 81 L50 58 L72 81" fill="none" stroke="#60a5fa" stroke-opacity="0.85" stroke-width="8.6" stroke-linecap="round" stroke-linejoin="round" />
+      <path class="t" d="M18 58 L50 24 L82 58" fill="none" stroke="#fff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+    <div class="ak-word">
+      <div class="n">AKYILDIZ</div>
+      <div class="s">SEVKİYAT YÖNETİMİ</div>
+    </div>
+    <div class="ak-bar"><i></i></div>
+    <div class="ak-cap">Lojistik Yönetim Sistemi</div>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+
+</html>
