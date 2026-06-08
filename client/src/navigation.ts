@@ -148,6 +148,7 @@ export const NAV_ITEMS: NavGroup[] = [
             { label: 'Tanımlamalar',          to: '/settings',                   icon: Cog6ToothIcon,         roles: ['Admin', 'Manager', 'Accounting'] },
             { label: 'Netsis Cari Eşleşmeleri', to: '/system/institution-cari-mappings', icon: ArrowsRightLeftIcon, roles: ['Admin', 'Manager', 'Accounting'] },
             { label: 'Harici Mail Adresleri', to: '/external-email-contacts',    icon: EnvelopeIcon,          roles: ['Admin', 'Manager', 'Accounting'] },
+            { label: 'Kıyafet Vurgu Kelimeleri', to: '/clothing-keywords',       icon: Cog6ToothIcon,         roles: ['Admin', 'Manager'] },
             { label: 'Kullanıcı Yönetimi',    to: '/users',                      icon: UsersIcon,             roles: ['Admin'] },
             { label: 'Şoför Puantajı',        to: '/admin/driver-sessions',      icon: DevicePhoneMobileIcon, roles: ['Admin', 'Manager', 'Accounting'] },
             { label: 'Mutabakat Kontrolleri', to: '/reconciliation',             icon: ShieldExclamationIcon, roles: ['Admin', 'Manager'] },

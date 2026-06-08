@@ -72,6 +72,9 @@ namespace Akyildiz.Sevkiyat.Application.Interfaces
         // External Email Contacts
         DbSet<ExternalEmailContact> ExternalEmailContacts { get; }
 
+        // Kıyafet toplama vurgu anahtar kelimeleri
+        DbSet<ClothingHighlightKeyword> ClothingHighlightKeywords { get; }
+
         // ISS KurumKodu → Netsis Fatura Cari Kodu eşleşmeleri
         DbSet<InstitutionCariMapping> InstitutionCariMappings { get; }
 

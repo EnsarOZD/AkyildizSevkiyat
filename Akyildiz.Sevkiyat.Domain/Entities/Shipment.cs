@@ -66,6 +66,11 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
         // Karşılaştırma sayfasında yalnızca bu alanı dolu olan pasif sevkiyatlar görünür.
         public string? CancelReason { get; private set; }
 
+        // Kıyafet depo hazırlığı bilgileri
+        public string? PreparedByUserName { get; private set; }  // Hazırlığı kim yaptı
+        public DateTime? PreparedAt { get; private set; }
+        public string? KoliCount { get; private set; }           // Hazırlıkta girilen koli sayısı (serbest metin)
+
         // Dispatch Confirmation (yükleme onayı)
         public DateTime? DispatchedAt { get; private set; }
         public string? DispatchConfirmedByName { get; private set; }
@@ -203,6 +208,30 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
 
             CancelReason = null;
             ChangeStatus(ShipmentStatus.Created, userId, reason);
+        }
+
+        // ── Kıyafet depo hazırlığı ────────────────────────────────────────────
+        public void StartClothingPreparation(int? userId)
+        {
+            if (OperationType != Akyildiz.Sevkiyat.Domain.Enums.OperationType.Clothing)
+                throw new DomainException("Bu işlem yalnızca kıyafet sevkiyatları için geçerlidir.");
+            if (Status != ShipmentStatus.Created)
+                throw new DomainException("Kıyafet hazırlığı yalnızca 'Oluşturuldu' durumundaki sevkiyatlar için başlatılabilir.");
+
+            ChangeStatus(ShipmentStatus.Picking, userId, "Kıyafet hazırlığına alındı");
+        }
+
+        public void CompleteClothingPreparation(string preparedByUserName, string? koliCount, int? userId)
+        {
+            if (OperationType != Akyildiz.Sevkiyat.Domain.Enums.OperationType.Clothing)
+                throw new DomainException("Bu işlem yalnızca kıyafet sevkiyatları için geçerlidir.");
+            if (Status != ShipmentStatus.Picking)
+                throw new DomainException("Kıyafet hazırlığı yalnızca 'Hazırlanıyor' durumundaki sevkiyatlar için tamamlanabilir.");
+
+            PreparedByUserName = preparedByUserName;
+            PreparedAt = DateTime.UtcNow;
+            KoliCount = koliCount;
+            ChangeStatus(ShipmentStatus.ReadyForDispatch, userId);
         }
 
         public void UpdateDeliveryDate(DateTime newDate)

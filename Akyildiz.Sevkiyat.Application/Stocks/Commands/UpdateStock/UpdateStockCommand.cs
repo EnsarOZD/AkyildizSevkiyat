@@ -22,7 +22,8 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Commands.UpdateStock
         string? NetsisStockCode = null,
         decimal? WeightKg = null,
         int PickingOrder = 0,
-        string? Barcode = null
+        string? Barcode = null,
+        Akyildiz.Sevkiyat.Domain.Enums.ClothingType? ClothingType = null
     ) : IRequest, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles =>
@@ -62,6 +63,7 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Commands.UpdateStock
             entity.WeightKg = request.WeightKg;
             entity.PickingOrder = request.PickingOrder;
             entity.Barcode = string.IsNullOrWhiteSpace(request.Barcode) ? null : request.Barcode.Trim();
+            entity.ClothingType = request.ClothingType;
 
             await _context.SaveChangesAsync(cancellationToken);
         }

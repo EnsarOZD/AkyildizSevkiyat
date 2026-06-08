@@ -67,6 +67,12 @@ const router = createRouter({
                     meta: { title: 'Tanımlamalar', roles: ['Admin', 'Manager', 'Accounting'] }
                 },
                 {
+                    path: 'clothing-keywords',
+                    name: 'ClothingKeywords',
+                    component: () => import('../views/ClothingKeywordsView.vue'),
+                    meta: { title: 'Kıyafet Vurgu Kelimeleri', roles: ['Admin', 'Manager'] }
+                },
+                {
                     path: 'zones',
                     redirect: '/settings',
                 },

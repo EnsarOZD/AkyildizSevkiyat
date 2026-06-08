@@ -23,6 +23,7 @@ export interface Stock {
     weightKg?: number | null;
     pickingOrder?: number;
     barcode?: string | null;
+    clothingTypeId?: number | null; // 0=Diğer, 1=Ayakkabı (yalnızca Kıyafet kategorisi)
 }
 
 export interface PaginatedResponse<T> {
@@ -60,6 +61,7 @@ export interface StockCreateRequest {
     weightKg?: number | null;
     pickingOrder?: number;
     barcode?: string | null;
+    clothingType?: number | null; // 0=Diğer, 1=Ayakkabı
 }
 
 export interface StockUpdateRequest extends Partial<StockCreateRequest> {

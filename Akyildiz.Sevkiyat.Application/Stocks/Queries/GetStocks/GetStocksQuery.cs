@@ -31,7 +31,8 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Queries.GetStocks
         bool IsActive,
         decimal? WeightKg,
         int PickingOrder,
-        string? Barcode
+        string? Barcode,
+        int? ClothingTypeId
     );
 
     public record GetStocksQuery(string? SearchTerm, int PageNumber = 1, int PageSize = 15, int? CategoryId = null, int? PickingTypeId = null, int? UnitId = null, bool? IsActive = null, int? ExcludeCategoryId = null)
@@ -101,7 +102,8 @@ namespace Akyildiz.Sevkiyat.Application.Stocks.Queries.GetStocks
                         s.IsActive,
                         s.WeightKg,
                         s.PickingOrder,
-                        s.Barcode
+                        s.Barcode,
+                        (int?)s.ClothingType
                     )),
                 request.PageNumber,
                 request.PageSize

@@ -14,6 +14,12 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
         public decimal UnitPrice { get; set; }
         public Akyildiz.Sevkiyat.Domain.Enums.TaxRate TaxRate { get; set; } = Akyildiz.Sevkiyat.Domain.Enums.TaxRate.Percent20;
         public Akyildiz.Sevkiyat.Domain.Enums.StockCategory Category { get; set; } = Akyildiz.Sevkiyat.Domain.Enums.StockCategory.Tanimsiz;
+
+        /// <summary>
+        /// Kıyafet operasyonu toplama gruplaması (Ayakkabı / Diğer). Yalnızca Category == Kiyafet
+        /// için anlamlıdır; boş bırakılabilir (varsayılan: Diğer gibi davranır).
+        /// </summary>
+        public Akyildiz.Sevkiyat.Domain.Enums.ClothingType? ClothingType { get; set; }
         public Akyildiz.Sevkiyat.Domain.Enums.PickingType PickingType { get; set; } = Akyildiz.Sevkiyat.Domain.Enums.PickingType.Unassigned;
 
         // Stok seviyeleri — sadece domain metodları üzerinden değiştirilmeli

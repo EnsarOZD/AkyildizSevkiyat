@@ -204,6 +204,15 @@
                     <p v-if="form.category === 0" class="text-xs text-red-500 mt-1">Kategori seçilmek zorundadır.</p>
                   </div>
 
+                  <!-- Clothing Type (only for Kıyafet) -->
+                  <div v-if="form.category === 3">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Kıyafet Türü <span class="text-gray-400 font-normal">(toplama gruplaması)</span></label>
+                    <select v-model.number="form.clothingType" class="w-full border p-2 rounded dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100">
+                        <option :value="0">Diğer</option>
+                        <option :value="1">Ayakkabı</option>
+                    </select>
+                  </div>
+
                   <!-- Picking Type Selection -->
                   <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Toplama Tipi <span class="text-red-500">*</span></label>
@@ -571,7 +580,7 @@ const isEditing = ref(false);
 
 // N tuşu → yeni stok ekle
 useKeyboardShortcut('n', () => { if (!showModal.value) { isEditing.value = false; showModal.value = true; } });
-const form = ref<any>({ id: 0, stockCode: '', stockName: '', unit: 0, unitPrice: null, taxRate: 20, pickingType: 0, category: null, brand: '', minStockQty: null, reorderPoint: null, warehouseLocation: '', netsisStockCode: '', weightKg: null, pickingOrder: 0, barcode: '' });
+const form = ref<any>({ id: 0, stockCode: '', stockName: '', unit: 0, unitPrice: null, taxRate: 20, pickingType: 0, category: null, brand: '', minStockQty: null, reorderPoint: null, warehouseLocation: '', netsisStockCode: '', weightKg: null, pickingOrder: 0, barcode: '', clothingType: 0 });
 
 const openModal = (stock?: Stock) => {
     if (stock) {
@@ -583,6 +592,7 @@ const openModal = (stock?: Stock) => {
             unit: stock.unitId || 0,
             reorderPoint: stock.reorderPoint ?? null,
             pickingOrder: stock.pickingOrder ?? 0,
+            clothingType: stock.clothingTypeId ?? 0,
         };
     } else {
         isEditing.value = false;
