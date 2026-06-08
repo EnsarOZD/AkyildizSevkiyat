@@ -311,7 +311,14 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Queries.GetDriverRoute
                                 l.StockCode,
                                 l.StockName,
                                 l.OrderedQty,
-                                l.DeliveredQty > 0 ? l.DeliveredQty : l.OrderedQty,
+                                // "Yüklenen" = depoda toplanan miktar. Depo hazırlığından
+                                // geçen (zone) sevkiyatlarda DeliveredQty otoritedir; 0 toplanan
+                                // satır araçta yoktur, bu yüzden sipariş miktarına düşülmez.
+                                // Zone'suz doğrudan sevklerde toplama verisi olmadığından sipariş
+                                // miktarı tahmin olarak kullanılır.
+                                s.ZonePreparationId != null
+                                    ? l.DeliveredQty
+                                    : (l.DeliveredQty > 0 ? l.DeliveredQty : l.OrderedQty),
                                 l.Unit.ToString(),
                                 (int)(l.StockMaster?.Category ?? 0)
                             )).ToList(),
