@@ -237,6 +237,9 @@
                     >Kıyafet</span>
                   </div>
                   <div class="text-xs text-gray-400">{{ shipment.projectName }}</div>
+                  <div v-if="shipment.preparedByUserName" class="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5">
+                    Hazırlayan: {{ shipment.preparedByUserName }}<span v-if="shipment.koliCount"> · {{ shipment.koliCount }}</span>
+                  </div>
                 </td>
                 <td class="px-5 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ shipment.region }}</td>
                 <td class="px-5 py-3 whitespace-nowrap text-sm" :class="isOverdue(shipment) ? 'text-red-600 font-medium' : 'text-gray-500 dark:text-gray-400'">
@@ -846,6 +849,8 @@ interface Shipment {
   netsisTransferredAt?: string | null;
   operationType?: string;
   operationTypeValue?: number;
+  preparedByUserName?: string | null;
+  koliCount?: string | null;
   cargoProviderValue?: number | null;
   freightCarrierName?: string | null;
   freightCarrierPlate?: string | null;

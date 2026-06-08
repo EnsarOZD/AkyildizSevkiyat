@@ -27,6 +27,9 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipments
         public DateTime? NetsisTransferredAt { get; set; }
         public string OperationType { get; set; } = "Catering";
         public int OperationTypeValue { get; set; } = 0;
+        // Kıyafet hazırlık bilgisi
+        public string? PreparedByUserName { get; set; }
+        public string? KoliCount { get; set; }
         // Dispatch type fields
         public int? CargoProviderValue { get; set; }
         public string? FreightCarrierName { get; set; }
@@ -196,6 +199,8 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Queries.GetShipments
                     NetsisTransferredAt  = s.NetsisTransferredAt,
                     OperationType        = s.OperationType == Domain.Enums.OperationType.Clothing ? "Kıyafet" : "Catering",
                     OperationTypeValue   = (int)s.OperationType,
+                    PreparedByUserName   = s.PreparedByUserName,
+                    KoliCount            = s.KoliCount,
                     CargoProviderValue   = s.CargoProvider != null ? (int?)s.CargoProvider.Value : null,
                     FreightCarrierName   = s.FreightCarrierName,
                     FreightCarrierPlate  = s.FreightCarrierPlate,

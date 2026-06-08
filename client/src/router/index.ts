@@ -73,6 +73,12 @@ const router = createRouter({
                     meta: { title: 'Kıyafet Vurgu Kelimeleri', roles: ['Admin', 'Manager'] }
                 },
                 {
+                    path: 'clothing-prep',
+                    name: 'ClothingPrep',
+                    component: () => import('../views/ClothingPrepView.vue'),
+                    meta: { title: 'Kıyafet Hazırlık', roles: ['Admin', 'Manager', 'Accounting', 'Warehouse'] }
+                },
+                {
                     path: 'zones',
                     redirect: '/settings',
                 },

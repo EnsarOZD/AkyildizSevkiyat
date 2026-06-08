@@ -282,9 +282,10 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
         /// </summary>
         public void SkipToDelivered()
         {
-            if (Status != ShipmentStatus.Created)
+            // Kıyafet: hazırlık atlanmışsa 'Oluşturuldu'dan, hazırlık yapıldıysa 'Sevke Hazır'dan teslim edilir.
+            if (Status != ShipmentStatus.Created && Status != ShipmentStatus.ReadyForDispatch)
                 throw new DomainException(
-                    "Kıyafet operasyonu aktarımı sadece 'Oluşturuldu' durumundaki sevkiyatlar için yapılabilir.");
+                    "Kıyafet operasyonu aktarımı yalnızca 'Oluşturuldu' veya 'Sevke Hazır' durumundaki sevkiyatlar için yapılabilir.");
 
             var oldStatus = Status;
             Status = ShipmentStatus.Delivered;

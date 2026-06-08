@@ -41,10 +41,14 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportClothingShipmentTo
                 throw new DomainException(
                     "Bu endpoint yalnızca Kıyafet (Clothing) operasyonu sevkiyatları için kullanılabilir.");
 
-            if (shipment.Status != ShipmentStatus.Created)
+            // Hazırlık atlanmışsa 'Oluşturuldu'dan; depo hazırlığı yapıldıysa 'Sevke Hazır'dan aktarılır.
+            if (shipment.Status != ShipmentStatus.Created && shipment.Status != ShipmentStatus.ReadyForDispatch)
                 throw new DomainException(
-                    $"Kıyafet Netsis aktarımı sadece 'Oluşturuldu' durumundaki sevkiyatlar için geçerlidir. " +
+                    $"Kıyafet Netsis aktarımı yalnızca 'Oluşturuldu' veya 'Sevke Hazır' durumundaki sevkiyatlar için geçerlidir. " +
                     $"Mevcut durum: {shipment.Status}");
+
+            // Hazırlık yapıldıysa irsaliyeye toplanan miktar, aksi halde sipariş miktarı yazılır.
+            bool usePreparedQty = shipment.Status == ShipmentStatus.ReadyForDispatch;
 
             if (shipment.NetsisTransferredAt.HasValue)
                 throw new Akyildiz.Sevkiyat.Domain.Exceptions.ConflictException(
@@ -61,10 +65,20 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportClothingShipmentTo
                 throw new DomainException(
                     $"Proje '{shipment.Project.Name}' için Netsis Teslim Cari Kodu tanımlanmamış.");
 
-            // NetsisStockCode doğrulaması
-            var missingNetsisCode = shipment.Lines
-                .Where(l => l.StockMaster == null || string.IsNullOrWhiteSpace(l.StockMaster.NetsisStockCode))
-                .Select(l => l.StockName)
+            // Aktarılacak kalemler: hazırlıkta toplanan (DeliveredQty) ya da sipariş (OrderedQty)
+            // miktarı; 0 olanlar (verilemeyen kalemler) irsaliyeye dahil edilmez.
+            var effectiveLines = shipment.Lines
+                .Select(l => new { Line = l, Qty = usePreparedQty ? l.DeliveredQty : l.OrderedQty })
+                .Where(x => x.Qty > 0)
+                .ToList();
+
+            if (effectiveLines.Count == 0)
+                throw new DomainException("Aktarılacak (miktarı 0'dan büyük) kalem bulunamadı.");
+
+            // NetsisStockCode doğrulaması (yalnızca aktarılacak kalemler)
+            var missingNetsisCode = effectiveLines
+                .Where(x => x.Line.StockMaster == null || string.IsNullOrWhiteSpace(x.Line.StockMaster.NetsisStockCode))
+                .Select(x => x.Line.StockName)
                 .ToList();
 
             if (missingNetsisCode.Any())
@@ -76,8 +90,8 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportClothingShipmentTo
                 shipment.TalepNo,
                 shipment.IssOrder?.TalepNo);
 
-            var netsisKodlari = shipment.Lines
-                .Select(l => l.StockMaster?.NetsisStockCode)
+            var netsisKodlari = effectiveLines
+                .Select(x => x.Line.StockMaster?.NetsisStockCode)
                 .Where(c => !string.IsNullOrWhiteSpace(c))
                 .Select(c => c!)
                 .Distinct()
@@ -85,19 +99,18 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportClothingShipmentTo
 
             var kdvMap = await _netsisClient.GetStockKdvRatesAsync(netsisKodlari, cancellationToken);
 
-            // Kıyafet operasyonunda ISS orijinal miktarı kullanılır
-            var lines = shipment.Lines
-                .Select((l, idx) => new NetsisSiparisLine
+            var lines = effectiveLines
+                .Select((x, idx) => new NetsisSiparisLine
                 {
                     SatirNo     = idx + 1,
-                    StokKodu    = l.StockMaster!.NetsisStockCode!,
-                    Miktar      = l.OrderedQty,
-                    Birim       = l.Unit.ToString(),
-                    BirimFiyati = l.IssOrderLine?.BirimFiyati ?? 0,
-                    KdvOrani    = l.StockMaster?.NetsisStockCode != null &&
-                                  kdvMap.TryGetValue(l.StockMaster.NetsisStockCode, out var nKdv)
+                    StokKodu    = x.Line.StockMaster!.NetsisStockCode!,
+                    Miktar      = x.Qty,
+                    Birim       = x.Line.Unit.ToString(),
+                    BirimFiyati = x.Line.IssOrderLine?.BirimFiyati ?? 0,
+                    KdvOrani    = x.Line.StockMaster?.NetsisStockCode != null &&
+                                  kdvMap.TryGetValue(x.Line.StockMaster.NetsisStockCode, out var nKdv)
                                       ? nKdv
-                                      : (decimal)(int)(l.StockMaster?.TaxRate ?? 0),
+                                      : (decimal)(int)(x.Line.StockMaster?.TaxRate ?? 0),
                 })
                 .ToList();
 
