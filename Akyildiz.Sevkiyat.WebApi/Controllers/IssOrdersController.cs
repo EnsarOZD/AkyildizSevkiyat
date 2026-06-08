@@ -38,15 +38,17 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             [FromQuery] string? search = null,
             [FromQuery] string? zone = null,
             [FromQuery] string? talepNoStatus = null,
+            [FromQuery] string? operationType = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
-            var query = new GetImportedOrdersQuery 
-            { 
+            var query = new GetImportedOrdersQuery
+            {
                 Tab = tab,
                 Search = search,
                 Zone = zone,
                 TalepNoStatus = talepNoStatus,
+                OperationType = operationType,
                 PageNumber = page,
                 PageSize = pageSize
             };

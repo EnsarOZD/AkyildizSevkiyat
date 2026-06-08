@@ -33,7 +33,12 @@ namespace Akyildiz.Sevkiyat.Application.Orders.Queries.GetImportedOrders
         string? TeslimAlacakTelefonNumaralari,
         string? YoneticiMailAdresleri,
         bool IsActive
-    );
+    )
+    {
+        // Stok kategorisinden türetilir (tüm eşleşmiş satırlar Kıyafet → Kıyafet siparişi).
+        // Sevkiyat oluşturmadaki OperationType mantığıyla aynı.
+        public bool IsClothing { get; set; }
+    }
 
     public class GetImportedOrdersQuery : IRequest<PaginatedList<ImportedOrderDto>>, IRequireRoles
     {
@@ -44,6 +49,7 @@ namespace Akyildiz.Sevkiyat.Application.Orders.Queries.GetImportedOrders
         public string? Search { get; set; }
         public string? Zone { get; set; }
         public string? TalepNoStatus { get; set; } // "All", "Zero", "NonZero"
+        public string? OperationType { get; set; } // "Catering" | "Clothing"
         public int PageNumber { get; set; } = 1;
         public int PageSize { get; set; } = 20;
     }
@@ -120,6 +126,37 @@ namespace Akyildiz.Sevkiyat.Application.Orders.Queries.GetImportedOrders
                 }
             }
 
+            // Operasyon tipi (Kıyafet/Catering) — stok kategorisinden türetilir.
+            // Bir sipariş "Kıyafet"tir: en az bir eşleşmiş Kıyafet satırı varsa VE
+            // eşleşmiş Kıyafet-dışı satırı yoksa (CreateShipment'taki mantıkla aynı).
+            // Not: TalepNo bazlı eski "İş Türü" filtresi yanlış sonuç veriyordu.
+            System.Linq.Expressions.Expression<Func<Domain.Entities.IssOrder, bool>> isClothing = o =>
+                o.Lines.Any(l => _context.StockMappings.Any(m =>
+                        m.ExternalSystem == "ISS-IP" && m.ExternalStockCode == l.StockCode &&
+                        m.MatchStatus == MatchStatus.Mapped && m.LocalStock != null &&
+                        m.LocalStock.Category == StockCategory.Kiyafet))
+                && !o.Lines.Any(l => _context.StockMappings.Any(m =>
+                        m.ExternalSystem == "ISS-IP" && m.ExternalStockCode == l.StockCode &&
+                        m.MatchStatus == MatchStatus.Mapped && m.LocalStock != null &&
+                        m.LocalStock.Category != StockCategory.Kiyafet));
+
+            if (request.OperationType == "Clothing")
+            {
+                query = query.Where(isClothing);
+            }
+            else if (request.OperationType == "Catering")
+            {
+                query = query.Where(o => !(
+                    o.Lines.Any(l => _context.StockMappings.Any(m =>
+                            m.ExternalSystem == "ISS-IP" && m.ExternalStockCode == l.StockCode &&
+                            m.MatchStatus == MatchStatus.Mapped && m.LocalStock != null &&
+                            m.LocalStock.Category == StockCategory.Kiyafet))
+                    && !o.Lines.Any(l => _context.StockMappings.Any(m =>
+                            m.ExternalSystem == "ISS-IP" && m.ExternalStockCode == l.StockCode &&
+                            m.MatchStatus == MatchStatus.Mapped && m.LocalStock != null &&
+                            m.LocalStock.Category != StockCategory.Kiyafet))));
+            }
+
             var totalCount = await query.CountAsync(cancellationToken);
 
             var items = await query
@@ -148,7 +185,22 @@ namespace Akyildiz.Sevkiyat.Application.Orders.Queries.GetImportedOrders
                     o.IsActive
                 ))
                 .ToListAsync(cancellationToken);
-                
+
+            // Sayfadaki siparişler için Kıyafet bayrağını hesapla (ikon gösterimi için)
+            var pageIds = items.Select(i => i.Id).ToList();
+            if (pageIds.Count > 0)
+            {
+                var clothingIds = await _context.IssOrders
+                    .Where(o => pageIds.Contains(o.Id))
+                    .Where(isClothing)
+                    .Select(o => o.Id)
+                    .ToListAsync(cancellationToken);
+
+                var clothingSet = clothingIds.ToHashSet();
+                foreach (var it in items)
+                    it.IsClothing = clothingSet.Contains(it.Id);
+            }
+
             return new PaginatedList<ImportedOrderDto>(items, totalCount, request.PageNumber, request.PageSize);
         }
     }

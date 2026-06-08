@@ -38,6 +38,7 @@ export interface IssOrderQueryParams {
   search?: string;
   zone?: string;
   talepNoStatus?: string;
+  operationType?: string; // "Catering" | "Clothing"
 }
 
 export interface DeliveryPhoto {

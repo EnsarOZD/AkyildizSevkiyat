@@ -196,10 +196,10 @@
                         size="sm"
                         class="flex-1 min-w-[120px]"
                     />
-                    <BaseSelect v-model="talepNoFilter" @change="loadOrders" size="sm">
-                        <option value="">İş Türü</option>
-                        <option value="Zero">Catering</option>
-                        <option value="NonZero">Diğer / Kıyafet</option>
+                    <BaseSelect v-model="operationTypeFilter" @change="loadOrders" size="sm">
+                        <option value="">İş Türü (Tümü)</option>
+                        <option value="Catering">Catering</option>
+                        <option value="Clothing">Kıyafet</option>
                     </BaseSelect>
                     <BaseInput
                         v-model="searchQuery"
@@ -350,7 +350,10 @@
                                             </td>
                                             <td class="p-4">
                                                 <div class="text-[10px] text-gray-400 uppercase font-bold">{{ order.institutionCode || order.InstitutionCode }}</div>
-                                                <div class="text-xs font-semibold dark:text-gray-200">{{ order.projectCode || order.ProjectCode }}</div>
+                                                <div class="text-xs font-semibold dark:text-gray-200 flex items-center gap-1.5">
+                                                    {{ order.projectCode || order.ProjectCode }}
+                                                    <span v-if="order.isClothing" class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 border border-purple-200 dark:border-purple-700">Kıyafet</span>
+                                                </div>
                                                 <div class="text-xs text-gray-500">{{ order.projectName || order.ProjectName }}</div>
                                                 <div v-if="order.aciklama || order.Aciklama" class="text-[10px] text-indigo-600 dark:text-indigo-400 truncate max-w-[150px] mt-0.5" :title="order.aciklama || order.Aciklama">
                                                     {{ order.aciklama || order.Aciklama }}
@@ -404,8 +407,9 @@
                                                     {{ order.externalOrderNumber || order.ExternalOrderNumber }}
                                                     <span class="text-sm font-extrabold bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-md tracking-tight">T: {{ order.talepNo || order.TalepNo || '-' }}</span>
                                                 </div>
-                                                <div class="text-[11px] text-gray-500 dark:text-gray-400 mt-1 font-medium">
-                                                    {{ order.projectCode || order.ProjectCode }} — {{ order.projectName || order.ProjectName }}
+                                                <div class="text-[11px] text-gray-500 dark:text-gray-400 mt-1 font-medium flex items-center gap-1.5 flex-wrap">
+                                                    <span>{{ order.projectCode || order.ProjectCode }} — {{ order.projectName || order.ProjectName }}</span>
+                                                    <span v-if="order.isClothing" class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 border border-purple-200 dark:border-purple-700">Kıyafet</span>
                                                 </div>
                                                 <div v-if="order.aciklama || order.Aciklama" class="text-[10px] text-indigo-500 dark:text-indigo-400 mt-0.5 line-clamp-1">
                                                     {{ order.aciklama || order.Aciklama }}
@@ -659,7 +663,7 @@ const totalCount = ref(0);
 const totalPages = ref(1);
 const searchQuery = ref('');
 const zoneSearch = ref(''); // New Zone Filter
-const talepNoFilter = ref(''); // "Zero", "NonZero", ""
+const operationTypeFilter = ref(''); // "Catering", "Clothing", ""
 const selectedIds = ref(new Set<number>()); // New Selection Set
 
 const readyCount = ref(0);
@@ -766,7 +770,7 @@ const loadOrders = async () => {
             pageSize: pageSize.value,
             search: searchQuery.value,
             zone: zoneSearch.value,
-            talepNoStatus: talepNoFilter.value
+            operationType: operationTypeFilter.value
         });
 
         orders.value = data.items;
