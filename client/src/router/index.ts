@@ -85,6 +85,12 @@ const router = createRouter({
                     meta: { title: 'Kıyafet Toplama Yönetimi', roles: ['Admin', 'Manager'] }
                 },
                 {
+                    path: 'clothing-picking/pick',
+                    name: 'PickerView',
+                    component: () => import('../views/PickerView.vue'),
+                    meta: { title: 'Toplama', roles: ['Admin', 'Manager', 'Accounting', 'Warehouse'] }
+                },
+                {
                     path: 'zones',
                     redirect: '/settings',
                 },

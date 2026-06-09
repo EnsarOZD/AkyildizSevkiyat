@@ -20,7 +20,8 @@ namespace Akyildiz.Sevkiyat.Application.ClothingPicking
         int? AssignedPickerId,
         string? AssignedPickerName,
         string Status,
-        int? PickingMode);
+        int? PickingMode,
+        bool Paused);
 
     public record PickingQueueDto(
         IReadOnlyList<PickingQueueItemDto> Claimable,   // alınabilir (Created, claim'siz) — gruba göre
@@ -75,7 +76,8 @@ namespace Akyildiz.Sevkiyat.Application.ClothingPicking
                     s.AssignedPickerId,
                     s.AssignedPickerName,
                     s.Status.ToString(),
-                    (int?)s.PickingMode))
+                    (int?)s.PickingMode,
+                    s.PickingPausedAt != null))
                 .ToListAsync(ct);
 
             // Benim devam eden işlerim (tüm gruplar)
@@ -100,7 +102,8 @@ namespace Akyildiz.Sevkiyat.Application.ClothingPicking
                     s.AssignedPickerId,
                     s.AssignedPickerName,
                     s.Status.ToString(),
-                    (int?)s.PickingMode))
+                    (int?)s.PickingMode,
+                    s.PickingPausedAt != null))
                 .ToListAsync(ct);
 
             return new PickingQueueDto(claimable, mine);

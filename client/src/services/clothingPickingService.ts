@@ -15,6 +15,7 @@ export interface PickingQueueItem {
   assignedPickerName?: string | null;
   status: string;
   pickingMode?: number | null;
+  paused: boolean;
 }
 
 export interface PickingQueue {
