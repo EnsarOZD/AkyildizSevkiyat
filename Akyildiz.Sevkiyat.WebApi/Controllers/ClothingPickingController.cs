@@ -46,6 +46,11 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         public async Task<IActionResult> Containers(int id)
             => Ok(await _mediator.Send(new GetShipmentContainersQuery(id)));
 
+        // Kapamacı QR akışı: araba kodundan sevkiyat(lar) + toplama durumu
+        [HttpGet("by-container/{code}")]
+        public async Task<IActionResult> ByContainer(string code)
+            => Ok(await _mediator.Send(new GetByContainerQuery(code)));
+
         [HttpPost("{id:int}/scan-container")]
         public async Task<IActionResult> ScanContainer(int id, [FromBody] ScanContainerRequest req)
             => Ok(await _mediator.Send(new ScanContainerCommand(id, req.Code)));
