@@ -231,6 +231,10 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Persistence
                     .IsUnique()
                     .HasFilter("[IssOrderId] IS NOT NULL");
 
+                // Kıyafet toplama kuyruğu listeleme indeksleri
+                entity.HasIndex(s => new { s.PickingGroupId, s.QueueOrder });
+                entity.HasIndex(s => s.AssignedPickerId);
+
                 // Optimistic concurrency
                 entity.Property(s => s.RowVersion).IsRowVersion();
 
