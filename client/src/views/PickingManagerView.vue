@@ -34,6 +34,31 @@
       </div>
     </details>
 
+    <!-- Araba (Container) yönetimi -->
+    <details class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
+      <summary class="px-4 py-3 cursor-pointer font-semibold text-gray-800 dark:text-gray-200">Arabalar / Paletler ({{ containers.length }})</summary>
+      <div class="p-4 pt-0 space-y-2">
+        <div class="flex flex-wrap items-end gap-2 border-b border-gray-100 dark:border-gray-800 pb-3">
+          <input v-model="newContainer.code" placeholder="Kod (QR), ör. ARB-03" class="flex-1 min-w-[140px] border rounded px-3 py-2 text-sm dark:bg-gray-800 dark:border-gray-700" />
+          <select v-model.number="newContainer.type" class="border rounded px-2 py-2 text-sm dark:bg-gray-800 dark:border-gray-700">
+            <option :value="0">Araba</option>
+            <option :value="1">Palet</option>
+          </select>
+          <button @click="saveContainer(null)" :disabled="!newContainer.code.trim()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold rounded-lg text-sm">Ekle</button>
+        </div>
+        <div v-for="c in containers" :key="c.id" class="flex items-center gap-2" :class="{ 'opacity-50': !c.isActive }">
+          <input v-model="c.code" class="flex-1 border rounded px-2 py-1.5 text-sm dark:bg-gray-800 dark:border-gray-700" />
+          <select v-model.number="c.type" class="border rounded px-2 py-1.5 text-sm dark:bg-gray-800 dark:border-gray-700">
+            <option :value="0">Araba</option>
+            <option :value="1">Palet</option>
+          </select>
+          <button @click="saveContainer(c)" class="px-3 py-1.5 text-xs font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 rounded">Kaydet</button>
+          <button v-if="c.isActive" @click="deactivateContainer(c)" class="px-2 py-1.5 text-xs font-bold text-red-600 bg-red-50 dark:bg-red-900/20 rounded">Pasifleştir</button>
+          <span v-else class="text-[11px] text-gray-400">pasif</span>
+        </div>
+      </div>
+    </details>
+
     <div v-if="loading" class="text-center py-12 text-gray-400 text-sm">Yükleniyor...</div>
 
     <!-- Board: gruplar + gruplandırılmamış -->
@@ -109,6 +134,7 @@ import { ref, computed, onMounted } from 'vue';
 import PageHeader from '../components/PageHeader.vue';
 import clothingPickingService, { type PickingOverviewItem, PickingModeLabels } from '../services/clothingPickingService';
 import pickingGroupService, { type PickingGroup } from '../services/pickingGroupService';
+import containerService, { type Container } from '../services/containerService';
 import printService from '../services/printService';
 import userService, { type UserListItem } from '../services/userService';
 import { useNotificationStore } from '../stores/notification';
@@ -120,6 +146,8 @@ const groups = ref<PickingGroup[]>([]);
 const items = ref<PickingOverviewItem[]>([]);
 const users = ref<UserListItem[]>([]);
 const newGroup = ref({ name: '', sortOrder: 0 });
+const containers = ref<Container[]>([]);
+const newContainer = ref({ code: '', type: 0 });
 const agentHealth = ref<{ ok: boolean; text: string }>({ ok: false, text: '—' });
 
 const unclaimTarget = ref<PickingOverviewItem | null>(null);
@@ -140,10 +168,11 @@ const columns = computed(() => {
 async function loadAll() {
   loading.value = true;
   try {
-    const [ov, us] = await Promise.all([clothingPickingService.overview(), userService.getAll()]);
+    const [ov, us, cs] = await Promise.all([clothingPickingService.overview(), userService.getAll(), containerService.getAll(false)]);
     groups.value = ov.groups;
     items.value = ov.items;
     users.value = us.filter(u => u.isActive);
+    containers.value = cs;
     await loadAgentHealth();
   } catch (e) {
     notify.add(ApiErrorUtils.getErrorMessage(e) || 'Yüklenemedi.', 'error');
@@ -181,6 +210,23 @@ async function saveGroup(g: PickingGroup | null) {
 async function deactivateGroup(g: PickingGroup) {
   if (!await notify.promptConfirm({ title: 'Pasifleştir', message: `"${g.name}" pasifleştirilsin mi?`, confirmText: 'Pasifleştir' })) return;
   try { await pickingGroupService.deactivate(g.id); await loadAll(); }
+  catch (e) { notify.add(ApiErrorUtils.getErrorMessage(e) || 'Hata.', 'error'); }
+}
+
+async function saveContainer(c: Container | null) {
+  try {
+    if (c) await containerService.save({ id: c.id, code: c.code.trim(), type: c.type, isActive: c.isActive });
+    else {
+      await containerService.save({ code: newContainer.value.code.trim(), type: newContainer.value.type, isActive: true });
+      newContainer.value = { code: '', type: 0 };
+    }
+    await loadAll();
+  } catch (e) { notify.add(ApiErrorUtils.getErrorMessage(e) || 'Kaydedilemedi.', 'error'); }
+}
+
+async function deactivateContainer(c: Container) {
+  if (!await notify.promptConfirm({ title: 'Pasifleştir', message: `"${c.code}" pasifleştirilsin mi?`, confirmText: 'Pasifleştir' })) return;
+  try { await containerService.deactivate(c.id); await loadAll(); }
   catch (e) { notify.add(ApiErrorUtils.getErrorMessage(e) || 'Hata.', 'error'); }
 }
 

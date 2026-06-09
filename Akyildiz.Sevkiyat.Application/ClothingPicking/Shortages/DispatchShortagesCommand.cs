@@ -31,6 +31,7 @@ namespace Akyildiz.Sevkiyat.Application.ClothingPicking.Shortages
             var shortages = await _context.ShortageRecords
                 .Where(r => request.ShortageIds.Contains(r.Id) && r.Status == ShortageStatus.Pending)
                 .Include(r => r.Shipment).ThenInclude(s => s.Lines)
+                .Include(r => r.Shipment).ThenInclude(s => s.IssOrder)
                 .ToListAsync(ct);
 
             if (shortages.Count == 0)
@@ -44,13 +45,16 @@ namespace Akyildiz.Sevkiyat.Application.ClothingPicking.Shortages
             foreach (var g in groups)
             {
                 var source = g.First().Shipment;
+                // İzlenebilirlik: orijinal sipariş numarası (Shipment'ta ExternalOrderNumber/Aciklama
+                // alanı yok — bunlar IssOrder'da; bu yüzden TalepNo kopyalanır + ShipmentHistory'ye yazılır).
+                var origRef = source.IssOrder?.ExternalOrderNumber ?? source.TalepNo ?? $"#{source.Id}";
 
                 var followup = new Shipment
                 {
                     ProjectId = g.Key.ProjectId,
                     IssOrderId = null,                 // unique index — orijinal sevkiyat tutuyor
                     DeliveryDate = source.DeliveryDate,
-                    TalepNo = source.TalepNo,
+                    TalepNo = source.TalepNo,          // BelgeNo fallback + izlenebilirlik
                     OperationType = OperationType.Clothing,
                     CreatedAt = DateTime.UtcNow,
                 };
@@ -65,6 +69,16 @@ namespace Akyildiz.Sevkiyat.Application.ClothingPicking.Shortages
 
                 _context.Shipments.Add(followup);
                 await _context.SaveChangesAsync(ct); // followup.Id için
+
+                // İzlenebilirlik kaydı
+                _context.ShipmentHistories.Add(new ShipmentHistory
+                {
+                    ShipmentId = followup.Id,
+                    OldStatus = ShipmentStatus.Created,
+                    NewStatus = ShipmentStatus.Created,
+                    ChangedAt = DateTime.UtcNow,
+                    Description = $"{origRef} siparişinin eksik tamamlaması",
+                });
 
                 foreach (var r in g)
                 {
