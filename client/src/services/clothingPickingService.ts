@@ -58,6 +58,15 @@ export interface ByContainer {
   shipments: ByContainerShipment[];
 }
 
+export interface ClosingQueueItem {
+  shipmentId: number;
+  externalOrderNumber?: string | null;
+  talepNo?: string | null;
+  projectName: string;
+  pickingMode?: number | null;
+  lineCount: number;
+}
+
 export interface PickLineInput {
   shipmentLineId: number;
   deliveredQty: number;
@@ -122,6 +131,8 @@ const clothingPickingService = {
   labelHandwritten: (id: number) => apiClient.post(`/clothing-picking/${id}/label-handwritten`),
   byContainer: (code: string) =>
     apiClient.get(`/clothing-picking/by-container/${encodeURIComponent(code)}`).then(r => r.data as ByContainer),
+  closingQueue: () =>
+    apiClient.get('/clothing-picking/closing-queue').then(r => r.data as ClosingQueueItem[]),
 
   // Yönetici
   assignGroup: (shipmentIds: number[], pickingGroupId: number | null) =>

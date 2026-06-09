@@ -57,6 +57,11 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         public async Task<IActionResult> ByContainer(string code)
             => Ok(await _mediator.Send(new GetByContainerQuery(code)));
 
+        // Kapamaya hazır kuyruk
+        [HttpGet("closing-queue")]
+        public async Task<IActionResult> ClosingQueue()
+            => Ok(await _mediator.Send(new GetClosingQueueQuery()));
+
         [HttpPost("{id:int}/scan-container")]
         public async Task<IActionResult> ScanContainer(int id, [FromBody] ScanContainerRequest req)
             => Ok(await _mediator.Send(new ScanContainerCommand(id, req.Code)));

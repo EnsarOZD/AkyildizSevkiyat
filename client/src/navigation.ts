@@ -39,6 +39,7 @@ export interface NavItem {
 
 export interface NavGroup {
     title?: string;
+    icon?: Component;
     items: NavItem[];
 }
 
@@ -77,6 +78,8 @@ export const MOBILE_NAV_BY_ROLE: Partial<Record<string, MobileQuickItem[]>> = {
     ],
 };
 
+// ════════ Yeniden düzenlenmiş bilgi mimarisi ════════
+// Dashboard tek başına (başlıksız grup → düz öğe). Diğerleri akordeon gruplar.
 export const NAV_ITEMS: NavGroup[] = [
     {
         items: [
@@ -84,78 +87,80 @@ export const NAV_ITEMS: NavGroup[] = [
         ],
     },
     {
-        title: 'Sipariş & Sevkiyat',
+        title: 'Sevkiyat',
+        icon: ClipboardDocumentListIcon,
         items: [
-            { label: 'ISS Entegrasyon', to: '/orders/import',    icon: SignalIcon,                roles: ['Admin', 'Accounting', 'Manager', 'Driver'] },
-            { label: 'Müşteriler',      to: '/customers',         icon: BuildingOfficeIcon,        roles: ['Admin', 'Accounting', 'Manager'] },
-            { label: 'Sevkiyatlar',     to: '/shipments',         icon: ClipboardDocumentListIcon },
-            { label: 'Kargo Takip',     to: '/cargo-tracking',    icon: TruckIcon },
-            { label: 'Nakliye Linkleri', to: '/freight-deliveries', icon: PhoneIcon,               roles: ['Admin', 'Manager', 'Accounting', 'Warehouse'] },
-            { label: 'Nakliyeciler',     to: '/carriers',           icon: TruckIcon,               roles: ['Admin', 'Manager', 'Accounting'] },
+            { label: 'Sevkiyatlar',      to: '/shipments',          icon: ClipboardDocumentListIcon },
+            { label: 'Kargo Takip',      to: '/cargo-tracking',     icon: TruckIcon },
+            { label: 'Müşteriler',       to: '/customers',          icon: BuildingOfficeIcon, roles: ['Admin', 'Accounting', 'Manager'] },
+            { label: 'ISS Entegrasyon',  to: '/orders/import',      icon: SignalIcon,         roles: ['Admin', 'Accounting', 'Manager', 'Driver'] },
+            { label: 'Nakliye Linkleri', to: '/freight-deliveries', icon: PhoneIcon,          roles: ['Admin', 'Manager', 'Accounting', 'Warehouse'] },
+            { label: 'Nakliyeciler',     to: '/carriers',           icon: TruckIcon,          roles: ['Admin', 'Manager', 'Accounting'] },
         ],
     },
     {
         title: 'Operasyon',
+        icon: BuildingStorefrontIcon,
         items: [
-            { label: 'Depo Hazırlık',    to: '/warehouse',          icon: BuildingStorefrontIcon, roles: ['Admin', 'Accounting', 'Warehouse', 'Manager', 'Driver'] },
-            { label: 'Kıyafet Hazırlık', to: '/clothing-prep',      icon: BuildingStorefrontIcon, roles: ['Admin', 'Accounting', 'Warehouse', 'Manager'] },
+            { label: 'Depo Hazırlık',      to: '/warehouse',               icon: BuildingStorefrontIcon, roles: ['Admin', 'Accounting', 'Warehouse', 'Manager', 'Driver'] },
+            { label: 'Kıyafet Hazırlık',   to: '/clothing-prep',           icon: BuildingStorefrontIcon, roles: ['Admin', 'Accounting', 'Warehouse', 'Manager'] },
             { label: 'Kıyafet Toplama Yön.', to: '/clothing-picking/manager', icon: BuildingStorefrontIcon, roles: ['Admin', 'Manager'] },
-            { label: 'Toplama (Toplayıcı)', to: '/clothing-picking/pick', icon: BuildingStorefrontIcon, roles: ['Admin', 'Manager', 'Accounting', 'Warehouse'] },
-            { label: 'Belirsiz İadeler', to: '/floating-returns',   icon: ArrowPathIcon,          roles: ['Admin', 'Manager', 'Warehouse', 'Driver'] },
-            { label: 'Araç İade Takibi', to: '/vehicle-returns',   icon: ArrowUturnLeftIcon,      roles: ['Admin', 'Manager', 'Accounting', 'Warehouse'] },
-            { label: 'Şoför Paneli',     to: '/driver',             icon: DevicePhoneMobileIcon,  roles: ['Admin', 'Manager', 'Driver'] },
-            { label: 'Aktif Operasyonlar', to: '/admin/active-operations', icon: SignalIcon,          roles: ['Admin', 'Manager', 'Accounting'] },
-            { label: 'Rota Optimizasyonu', to: '/route-optimization', icon: ArrowTrendingUpIcon,  roles: ['Admin', 'Manager'] },
+            { label: 'Toplama (Toplayıcı)',  to: '/clothing-picking/pick',  icon: BuildingStorefrontIcon, roles: ['Admin', 'Manager', 'Accounting', 'Warehouse'] },
+            { label: 'Kapama',             to: '/clothing-picking/closing',  icon: BuildingStorefrontIcon, roles: ['Admin', 'Manager', 'Accounting', 'Warehouse'] },
+            { label: 'Belirsiz İadeler',   to: '/floating-returns',        icon: ArrowPathIcon,          roles: ['Admin', 'Manager', 'Warehouse', 'Driver'] },
+            { label: 'Araç İade Takibi',   to: '/vehicle-returns',         icon: ArrowUturnLeftIcon,     roles: ['Admin', 'Manager', 'Accounting', 'Warehouse'] },
+            { label: 'Aktif Operasyonlar', to: '/admin/active-operations', icon: SignalIcon,             roles: ['Admin', 'Manager', 'Accounting'] },
+            { label: 'Rota Optimizasyonu', to: '/route-optimization',      icon: ArrowTrendingUpIcon,    roles: ['Admin', 'Manager'] },
+            { label: 'Şoför Paneli',       to: '/driver',                  icon: DevicePhoneMobileIcon,  roles: ['Admin', 'Manager', 'Driver'] },
         ],
     },
     {
-        title: 'Stok',
+        title: 'Stok & Yerleşim',
+        icon: ArchiveBoxIcon,
         items: [
-            { label: 'Stok Yönetimi',    to: '/stocks',           icon: ArchiveBoxIcon,     roles: ['Admin', 'Accounting', 'Manager'] },
-            { label: 'Stok Eşleştirme', to: '/stocks/mappings',  icon: ArrowsRightLeftIcon, roles: ['Admin', 'Accounting', 'Manager'] },
-            { label: 'Stok Sayımı',      to: '/stock-counts',     icon: CalculatorIcon,     roles: ['Admin', 'Manager', 'Warehouse'] },
-            { label: 'Stok Tüketim / Zai', to: '/stock-consumptions', icon: ArchiveBoxIcon, roles: ['Admin', 'Manager', 'Warehouse', 'Accounting'] },
-        ],
-    },
-    {
-        title: 'Depo & Yerleşim',
-        items: [
-            { label: 'Proje - Bölge',      to: '/projects/zone-mapping',      icon: PuzzlePieceIcon,    roles: ['Admin', 'Manager', 'Accounting'] },
-            { label: 'Teslimat Sırası',    to: '/zones/project-order',        icon: ListBulletIcon,     roles: ['Admin', 'Manager', 'Accounting'] },
-            { label: 'Depo Adresleri',     to: '/warehouse/locations',        icon: MapPinIcon,         roles: ['Admin', 'Manager', 'Warehouse', 'Accounting'] },
-            { label: 'Depo Haritası',      to: '/warehouse/map',              icon: BuildingOfficeIcon, roles: ['Admin', 'Manager', 'Warehouse', 'Accounting'] },
-            { label: 'Stok Haritası',      to: '/warehouse/stock-locations',  icon: ArrowsRightLeftIcon, roles: ['Admin', 'Manager', 'Warehouse', 'Accounting'] },
-            { label: 'Koordinat Doğrulama', to: '/projects/coordinates',      icon: MapPinIcon,         roles: ['Admin', 'Manager'] },
-            { label: 'Proje İletişim',     to: '/projects/contacts',          icon: PhoneIcon,          roles: ['Admin', 'Manager', 'Accounting'] },
+            { label: 'Stok Yönetimi',      to: '/stocks',                    icon: ArchiveBoxIcon,      roles: ['Admin', 'Accounting', 'Manager'] },
+            { label: 'Stok Sayımı',        to: '/stock-counts',              icon: CalculatorIcon,      roles: ['Admin', 'Manager', 'Warehouse'] },
+            { label: 'Stok Tüketim / Zai', to: '/stock-consumptions',        icon: ArchiveBoxIcon,      roles: ['Admin', 'Manager', 'Warehouse', 'Accounting'] },
+            { label: 'Stok Eşleştirme',    to: '/stocks/mappings',           icon: ArrowsRightLeftIcon, roles: ['Admin', 'Accounting', 'Manager'] },
+            { label: 'Depo Adresleri',     to: '/warehouse/locations',       icon: MapPinIcon,          roles: ['Admin', 'Manager', 'Warehouse', 'Accounting'] },
+            { label: 'Depo Haritası',      to: '/warehouse/map',             icon: BuildingOfficeIcon,  roles: ['Admin', 'Manager', 'Warehouse', 'Accounting'] },
+            { label: 'Stok Haritası',      to: '/warehouse/stock-locations', icon: ArrowsRightLeftIcon, roles: ['Admin', 'Manager', 'Warehouse', 'Accounting'] },
+            { label: 'Proje – Bölge',      to: '/projects/zone-mapping',     icon: PuzzlePieceIcon,     roles: ['Admin', 'Manager', 'Accounting'] },
+            { label: 'Teslimat Sırası',    to: '/zones/project-order',       icon: ListBulletIcon,      roles: ['Admin', 'Manager', 'Accounting'] },
+            { label: 'Koordinat Doğrulama', to: '/projects/coordinates',     icon: MapPinIcon,          roles: ['Admin', 'Manager'] },
+            { label: 'Proje İletişim',     to: '/projects/contacts',         icon: PhoneIcon,           roles: ['Admin', 'Manager', 'Accounting'] },
         ],
     },
     {
         title: 'Satınalma',
+        icon: ShoppingCartIcon,
         items: [
-            { label: 'Satınalma Siparişleri', to: '/purchase-orders',        icon: ShoppingCartIcon,   roles: ['Admin', 'Accounting', 'Manager', 'Warehouse'] },
-            { label: 'Mal Kabul Merkezi',     to: '/goods-receipts/intake',  icon: InboxArrowDownIcon, roles: ['Admin', 'Warehouse', 'Manager', 'Accounting'] },
-            { label: 'İrsaliye Geçmişi',      to: '/goods-receipts/list',    icon: ListBulletIcon,     roles: ['Admin', 'Warehouse', 'Manager', 'Accounting'] },
-            { label: 'Tedarikçiler',          to: '/suppliers',              icon: BuildingOfficeIcon, roles: ['Admin', 'Accounting', 'Manager'] },
+            { label: 'Satınalma Siparişleri', to: '/purchase-orders',       icon: ShoppingCartIcon,   roles: ['Admin', 'Accounting', 'Manager', 'Warehouse'] },
+            { label: 'Mal Kabul Merkezi',     to: '/goods-receipts/intake', icon: InboxArrowDownIcon, roles: ['Admin', 'Warehouse', 'Manager', 'Accounting'] },
+            { label: 'İrsaliye Geçmişi',      to: '/goods-receipts/list',   icon: ListBulletIcon,     roles: ['Admin', 'Warehouse', 'Manager', 'Accounting'] },
+            { label: 'Tedarikçiler',          to: '/suppliers',             icon: BuildingOfficeIcon, roles: ['Admin', 'Accounting', 'Manager'] },
         ],
     },
     {
         title: 'Raporlar',
+        icon: ChartBarIcon,
         items: [
-            { label: 'Raporlar', to: '/reports', icon: ChartBarIcon, roles: ['Admin', 'Accounting', 'Warehouse', 'Manager'] },
+            { label: 'Raporlar',               to: '/reports',                     icon: ChartBarIcon,      roles: ['Admin', 'Accounting', 'Warehouse', 'Manager'] },
             { label: 'Sevkiyat Karşılaştırma', to: '/reports/shipment-comparison', icon: DocumentCheckIcon, roles: ['Admin', 'Accounting', 'Manager'] },
         ],
     },
     {
         title: 'Sistem',
+        icon: Cog6ToothIcon,
         items: [
-            { label: 'Tanımlamalar',          to: '/settings',                   icon: Cog6ToothIcon,         roles: ['Admin', 'Manager', 'Accounting'] },
-            { label: 'Netsis Cari Eşleşmeleri', to: '/system/institution-cari-mappings', icon: ArrowsRightLeftIcon, roles: ['Admin', 'Manager', 'Accounting'] },
-            { label: 'Harici Mail Adresleri', to: '/external-email-contacts',    icon: EnvelopeIcon,          roles: ['Admin', 'Manager', 'Accounting'] },
-            { label: 'Kıyafet Vurgu Kelimeleri', to: '/clothing-keywords',       icon: Cog6ToothIcon,         roles: ['Admin', 'Manager'] },
-            { label: 'Kullanıcı Yönetimi',    to: '/users',                      icon: UsersIcon,             roles: ['Admin'] },
-            { label: 'Şoför Puantajı',        to: '/admin/driver-sessions',      icon: DevicePhoneMobileIcon, roles: ['Admin', 'Manager', 'Accounting'] },
-            { label: 'Mutabakat Kontrolleri', to: '/reconciliation',             icon: ShieldExclamationIcon, roles: ['Admin', 'Manager'] },
-            { label: 'Netsis Uzlaştırma',     to: '/netsis/reconciliation',      icon: DocumentCheckIcon,     roles: ['Admin', 'Manager', 'Accounting'] },
+            { label: 'Tanımlamalar',             to: '/settings',                          icon: Cog6ToothIcon,         roles: ['Admin', 'Manager', 'Accounting'] },
+            { label: 'Mutabakat Kontrolleri',    to: '/reconciliation',                    icon: ShieldExclamationIcon, roles: ['Admin', 'Manager'] },
+            { label: 'Netsis Uzlaştırma',        to: '/netsis/reconciliation',             icon: DocumentCheckIcon,     roles: ['Admin', 'Manager', 'Accounting'] },
+            { label: 'Netsis Cari Eşleşmeleri',  to: '/system/institution-cari-mappings',  icon: ArrowsRightLeftIcon,   roles: ['Admin', 'Manager', 'Accounting'] },
+            { label: 'Şoför Puantajı',           to: '/admin/driver-sessions',             icon: DevicePhoneMobileIcon, roles: ['Admin', 'Manager', 'Accounting'] },
+            { label: 'Harici Mail Adresleri',    to: '/external-email-contacts',           icon: EnvelopeIcon,          roles: ['Admin', 'Manager', 'Accounting'] },
+            { label: 'Kıyafet Vurgu Kelimeleri', to: '/clothing-keywords',                 icon: Cog6ToothIcon,         roles: ['Admin', 'Manager'] },
+            { label: 'Kullanıcı Yönetimi',       to: '/users',                             icon: UsersIcon,             roles: ['Admin'] },
         ],
     },
 ];

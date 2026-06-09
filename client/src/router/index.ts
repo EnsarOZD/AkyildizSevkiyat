@@ -91,6 +91,12 @@ const router = createRouter({
                     meta: { title: 'Toplama', roles: ['Admin', 'Manager', 'Accounting', 'Warehouse'] }
                 },
                 {
+                    path: 'clothing-picking/closing',
+                    name: 'ClosingView',
+                    component: () => import('../views/ClosingView.vue'),
+                    meta: { title: 'Kapama', roles: ['Admin', 'Manager', 'Accounting', 'Warehouse'] }
+                },
+                {
                     path: 'zones',
                     redirect: '/settings',
                 },
