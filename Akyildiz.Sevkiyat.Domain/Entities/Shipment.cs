@@ -268,7 +268,29 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
             PreparedByUserName = preparedByUserName;
             PreparedAt = DateTime.UtcNow;
             KoliCount = koliCount;
+
+            // Köprü (yeni kapama modeline): eski akışta hazırlayan = kapatan.
+            ClosedByUserName = preparedByUserName;
+            ClosedAt = DateTime.UtcNow;
+            // KoliCount düz sayıya parse edilebiliyorsa BoxCount'a da yaz (etiket/muhasebe).
+            if (int.TryParse((koliCount ?? string.Empty).Trim(), out var parsedBox))
+                BoxCount = parsedBox;
+
             ChangeStatus(ShipmentStatus.ReadyForDispatch, userId);
+        }
+
+        /// <summary>
+        /// Yeni kapama akışı: kapama bilgilerini yazar (BoxCount tek doğruluk). Durum geçişi
+        /// (Picking→ReadyForDispatch) ve container release çağıran handler'da yapılır.
+        /// </summary>
+        public void SetClosingInfo(string closedByUserName, int boxCount,
+            Akyildiz.Sevkiyat.Domain.Enums.PackageType packageType, string? note)
+        {
+            ClosedByUserName = closedByUserName;
+            ClosedAt = DateTime.UtcNow;
+            BoxCount = boxCount;
+            PackageType = packageType;
+            KoliCount = string.IsNullOrWhiteSpace(note) ? KoliCount : note.Trim();
         }
 
         public void UpdateDeliveryDate(DateTime newDate)

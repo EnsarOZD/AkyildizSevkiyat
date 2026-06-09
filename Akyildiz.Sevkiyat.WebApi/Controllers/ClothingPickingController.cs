@@ -79,6 +79,21 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             return Ok();
         }
 
+        // ── Kapama + etiket ─────────────────────────────────────────────────
+        [HttpPost("{id:int}/complete-closing")]
+        public async Task<IActionResult> CompleteClosing(int id, [FromBody] CompleteClosingRequest req)
+        {
+            await _mediator.Send(new CompleteClosingCommand(id, req.BoxCount, req.PackageType, req.Note));
+            return Ok();
+        }
+
+        [HttpPost("{id:int}/label-handwritten")]
+        public async Task<IActionResult> LabelHandwritten(int id)
+        {
+            await _mediator.Send(new MarkLabelHandwrittenCommand(id));
+            return Ok();
+        }
+
         [HttpPost("{id:int}/resume")]
         public async Task<IActionResult> Resume(int id)
         {
@@ -115,4 +130,5 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
     public record ScanContainerRequest(string Code);
     public record SavePickProgressRequest(List<ClothingPickLineInput>? Lines);
     public record CompletePickingRequest(List<ClothingPickLineInput>? Lines, bool ConfirmContainers, int? PalletCount);
+    public record CompleteClosingRequest(int BoxCount, PackageType PackageType, string? Note);
 }

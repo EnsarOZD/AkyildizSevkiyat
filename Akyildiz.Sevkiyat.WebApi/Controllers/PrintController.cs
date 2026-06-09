@@ -119,6 +119,17 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             if (req.Status == PrintJobStatus.Printing) job.StartedAt   = DateTime.UtcNow;
             if (req.Status is PrintJobStatus.Done or PrintJobStatus.Failed) job.CompletedAt = DateTime.UtcNow;
 
+            // Koli etiketi başarıyla basıldıysa sevkiyatta işaretle (kuyruğa atılınca DEĞİL, Done'da).
+            if (req.Status == PrintJobStatus.Done && job.LabelType == LabelType.BoxLabel && job.ShipmentId != null)
+            {
+                var shipment = await _context.Shipments.FirstOrDefaultAsync(s => s.Id == job.ShipmentId, ct);
+                if (shipment != null && !shipment.LabelPrinted)
+                {
+                    shipment.LabelPrinted = true;
+                    shipment.LabelPrintedAt = DateTime.UtcNow;
+                }
+            }
+
             await _context.SaveChangesAsync(ct);
             return Ok();
         }
@@ -302,6 +313,48 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             return Ok(new { jobId = job.Id, message = "Baskı kuyruğa alındı." });
         }
 
+        /// <summary>Koli etiketi baskı işi oluşturur (kapanmış kıyafet sevkiyatı).</summary>
+        [Authorize(Roles = "Admin,Manager,Accounting,Warehouse")]
+        [HttpPost("jobs/box")]
+        public async Task<IActionResult> CreateBoxJob([FromBody] CreateBoxJobRequest req, CancellationToken ct)
+        {
+            var shipment = await _context.Shipments
+                .Include(s => s.Project)
+                .FirstOrDefaultAsync(s => s.Id == req.ShipmentId, ct);
+            if (shipment == null)
+                return NotFound(new { message = "Sevkiyat bulunamadı." });
+
+            // Guard: kapama tamamlanmış + koli sayısı girilmiş olmalı
+            if (shipment.ClosedAt == null || shipment.BoxCount == null)
+                return BadRequest(new { message = "Etiket için sevkiyatın kapatılmış ve koli sayısının girilmiş olması gerekir." });
+
+            var config = await _context.PrinterConfigs
+                .FirstOrDefaultAsync(c => c.LabelType == LabelType.BoxLabel && c.IsDefault && c.IsActive, ct);
+            if (config == null)
+                return BadRequest(new { message = "Aktif koli etiketi yazıcısı bulunamadı. Lütfen yazıcı ayarlarını kontrol edin." });
+
+            var payload = JsonSerializer.Serialize(new BoxLabelPayload
+            {
+                ProjectName = shipment.Project.Name,
+                ProjectCode = shipment.Project.Code,
+                Location    = shipment.Project.Region ?? string.Empty,   // birim (teyit edilebilir)
+                BoxCount    = shipment.BoxCount.Value,
+            });
+
+            var job = new PrintJob
+            {
+                PrinterConfigId = config.Id,
+                ShipmentId      = shipment.Id,
+                LabelType       = LabelType.BoxLabel,
+                PayloadJson     = payload,
+                Status          = PrintJobStatus.Pending,
+            };
+            _context.PrintJobs.Add(job);
+            await _context.SaveChangesAsync(ct);
+
+            return Ok(new { jobId = job.Id, message = "Koli etiketi kuyruğa alındı." });
+        }
+
         /// <summary>Tek bir baskı işinin güncel durumunu döner (polling için).</summary>
         [Authorize]
         [HttpGet("jobs/{id:int}")]
@@ -388,6 +441,8 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
     );
 
     public record CreateCargoJobRequest(int? PrinterConfigId, CargoLabelPayload Payload);
+
+    public record CreateBoxJobRequest(int ShipmentId);
 
     public record CargoLabelPayload
     {

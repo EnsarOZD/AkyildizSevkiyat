@@ -10,6 +10,9 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
         public int PrinterConfigId { get; set; }
         public PrinterConfig PrinterConfig { get; set; } = null!;
 
+        /// <summary>Koli etiketi işlerinde ilgili sevkiyat (Done olunca LabelPrinted için). Gevşek referans.</summary>
+        public int? ShipmentId { get; set; }
+
         public LabelType LabelType { get; set; }
 
         /// <summary>Etiket verisi — JSON (kargo için: barcode, alıcı, adres, irsaliye no vb.).</summary>
