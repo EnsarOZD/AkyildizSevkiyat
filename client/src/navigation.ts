@@ -107,6 +107,7 @@ export const NAV_ITEMS: NavGroup[] = [
             { label: 'Kıyafet Toplama Yön.', to: '/clothing-picking/manager', icon: BuildingStorefrontIcon, roles: ['Admin', 'Manager'] },
             { label: 'Toplama (Toplayıcı)',  to: '/clothing-picking/pick',  icon: BuildingStorefrontIcon, roles: ['Admin', 'Manager', 'Accounting', 'Warehouse'] },
             { label: 'Kapama',             to: '/clothing-picking/closing',  icon: BuildingStorefrontIcon, roles: ['Admin', 'Manager', 'Accounting', 'Warehouse'] },
+            { label: 'Eksik Ürün Kuyruğu', to: '/clothing-picking/shortages', icon: ArrowPathIcon,         roles: ['Admin', 'Manager', 'Accounting', 'Warehouse'] },
             { label: 'Belirsiz İadeler',   to: '/floating-returns',        icon: ArrowPathIcon,          roles: ['Admin', 'Manager', 'Warehouse', 'Driver'] },
             { label: 'Araç İade Takibi',   to: '/vehicle-returns',         icon: ArrowUturnLeftIcon,     roles: ['Admin', 'Manager', 'Accounting', 'Warehouse'] },
             { label: 'Aktif Operasyonlar', to: '/admin/active-operations', icon: SignalIcon,             roles: ['Admin', 'Manager', 'Accounting'] },

@@ -97,6 +97,12 @@ const router = createRouter({
                     meta: { title: 'Kapama', roles: ['Admin', 'Manager', 'Accounting', 'Warehouse'] }
                 },
                 {
+                    path: 'clothing-picking/shortages',
+                    name: 'ShortageQueue',
+                    component: () => import('../views/ShortageQueueView.vue'),
+                    meta: { title: 'Eksik Ürün Kuyruğu', roles: ['Admin', 'Manager', 'Accounting', 'Warehouse'] }
+                },
+                {
                     path: 'zones',
                     redirect: '/settings',
                 },
