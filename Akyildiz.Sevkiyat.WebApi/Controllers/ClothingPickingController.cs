@@ -1,4 +1,5 @@
 using Akyildiz.Sevkiyat.Application.ClothingPicking;
+using Akyildiz.Sevkiyat.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -33,6 +34,58 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
             return Ok();
         }
 
+        // ── Toplama akışı ───────────────────────────────────────────────────
+        [HttpPost("{id:int}/mode")]
+        public async Task<IActionResult> SetMode(int id, [FromBody] SetModeRequest req)
+        {
+            await _mediator.Send(new SetPickingModeCommand(id, req.Mode));
+            return Ok();
+        }
+
+        [HttpGet("{id:int}/containers")]
+        public async Task<IActionResult> Containers(int id)
+            => Ok(await _mediator.Send(new GetShipmentContainersQuery(id)));
+
+        [HttpPost("{id:int}/scan-container")]
+        public async Task<IActionResult> ScanContainer(int id, [FromBody] ScanContainerRequest req)
+            => Ok(await _mediator.Send(new ScanContainerCommand(id, req.Code)));
+
+        [HttpPost("release-container")]
+        [Authorize(Roles = "Admin,Manager")]
+        public async Task<IActionResult> ReleaseContainer([FromBody] ReleaseContainerCommand command)
+        {
+            await _mediator.Send(command);
+            return Ok();
+        }
+
+        [HttpPost("{id:int}/save-progress")]
+        public async Task<IActionResult> SaveProgress(int id, [FromBody] SavePickProgressRequest req)
+        {
+            await _mediator.Send(new SaveClothingPickProgressCommand(id, req.Lines ?? new()));
+            return Ok();
+        }
+
+        [HttpPost("{id:int}/complete-picking")]
+        public async Task<IActionResult> CompletePicking(int id, [FromBody] CompletePickingRequest req)
+        {
+            await _mediator.Send(new CompletePickingCommand(id, req.Lines ?? new(), req.ConfirmContainers, req.PalletCount));
+            return Ok();
+        }
+
+        [HttpPost("{id:int}/pause")]
+        public async Task<IActionResult> Pause(int id)
+        {
+            await _mediator.Send(new PausePickingCommand(id));
+            return Ok();
+        }
+
+        [HttpPost("{id:int}/resume")]
+        public async Task<IActionResult> Resume(int id)
+        {
+            await _mediator.Send(new ResumePickingCommand(id));
+            return Ok();
+        }
+
         // ── Yönetici: gruplama / sıralama / rezervasyon ─────────────────────
         [HttpPost("assign-group")]
         [Authorize(Roles = "Admin,Manager")]
@@ -58,4 +111,8 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
 
     public record UnclaimRequest(string Reason);
     public record ReserveRequest(int? ReservedForUserId);
+    public record SetModeRequest(PickingMode Mode);
+    public record ScanContainerRequest(string Code);
+    public record SavePickProgressRequest(List<ClothingPickLineInput>? Lines);
+    public record CompletePickingRequest(List<ClothingPickLineInput>? Lines, bool ConfirmContainers, int? PalletCount);
 }

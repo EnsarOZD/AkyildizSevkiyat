@@ -247,6 +247,17 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
             ChangeStatus(ShipmentStatus.Picking, userId, "Kıyafet hazırlığına alındı");
         }
 
+        /// <summary>
+        /// "Toplama bitti" — yeni claim/picking akışı. Yalnızca toplama bilgisi yazar;
+        /// DURUM DEĞİŞTİRMEZ (kapama ayrı adımda Picking→ReadyForDispatch yapar).
+        /// </summary>
+        public void MarkPickingCompleted(string preparedByUserName)
+        {
+            PreparedByUserName = preparedByUserName;
+            PreparedAt = DateTime.UtcNow;
+            PickingCompletedAt = DateTime.UtcNow;
+        }
+
         public void CompleteClothingPreparation(string preparedByUserName, string? koliCount, int? userId)
         {
             if (OperationType != Akyildiz.Sevkiyat.Domain.Enums.OperationType.Clothing)
