@@ -19,6 +19,12 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         public async Task<IActionResult> Queue([FromQuery] int? groupId)
             => Ok(await _mediator.Send(new GetPickingQueueQuery(groupId)));
 
+        // Yönetici panosu (tüm Created/Picking kıyafet sevkiyatları)
+        [HttpGet("overview")]
+        [Authorize(Roles = "Admin,Manager")]
+        public async Task<IActionResult> Overview()
+            => Ok(await _mediator.Send(new GetPickingOverviewQuery()));
+
         // ── Claim / Unclaim ─────────────────────────────────────────────────
         [HttpPost("{id:int}/claim")]
         public async Task<IActionResult> Claim(int id)

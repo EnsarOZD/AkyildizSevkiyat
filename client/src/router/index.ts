@@ -79,6 +79,12 @@ const router = createRouter({
                     meta: { title: 'Kıyafet Hazırlık', roles: ['Admin', 'Manager', 'Accounting', 'Warehouse'] }
                 },
                 {
+                    path: 'clothing-picking/manager',
+                    name: 'PickingManager',
+                    component: () => import('../views/PickingManagerView.vue'),
+                    meta: { title: 'Kıyafet Toplama Yönetimi', roles: ['Admin', 'Manager'] }
+                },
+                {
                     path: 'zones',
                     redirect: '/settings',
                 },
