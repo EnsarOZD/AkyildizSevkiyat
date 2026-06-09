@@ -35,6 +35,7 @@ namespace Akyildiz.Sevkiyat.Application.ClothingPreparation
         {
             var shipment = await _context.Shipments
                 .Include(s => s.Lines)
+                .Include(s => s.Project)
                 .FirstOrDefaultAsync(s => s.Id == request.ShipmentId, cancellationToken)
                 ?? throw new NotFoundException("Shipment", request.ShipmentId);
 
@@ -51,6 +52,10 @@ namespace Akyildiz.Sevkiyat.Application.ClothingPreparation
                 _currentUser.FullName ?? _currentUser.Email ?? "Bilinmiyor",
                 string.IsNullOrWhiteSpace(request.KoliCount) ? null : request.KoliCount.Trim(),
                 _currentUser.UserId);
+
+            // Eksik satırlardan ShortageRecord üret (köprü: eski akış da kuyruğa düşürür)
+            _context.ShortageRecords.AddRange(
+                ClothingPicking.ShortageRecordFactory.CreateForShipment(shipment, _currentUser.UserId));
 
             await _context.SaveChangesAsync(cancellationToken);
             return Unit.Value;

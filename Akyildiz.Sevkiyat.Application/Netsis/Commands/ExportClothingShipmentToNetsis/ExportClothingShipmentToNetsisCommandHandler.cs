@@ -163,6 +163,18 @@ namespace Akyildiz.Sevkiyat.Application.Netsis.Commands.ExportClothingShipmentTo
             // Not: İrsaliye otomatik çekme kaldırıldı — sipariş Netsis'e iletildiği anda
             // irsaliye henüz kesilmemiştir. İrsaliye çekimi "İrsaliye Yenile" butonu ile yapılmalıdır.
 
+            // ── Additive: bu sevkiyat bir eksik-tamamlama (followup) ise ilgili
+            //    ShortageRecord'ları Shipped yap. Çekirdek export / SkipToDelivered DEĞİŞMEDİ.
+            var relatedShortages = await _context.ShortageRecords
+                .Where(r => r.FollowupShipmentId == shipment.Id
+                         && r.Status == Domain.Enums.ShortageStatus.DispatchRequested)
+                .ToListAsync(cancellationToken);
+            foreach (var r in relatedShortages)
+            {
+                r.Status = Domain.Enums.ShortageStatus.Shipped;
+                r.ResolvedAt = DateTime.UtcNow;
+            }
+
             await _context.SaveChangesAsync(cancellationToken);
 
             return new ExportClothingShipmentToNetsisResult(

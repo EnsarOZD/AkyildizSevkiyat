@@ -35,7 +35,10 @@ namespace Akyildiz.Sevkiyat.Application.ClothingPicking
 
         public async Task<Unit> Handle(CompleteClosingCommand request, CancellationToken ct)
         {
-            var s = await _context.Shipments.FirstOrDefaultAsync(x => x.Id == request.ShipmentId, ct)
+            var s = await _context.Shipments
+                .Include(x => x.Lines)
+                .Include(x => x.Project)
+                .FirstOrDefaultAsync(x => x.Id == request.ShipmentId, ct)
                 ?? throw new NotFoundException("Shipment", request.ShipmentId);
 
             if (s.OperationType != OperationType.Clothing)
@@ -61,6 +64,9 @@ namespace Akyildiz.Sevkiyat.Application.ClothingPicking
 
             // Mevcut geçiş — yeni durum yok.
             s.ChangeStatus(ShipmentStatus.ReadyForDispatch, _currentUser.UserId, "Kapama tamamlandı");
+
+            // Eksik satırlardan ShortageRecord üret (Pending)
+            _context.ShortageRecords.AddRange(ShortageRecordFactory.CreateForShipment(s, _currentUser.UserId));
 
             await _context.SaveChangesAsync(ct);
             return Unit.Value;
