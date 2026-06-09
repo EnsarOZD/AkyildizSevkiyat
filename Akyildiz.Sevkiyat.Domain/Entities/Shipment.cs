@@ -67,9 +67,35 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
         public string? CancelReason { get; private set; }
 
         // Kıyafet depo hazırlığı bilgileri
-        public string? PreparedByUserName { get; private set; }  // Hazırlığı kim yaptı
+        public string? PreparedByUserName { get; private set; }  // Toplamayı bitiren (picker)
         public DateTime? PreparedAt { get; private set; }
-        public string? KoliCount { get; private set; }           // Hazırlıkta girilen koli sayısı (serbest metin)
+        public string? KoliCount { get; private set; }           // Serbest metin not (eski; BoxCount otoritedir)
+
+        // ── Kıyafet toplama/kapama V1 (claim kuyruğu + mod + kapama + etiket) ──
+        // Claim kuyruğu (pull modeli)
+        public int? PickingGroupId { get; set; }                 // null = "Gruplandırılmamış" havuzu
+        public int QueueOrder { get; set; } = 0;                 // grup içi sıra (küçük = üstte)
+        public int? ReservedForUserId { get; set; }              // doluysa yalnızca o kullanıcı claim eder
+        public int? AssignedPickerId { get; set; }               // claim anında set
+        public string? AssignedPickerName { get; set; }
+        public DateTime? ClaimedAt { get; set; }
+        public bool ClaimedOutOfOrder { get; set; }              // sıra atlanarak alındıysa true
+        public DateTime? PickingPausedAt { get; set; }           // duraklat (yeni status yok)
+        public DateTime? PickingCompletedAt { get; set; }        // toplama bitti, kapama bekliyor
+
+        // Toplama modu
+        public Akyildiz.Sevkiyat.Domain.Enums.PickingMode? PickingMode { get; set; }
+        public int? PalletCount { get; set; }                    // Pallet modunda
+
+        // Kapama (closing)
+        public string? ClosedByUserName { get; set; }
+        public DateTime? ClosedAt { get; set; }
+        public Akyildiz.Sevkiyat.Domain.Enums.PackageType? PackageType { get; set; }
+        public int? BoxCount { get; set; }                       // Koli adedi — tek doğruluk (etiket/muhasebe)
+
+        // Etiket izleme
+        public bool LabelPrinted { get; set; }
+        public DateTime? LabelPrintedAt { get; set; }
 
         // Dispatch Confirmation (yükleme onayı)
         public DateTime? DispatchedAt { get; private set; }

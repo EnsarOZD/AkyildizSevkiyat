@@ -99,6 +99,12 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Persistence
         // Kıyafet toplama vurgu anahtar kelimeleri
         public DbSet<ClothingHighlightKeyword> ClothingHighlightKeywords { get; set; } = null!;
 
+        // Kıyafet toplama/kapama V1
+        public DbSet<PickingGroup> PickingGroups { get; set; } = null!;
+        public DbSet<ShortageRecord> ShortageRecords { get; set; } = null!;
+        public DbSet<Container> Containers { get; set; } = null!;
+        public DbSet<ContainerAssignment> ContainerAssignments { get; set; } = null!;
+
         // Vehicle Return Tracking
         public DbSet<VehicleReturn> VehicleReturns { get; set; } = null!;
         public DbSet<VehicleReturnLine> VehicleReturnLines { get; set; } = null!;
@@ -119,6 +125,12 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Persistence
         {
             base.OnModelCreating(modelBuilder);
 
+            // Container (kıyafet toplama kabı) — Code benzersiz, sınırlı uzunluk
+            modelBuilder.Entity<Container>(e =>
+            {
+                e.Property(c => c.Code).HasMaxLength(50).IsRequired();
+                e.HasIndex(c => c.Code).IsUnique();
+            });
 
             // User
             modelBuilder.Entity<User>()

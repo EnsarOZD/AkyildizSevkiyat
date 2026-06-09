@@ -75,6 +75,12 @@ namespace Akyildiz.Sevkiyat.Application.Interfaces
         // Kıyafet toplama vurgu anahtar kelimeleri
         DbSet<ClothingHighlightKeyword> ClothingHighlightKeywords { get; }
 
+        // Kıyafet toplama/kapama V1
+        DbSet<PickingGroup> PickingGroups { get; }
+        DbSet<ShortageRecord> ShortageRecords { get; }
+        DbSet<Container> Containers { get; }
+        DbSet<ContainerAssignment> ContainerAssignments { get; }
+
         // ISS KurumKodu → Netsis Fatura Cari Kodu eşleşmeleri
         DbSet<InstitutionCariMapping> InstitutionCariMappings { get; }
 
