@@ -46,7 +46,13 @@
           </select>
           <button @click="saveContainer(null)" :disabled="!newContainer.code.trim()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold rounded-lg text-sm">Ekle</button>
         </div>
+        <!-- Etiket baskı çubuğu -->
+        <div class="flex flex-wrap items-center gap-2 pb-1">
+          <button @click="printLabels" class="px-3 py-1.5 text-sm font-semibold bg-gray-900 hover:bg-gray-700 text-white rounded-lg">🏷 Etiketleri Yazdır</button>
+          <span class="text-xs text-gray-400">{{ selectedContainers.size > 0 ? `${selectedContainers.size} seçili` : 'Seçim yoksa tüm aktif arabalar' }}</span>
+        </div>
         <div v-for="c in containers" :key="c.id" class="flex items-center gap-2" :class="{ 'opacity-50': !c.isActive }">
+          <input type="checkbox" :checked="selectedContainers.has(c.id)" :disabled="!c.isActive" @change="toggleSelect(c.id)" class="shrink-0 accent-indigo-600 disabled:opacity-30" title="Etikete dahil et" />
           <input v-model="c.code" class="flex-1 border rounded px-2 py-1.5 text-sm dark:bg-gray-800 dark:border-gray-700" />
           <select v-model.number="c.type" class="border rounded px-2 py-1.5 text-sm dark:bg-gray-800 dark:border-gray-700">
             <option :value="0">Araba</option>
@@ -185,6 +191,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import PageHeader from '../components/PageHeader.vue';
 import clothingPickingService, { type PickingOverviewItem, type PickingDetail, PickingModeLabels, ClothingTypeLabels, PackageTypeLabels } from '../services/clothingPickingService';
 import pickingGroupService, { type PickingGroup } from '../services/pickingGroupService';
@@ -195,6 +202,7 @@ import { useNotificationStore } from '../stores/notification';
 import { ApiErrorUtils } from '../utils/apiError';
 
 const notify = useNotificationStore();
+const router = useRouter();
 const loading = ref(false);
 const groups = ref<PickingGroup[]>([]);
 const items = ref<PickingOverviewItem[]>([]);
@@ -308,6 +316,19 @@ async function deactivateContainer(c: Container) {
   if (!await notify.promptConfirm({ title: 'Pasifleştir', message: `"${c.code}" pasifleştirilsin mi?`, confirmText: 'Pasifleştir' })) return;
   try { await containerService.deactivate(c.id); await loadAll(); }
   catch (e) { notify.add(ApiErrorUtils.getErrorMessage(e) || 'Hata.', 'error'); }
+}
+
+// Etiket baskısı — seçili (ya da tüm aktif) arabalar için yazdırılabilir sayfa
+const selectedContainers = ref<Set<number>>(new Set());
+function toggleSelect(id: number) {
+  const next = new Set(selectedContainers.value);
+  next.has(id) ? next.delete(id) : next.add(id);
+  selectedContainers.value = next;
+}
+function printLabels() {
+  const ids = [...selectedContainers.value];
+  const route = router.resolve({ name: 'ContainerLabelPrint', query: ids.length ? { ids: ids.join(',') } : {} });
+  window.open(route.href, '_blank');
 }
 
 async function onMoveGroup(it: PickingOverviewItem, ev: Event) {

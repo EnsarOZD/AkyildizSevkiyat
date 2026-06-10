@@ -381,6 +381,12 @@ const router = createRouter({
             component: () => import('../views/CargoLabelPrintView.vue'),
             meta: { requiresAuth: true, roles: ['Admin', 'Manager', 'Accounting', 'Dispatcher', 'Warehouse'], title: 'Kargo Etiketi' }
         },
+        {
+            path: '/print/container-labels',
+            name: 'ContainerLabelPrint',
+            component: () => import('../views/ContainerLabelPrintView.vue'),
+            meta: { requiresAuth: true, roles: ['Admin', 'Manager', 'Warehouse'], title: 'Araba QR Etiketleri' }
+        },
     ],
 });
 
