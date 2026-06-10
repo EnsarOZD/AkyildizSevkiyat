@@ -69,13 +69,16 @@
         </div>
         <div v-if="col.items.length === 0" class="px-4 py-3 text-xs text-gray-400">Boş.</div>
         <div v-else class="divide-y divide-gray-100 dark:divide-gray-800">
-          <div v-for="(it, idx) in col.items" :key="it.shipmentId" class="p-3 flex flex-wrap items-center gap-2">
+          <div v-for="(it, idx) in col.items" :key="it.shipmentId">
+          <div class="p-3 flex flex-wrap items-center gap-2">
             <!-- sıralama -->
             <div class="flex flex-col">
               <button @click="move(col, idx, -1)" :disabled="idx === 0" class="text-gray-400 disabled:opacity-30 leading-none">▲</button>
               <button @click="move(col, idx, 1)" :disabled="idx === col.items.length - 1" class="text-gray-400 disabled:opacity-30 leading-none">▼</button>
             </div>
-            <div class="flex-1 min-w-[200px]">
+            <!-- detay aç/kapa -->
+            <button @click="toggleDetail(it)" class="text-gray-400 hover:text-indigo-600 transition-transform" :class="{ 'rotate-90': expanded.has(it.shipmentId) }" title="Satır detayı">▶</button>
+            <div class="flex-1 min-w-[200px] cursor-pointer" @click="toggleDetail(it)">
               <div class="flex flex-wrap items-center gap-1.5">
                 <span class="font-semibold text-gray-900 dark:text-gray-100">{{ it.externalOrderNumber || ('#' + it.shipmentId) }}</span>
                 <span v-if="it.talepNo" class="text-[10px] font-bold bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded">T:{{ it.talepNo }}</span>
@@ -110,6 +113,57 @@
               </template>
             </div>
           </div>
+
+          <!-- Satır detayı (lazy-load) -->
+          <div v-if="expanded.has(it.shipmentId)" class="px-3 pb-3 bg-gray-50 dark:bg-gray-800/40">
+            <div v-if="!details[it.shipmentId]" class="py-3 text-xs text-gray-400">Yükleniyor...</div>
+            <div v-else class="space-y-2">
+              <!-- Toplayıcı / kapamacı / koli bilgisi -->
+              <div class="flex flex-wrap gap-1.5 text-[11px]">
+                <span v-if="details[it.shipmentId]!.assignedPickerName" class="px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 font-semibold">👷 Toplayıcı: {{ details[it.shipmentId]!.assignedPickerName }}</span>
+                <span v-if="details[it.shipmentId]!.preparedByUserName" class="px-1.5 py-0.5 rounded bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300 font-semibold">✓ Toplamayı bitiren: {{ details[it.shipmentId]!.preparedByUserName }}</span>
+                <span v-if="details[it.shipmentId]!.closedByUserName" class="px-1.5 py-0.5 rounded bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 font-semibold">📦 Kapayan: {{ details[it.shipmentId]!.closedByUserName }}</span>
+                <span v-if="details[it.shipmentId]!.boxCount != null" class="px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 font-semibold">{{ details[it.shipmentId]!.boxCount }} {{ packageLabel(details[it.shipmentId]!.packageType) }}</span>
+                <span v-if="details[it.shipmentId]!.labelPrinted" class="px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-semibold">🏷 etiket basıldı</span>
+                <span v-for="code in details[it.shipmentId]!.openContainerCodes" :key="code" class="px-1.5 py-0.5 rounded bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300 font-semibold">🛒 {{ code }}</span>
+              </div>
+              <!-- Satırlar -->
+              <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+                <table class="w-full text-xs">
+                  <thead class="bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+                    <tr>
+                      <th class="text-left px-2 py-1.5 font-semibold">Stok</th>
+                      <th class="text-left px-2 py-1.5 font-semibold">Tür</th>
+                      <th class="text-right px-2 py-1.5 font-semibold">Sipariş</th>
+                      <th class="text-right px-2 py-1.5 font-semibold">Toplanan</th>
+                      <th class="text-right px-2 py-1.5 font-semibold">Fark</th>
+                      <th class="text-left px-2 py-1.5 font-semibold">Sebep</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                    <tr v-for="ln in details[it.shipmentId]!.lines" :key="ln.lineId" class="bg-white dark:bg-gray-900">
+                      <td class="px-2 py-1.5">
+                        <span class="font-mono text-gray-500">{{ ln.stockCode }}</span> · {{ ln.stockName }}
+                      </td>
+                      <td class="px-2 py-1.5">
+                        <span v-if="ln.clothingType != null" class="px-1.5 py-0.5 rounded text-[10px] font-bold"
+                              :class="ln.clothingType === 1 ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-600'">{{ clothingLabel(ln.clothingType) }}</span>
+                        <span v-else class="text-gray-300">—</span>
+                      </td>
+                      <td class="px-2 py-1.5 text-right tabular-nums">{{ ln.orderedQty }} {{ ln.unit }}</td>
+                      <td class="px-2 py-1.5 text-right tabular-nums">{{ ln.deliveredQty }}</td>
+                      <td class="px-2 py-1.5 text-right tabular-nums font-semibold"
+                          :class="ln.differenceQty < 0 ? 'text-red-600' : ln.differenceQty > 0 ? 'text-amber-600' : 'text-gray-400'">
+                        {{ ln.differenceQty > 0 ? '+' : '' }}{{ ln.differenceQty }}
+                      </td>
+                      <td class="px-2 py-1.5 text-gray-500">{{ ln.differenceReason || '—' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          </div>
         </div>
       </div>
     </div>
@@ -132,7 +186,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import PageHeader from '../components/PageHeader.vue';
-import clothingPickingService, { type PickingOverviewItem, PickingModeLabels } from '../services/clothingPickingService';
+import clothingPickingService, { type PickingOverviewItem, type PickingDetail, PickingModeLabels, ClothingTypeLabels, PackageTypeLabels } from '../services/clothingPickingService';
 import pickingGroupService, { type PickingGroup } from '../services/pickingGroupService';
 import containerService, { type Container } from '../services/containerService';
 import printService from '../services/printService';
@@ -152,6 +206,32 @@ const agentHealth = ref<{ ok: boolean; text: string }>({ ok: false, text: '—' 
 
 const unclaimTarget = ref<PickingOverviewItem | null>(null);
 const unclaimReason = ref('');
+
+// Satır detayı (lazy-load): açık satırlar + yüklenen detay önbelleği
+const expanded = ref<Set<number>>(new Set());
+const details = ref<Record<number, PickingDetail>>({});
+const clothingLabel = (t: number) => ClothingTypeLabels[t] ?? '?';
+const packageLabel = (t?: number | null) => (t != null ? PackageTypeLabels[t] : null) ?? 'Koli';
+
+async function toggleDetail(it: PickingOverviewItem) {
+  const id = it.shipmentId;
+  const next = new Set(expanded.value);
+  if (next.has(id)) {
+    next.delete(id);
+    expanded.value = next;
+    return;
+  }
+  next.add(id);
+  expanded.value = next;
+  if (!details.value[id]) {
+    try {
+      details.value[id] = await clothingPickingService.detail(id);
+    } catch (e) {
+      expanded.value = new Set([...expanded.value].filter(x => x !== id));
+      notify.add(ApiErrorUtils.getErrorMessage(e) || 'Detay yüklenemedi.', 'error');
+    }
+  }
+}
 
 const activeGroups = computed(() => groups.value.filter(g => g.isActive));
 const modeLabel = (m: number) => PickingModeLabels[m] ?? '?';

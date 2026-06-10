@@ -25,6 +25,12 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         public async Task<IActionResult> Overview()
             => Ok(await _mediator.Send(new GetPickingOverviewQuery()));
 
+        // Panoda satır detayı (lazy-load) — satırlar + toplayıcı/kapamacı/koli bilgisi
+        [HttpGet("{id:int}/detail")]
+        [Authorize(Roles = "Admin,Manager")]
+        public async Task<IActionResult> Detail(int id)
+            => Ok(await _mediator.Send(new GetPickingDetailQuery(id)));
+
         // ── Claim / Unclaim ─────────────────────────────────────────────────
         [HttpPost("{id:int}/claim")]
         public async Task<IActionResult> Claim(int id)

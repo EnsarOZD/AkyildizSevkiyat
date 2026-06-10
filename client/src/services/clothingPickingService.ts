@@ -99,9 +99,43 @@ export interface PickingOverviewItem {
 export interface PickingOverviewGroup { id: number; name: string; sortOrder: number; isActive: boolean; }
 export interface PickingOverview { groups: PickingOverviewGroup[]; items: PickingOverviewItem[]; }
 
+// ClothingType: 0=Diğer, 1=Ayakkabı ; PackageType: 0=Koli, 1=Poşet
+export const ClothingTypeLabels: Record<number, string> = { 0: 'Giysi/Diğer', 1: 'Ayakkabı' };
+export const PackageTypeLabels: Record<number, string> = { 0: 'Koli', 1: 'Poşet' };
+
+export interface PickingDetailLine {
+  lineId: number;
+  stockCode: string;
+  stockName: string;
+  orderedQty: number;
+  deliveredQty: number;
+  differenceQty: number;
+  unit: string;
+  clothingType?: number | null;
+  differenceReason?: string | null;
+}
+
+export interface PickingDetail {
+  shipmentId: number;
+  assignedPickerName?: string | null;
+  preparedByUserName?: string | null;
+  preparedAt?: string | null;
+  closedByUserName?: string | null;
+  closedAt?: string | null;
+  boxCount?: number | null;
+  packageType?: number | null;
+  labelPrinted: boolean;
+  openContainerCodes: string[];
+  lines: PickingDetailLine[];
+}
+
 const clothingPickingService = {
   // Yönetici panosu
   overview: () => apiClient.get('/clothing-picking/overview').then(r => r.data as PickingOverview),
+
+  // Panoda satır detayı (lazy-load)
+  detail: (id: number) =>
+    apiClient.get(`/clothing-picking/${id}/detail`).then(r => r.data as PickingDetail),
 
   // Kuyruk
   queue: (groupId?: number | null) =>
