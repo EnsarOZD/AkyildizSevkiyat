@@ -343,6 +343,12 @@ builder.Services.AddDbContext<SevkiyatDbContext>(options => options.UseSqlServer
 // IApplicationDbContext mapping
 builder.Services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<SevkiyatDbContext>());
 
+// Health checks — liveness + DB erişim kontrolü.
+// AddDbContextCheck, SevkiyatDbContext.CanConnectAsync() çağırır; böylece
+// "uygulama açıldı ama DB'ye bağlanamıyor" durumu /health üzerinden Unhealthy olarak görünür.
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<SevkiyatDbContext>("database");
+
 // MediatR
 builder.Services.AddMediatR(cfg =>
 {
@@ -452,6 +458,11 @@ using (var scope = app.Services.CreateScope())
     await Akyildiz.Sevkiyat.Infrastructure.Persistence.Seeding.UserSeeder.SeedAsync(context, hasher, seedOpt.AdminPassword);
     await Akyildiz.Sevkiyat.Infrastructure.Persistence.Seeding.ShipmentSeeder.SeedAsync(context);
 }
+
+// Health endpoint — anonim erişilebilir (liveness + DB connectivity).
+// AllowAnonymous() endpoint'e authorization metadata ekler; bu sayede global
+// FallbackPolicy (RequireAuthenticatedUser) bu endpoint'i KAPSAMAZ → 401 yerine 200.
+app.MapHealthChecks("/health").AllowAnonymous();
 
 app.MapControllers();
 app.Run();
