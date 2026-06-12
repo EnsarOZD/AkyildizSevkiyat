@@ -87,7 +87,7 @@
             class="hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
             @click="openDetail(receipt.id)"
           >
-            <td class="px-5 py-3 text-sm font-semibold text-purple-600 dark:text-purple-400 whitespace-nowrap">{{ receipt.waybillNo }}</td>
+            <td class="px-5 py-3 text-sm font-semibold text-blue-600 dark:text-blue-400 whitespace-nowrap">{{ receipt.waybillNo }}</td>
             <td class="px-5 py-3 text-sm text-gray-500 dark:text-gray-400">
               <span v-if="poNumbersText(receipt)" class="font-semibold">{{ poNumbersText(receipt) }}</span>
               <span v-else class="text-gray-300 dark:text-gray-600">—</span>
@@ -118,14 +118,14 @@
       >
         <div class="flex items-start justify-between gap-2 mb-2">
           <div class="min-w-0">
-            <p class="font-bold text-purple-600 dark:text-purple-400 text-sm">{{ receipt.waybillNo }}</p>
+            <p class="font-bold text-blue-600 dark:text-blue-400 text-sm">{{ receipt.waybillNo }}</p>
             <p class="font-semibold text-gray-900 dark:text-gray-100 text-sm truncate">{{ receipt.supplierNameSnapshot }}</p>
           </div>
           <StatusBadge :status="receipt.status" type="goodsReceipt" />
         </div>
         <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mt-2 pt-2 border-t border-gray-100 dark:border-gray-800">
           <span>{{ formatDate(receipt.waybillDate) }}</span>
-          <span v-if="poNumbersText(receipt)" class="font-semibold text-indigo-600 dark:text-indigo-400 text-right">{{ poNumbersText(receipt) }}</span>
+          <span v-if="poNumbersText(receipt)" class="font-semibold text-blue-600 dark:text-blue-400 text-right">{{ poNumbersText(receipt) }}</span>
           <span v-else class="text-gray-300 dark:text-gray-600">—</span>
           <span class="bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded font-semibold">{{ receipt.lineCount }} kalem</span>
         </div>
@@ -200,7 +200,7 @@
                   <td class="px-4 py-3">
                     <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ line.stockNameSnapshot }}</p>
                     <p class="text-[10px] text-gray-400 dark:text-gray-600 font-mono">{{ line.unitSnapshot }}</p>
-                    <p v-if="line.purchaseOrderNumber" class="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 mt-0.5">Sipariş: {{ line.purchaseOrderNumber }}</p>
+                    <p v-if="line.purchaseOrderNumber" class="text-[10px] font-semibold text-blue-600 dark:text-blue-400 mt-0.5">Sipariş: {{ line.purchaseOrderNumber }}</p>
                   </td>
                   <td class="px-4 py-3 text-right text-sm text-gray-500 dark:text-gray-400 font-medium">{{ line.orderedQty }}</td>
                   <td class="px-4 py-3">
@@ -269,7 +269,7 @@
               <div class="px-3 py-2.5 border-b border-gray-200 dark:border-gray-700">
                 <p class="font-semibold text-sm text-gray-900 dark:text-gray-100 leading-tight">{{ line.stockNameSnapshot }}</p>
                 <p class="text-[11px] font-mono text-gray-400 dark:text-gray-600">{{ line.unitSnapshot }}</p>
-                <p v-if="line.purchaseOrderNumber" class="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 mt-0.5">Sipariş: {{ line.purchaseOrderNumber }}</p>
+                <p v-if="line.purchaseOrderNumber" class="text-[11px] font-semibold text-blue-600 dark:text-blue-400 mt-0.5">Sipariş: {{ line.purchaseOrderNumber }}</p>
               </div>
 
               <!-- Qty row -->
@@ -352,8 +352,8 @@
           </div>
 
           <!-- Add Line -->
-          <div v-if="selectedReceipt.isEditable" class="mt-4 bg-indigo-50 dark:bg-indigo-900/10 rounded-xl p-4 border border-indigo-200 dark:border-indigo-800">
-            <h4 class="text-xs font-bold text-indigo-700 dark:text-indigo-400 uppercase tracking-wider mb-3">Manuel Kalem Ekle</h4>
+          <div v-if="selectedReceipt.isEditable" class="mt-4 bg-blue-50 dark:bg-blue-900/10 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
+            <h4 class="text-xs font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider mb-3">Manuel Kalem Ekle</h4>
             <div class="space-y-3">
               <div>
                 <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Stok Seçimi</label>
@@ -362,12 +362,12 @@
               <div class="flex gap-3 items-end">
                 <div class="flex-1">
                   <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Gelen Miktar</label>
-                  <input type="number" v-model="lineForm.receivedQty" class="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none" step="0.01" />
+                  <input type="number" v-model="lineForm.receivedQty" class="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" step="0.01" />
                 </div>
                 <button
                   @click="addLine"
                   :disabled="addingLine || !lineForm.stockMasterId"
-                  class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
+                  class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
                 >
                   <span v-if="addingLine">...</span>
                   <span v-else>+ Ekle</span>

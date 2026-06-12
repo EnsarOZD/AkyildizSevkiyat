@@ -61,7 +61,7 @@
                <div v-if="supplier.lastModified" class="text-xs text-gray-400 dark:text-gray-500">{{ formatDate(supplier.lastModified) }}</div>
              </td>
              <td class="px-6 py-4 whitespace-nowrap text-right space-x-3">
-               <button @click="openEdit(supplier)" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 text-sm font-medium">Düzenle</button>
+               <button @click="openEdit(supplier)" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">Düzenle</button>
                <button @click="confirmDelete(supplier)" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium">Sil</button>
              </td>
            </tr>

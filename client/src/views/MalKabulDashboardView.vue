@@ -18,7 +18,7 @@
           </div>
           <router-link
             to="/goods-receipts"
-            class="text-[11px] font-black text-indigo-500 uppercase tracking-widest whitespace-nowrap"
+            class="text-[11px] font-black text-blue-500 uppercase tracking-widest whitespace-nowrap"
           >
             İrsaliyeler
           </router-link>
@@ -36,7 +36,7 @@
             @input="handleSearch"
             type="search"
             placeholder="Malzeme adı veya stok kodu..."
-            class="w-full pl-10 pr-4 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-none rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:bg-white dark:focus:bg-gray-700 transition-all"
+            class="w-full pl-10 pr-4 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-none rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-gray-700 transition-all"
           />
         </div>
       </div>
@@ -61,7 +61,7 @@
         <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-[220px]">
           {{ searchTerm ? 'Aramanızla eşleşen malzeme bulunamadı.' : 'Tüm siparişler teslim alındı.' }}
         </p>
-        <button v-if="searchTerm" @click="searchTerm = ''; loadMaterials()" class="mt-3 text-xs font-bold text-indigo-500 underline underline-offset-2">
+        <button v-if="searchTerm" @click="searchTerm = ''; loadMaterials()" class="mt-3 text-xs font-bold text-blue-500 underline underline-offset-2">
           Aramayı Temizle
         </button>
       </div>
@@ -101,7 +101,7 @@
               <div class="flex items-center gap-2 mt-0.5">
                 <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{{ mat.stockCode }}</span>
                 <span class="text-gray-200 dark:text-gray-700 text-[10px]">•</span>
-                <span class="text-[10px] font-bold text-indigo-500">{{ mat.allocationCount }} sipariş</span>
+                <span class="text-[10px] font-bold text-blue-500">{{ mat.allocationCount }} sipariş</span>
                 <span class="text-gray-200 dark:text-gray-700 text-[10px]">•</span>
                 <span class="text-[10px] font-bold text-gray-600 dark:text-gray-400">{{ mat.totalRemainingQty }} {{ mat.unit }} bekleniyor</span>
               </div>
@@ -119,7 +119,7 @@
               class="flex-shrink-0 px-4 py-2 rounded-xl text-xs font-black transition-all active:scale-95"
               :class="store.hasEntry(mat.stockMasterId)
                 ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
-                : 'bg-indigo-600 text-white shadow-md shadow-indigo-100 dark:shadow-none hover:bg-indigo-700'"
+                : 'bg-blue-600 text-white shadow-md shadow-blue-100 dark:shadow-none hover:bg-blue-700'"
             >
               {{ store.hasEntry(mat.stockMasterId) ? 'Düzenle' : 'Ekle' }}
             </button>
@@ -152,7 +152,7 @@
     >
       <button
         @click="showPostModal = true"
-        class="w-full bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white rounded-2xl shadow-2xl shadow-indigo-200 dark:shadow-none transition-all flex items-center px-5 py-4"
+        class="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white rounded-2xl shadow-2xl shadow-blue-200 dark:shadow-none transition-all flex items-center px-5 py-4"
       >
         <div class="flex items-center gap-3 flex-1 min-w-0">
           <div class="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
@@ -160,10 +160,10 @@
           </div>
           <div class="text-left min-w-0">
             <p class="text-sm font-black leading-tight">{{ store.totalEntryCount }} malzeme eklendi</p>
-            <p class="text-xs text-indigo-200 font-medium">İrsaliye gir ve postla</p>
+            <p class="text-xs text-blue-200 font-medium">İrsaliye gir ve postla</p>
           </div>
         </div>
-        <svg class="w-5 h-5 text-indigo-200 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg class="w-5 h-5 text-blue-200 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
         </svg>
       </button>

@@ -2,12 +2,12 @@
   <div class="space-y-4">
 
     <!-- Hero Header -->
-    <div class="relative overflow-hidden bg-white dark:bg-gray-900 rounded-3xl p-6 sm:p-8 shadow-xl shadow-indigo-100/50 dark:shadow-none border border-indigo-50 dark:border-indigo-900 group mb-6">
-      <div class="absolute -top-24 -right-24 h-64 w-64 bg-indigo-500/5 rounded-full blur-3xl group-hover:bg-indigo-500/10 transition-all duration-700"></div>
+    <div class="relative overflow-hidden bg-white dark:bg-gray-900 rounded-3xl p-6 sm:p-8 shadow-xl shadow-blue-100/50 dark:shadow-none border border-blue-50 dark:border-blue-900 group mb-6">
+      <div class="absolute -top-24 -right-24 h-64 w-64 bg-blue-500/5 rounded-full blur-3xl group-hover:bg-blue-500/10 transition-all duration-700"></div>
       
       <div class="relative flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div class="flex items-center gap-4">
-          <div class="p-4 bg-indigo-600 rounded-2xl text-white shadow-lg shadow-indigo-200 dark:shadow-none">
+          <div class="p-4 bg-blue-600 rounded-2xl text-white shadow-lg shadow-blue-200 dark:shadow-none">
             <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
             </svg>
@@ -20,7 +20,7 @@
 
         <button
           @click="showCreateModal = true"
-          class="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl shadow-lg shadow-indigo-100 dark:shadow-none transition-all hover:scale-[1.02] active:scale-95"
+          class="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-lg shadow-blue-100 dark:shadow-none transition-all hover:scale-[1.02] active:scale-95"
         >
           <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -38,7 +38,7 @@
           <select
             v-model="filters.status"
             @change="handleFilterChange"
-            class="w-full border-gray-100 dark:border-gray-800 rounded-xl px-4 py-2.5 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+            class="w-full border-gray-100 dark:border-gray-800 rounded-xl px-4 py-2.5 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
           >
             <option value="">Tümü</option>
             <option value="0">Taslak</option>
@@ -56,7 +56,7 @@
               v-model="filters.supplierName"
               @input="handleSearch"
               placeholder="İsim ile hızlı ara..."
-              class="w-full border-gray-100 dark:border-gray-800 rounded-xl px-4 py-2.5 pl-10 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+              class="w-full border-gray-100 dark:border-gray-800 rounded-xl px-4 py-2.5 pl-10 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
             />
             <svg class="absolute left-3 top-2.5 h-5 w-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -68,7 +68,7 @@
           <select
             v-model="filters.emailSent"
             @change="handleFilterChange"
-            class="w-full border-gray-100 dark:border-gray-800 rounded-xl px-4 py-2.5 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+            class="w-full border-gray-100 dark:border-gray-800 rounded-xl px-4 py-2.5 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
           >
             <option value="">Tümü</option>
             <option value="false">Gönderilmedi</option>
@@ -83,7 +83,7 @@
               v-model="filters.stockName"
               @input="handleSearch"
               placeholder="Ürün adı ile ara..."
-              class="w-full border-gray-100 dark:border-gray-800 rounded-xl px-4 py-2.5 pl-10 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+              class="w-full border-gray-100 dark:border-gray-800 rounded-xl px-4 py-2.5 pl-10 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
             />
             <svg class="absolute left-3 top-2.5 h-5 w-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
@@ -103,7 +103,7 @@
           </button>
           <button
             @click="() => fetchOrders()"
-            class="p-2.5 bg-gray-50 dark:bg-gray-800 text-gray-400 hover:text-indigo-600 rounded-xl border border-gray-100 dark:border-gray-700 transition-all"
+            class="p-2.5 bg-gray-50 dark:bg-gray-800 text-gray-400 hover:text-blue-600 rounded-xl border border-gray-100 dark:border-gray-700 transition-all"
             title="Yenile"
           >
             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -123,7 +123,7 @@
     </div>
 
     <!-- Desktop Table -->
-    <div class="hidden md:block bg-white dark:bg-gray-900 shadow-xl shadow-indigo-100/20 dark:shadow-none rounded-3xl overflow-hidden border border-gray-100 dark:border-gray-800">
+    <div class="hidden md:block bg-white dark:bg-gray-900 shadow-xl shadow-blue-100/20 dark:shadow-none rounded-3xl overflow-hidden border border-gray-100 dark:border-gray-800">
       <table class="min-w-full divide-y divide-gray-100 dark:divide-gray-800">
         <thead class="bg-gray-50/50 dark:bg-gray-800/50">
           <tr>
@@ -149,11 +149,11 @@
           <tr
             v-for="order in orders"
             :key="order.id || order.Id"
-            class="hover:bg-indigo-50/30 dark:hover:bg-indigo-900/10 cursor-pointer transition-all group"
+            class="hover:bg-blue-50/30 dark:hover:bg-blue-900/10 cursor-pointer transition-all group"
             @click="openDetail(order.id || order.Id)"
           >
             <td class="px-6 py-4">
-              <span class="text-sm font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/40 px-3 py-1.5 rounded-xl shadow-sm">
+              <span class="text-sm font-black text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/40 px-3 py-1.5 rounded-xl shadow-sm">
                 #{{ order.orderNumber || order.OrderNumber }}
               </span>
             </td>
@@ -216,7 +216,7 @@
                   >
                     Mal Kabul
                   </button>
-                  <div class="h-8 w-8 rounded-full flex items-center justify-center text-gray-300 group-hover:text-indigo-600 transition-colors">
+                  <div class="h-8 w-8 rounded-full flex items-center justify-center text-gray-300 group-hover:text-blue-600 transition-colors">
                     <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                     </svg>
@@ -240,7 +240,7 @@
       >
         <div class="flex items-start justify-between gap-2 mb-4">
           <div class="min-w-0">
-            <p class="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-1">#{{ order.orderNumber || order.OrderNumber }}</p>
+            <p class="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-1">#{{ order.orderNumber || order.OrderNumber }}</p>
             <p class="font-black text-gray-900 dark:text-gray-100 text-base leading-tight">{{ order.supplierNameSnapshot || order.SupplierNameSnapshot }}</p>
           </div>
           <div class="flex flex-col items-end gap-1">
@@ -264,7 +264,7 @@
         <div class="flex items-center justify-between text-[10px] font-black text-gray-400 uppercase tracking-widest pt-4 border-t border-gray-50 dark:border-gray-800">
           <div class="flex flex-col">
              <span>Sipariş: {{ formatDate(order.orderDate || order.OrderDate) }}</span>
-             <span v-if="order.expectedDeliveryDate" class="text-indigo-500">Termin: {{ formatDate(order.expectedDeliveryDate || order.ExpectedDeliveryDate) }}</span>
+             <span v-if="order.expectedDeliveryDate" class="text-blue-500">Termin: {{ formatDate(order.expectedDeliveryDate || order.ExpectedDeliveryDate) }}</span>
           </div>
           <div class="flex items-center gap-2">
             <button
@@ -278,7 +278,7 @@
               @click.stop="goToMalKabul(order.id || order.Id)"
               class="px-2 py-1 text-[10px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg"
             >Mal Kabul</button>
-            <span class="bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 px-2 py-1 rounded-lg">{{ order.lineCount || order.LineCount }} Kalem</span>
+            <span class="bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 px-2 py-1 rounded-lg">{{ order.lineCount || order.LineCount }} Kalem</span>
           </div>
         </div>
       </div>

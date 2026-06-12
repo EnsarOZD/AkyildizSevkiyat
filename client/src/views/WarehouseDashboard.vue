@@ -22,6 +22,12 @@
       </template>
     </PageHeader>
 
+    <!-- ── Özet KPI şeridi (yeni kimlik) ── -->
+    <WarehouseKpiStrip
+      :zones="allZones"
+      :critical-stock-count="criticalStocks.length"
+    />
+
     <!-- ── Tab bar (scrollable on mobile) ── -->
     <div class="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
       <div class="flex rounded-lg border border-gray-300 dark:border-gray-700 overflow-hidden text-xs w-max min-w-full sm:w-auto">
@@ -618,6 +624,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import PageHeader from '../components/PageHeader.vue';
+import WarehouseKpiStrip from '../components/WarehouseKpiStrip.vue';
 import warehouseService, { type DashboardZoneDto, type VerificationShipmentDto } from '../services/warehouseService';
 import { dashboardService, type CriticalStockItem } from '../services/dashboardService';
 import { ApiErrorUtils } from '../utils/apiError';
