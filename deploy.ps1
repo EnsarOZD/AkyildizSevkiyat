@@ -1,48 +1,83 @@
 # ============================================================
-# Akyildiz Sevkiyat — Deploy Script
+# Akyildiz Sevkiyat — Deploy Script (release + symlink deseni)
 # Kullanim: .\deploy.ps1
+#
+# ON KOSUL (sunucuda bir kere yapilacak):
+#   1) Klasorler:
+#        sudo mkdir -p /var/www/releases/api /var/www/releases/web
+#        sudo chown -R ensaradmin:ensaradmin /var/www/releases
+#   2) Ilk symlink'ler (mevcut canli surumu ilk release olarak tasi):
+#        mv /var/www/sevkiyat-api /var/www/releases/api/initial
+#        ln -s /var/www/releases/api/initial /var/www/sevkiyat-api
+#        (ayni islemi sevkiyat-app icin de yap)
+#      NOT: systemd unit'i ve nginx root'u symlink yolunu gosterdigi
+#      icin hicbir config degisikligi gerekmez.
+#   3) sudoers (sudo visudo ile, sifresiz systemctl icin):
+#        ensaradmin ALL=(ALL) NOPASSWD: /usr/bin/systemctl stop sevkiyat-api, /usr/bin/systemctl start sevkiyat-api, /usr/bin/systemctl restart sevkiyat-api, /usr/bin/systemctl status sevkiyat-api
 # ============================================================
 
-# --- AYARLAR (sunucuya gore duzenle) ------------------------
 $SERVER        = "ensaradmin@204.168.205.59"
-$API_PATH      = "/var/www/sevkiyat-api"    # dotnet'in calistigi klasor
-$WEB_PATH      = "/var/www/sevkiyat-app"    # nginx'in serve ettigi frontend klasoru
-$SERVICE_NAME  = "sevkiyat-api"             # systemd servis adi
+$RELEASES_API  = "/var/www/releases/api"
+$RELEASES_WEB  = "/var/www/releases/web"
+$LINK_API      = "/var/www/sevkiyat-api"
+$LINK_WEB      = "/var/www/sevkiyat-app"
+$SERVICE_NAME  = "sevkiyat-api"
+$HEALTH_URL    = "http://localhost:5000/health"   # kendi health endpoint'ine gore duzelt
+$KEEP_RELEASES = 5
 $PUBLISH_DIR   = ".\publish"
 $CLIENT_DIR    = ".\client"
-# ------------------------------------------------------------
 
-Write-Host "`n=== [1/4] .NET publish ===" -ForegroundColor Cyan
+$STAMP = Get-Date -Format "yyyyMMdd-HHmmss"
+
+function Fail($msg) { Write-Error $msg; exit 1 }
+
+# --- [1/6] .NET publish -------------------------------------
+Write-Host "`n=== [1/6] .NET publish ===" -ForegroundColor Cyan
 if (Test-Path $PUBLISH_DIR) { Remove-Item $PUBLISH_DIR -Recurse -Force }
-dotnet publish Akyildiz.Sevkiyat.WebApi `
-    --configuration Release `
-    --output $PUBLISH_DIR `
-    --no-self-contained
-if ($LASTEXITCODE -ne 0) { Write-Error "dotnet publish basarisiz."; exit 1 }
+dotnet publish Akyildiz.Sevkiyat.WebApi --configuration Release --output $PUBLISH_DIR --no-self-contained
+if ($LASTEXITCODE -ne 0) { Fail "dotnet publish basarisiz." }
 
-Write-Host "`n=== [2/4] Vue frontend build ===" -ForegroundColor Cyan
+# --- [2/6] Vue build ----------------------------------------
+Write-Host "`n=== [2/6] Vue frontend build ===" -ForegroundColor Cyan
 Push-Location $CLIENT_DIR
 if (Test-Path "dist") { Remove-Item "dist" -Recurse -Force -ErrorAction SilentlyContinue }
 npm run build
-if ($LASTEXITCODE -ne 0) { Pop-Location; Write-Error "npm run build basarisiz."; exit 1 }
+$buildExit = $LASTEXITCODE
 Pop-Location
+if ($buildExit -ne 0) { Fail "npm run build basarisiz." }
 
-Write-Host "`n=== [3/4] Sunucuya kopyalama ===" -ForegroundColor Cyan
+# --- [3/6] Yeni release klasorlerine yukle -------------------
+# Canli surume DOKUNMADAN yan klasore yukluyoruz. Servis calismaya devam ediyor.
+Write-Host "`n=== [3/6] Release yukleniyor: $STAMP ===" -ForegroundColor Cyan
+ssh $SERVER "mkdir -p ${RELEASES_API}/${STAMP} ${RELEASES_WEB}/${STAMP}"
+if ($LASTEXITCODE -ne 0) { Fail "Sunucuda release klasoru olusturulamadi." }
 
-$SUDO_PASS = Read-Host -Prompt "Sudo sifresi" -AsSecureString
-$SUDO = [Runtime.InteropServices.Marshal]::PtrToStringAuto(
-    [Runtime.InteropServices.Marshal]::SecureStringToBSTR($SUDO_PASS))
+scp -r "${PUBLISH_DIR}/." "${SERVER}:${RELEASES_API}/${STAMP}/"
+if ($LASTEXITCODE -ne 0) { Fail "API dosyalari yuklenemedi. Canli surum etkilenmedi." }
 
-# API dosyalarini gonder (servis durdurularak)
-ssh $SERVER "echo '$SUDO' | sudo -S systemctl stop $SERVICE_NAME"
-ssh $SERVER "echo '$SUDO' | sudo -S rm -rf ${API_PATH}/*"
-scp -r "${PUBLISH_DIR}/." "${SERVER}:${API_PATH}/"
+scp -r "${CLIENT_DIR}/dist/." "${SERVER}:${RELEASES_WEB}/${STAMP}/"
+if ($LASTEXITCODE -ne 0) { Fail "Frontend dosyalari yuklenemedi. Canli surum etkilenmedi." }
 
-# Frontend dist'i gonder
-ssh $SERVER "echo '$SUDO' | sudo -S rm -rf ${WEB_PATH}/*"
-scp -r "client/dist/." "${SERVER}:${WEB_PATH}/"
+# --- [4/6] Atomik gecis (symlink swap) -----------------------
+Write-Host "`n=== [4/6] Symlink swap + servis restart ===" -ForegroundColor Cyan
+# ln -sfn: symlink'i tek hamlede yeni release'e cevirir
+ssh $SERVER "ln -sfn ${RELEASES_API}/${STAMP} ${LINK_API} && ln -sfn ${RELEASES_WEB}/${STAMP} ${LINK_WEB} && sudo systemctl restart ${SERVICE_NAME}"
+if ($LASTEXITCODE -ne 0) { Fail "Symlink/restart basarisiz. Rollback icin: .\rollback.ps1" }
 
-Write-Host "`n=== [4/4] Servisi baslat ===" -ForegroundColor Cyan
-ssh $SERVER "echo '$SUDO' | sudo -S systemctl start $SERVICE_NAME && sleep 3 && echo '$SUDO' | sudo -S systemctl status $SERVICE_NAME --no-pager -l"
+# --- [5/6] Health check --------------------------------------
+Write-Host "`n=== [5/6] Health check ===" -ForegroundColor Cyan
+Start-Sleep -Seconds 5
+ssh $SERVER "curl -sf --max-time 10 ${HEALTH_URL} > /dev/null"
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "HEALTH CHECK BASARISIZ! Uygulama ayakta degil." -ForegroundColor Red
+    Write-Host "Geri donmek icin: .\rollback.ps1" -ForegroundColor Yellow
+    exit 1
+}
+Write-Host "Health check OK." -ForegroundColor Green
 
-Write-Host "`nDeploy tamamlandi!" -ForegroundColor Green
+# --- [6/6] Eski release temizligi ----------------------------
+Write-Host "`n=== [6/6] Eski release'ler temizleniyor (son $KEEP_RELEASES kalir) ===" -ForegroundColor Cyan
+ssh $SERVER "ls -1dt ${RELEASES_API}/*/ | tail -n +$($KEEP_RELEASES + 1) | xargs -r rm -rf"
+ssh $SERVER "ls -1dt ${RELEASES_WEB}/*/ | tail -n +$($KEEP_RELEASES + 1) | xargs -r rm -rf"
+
+Write-Host "`nDeploy tamamlandi: $STAMP" -ForegroundColor Green
