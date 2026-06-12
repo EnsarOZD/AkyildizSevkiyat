@@ -4,6 +4,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Marka yazı tipi: Plus Jakarta Sans (tüm uygulama) ─────────────────────── */
+html {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+}
+
 /* ── Accessibility: keyboard focus ring ────────────────────────────────────── */
 /* Tailwind's preflight removes the default browser outline. Restore it for
    keyboard users via focus-visible (doesn't affect mouse clicks). */

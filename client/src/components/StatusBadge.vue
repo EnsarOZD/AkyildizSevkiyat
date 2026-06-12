@@ -1,5 +1,6 @@
 <template>
-  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold" :class="config.classes">
+  <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold" :class="config.classes">
+    <span class="w-1.5 h-1.5 rounded-full bg-current opacity-70"></span>
     {{ config.label }}
   </span>
 </template>
@@ -27,8 +28,8 @@ const SHIPMENT_MAP: Record<ShipmentStatus, StatusConfig> = {
   Created:             { label: 'Taslak',         classes: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-400' },
   AssignedToWarehouse: { label: 'Depoda',          classes: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400' },
   Picking:             { label: 'Toplanıyor',      classes: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400' },
-  ReadyForDispatch:    { label: 'Sevke Hazır',     classes: 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 transition-all' },
-  AssignedToVehicle:   { label: 'Araçta',          classes: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-400' },
+  ReadyForDispatch:    { label: 'Sevke Hazır',     classes: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 transition-all' },
+  AssignedToVehicle:   { label: 'Araçta',          classes: 'bg-violet-100 dark:bg-violet-900/30 text-violet-800 dark:text-violet-400' },
   Dispatched:          { label: 'Yolda',           classes: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400' },
   Delivered:           { label: 'Teslim Edildi',   classes: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' },
   ReturnedToWarehouse: { label: 'İade',            classes: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400' },

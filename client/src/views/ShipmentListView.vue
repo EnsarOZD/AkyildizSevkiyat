@@ -24,7 +24,7 @@
         <button
           @click="activeTab = 'clothing'; filters.status = ''; page = 1"
           :class="activeTab === 'clothing'
-            ? 'border-purple-500 text-purple-600'
+            ? 'border-blue-500 text-blue-600 dark:text-blue-400'
             : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'"
           class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition-colors"
         >
@@ -33,7 +33,7 @@
         <button
           @click="activeTab = 'passive'; filters.status = ''; page = 1"
           :class="activeTab === 'passive'
-            ? 'border-gray-500 text-gray-600'
+            ? 'border-blue-500 text-blue-600 dark:text-blue-400'
             : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'"
           class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition-colors"
         >
@@ -42,7 +42,7 @@
         <button
           @click="activeTab = 'other'; filters.status = ''; page = 1"
           :class="activeTab === 'other'
-            ? 'border-emerald-500 text-emerald-600'
+            ? 'border-blue-500 text-blue-600 dark:text-blue-400'
             : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'"
           class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition-colors"
         >
@@ -55,7 +55,7 @@
     <div v-if="activeTab === 'other'" v-role="['Admin', 'Manager', 'Accounting']" class="mb-4 flex justify-end">
       <button
         @click="manualShipmentModalOpen = true"
-        class="inline-flex items-center px-4 py-2 bg-emerald-600 text-white text-sm rounded-md hover:bg-emerald-700"
+        class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
       >
         + Manuel Sevkiyat Oluştur
       </button>
@@ -139,7 +139,7 @@
         <button
           @click="verifyNetsisTransfers"
           :disabled="verifyingNetsis"
-          class="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/40 disabled:opacity-50 transition-colors"
+          class="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:border-blue-400 dark:hover:border-blue-500 disabled:opacity-50 transition-colors"
           title="Netsis'e aktarılmış görünen siparişlerin Netsis'te hâlâ mevcut olup olmadığını kontrol eder. Silinmişlerin aktarım durumu sıfırlanır. Aktarılmamış ama Netsis'te mevcut olanlar otomatik işaretlenir."
         >
           <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -227,13 +227,13 @@
                 </td>
                 <td class="px-5 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{{ shipment.talepNo || '-' }}</td>
                 <td class="px-5 py-3 whitespace-nowrap text-sm font-mono text-gray-600 dark:text-gray-400">{{ shipment.externalOrderNumber || '-' }}</td>
-                <td class="px-5 py-3 whitespace-nowrap text-sm font-mono text-purple-600">{{ shipment.waybillNumber || '-' }}</td>
+                <td class="px-5 py-3 whitespace-nowrap text-sm font-mono text-gray-700 dark:text-gray-300">{{ shipment.waybillNumber || '-' }}</td>
                 <td class="px-5 py-3 whitespace-nowrap text-sm">
                   <div class="flex items-center gap-1.5">
                     <span class="font-medium text-gray-900 dark:text-gray-100">{{ shipment.projectCode }}</span>
                     <span
                       v-if="shipment.operationTypeValue === 1"
-                      class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 border border-purple-200 dark:border-purple-700"
+                      class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-violet-50 text-violet-600 dark:bg-violet-900/30 dark:text-violet-300 border border-violet-200 dark:border-purple-700"
                     >Kıyafet</span>
                   </div>
                   <div class="text-xs text-gray-400">{{ shipment.projectName }}</div>
@@ -252,14 +252,11 @@
                   <template v-for="info in [getDispatchInfo(shipment)]" :key="shipment.id + '-dispatch'">
                     <template v-if="info">
                       <div class="flex items-center gap-1.5">
-                        <span
-                          :class="{
-                            'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300': info.type === 'Kargo',
-                            'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300': info.type === 'Nakliye',
-                            'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300': info.type === 'Araç',
-                          }"
-                          class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold"
-                        >{{ info.type }}</span>
+                        <span class="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-gray-100 dark:bg-gray-800 text-blue-500 dark:text-blue-400 shrink-0">
+                          <svg v-if="info.type === 'Kargo'" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13h2l2-7h10l2 7h2M5 13v6h14v-6M8 19a1 1 0 100 2 1 1 0 000-2zm8 0a1 1 0 100 2 1 1 0 000-2z"/></svg>
+                          <svg v-else-if="info.type === 'Nakliye'" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M1 3h13v11H1zM14 7h4l3 3v4h-7M5 18a2 2 0 104 0 2 2 0 00-4 0zm11 0a2 2 0 104 0 2 2 0 00-4 0z"/></svg>
+                          <svg v-else class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8 6h8l3 6v5h-2a2 2 0 11-4 0H9a2 2 0 11-4 0H3v-5l3-6zM3 12h16"/></svg>
+                        </span>
                         <span class="text-gray-700 dark:text-gray-300">{{ info.label }}</span>
                       </div>
                       <div v-if="info.plate" class="text-xs text-gray-400 mt-0.5">{{ info.plate }}</div>
@@ -331,9 +328,7 @@
                   <span class="block text-xs text-gray-400">Gönderim</span>
                   <span
                     :class="{
-                      'bg-sky-100 text-sky-700': info.type === 'Kargo',
-                      'bg-amber-100 text-amber-700': info.type === 'Nakliye',
-                      'bg-green-100 text-green-700': info.type === 'Araç',
+                      'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300': true,
                     }"
                     class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold mr-1.5"
                   >{{ info.type }}</span>
@@ -396,7 +391,7 @@
     >
       <div
         v-if="selectedIds.size > 0"
-        class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-2xl shadow-2xl px-5 py-3"
+        class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-[#16305a] text-white border border-white/10 rounded-2xl shadow-2xl px-5 py-3"
       >
         <span class="text-sm font-medium">{{ selectedIds.size }} sevkiyat seçili</span>
         <div class="w-px h-5 bg-white/20 dark:bg-gray-900/20"></div>
@@ -404,10 +399,10 @@
           v-role="['Admin', 'Manager', 'Accounting']"
           @click="bulkExportToNetsis"
           :disabled="isBulkExporting"
-          class="flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-400 text-white text-sm font-semibold px-3 py-1.5 rounded-lg transition-colors"
+          class="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm font-semibold px-3 py-1.5 rounded-lg transition-colors"
         >
           <span v-if="isBulkExporting" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-          <span v-else>📤</span>
+          <svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
           {{ isBulkExporting ? 'Aktarılıyor...' : 'Netsis\'e Aktar' }}
         </button>
         <button
@@ -428,7 +423,7 @@
         </button>
         <button
           @click="selectedIds.clear()"
-          class="text-sm text-white/70 dark:text-gray-900/60 hover:text-white dark:hover:text-gray-900 px-2 py-1 rounded-lg transition-colors"
+          class="text-sm text-white/60 hover:text-white px-2 py-1 rounded-lg transition-colors"
         >
           İptal
         </button>
@@ -760,7 +755,7 @@
           <div v-else-if="cancelContacts.contacts.value.length === 0" class="text-xs text-gray-400 italic py-1">Harici mail adresi tanımlı değil.</div>
           <div v-else class="space-y-1 max-h-40 overflow-y-auto">
             <label v-for="c in cancelContacts.contacts.value" :key="c.id" class="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
-              <input type="checkbox" :checked="cancelContacts.selectedIds.value.has(c.id)" @change="cancelContacts.toggle(c.id)" class="h-4 w-4 rounded border-gray-300 text-indigo-600" />
+              <input type="checkbox" :checked="cancelContacts.selectedIds.value.has(c.id)" @change="cancelContacts.toggle(c.id)" class="h-4 w-4 rounded border-gray-300 text-blue-600" />
               <span class="text-sm text-gray-800 dark:text-gray-100">{{ c.name }}</span>
               <span class="text-xs text-gray-500 dark:text-gray-400">{{ c.email }}</span>
             </label>

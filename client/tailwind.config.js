@@ -9,6 +9,9 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Plus Jakarta Sans', ...defaultTheme.fontFamily.sans],
+      },
       screens: {
         // Sidebar ↔ alt navbar geçişi için özel kırılım.
         // < desktop  → mobil/tablet modu (gizli sidebar + alt navbar)
