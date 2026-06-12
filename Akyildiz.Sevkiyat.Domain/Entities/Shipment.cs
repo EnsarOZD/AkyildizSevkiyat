@@ -295,16 +295,13 @@ namespace Akyildiz.Sevkiyat.Domain.Entities
 
         public void UpdateDeliveryDate(DateTime newDate)
         {
-            if (Status != ShipmentStatus.Created && Status != ShipmentStatus.ReadyForDispatch)
-                throw new DomainException("Sevkiyat düzenlenemez. Yalnızca 'Taslak' veya 'Sevke Hazır' durumundaki sevkiyatlar düzenlenebilir.");
+            // Termin (teslim) tarihi yalnızca taslak (Created) sevkiyatlarda değiştirilebilir.
+            if (Status != ShipmentStatus.Created)
+                throw new DomainException("Termin tarihi yalnızca taslak sevkiyatlarda değiştirilebilir.");
 
             DeliveryDate = newDate;
-            // Only clear zone link for draft shipments; ReadyForDispatch stays in its zone
-            if (Status == ShipmentStatus.Created)
-            {
-                ZonePreparationId = null;
-                ZonePreparation = null;
-            }
+            ZonePreparationId = null;
+            ZonePreparation = null;
         }
 
         public void SetIrsaliyeInfo(string? irsaliyeNo, DateOnly? irsaliyeDate)

@@ -753,6 +753,20 @@
           Bu seçimde projeye "stokta olmadığı için gönderilememiştir" bildirimi e-postası gönderilecektir.
         </p>
 
+        <!-- Stokta yok: harici CC seçimi -->
+        <div v-if="cancelModal.reason === 'Stokta yok'" class="rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+          <p class="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-2">CC'ye eklenecek harici adresler <span class="text-gray-400 font-normal">(opsiyonel)</span></p>
+          <div v-if="cancelContacts.loading.value" class="text-xs text-gray-400 py-1">Yükleniyor...</div>
+          <div v-else-if="cancelContacts.contacts.value.length === 0" class="text-xs text-gray-400 italic py-1">Harici mail adresi tanımlı değil.</div>
+          <div v-else class="space-y-1 max-h-40 overflow-y-auto">
+            <label v-for="c in cancelContacts.contacts.value" :key="c.id" class="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
+              <input type="checkbox" :checked="cancelContacts.selectedIds.value.has(c.id)" @change="cancelContacts.toggle(c.id)" class="h-4 w-4 rounded border-gray-300 text-indigo-600" />
+              <span class="text-sm text-gray-800 dark:text-gray-100">{{ c.name }}</span>
+              <span class="text-xs text-gray-500 dark:text-gray-400">{{ c.email }}</span>
+            </label>
+          </div>
+        </div>
+
         <div class="flex gap-3 pt-1">
           <button @click="cancelModal.open = false" class="flex-1 py-2.5 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
             Vazgeç
@@ -787,6 +801,7 @@ import { ClipboardDocumentListIcon } from '@heroicons/vue/24/outline';
 import shipmentService, { type ZoneItem } from '../services/shipmentService';
 import transportService, { type Driver, type Vehicle } from '../services/transportService';
 import { useNotificationStore } from '../stores/notification';
+import { useExternalContacts } from '../composables/useExternalContacts';
 import { ApiErrorUtils } from '../utils/apiError';
 import StatusBadge from '../components/StatusBadge.vue';
 import SkeletonTable from '../components/SkeletonTable.vue';
@@ -1450,21 +1465,27 @@ const effectiveCancelReason = computed(() =>
   cancelModal.reason === 'Diğer' ? cancelModal.customReason.trim() : cancelModal.reason
 );
 
+// İptal mailinde (Stokta yok) CC seçilebilecek harici adresler
+const cancelContacts = useExternalContacts();
+
 const openCancelModal = (id: number) => {
   cancelModal.shipmentId = id;
   cancelModal.reason = 'Stokta yok';
   cancelModal.customReason = '';
   cancelModal.submitting = false;
   cancelModal.open = true;
+  cancelContacts.reset();
+  cancelContacts.load();
 };
 
 const confirmCancel = async () => {
   const reason = effectiveCancelReason.value;
   if (!reason) return;
   const notifyOutOfStock = cancelModal.reason === 'Stokta yok';
+  const extraCc = notifyOutOfStock ? cancelContacts.selectedEmails() : undefined;
   cancelModal.submitting = true;
   try {
-    const res = await shipmentService.cancelShipment(cancelModal.shipmentId, reason, notifyOutOfStock);
+    const res = await shipmentService.cancelShipment(cancelModal.shipmentId, reason, notifyOutOfStock, extraCc);
     cancelModal.open = false;
     if (notifyOutOfStock && res.emailSent) {
       notificationStore.add('Sevkiyat iptal edildi ve projeye bilgilendirme e-postası gönderildi.', 'success');

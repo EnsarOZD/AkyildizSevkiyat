@@ -140,6 +140,16 @@ export interface UpdateShipmentDetailsRequest {
     stockName: string;
     orderedQty: number;
   }[];
+  // Termin tarihi değiştiyse: 0=None, 1=Erteleme(Postpone), 2=Diğer(Other)
+  dateChangeReason?: number;
+  // Erteleme mailine CC eklenecek seçili harici adresler
+  extraCc?: string[];
+}
+
+export interface UpdateShipmentDetailsResult {
+  dateChanged: boolean;
+  emailSent: boolean;
+  emailError?: string | null;
 }
 
 export interface UpdateShipmentQuantitiesRequest {
@@ -281,8 +291,8 @@ const shipmentService = {
     await apiClient.post(`/shipments/${id}/toggle-status?setPassive=${setPassive}`, { reason });
   },
 
-  async cancelShipment(id: number, reason: string, notifyOutOfStock: boolean): Promise<{ emailSent: boolean; emailError?: string | null }> {
-    const res = await apiClient.post(`/shipments/${id}/cancel`, { reason, notifyOutOfStock });
+  async cancelShipment(id: number, reason: string, notifyOutOfStock: boolean, extraCc?: string[]): Promise<{ emailSent: boolean; emailError?: string | null }> {
+    const res = await apiClient.post(`/shipments/${id}/cancel`, { reason, notifyOutOfStock, extraCc });
     const d = res.data ?? {};
     return {
       emailSent: d.emailSent ?? d.EmailSent ?? false,
@@ -334,11 +344,17 @@ const shipmentService = {
     return response.data;
   },
 
-  async updateDetails(id: number, request: UpdateShipmentDetailsRequest): Promise<void> {
-    await apiClient.put(`/shipments/${id}/details`, {
+  async updateDetails(id: number, request: UpdateShipmentDetailsRequest): Promise<UpdateShipmentDetailsResult> {
+    const res = await apiClient.put(`/shipments/${id}/details`, {
       ...request,
       shipmentId: id
     });
+    const d = res.data ?? {};
+    return {
+      dateChanged: d.dateChanged ?? d.DateChanged ?? false,
+      emailSent: d.emailSent ?? d.EmailSent ?? false,
+      emailError: d.emailError ?? d.EmailError ?? null,
+    };
   },
 
   async updateQuantities(id: number, request: UpdateShipmentQuantitiesRequest): Promise<void> {

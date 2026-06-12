@@ -16,7 +16,11 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.CancelShipment
     /// sevkiyatlarda rezervasyon mevcut "taslağa al" akışıyla serbest bırakılır.
     /// "Stokta yok" sebebinde projeye eksik/iptal bildirim e-postası gönderilir.
     /// </summary>
-    public record CancelShipmentCommand(int ShipmentId, string Reason, bool NotifyOutOfStock = false)
+    public record CancelShipmentCommand(
+        int ShipmentId,
+        string Reason,
+        bool NotifyOutOfStock = false,
+        List<string>? ExtraCc = null)
         : IRequest<CancelShipmentResult>, IRequireRoles
     {
         public IReadOnlyList<string> AllowedRoles =>
@@ -102,7 +106,7 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.CancelShipment
                 try
                 {
                     await _mediator.Send(
-                        new SendComparisonEmailCommand(request.ShipmentId, CancellationReason: request.Reason),
+                        new SendComparisonEmailCommand(request.ShipmentId, request.ExtraCc, CancellationReason: request.Reason),
                         cancellationToken);
                     emailSent = true;
                 }

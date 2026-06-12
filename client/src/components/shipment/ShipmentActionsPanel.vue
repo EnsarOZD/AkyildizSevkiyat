@@ -63,7 +63,7 @@
 
         <button
           v-if="shipment.status === 'Created' || shipment.status === 'ReadyForDispatch'"
-          v-role="['Admin', 'Accounting']"
+          v-role="['Admin', 'Accounting', 'Manager']"
           @click="$emit('openEdit')"
           class="w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition text-sm font-medium"
         >Siparişi Düzenle</button>

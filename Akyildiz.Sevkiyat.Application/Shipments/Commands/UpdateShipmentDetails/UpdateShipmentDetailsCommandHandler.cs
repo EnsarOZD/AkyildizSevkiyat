@@ -1,44 +1,74 @@
 using Akyildiz.Sevkiyat.Application.Interfaces;
+using Akyildiz.Sevkiyat.Application.Shipments.Commands.SendPostponementEmail;
 using Akyildiz.Sevkiyat.Domain.Entities;
 using Akyildiz.Sevkiyat.Domain.Enums;
 using Akyildiz.Sevkiyat.Domain.Exceptions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.UpdateShipmentDetails
 {
-    public class UpdateShipmentDetailsCommandHandler : IRequestHandler<UpdateShipmentDetailsCommand, Unit>
+    public class UpdateShipmentDetailsCommandHandler : IRequestHandler<UpdateShipmentDetailsCommand, UpdateShipmentDetailsResult>
     {
         private readonly IApplicationDbContext _context;
         private readonly ICurrentUserService _currentUserService;
+        private readonly ISender _mediator;
+        private readonly ILogger<UpdateShipmentDetailsCommandHandler> _logger;
 
-        public UpdateShipmentDetailsCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+        public UpdateShipmentDetailsCommandHandler(
+            IApplicationDbContext context,
+            ICurrentUserService currentUserService,
+            ISender mediator,
+            ILogger<UpdateShipmentDetailsCommandHandler> logger)
         {
             _context = context;
             _currentUserService = currentUserService;
+            _mediator = mediator;
+            _logger = logger;
         }
 
-        public async Task<Unit> Handle(UpdateShipmentDetailsCommand request, CancellationToken cancellationToken)
+        public async Task<UpdateShipmentDetailsResult> Handle(UpdateShipmentDetailsCommand request, CancellationToken cancellationToken)
         {
             // 2. Fetch Shipment
             var shipment = await _context.Shipments
                 .Include(s => s.Lines)
                 .FirstOrDefaultAsync(s => s.Id == request.ShipmentId, cancellationToken);
-            
+
             if (shipment == null)
                 throw new NotFoundException("Shipment", request.ShipmentId);
 
-            // 3. Status Check (Critical)
+            // 3. Status Check — düzenleme yalnızca Taslak veya Sevke Hazır.
             if (shipment.Status != ShipmentStatus.Created && shipment.Status != ShipmentStatus.ReadyForDispatch)
-            {
                 throw new DomainException("Sevkiyat düzenlenemez. Yalnızca 'Taslak' veya 'Sevke Hazır' durumundaki sevkiyatlar düzenlenebilir.");
+
+            // 4. Termin tarihi değişimi — yalnızca taslak (Created) sevkiyatlarda.
+            var oldDate = shipment.DeliveryDate;
+            bool dateChanged = oldDate.Date != request.DeliveryDate.Date;
+
+            if (dateChanged)
+            {
+                if (shipment.Status != ShipmentStatus.Created)
+                    throw new DomainException("Termin tarihi yalnızca taslak sevkiyatlarda değiştirilebilir.");
+                if (request.DateChangeReason == DeliveryDateChangeReason.None)
+                    throw new DomainException("Termin tarihi değiştirildiğinde sebep seçilmelidir.");
+
+                shipment.UpdateDeliveryDate(request.DeliveryDate);
+
+                var reasonLabel = request.DateChangeReason == DeliveryDateChangeReason.Postpone ? "Erteleme" : "Diğer";
+                shipment.Histories.Add(new ShipmentHistory
+                {
+                    ShipmentId      = shipment.Id,
+                    OldStatus       = shipment.Status,
+                    NewStatus       = shipment.Status,
+                    ChangedByUserId = _currentUserService.UserId,
+                    ChangedAt       = DateTime.UtcNow,
+                    Description     = $"Termin tarihi değişti: {oldDate:dd.MM.yyyy} → {request.DeliveryDate:dd.MM.yyyy} (Sebep: {reasonLabel})"
+                });
             }
 
-            // 4. Update Header
-            // Using domain method ensures encapsulation if we add more logic there later
-            shipment.UpdateDeliveryDate(request.DeliveryDate);
-            
             // 5. Update Lines
+
             // Strategy: 
             // - Updates existing lines
             // - Removes lines not in the list? (User requirement: 'Stock Card swap' -> implies changing a line or adding/removing)
@@ -98,7 +128,37 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.UpdateShipmentDetails
             }
 
             await _context.SaveChangesAsync(cancellationToken);
-            return Unit.Value;
+            return await FinishAsync(request, dateChanged, cancellationToken);
+        }
+
+        /// <summary>
+        /// Kaydetme sonrası: termin ertelendiyse (Postpone) projeye bildirim maili gönderir.
+        /// Mail hatası işlemi başarısız saymaz — kayıt zaten yapılmıştır.
+        /// </summary>
+        private async Task<UpdateShipmentDetailsResult> FinishAsync(
+            UpdateShipmentDetailsCommand request, bool dateChanged, CancellationToken cancellationToken)
+        {
+            bool emailSent = false;
+            string? emailError = null;
+
+            if (dateChanged && request.DateChangeReason == DeliveryDateChangeReason.Postpone)
+            {
+                try
+                {
+                    await _mediator.Send(
+                        new SendPostponementEmailCommand(request.ShipmentId, request.ExtraCc),
+                        cancellationToken);
+                    emailSent = true;
+                }
+                catch (Exception ex)
+                {
+                    emailError = ex.Message;
+                    _logger.LogWarning(ex,
+                        "Erteleme bildirimi e-postası gönderilemedi. Sevkiyat #{ShipmentId}", request.ShipmentId);
+                }
+            }
+
+            return new UpdateShipmentDetailsResult(dateChanged, emailSent, emailError);
         }
     }
 }

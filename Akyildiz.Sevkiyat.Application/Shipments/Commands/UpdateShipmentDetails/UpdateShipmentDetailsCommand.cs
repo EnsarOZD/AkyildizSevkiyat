@@ -4,6 +4,16 @@ using MediatR;
 
 namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.UpdateShipmentDetails
 {
+    /// <summary>Termin (teslim) tarihi değiştiğinde girilen sebep. Postpone → projeye erteleme maili.</summary>
+    public enum DeliveryDateChangeReason
+    {
+        None = 0,       // tarih değişmedi
+        Postpone = 1,   // Erteleme — projeye bildirim maili gönderilir
+        Other = 2       // Diğer — mail gönderilmez
+    }
+
+    public record UpdateShipmentDetailsResult(bool DateChanged, bool EmailSent, string? EmailError);
+
     public class ShipmentLineUpdateDto
     {
         public int? LineId { get; set; }
@@ -24,11 +34,17 @@ namespace Akyildiz.Sevkiyat.Application.Shipments.Commands.UpdateShipmentDetails
         }
     }
 
-    public class UpdateShipmentDetailsCommand : IRequest<Unit>
+    public class UpdateShipmentDetailsCommand : IRequest<UpdateShipmentDetailsResult>
     {
         public int ShipmentId { get; set; }
         public DateTime DeliveryDate { get; set; }
         public List<ShipmentLineUpdateDto> Lines { get; set; } = new();
+
+        /// <summary>Termin tarihi değiştiyse sebep. Postpone → erteleme maili gönderilir.</summary>
+        public DeliveryDateChangeReason DateChangeReason { get; set; } = DeliveryDateChangeReason.None;
+
+        /// <summary>Erteleme mailine CC eklenecek seçili harici e-posta adresleri.</summary>
+        public List<string>? ExtraCc { get; set; }
 
         public UpdateShipmentDetailsCommand() { }
 

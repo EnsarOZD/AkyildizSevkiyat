@@ -24,7 +24,7 @@
             <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">Sevkiyat #{{ shipment.id }}</h1>
             <span
               v-if="shipment.operationTypeValue === 1"
-              class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 border border-purple-200 dark:border-purple-700 uppercase"
+              class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-violet-50 text-violet-600 dark:bg-violet-900/30 dark:text-violet-300 border border-violet-200 dark:border-violet-800 uppercase"
             >Kıyafet</span>
           </div>
           <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 break-words font-medium">{{ shipment.projectName }}</p>
@@ -270,7 +270,7 @@
             class="w-full border dark:border-gray-700 px-3 py-1.5 text-sm rounded focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100"
           />
           <label class="flex items-center gap-2 cursor-pointer select-none">
-            <input type="checkbox" v-model="newZoneIsOutOfCity" class="w-4 h-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500" />
+            <input type="checkbox" v-model="newZoneIsOutOfCity" class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
             <span class="text-sm text-gray-700 dark:text-gray-300">Şehir Dışı Bölge</span>
           </label>
           <div class="flex gap-2">
@@ -327,8 +327,8 @@
               <span v-for="v in activeVehicles.filter(v => v.id === vehicleForm.vehicleId)" :key="v.id"
                     :class="['text-xs font-medium px-2 py-0.5 rounded',
                       v.vehicleType === 0 ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' :
-                      v.vehicleType === 1 ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' :
-                                            'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300']">
+                      v.vehicleType === 1 ? 'bg-violet-50 text-violet-600 dark:bg-violet-900/30 dark:text-violet-300' :
+                                            'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300']">
                 {{ v.vehicleTypeName }}
               </span>
             </div>
@@ -338,16 +338,51 @@
       <template #footer>
         <button @click="showVehicleModal = false" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">İptal</button>
         <button @click="confirmAssignVehicle" :disabled="!vehicleForm.driverId || !vehicleForm.vehicleId"
-                class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 font-bold disabled:opacity-50 disabled:cursor-not-allowed">Kaydet</button>
+                class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-bold disabled:opacity-50 disabled:cursor-not-allowed">Kaydet</button>
       </template>
     </BaseModal>
 
     <!-- Edit Details Modal -->
-    <BaseModal :show="showEditModal" title="Siparişi Düzenle (Taslak)" maxWidth="5xl" @close="showEditModal = false">
+    <BaseModal :show="showEditModal" :title="editModalTitle" maxWidth="5xl" @close="showEditModal = false">
       <div class="mb-6 bg-blue-50 dark:bg-blue-950/40 p-4 rounded border border-blue-100 dark:border-blue-900">
-        <label class="block text-sm font-bold text-blue-800 dark:text-blue-300 mb-1">Teslim Tarihi</label>
-        <input v-model="editForm.deliveryDate" type="date" class="border dark:border-gray-700 p-2 rounded w-full md:w-64 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" />
+        <label class="block text-sm font-bold text-blue-800 dark:text-blue-300 mb-1">Termin (Teslim) Tarihi</label>
+        <input v-model="editForm.deliveryDate" type="date" :disabled="!canEditDate"
+               class="border dark:border-gray-700 p-2 rounded w-full md:w-64 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 disabled:opacity-60 disabled:cursor-not-allowed" />
+        <p v-if="!canEditDate" class="mt-1 text-xs text-gray-500 dark:text-gray-400">Termin tarihi yalnızca taslak sevkiyatlarda değiştirilebilir.</p>
+
+        <!-- Termin değiştiğinde sebep + (erteleme) harici CC -->
+        <div v-if="dateChanged" class="mt-4 space-y-3 border-t border-blue-200 dark:border-blue-900 pt-3">
+          <p class="text-sm font-bold text-blue-800 dark:text-blue-300">Termin tarihi değişti — sebep seçin <span class="text-red-500">*</span></p>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <label class="flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer flex-1"
+                   :class="dateChangeReason === 'Postpone' ? 'border-amber-400 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700' : 'border-gray-200 dark:border-gray-700'">
+              <input type="radio" value="Postpone" v-model="dateChangeReason" class="text-amber-600 focus:ring-amber-500" />
+              <span class="text-sm font-medium text-gray-800 dark:text-gray-200">Erteleme</span>
+              <span class="ml-auto text-[10px] font-bold text-amber-700 bg-amber-100 dark:bg-amber-900/30 px-2 py-0.5 rounded">PROJEYE MAİL</span>
+            </label>
+            <label class="flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer flex-1"
+                   :class="dateChangeReason === 'Other' ? 'border-blue-400 bg-blue-100 dark:bg-blue-900/30 dark:border-blue-700' : 'border-gray-200 dark:border-gray-700'">
+              <input type="radio" value="Other" v-model="dateChangeReason" class="text-blue-600 focus:ring-blue-500" />
+              <span class="text-sm font-medium text-gray-800 dark:text-gray-200">Diğer (mail gönderilmez)</span>
+            </label>
+          </div>
+
+          <!-- Erteleme: harici CC seçimi -->
+          <div v-if="dateChangeReason === 'Postpone'" class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+            <p class="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-2">CC'ye eklenecek harici adresler <span class="text-gray-400 font-normal">(opsiyonel)</span></p>
+            <div v-if="extContacts.loading.value" class="text-xs text-gray-400 py-1">Yükleniyor...</div>
+            <div v-else-if="extContacts.contacts.value.length === 0" class="text-xs text-gray-400 italic py-1">Harici mail adresi tanımlı değil.</div>
+            <div v-else class="space-y-1 max-h-40 overflow-y-auto">
+              <label v-for="c in extContacts.contacts.value" :key="c.id" class="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
+                <input type="checkbox" :checked="extContacts.selectedIds.value.has(c.id)" @change="extContacts.toggle(c.id)" class="h-4 w-4 rounded border-gray-300 text-blue-600" />
+                <span class="text-sm text-gray-800 dark:text-gray-100">{{ c.name }}</span>
+                <span class="text-xs text-gray-500 dark:text-gray-400">{{ c.email }}</span>
+              </label>
+            </div>
+          </div>
+        </div>
       </div>
+
       <div class="bg-white dark:bg-gray-900 rounded border dark:border-gray-700 shadow-sm pb-48 overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead class="bg-gray-50 dark:bg-gray-800">
@@ -412,7 +447,7 @@
           </tbody>
         </table>
       </div>
-      <button @click="addNewLine" class="mt-4 flex items-center gap-2 text-blue-600 hover:text-blue-800 font-semibold px-2 py-1 rounded hover:bg-blue-50 transition">
+      <button v-if="canEditLines" @click="addNewLine" class="mt-4 flex items-center gap-2 text-blue-600 hover:text-blue-800 font-semibold px-2 py-1 rounded hover:bg-blue-50 transition">
         <span class="text-xl font-bold">+</span> Yeni Satır Ekle
       </button>
       <template #footer>
@@ -526,18 +561,18 @@
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">İrsaliye No <span class="text-red-500">*</span></label>
           <input v-model="irsaliyeForm.irsaliyeNo" type="text" maxlength="50" placeholder="Örn: IRŞ-2024-001"
-            class="w-full border dark:border-gray-700 p-2 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono dark:bg-gray-800 dark:text-gray-100" />
+            class="w-full border dark:border-gray-700 p-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono dark:bg-gray-800 dark:text-gray-100" />
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">İrsaliye Tarihi <span class="text-red-500">*</span></label>
           <input v-model="irsaliyeForm.irsaliyeDate" type="date"
-            class="w-full border dark:border-gray-700 p-2 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-800 dark:text-gray-100" />
+            class="w-full border dark:border-gray-700 p-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-gray-100" />
         </div>
       </div>
       <template #footer>
         <button @click="showIrsaliyeModal = false" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">İptal</button>
         <button @click="saveIrsaliye" :disabled="!irsaliyeForm.irsaliyeNo || !irsaliyeForm.irsaliyeDate"
-          class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 font-bold disabled:bg-indigo-300">Kaydet</button>
+          class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-bold disabled:bg-blue-300">Kaydet</button>
       </template>
     </BaseModal>
 
@@ -692,6 +727,7 @@ import ShipmentHistoryTab from '../components/shipment/ShipmentHistoryTab.vue';
 import ShipmentActionsPanel from '../components/shipment/ShipmentActionsPanel.vue';
 import DriverAssignmentModal from '../components/DriverAssignmentModal.vue';
 import { useNotificationStore } from '../stores/notification';
+import { useExternalContacts } from '../composables/useExternalContacts';
 import { ApiErrorUtils } from '../utils/apiError';
 
 interface ShipmentDetail {
@@ -899,6 +935,19 @@ const editForm = ref<{ deliveryDate: string; lines: EditLine[] }>({ deliveryDate
 const qtyRefs = ref<any[]>([]);
 const stockRefs = ref<any[]>([]);
 const editingStockIdx = ref(-1);
+
+// Termin tarihi değişimi: sebep + (erteleme) harici CC
+const originalDeliveryDate = ref('');
+const dateChangeReason = ref<'' | 'Postpone' | 'Other'>('');
+const extContacts = useExternalContacts();
+const dateChanged = computed(() => !!editForm.value.deliveryDate && editForm.value.deliveryDate !== originalDeliveryDate.value);
+const canEditLines = computed(() => {
+  const st = shipment.value?.status;
+  return st === 'Created' || st === 'ReadyForDispatch';
+});
+// Termin (erteleme) yalnızca taslak sevkiyatlarda değiştirilebilir.
+const canEditDate = computed(() => shipment.value?.status === 'Created');
+const editModalTitle = computed(() => 'Siparişi Düzenle');
 
 // Quantities modal
 const showQuantitiesModal = ref(false);
@@ -1201,7 +1250,11 @@ const generateId = () => { try { return crypto.randomUUID(); } catch { return `$
 const openEditModal = () => {
   if (!shipment.value) return;
   editForm.value.deliveryDate = shipment.value.deliveryDate.split('T')[0] || '';
-  editForm.value.lines = shipment.value.lines.map(l => ({ 
+  originalDeliveryDate.value = editForm.value.deliveryDate;
+  dateChangeReason.value = '';
+  extContacts.reset();
+  extContacts.load();
+  editForm.value.lines = shipment.value.lines.map(l => ({
     id: generateId(), 
     lineId: l.id, 
     stockCode: l.localStockCode || l.stockCode, 
@@ -1245,20 +1298,37 @@ const removeLineAndFocus = (idx: number) => {
 };
 const saveDetails = async () => {
   if (!shipment.value) return;
-  const emptyIdx = editForm.value.lines.findIndex(l => !l.stockCode?.trim());
-  if (emptyIdx !== -1) { notificationStore.add('Lütfen tüm satırlar için stok seçimi yapınız.', 'warning'); requestAnimationFrame(() => { stockRefs.value[emptyIdx]?.focus(); }); return; }
+  if (canEditLines.value) {
+    const emptyIdx = editForm.value.lines.findIndex(l => !l.stockCode?.trim());
+    if (emptyIdx !== -1) { notificationStore.add('Lütfen tüm satırlar için stok seçimi yapınız.', 'warning'); requestAnimationFrame(() => { stockRefs.value[emptyIdx]?.focus(); }); return; }
+  }
+  // Termin değiştiyse sebep zorunlu
+  if (dateChanged.value && !dateChangeReason.value) {
+    notificationStore.add('Termin tarihi değişti — lütfen bir sebep seçin.', 'warning');
+    return;
+  }
+  const reasonCode = !dateChanged.value ? 0 : (dateChangeReason.value === 'Postpone' ? 1 : 2);
+  const extraCc = (dateChanged.value && dateChangeReason.value === 'Postpone') ? extContacts.selectedEmails() : undefined;
   try {
-    await shipmentService.updateDetails(shipment.value.id, { 
-      deliveryDate: editForm.value.deliveryDate, 
-      lines: editForm.value.lines.map(l => ({ 
-        lineId: l.lineId, 
-        stockCode: l.stockCode, 
-        stockName: l.stockName, 
-        orderedQty: Number(l.orderedQty), 
-        unit: Number(l.unit || 0) 
-      })) 
+    const res = await shipmentService.updateDetails(shipment.value.id, {
+      deliveryDate: editForm.value.deliveryDate,
+      lines: editForm.value.lines.map(l => ({
+        lineId: l.lineId,
+        stockCode: l.stockCode,
+        stockName: l.stockName,
+        orderedQty: Number(l.orderedQty),
+        unit: Number(l.unit || 0)
+      })),
+      dateChangeReason: reasonCode,
+      extraCc,
     } as any);
     showEditModal.value = false;
+    if (res.dateChanged && dateChangeReason.value === 'Postpone') {
+      if (res.emailSent) notificationStore.add('Güncellendi ve projeye erteleme bildirimi e-postası gönderildi.', 'success');
+      else notificationStore.add(`Güncellendi ancak e-posta gönderilemedi: ${res.emailError || 'bilinmeyen hata'}`, 'warning');
+    } else {
+      notificationStore.add('Güncellendi.', 'success');
+    }
     await fetchShipmentDetail();
   } catch (error) {
     notificationStore.add(ApiErrorUtils.getErrorMessage(error) || 'Güncelleme başarısız.', 'error');

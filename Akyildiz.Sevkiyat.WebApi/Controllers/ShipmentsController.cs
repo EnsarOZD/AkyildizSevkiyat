@@ -168,7 +168,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         public async Task<IActionResult> Cancel(int id, [FromBody] CancelShipmentRequest request)
         {
             var result = await _mediator.Send(
-                new CancelShipmentCommand(id, request.Reason, request.NotifyOutOfStock));
+                new CancelShipmentCommand(id, request.Reason, request.NotifyOutOfStock, request.ExtraCc));
             return Ok(result);
         }
 
@@ -177,8 +177,8 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
         public async Task<IActionResult> UpdateDetails(int id, [FromBody] UpdateShipmentDetailsCommand request)
         {
             if (id != request.ShipmentId) return BadRequest();
-            await _mediator.Send(request);
-            return NoContent();
+            var result = await _mediator.Send(request);
+            return Ok(result);
         }
 
         [HttpPost("{id:int}/mark-delivered")]
@@ -373,7 +373,7 @@ namespace Akyildiz.Sevkiyat.WebApi.Controllers
 
     public record SendComparisonEmailRequest(List<string>? CcEmails);
 
-    public record CancelShipmentRequest(string Reason, bool NotifyOutOfStock = false);
+    public record CancelShipmentRequest(string Reason, bool NotifyOutOfStock = false, List<string>? ExtraCc = null);
 
     public record DeliverStopRequest(
         string DeliveryRecipient,
