@@ -1,6 +1,6 @@
 <template>
   <div class="p-6 space-y-6">
-    <PageHeader title="Stok Yönetimi" subtitle="Sistemdeki stok tanımlarını yönetin" color="gray">
+    <PageHeader title="Stok Yönetimi" subtitle="Sistemdeki stok tanımlarını yönetin" color="blue">
       <template #icon>
         <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
@@ -98,74 +98,30 @@
       </div>
     </div>
 
-    <!-- Table -->
-    <div class="bg-white dark:bg-gray-900 shadow rounded overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead class="bg-gray-50 dark:bg-gray-800">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer select-none hover:text-gray-700 dark:hover:text-gray-200" @click="toggleSort('stockCode')">
-                      Kod <span class="ml-1">{{ sortIndicator('stockCode') }}</span>
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer select-none hover:text-gray-700 dark:hover:text-gray-200" @click="toggleSort('stockName')">
-                      Ad <span class="ml-1">{{ sortIndicator('stockName') }}</span>
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell cursor-pointer select-none hover:text-gray-700 dark:hover:text-gray-200" @click="toggleSort('unitId')">
-                      Birim <span class="ml-1">{{ sortIndicator('unitId') }}</span>
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell cursor-pointer select-none hover:text-gray-700 dark:hover:text-gray-200" @click="toggleSort('unitPrice')">
-                      Birim Fiyat <span class="ml-1">{{ sortIndicator('unitPrice') }}</span>
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">KDV %</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">Toplama Tipi</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">Kategori</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">Marka</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">Lokasyon</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">Netsis Kodu</th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">İşlem</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-                <tr v-if="loading">
-                    <td colspan="11" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">Yükleniyor...</td>
-                </tr>
-                <tr v-else-if="stocks.length === 0">
-                    <td colspan="11" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">Kayıt bulunamadı.</td>
-                </tr>
-                <tr v-for="stock in stocks" :key="stock.id" class="hover:bg-gray-50 dark:hover:bg-gray-800">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{{ stock.stockCode }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ stock.stockName }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden lg:table-cell">{{ stock.unit || '-' }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden lg:table-cell">{{ stock.unitPrice ? stock.unitPrice.toFixed(2) : '-' }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden lg:table-cell">
-                        {{ stock.taxRate !== undefined ? `%${stock.taxRate}` : '-' }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm hidden lg:table-cell">
-                        <span v-if="stock.pickingTypeId === 1" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                            Micro
-                        </span>
-                        <span v-else-if="stock.pickingTypeId === 2" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800">
-                            Macro
-                        </span>
-                        <span v-else class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
-                            Tanımsız
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden lg:table-cell">{{ stock.category || '-' }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden lg:table-cell">{{ stock.brand || '-' }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 font-mono text-xs hidden lg:table-cell">{{ stock.warehouseLocation || '-' }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 font-mono text-xs hidden lg:table-cell">{{ stock.netsisStockCode || '-' }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-end gap-2">
-                        <button v-role="['Admin','Manager','Warehouse']" @click="openAdjustModal(stock)" class="text-amber-600 hover:text-amber-900">Sayım</button>
-                        <button @click="openThresholdModal(stock)" class="text-emerald-600 hover:text-emerald-900">Eşik</button>
-                        <button @click="openModal(stock)" class="text-blue-600 hover:text-blue-900">Düzenle</button>
-                        <button @click="deleteStock(stock)" class="text-red-600 hover:text-red-900">Sil</button>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-      </div>
-    </div>
+    <!-- Tablo (masaüstü) + Kart (mobil) — ortak ResponsiveTable -->
+    <p v-if="loading" class="text-center text-gray-500 dark:text-gray-400 py-8">Yükleniyor...</p>
+    <ResponsiveTable v-else :columns="columns" :rows="stocks" row-key="id" default-sort="stockCode" empty-text="Kayıt bulunamadı.">
+      <template #stockCode="{ row }"><span class="font-medium text-gray-900 dark:text-gray-100">{{ row.stockCode }}</span></template>
+      <template #stockName="{ row }">{{ row.stockName }}</template>
+      <template #unit="{ row }">{{ row.unit || '—' }}</template>
+      <template #unitPrice="{ row }">{{ row.unitPrice ? row.unitPrice.toFixed(2) : '—' }}</template>
+      <template #taxRate="{ row }">{{ row.taxRate !== undefined && row.taxRate !== null ? '%' + row.taxRate : '—' }}</template>
+      <template #pickingTypeId="{ row }">
+        <span v-if="row.pickingTypeId === 1" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">Micro</span>
+        <span v-else-if="row.pickingTypeId === 2" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300">Macro</span>
+        <span v-else class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200">Tanımsız</span>
+      </template>
+      <template #category="{ row }">{{ row.category || '—' }}</template>
+      <template #brand="{ row }">{{ row.brand || '—' }}</template>
+      <template #warehouseLocation="{ row }"><span class="font-mono text-xs">{{ row.warehouseLocation || '—' }}</span></template>
+      <template #netsisStockCode="{ row }"><span class="font-mono text-xs">{{ row.netsisStockCode || '—' }}</span></template>
+      <template #actions="{ row }">
+        <button v-role="['Admin','Manager','Warehouse']" @click="openAdjustModal(row as Stock)" class="text-amber-600 hover:text-amber-900 dark:text-amber-400 text-sm font-medium">Sayım</button>
+        <button @click="openThresholdModal(row as Stock)" class="text-emerald-600 hover:text-emerald-900 dark:text-emerald-400 text-sm font-medium">Eşik</button>
+        <button @click="openModal(row as Stock)" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 text-sm font-medium">Düzenle</button>
+        <button @click="deleteStock(row as Stock)" class="text-red-600 hover:text-red-900 dark:text-red-400 text-sm font-medium">Sil</button>
+      </template>
+    </ResponsiveTable>
 
     <!-- Pagination -->
     <Pagination
@@ -436,6 +392,21 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import PageHeader from '../components/PageHeader.vue';
+import ResponsiveTable from '../components/ResponsiveTable.vue';
+
+// Ortak tablo kolon tanımı (masaüstü tablo + mobil kart). hideOnMobile → kartta gizli (ikincil).
+const columns = [
+  { key: 'stockCode',        label: 'Kod',        priority: true, mono: true, sortable: true },
+  { key: 'stockName',        label: 'Ad', sortable: true },
+  { key: 'pickingTypeId',    label: 'Toplama Tipi' },
+  { key: 'unitPrice',        label: 'Birim Fiyat', align: 'right' as const, sortable: true },
+  { key: 'unit',             label: 'Birim',       hideOnMobile: true, sortable: true },
+  { key: 'taxRate',          label: 'KDV %',       hideOnMobile: true },
+  { key: 'category',         label: 'Kategori',    hideOnMobile: true },
+  { key: 'brand',            label: 'Marka',       hideOnMobile: true },
+  { key: 'warehouseLocation',label: 'Lokasyon',    hideOnMobile: true },
+  { key: 'netsisStockCode',  label: 'Netsis Kodu', hideOnMobile: true },
+];
 import { stockService } from '../services/stockService';
 import type { Stock, ImportStocksResult } from '../services/stockService';
 import Pagination from '../components/Pagination.vue';
@@ -473,34 +444,7 @@ const clearFilters = () => {
     fetchStocks(1);
 };
 
-// Sort state (client-side)
-const sortBy = ref<string>('stockCode');
-const sortDir = ref<'asc' | 'desc'>('asc');
-
-const toggleSort = (col: string) => {
-    if (sortBy.value === col) {
-        sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc';
-    } else {
-        sortBy.value = col;
-        sortDir.value = 'asc';
-    }
-    sortStocks();
-};
-
-const sortIndicator = (col: string) => {
-    if (sortBy.value !== col) return '↕';
-    return sortDir.value === 'asc' ? '↑' : '↓';
-};
-
-const sortStocks = () => {
-    const dir = sortDir.value === 'asc' ? 1 : -1;
-    stocks.value = [...stocks.value].sort((a: any, b: any) => {
-        const av = a[sortBy.value] ?? '';
-        const bv = b[sortBy.value] ?? '';
-        if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
-        return String(av).localeCompare(String(bv), 'tr') * dir;
-    });
-};
+// Sıralama ResponsiveTable içinde (sortable kolonlar) yapılır — burada ayrı state yok.
 
 // Pagination State
 const currentPage = ref(1);
@@ -525,7 +469,6 @@ const fetchStocks = async (page = 1) => {
         currentPage.value = data.pageIndex;
         totalPages.value = data.totalPages;
         totalCount.value = data.totalCount;
-        sortStocks();
 
     } catch (e) {
         console.error(e);

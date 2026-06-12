@@ -1,6 +1,6 @@
 <template>
   <div>
-    <PageHeader title="Tedarikçi Yönetimi" subtitle="Tedarikçi tanımlarını yönetin" color="slate" class="mb-6">
+    <PageHeader title="Tedarikçi Yönetimi" subtitle="Tedarikçi tanımlarını yönetin" color="blue" class="mb-6">
       <template #icon>
         <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -26,49 +26,37 @@
       </div>
     </div>
 
-    <!-- Table -->
-    <div class="bg-white dark:bg-gray-900 shadow rounded-lg overflow-hidden">
-      <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-        <thead class="bg-gray-50 dark:bg-gray-800">
-          <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tedarikçi Adı</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Kod</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden sm:table-cell">E-posta</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">Oluşturulma / Güncelleme</th>
-            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">İşlemler</th>
-          </tr>
-        </thead>
-        <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-           <tr v-if="loading">
-             <td colspan="5" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">Yükleniyor...</td>
-           </tr>
-           <tr v-else-if="!suppliers || suppliers.length === 0">
-             <td colspan="5" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">Kayıt bulunamadı.</td>
-           </tr>
-           <tr v-for="supplier in suppliers" :key="supplier.id" class="hover:bg-gray-50 dark:hover:bg-gray-800">
-             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{{ supplier.name }}</td>
-             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ supplier.supplierCode || '-' }}</td>
-             <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 hidden sm:table-cell">
-               <div v-if="supplier.email" class="flex flex-wrap gap-1">
-                 <a v-for="addr in splitEmails(supplier.email)" :key="addr" :href="'mailto:' + addr"
-                    class="text-blue-600 hover:underline">{{ addr }}</a>
-               </div>
-               <span v-else class="text-gray-300 dark:text-gray-600">—</span>
-             </td>
-             <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 hidden lg:table-cell">
-               <div>{{ formatDate(supplier.createdAt) }}</div>
-               <div v-if="supplier.lastModified" class="text-xs text-gray-400 dark:text-gray-500">{{ formatDate(supplier.lastModified) }}</div>
-             </td>
-             <td class="px-6 py-4 whitespace-nowrap text-right space-x-3">
-               <button @click="openEdit(supplier)" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">Düzenle</button>
-               <button @click="confirmDelete(supplier)" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium">Sil</button>
-             </td>
-           </tr>
-        </tbody>
-      </table>
-      </div>
-    </div>
+    <!-- Tablo (masaüstü) + Kart (mobil) — ortak ResponsiveTable -->
+    <p v-if="loading" class="text-center text-gray-500 dark:text-gray-400 py-8">Yükleniyor...</p>
+    <ResponsiveTable
+      v-else
+      :columns="columns"
+      :rows="suppliers"
+      row-key="id"
+      empty-text="Kayıt bulunamadı."
+    >
+      <!-- Tedarikçi adı (kartta başlık) -->
+      <template #name="{ row }">{{ row.name }}</template>
+      <!-- Kod -->
+      <template #supplierCode="{ row }">{{ row.supplierCode || '—' }}</template>
+      <!-- E-posta (çoklu adres) -->
+      <template #email="{ row }">
+        <div v-if="row.email" class="flex flex-wrap gap-1 md:justify-start justify-end">
+          <a v-for="addr in splitEmails(row.email)" :key="addr" :href="'mailto:' + addr" class="text-blue-600 dark:text-blue-400 hover:underline">{{ addr }}</a>
+        </div>
+        <span v-else class="text-gray-300 dark:text-gray-600">—</span>
+      </template>
+      <!-- Oluşturulma / Güncelleme -->
+      <template #createdAt="{ row }">
+        <div>{{ formatDate(row.createdAt) }}</div>
+        <div v-if="row.lastModified" class="text-xs text-gray-400 dark:text-gray-500">{{ formatDate(row.lastModified) }}</div>
+      </template>
+      <!-- İşlemler -->
+      <template #actions="{ row }">
+        <button @click="openEdit(row)" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">Düzenle</button>
+        <button @click="confirmDelete(row)" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium">Sil</button>
+      </template>
+    </ResponsiveTable>
 
     <CreateSupplierModal
         :isOpen="showCreateModal"
@@ -108,12 +96,21 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue';
 import PageHeader from '../components/PageHeader.vue';
+import ResponsiveTable from '../components/ResponsiveTable.vue';
 import { supplierService } from '../services/supplierService';
 import { ApiErrorUtils } from '../utils/apiError';
 import { formatDate } from '../utils/dateFormat';
 import { useNotificationStore } from '../stores/notification';
 import CreateSupplierModal from '../components/CreateSupplierModal.vue';
 import BaseModal from '../components/BaseModal.vue';
+
+// Ortak tablo kolon tanımı (masaüstü tablo + mobil kart aynı kaynaktan)
+const columns = [
+  { key: 'name',         label: 'Tedarikçi Adı', priority: true },
+  { key: 'supplierCode', label: 'Kod',           mono: true },
+  { key: 'email',        label: 'E-posta' },
+  { key: 'createdAt',    label: 'Oluşturulma / Güncelleme', hideOnMobile: true },
+];
 
 const suppliers = ref<any[]>([]);
 const loading = ref(false);
