@@ -12,7 +12,7 @@
           v-model="form.depotName"
           type="text"
           placeholder="Örn: Akyıldız Ana Depo"
-          class="w-full border dark:border-gray-700 rounded-lg px-3 py-2 dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+          class="w-full border dark:border-gray-700 rounded-lg px-3 py-2 dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
         />
       </div>
 
@@ -23,7 +23,7 @@
             v-model="form.depotAddress"
             type="text"
             placeholder="Depo adresi"
-            class="flex-1 border dark:border-gray-700 rounded-lg px-3 py-2 dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+            class="flex-1 border dark:border-gray-700 rounded-lg px-3 py-2 dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
           />
           <BaseButton @click="geocodeAddress" :disabled="!form.depotAddress || geocoding" :loading="geocoding" variant="primary" class="whitespace-nowrap">
             {{ geocoding ? 'Aranıyor...' : 'Koordinatı Bul' }}
@@ -40,7 +40,7 @@
             type="number"
             step="0.000001"
             placeholder="41.0082"
-            class="w-full border dark:border-gray-700 rounded-lg px-3 py-2 dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+            class="w-full border dark:border-gray-700 rounded-lg px-3 py-2 dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
           />
         </div>
         <div>
@@ -50,7 +50,7 @@
             type="number"
             step="0.000001"
             placeholder="28.9784"
-            class="w-full border dark:border-gray-700 rounded-lg px-3 py-2 dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+            class="w-full border dark:border-gray-700 rounded-lg px-3 py-2 dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
           />
         </div>
       </div>

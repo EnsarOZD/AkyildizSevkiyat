@@ -10,14 +10,14 @@
     <div v-else class="space-y-2">
       <div v-for="r in rows" :key="r.shipmentId"
            class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-3 flex flex-wrap items-center gap-3"
-           :class="{ 'ring-2 ring-purple-400': selected.has(r.shipmentId) }">
+           :class="{ 'ring-2 ring-violet-400': selected.has(r.shipmentId) }">
         <input v-if="r.status === 'Created' || r.status === 'Picking'" type="checkbox"
                :checked="selected.has(r.shipmentId)" @change="toggleSel(r.shipmentId)"
-               class="h-5 w-5 rounded border-gray-300 text-purple-600 focus:ring-purple-500" />
+               class="h-5 w-5 rounded border-gray-300 text-violet-600 focus:ring-violet-500" />
         <div class="flex-1 min-w-[200px]">
           <div class="flex items-center gap-2">
             <span class="font-semibold text-gray-900 dark:text-gray-100">{{ r.externalOrderNumber || ('#' + r.shipmentId) }}</span>
-            <span v-if="r.talepNo" class="text-[11px] font-bold bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded">T:{{ r.talepNo }}</span>
+            <span v-if="r.talepNo" class="text-[11px] font-bold bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded">T:{{ r.talepNo }}</span>
             <span class="px-2 py-0.5 rounded-full text-[10px] font-bold" :class="statusClass(r.status)">{{ statusLabel(r.status) }}</span>
           </div>
           <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ r.projectCode }} — {{ r.projectName }} · {{ r.lineCount }} kalem</div>
@@ -29,7 +29,7 @@
         <div class="flex items-center gap-2">
           <button v-if="r.status === 'Created' || r.status === 'Picking'"
                   @click="prepare(r)" :disabled="busyId === r.shipmentId"
-                  class="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-semibold rounded-lg text-sm">
+                  class="px-4 py-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white font-semibold rounded-lg text-sm">
             Hazırla
           </button>
           <button v-else-if="r.status === 'ReadyForDispatch' && !r.netsisTransferred"
@@ -45,7 +45,7 @@
     <!-- Konsolide toplama çubuğu -->
     <div v-if="selected.size >= 2" class="sticky bottom-4">
       <button @click="openConsolidated" :disabled="consolidating"
-              class="w-full py-3.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-bold rounded-xl shadow-lg text-sm">
+              class="w-full py-3.5 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white font-bold rounded-xl shadow-lg text-sm">
         Konsolide Topla ({{ selected.size }} irsaliye)
       </button>
     </div>
@@ -111,7 +111,7 @@ function statusLabel(s: string) {
 function statusClass(s: string) {
   return s === 'Created' ? 'bg-gray-100 text-gray-700'
     : s === 'Picking' ? 'bg-yellow-100 text-yellow-800'
-    : 'bg-indigo-100 text-indigo-700';
+    : 'bg-blue-100 text-blue-700';
 }
 
 async function load() {

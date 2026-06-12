@@ -28,7 +28,7 @@
           <tr v-for="zone in zones" :key="zone.id" class="hover:bg-gray-50 dark:hover:bg-gray-800" :class="{ 'opacity-50': !zone.isActive }">
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{{ zone.name }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-center">
-              <span v-if="zone.isOutOfCity" class="text-xs font-bold bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 px-2 py-0.5 rounded-full">Evet</span>
+              <span v-if="zone.isOutOfCity" class="text-xs font-bold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-2 py-0.5 rounded-full">Evet</span>
               <span v-else class="text-xs text-gray-400 dark:text-gray-600">—</span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-center">
@@ -36,7 +36,7 @@
               <span v-else class="text-xs font-bold bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full">Pasif</span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-              <button @click="openEdit(zone)" class="text-indigo-600 hover:text-indigo-900 mr-4">Düzenle</button>
+              <button @click="openEdit(zone)" class="text-blue-600 hover:text-blue-900 mr-4">Düzenle</button>
               <button v-if="zone.isActive" @click="toggleActive(zone, false)" class="text-amber-600 hover:text-amber-800 mr-4">Pasife Al</button>
               <button v-else @click="toggleActive(zone, true)" class="text-green-600 hover:text-green-800 mr-4">Aktif Et</button>
               <button @click="confirmDelete(zone)" class="text-red-600 hover:text-red-900">Sil</button>
@@ -54,7 +54,7 @@
       <div class="space-y-4">
         <BaseInput v-model="form.name" label="Bölge Adı" placeholder="Örn: A Koridoru" />
         <label class="flex items-center gap-3 cursor-pointer select-none">
-          <input type="checkbox" v-model="form.isOutOfCity" class="w-4 h-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500" />
+          <input type="checkbox" v-model="form.isOutOfCity" class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
           <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Şehir Dışı Bölge</span>
           <span class="text-xs text-gray-400 dark:text-gray-500">(Micro/Macro yerine tek toplu hazırlık ekranı)</span>
         </label>

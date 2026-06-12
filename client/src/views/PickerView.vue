@@ -8,7 +8,7 @@
       <div class="flex gap-2 overflow-x-auto pb-1">
         <button v-for="g in groupChips" :key="g.key" @click="selectGroup(g.id)"
                 class="px-3 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap border"
-                :class="selectedGroupId === g.id ? 'bg-purple-600 text-white border-purple-600' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-700'">
+                :class="selectedGroupId === g.id ? 'bg-violet-600 text-white border-violet-600' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-700'">
           {{ g.name }}
         </button>
       </div>
@@ -20,17 +20,17 @@
                 class="w-full text-left p-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
           <div>
             <div class="font-semibold text-gray-900 dark:text-gray-100">{{ it.externalOrderNumber || ('#' + it.shipmentId) }}
-              <span v-if="it.pickingMode != null" class="text-[10px] font-bold bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded ml-1">{{ modeLabel(it.pickingMode) }}</span>
+              <span v-if="it.pickingMode != null" class="text-[10px] font-bold bg-violet-100 text-violet-700 px-1.5 py-0.5 rounded ml-1">{{ modeLabel(it.pickingMode) }}</span>
             </div>
             <div class="text-xs text-gray-500">{{ it.projectName }} · {{ it.lineCount }} kalem</div>
           </div>
-          <span class="text-purple-600 font-bold">Devam →</span>
+          <span class="text-violet-600 font-bold">Devam →</span>
         </button>
       </div>
 
       <!-- Sıradaki işi al -->
       <button v-if="queue.claimable.length" @click="claimNext" :disabled="busy"
-              class="w-full py-3.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-bold rounded-xl shadow text-sm">
+              class="w-full py-3.5 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white font-bold rounded-xl shadow text-sm">
         Sıradaki İşi Al ({{ queue.claimable.length }} bekliyor)
       </button>
 
@@ -41,11 +41,11 @@
           <div class="min-w-0">
             <div class="font-semibold text-gray-900 dark:text-gray-100 truncate">
               {{ it.externalOrderNumber || ('#' + it.shipmentId) }}
-              <span v-if="it.reservedForMe" class="text-[10px] font-bold bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded ml-1">size ayrıldı</span>
+              <span v-if="it.reservedForMe" class="text-[10px] font-bold bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded ml-1">size ayrıldı</span>
             </div>
             <div class="text-xs text-gray-500 truncate">{{ it.projectName }} · {{ it.lineCount }} kalem · sıra {{ it.queueOrder }}</div>
           </div>
-          <button @click="claim(it)" :disabled="busy" class="px-3 py-2 bg-purple-600 disabled:opacity-50 text-white font-semibold rounded-lg text-xs whitespace-nowrap">Al</button>
+          <button @click="claim(it)" :disabled="busy" class="px-3 py-2 bg-violet-600 disabled:opacity-50 text-white font-semibold rounded-lg text-xs whitespace-nowrap">Al</button>
         </div>
         <p v-if="!loading && queue.claimable.length === 0 && queue.mine.length === 0" class="text-center text-gray-400 text-sm py-8">Bu grupta bekleyen iş yok.</p>
       </div>
@@ -53,7 +53,7 @@
 
     <!-- ════ AKTİF İŞ ════ -->
     <template v-else>
-      <button @click="closeJob" class="text-sm text-purple-600 font-semibold">← Listeye dön</button>
+      <button @click="closeJob" class="text-sm text-violet-600 font-semibold">← Listeye dön</button>
       <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-3">
         <div class="font-bold text-gray-900 dark:text-gray-100">{{ active.externalOrderNumber || ('#' + active.shipmentId) }}</div>
         <div class="text-xs text-gray-500">{{ active.projectName }}</div>
@@ -64,7 +64,7 @@
         <p class="text-sm font-semibold text-gray-700 dark:text-gray-200">Toplama modu seçin</p>
         <div class="grid grid-cols-3 gap-2">
           <button v-for="m in [0,1,2]" :key="m" @click="chooseMode(m)" :disabled="busy"
-                  class="py-4 rounded-xl border-2 border-purple-200 dark:border-purple-800 font-bold text-purple-700 dark:text-purple-300 disabled:opacity-50">
+                  class="py-4 rounded-xl border-2 border-violet-200 dark:border-violet-800 font-bold text-violet-700 dark:text-violet-300 disabled:opacity-50">
             {{ modeLabel(m) }}
           </button>
         </div>
@@ -113,7 +113,7 @@
     <div v-if="active && active.pickingMode != null" class="fixed bottom-0 inset-x-0 bg-white dark:bg-gray-800 border-t dark:border-gray-700 p-3 flex gap-2 max-w-2xl mx-auto">
       <button @click="togglePause" class="px-3 py-3 bg-amber-50 text-amber-700 font-bold rounded-xl text-sm">{{ active.paused ? 'Devam' : 'Duraklat' }}</button>
       <button v-if="canPick" @click="saveProgress" :disabled="busy" class="px-3 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-bold rounded-xl text-sm">Kaydet</button>
-      <button v-if="canPick" @click="finishPicking" :disabled="busy" class="flex-1 py-3 bg-purple-600 disabled:opacity-50 text-white font-bold rounded-xl text-sm">Toplama Bitti</button>
+      <button v-if="canPick" @click="finishPicking" :disabled="busy" class="flex-1 py-3 bg-violet-600 disabled:opacity-50 text-white font-bold rounded-xl text-sm">Toplama Bitti</button>
     </div>
 
     <!-- Toplama bitti modalı -->
@@ -133,7 +133,7 @@
         </template>
         <div class="flex gap-2 pt-1">
           <button @click="finishOpen = false" class="flex-1 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm font-bold">Vazgeç</button>
-          <button @click="confirmFinish" :disabled="busy" class="flex-1 py-2 bg-purple-600 disabled:opacity-50 text-white rounded-lg text-sm font-bold">Onayla</button>
+          <button @click="confirmFinish" :disabled="busy" class="flex-1 py-2 bg-violet-600 disabled:opacity-50 text-white rounded-lg text-sm font-bold">Onayla</button>
         </div>
       </div>
     </div>

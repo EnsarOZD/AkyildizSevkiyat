@@ -12,7 +12,7 @@
 
     <!-- Clock -->
     <div class="flex flex-col items-end justify-center h-full">
-      <span class="text-sm font-black text-indigo-900 dark:text-indigo-100 leading-none tracking-tight" style="font-variant-numeric: tabular-nums;">
+      <span class="text-sm font-black text-blue-900 dark:text-blue-100 leading-none tracking-tight" style="font-variant-numeric: tabular-nums;">
         {{ formattedTime }}
       </span>
       <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest leading-none mt-1">

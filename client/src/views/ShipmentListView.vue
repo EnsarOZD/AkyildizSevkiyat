@@ -233,7 +233,7 @@
                     <span class="font-medium text-gray-900 dark:text-gray-100">{{ shipment.projectCode }}</span>
                     <span
                       v-if="shipment.operationTypeValue === 1"
-                      class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-violet-50 text-violet-600 dark:bg-violet-900/30 dark:text-violet-300 border border-violet-200 dark:border-purple-700"
+                      class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-violet-50 text-violet-600 dark:bg-violet-900/30 dark:text-violet-300 border border-violet-200 dark:border-violet-700"
                     >Kıyafet</span>
                   </div>
                   <div class="text-xs text-gray-400">{{ shipment.projectName }}</div>

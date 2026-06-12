@@ -11,7 +11,7 @@
           <button @click="downloadTemplate" class="bg-gray-600 text-white px-3 py-2 rounded-lg hover:bg-gray-700 text-sm font-medium">Şablon İndir</button>
           <button @click="exportStocks" class="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium">Excel İndir</button>
           <button @click="openImportModal" class="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 text-sm font-medium">Excel ile Yükle</button>
-          <button @click="openModal()" class="bg-indigo-600 text-white px-3 py-2 rounded-lg hover:bg-indigo-700 text-sm font-medium">+ Yeni Stok</button>
+          <button @click="openModal()" class="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium">+ Yeni Stok</button>
         </div>
       </template>
     </PageHeader>
@@ -29,11 +29,11 @@
         <button
           @click="filterOpen = !filterOpen"
           class="flex items-center gap-1 px-3 py-2 border rounded text-sm font-medium transition"
-          :class="activeFilterCount > 0 ? 'border-indigo-400 text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30' : 'border-gray-300 text-gray-600 dark:text-gray-400 dark:border-gray-700'"
+          :class="activeFilterCount > 0 ? 'border-blue-400 text-blue-600 bg-blue-50 dark:bg-blue-900/30' : 'border-gray-300 text-gray-600 dark:text-gray-400 dark:border-gray-700'"
         >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/></svg>
           Filtrele
-          <span v-if="activeFilterCount > 0" class="ml-1 bg-indigo-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">{{ activeFilterCount }}</span>
+          <span v-if="activeFilterCount > 0" class="ml-1 bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">{{ activeFilterCount }}</span>
         </button>
         <button v-if="activeFilterCount > 0" @click="clearFilters" class="text-xs text-red-500 hover:text-red-700 px-2 py-1 border border-red-300 rounded">Temizle</button>
       </div>
@@ -81,7 +81,7 @@
             <button
               @click="filterIsActive = null; debouncedSearch()"
               class="flex-1 px-2 py-1.5 transition"
-              :class="filterIsActive === null ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'"
+              :class="filterIsActive === null ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'"
             >Tümü</button>
             <button
               @click="filterIsActive = true; debouncedSearch()"
@@ -158,7 +158,7 @@
                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-end gap-2">
                         <button v-role="['Admin','Manager','Warehouse']" @click="openAdjustModal(stock)" class="text-amber-600 hover:text-amber-900">Sayım</button>
                         <button @click="openThresholdModal(stock)" class="text-emerald-600 hover:text-emerald-900">Eşik</button>
-                        <button @click="openModal(stock)" class="text-indigo-600 hover:text-indigo-900">Düzenle</button>
+                        <button @click="openModal(stock)" class="text-blue-600 hover:text-blue-900">Düzenle</button>
                         <button @click="deleteStock(stock)" class="text-red-600 hover:text-red-900">Sil</button>
                     </td>
                 </tr>
@@ -311,7 +311,7 @@
             </div>
             <div class="mt-6 flex justify-end gap-3">
                 <button @click="showModal = false" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">İptal</button>
-                <button @click="saveStock" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Kaydet</button>
+                <button @click="saveStock" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Kaydet</button>
             </div>
         </div>
     </div>

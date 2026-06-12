@@ -11,7 +11,7 @@
         <button
           v-role="['Admin', 'Manager', 'Accounting']"
           @click="openCreate"
-          class="px-4 py-2 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700 transition text-sm"
+          class="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition text-sm"
         >
           + Yeni Nakliyeci
         </button>
@@ -71,7 +71,7 @@
               </span>
             </td>
             <td class="px-4 py-3 text-right whitespace-nowrap">
-              <button v-role="['Admin', 'Manager', 'Accounting']" @click="openEdit(c)" class="text-indigo-600 hover:text-indigo-900 mr-3">Düzenle</button>
+              <button v-role="['Admin', 'Manager', 'Accounting']" @click="openEdit(c)" class="text-blue-600 hover:text-blue-900 mr-3">Düzenle</button>
               <button v-role="['Admin', 'Manager']" @click="remove(c)" class="text-red-600 hover:text-red-900">Sil</button>
             </td>
           </tr>
@@ -113,7 +113,7 @@
               <button @click="form.plates.splice(idx, 1)" class="px-3 rounded text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">✕</button>
             </div>
           </div>
-          <button @click="form.plates.push('')" class="mt-2 text-sm text-teal-600 hover:underline">+ Plaka Ekle</button>
+          <button @click="form.plates.push('')" class="mt-2 text-sm text-blue-600 hover:underline">+ Plaka Ekle</button>
         </div>
 
         <label v-if="isEditing" class="flex items-center gap-2 cursor-pointer">
@@ -123,7 +123,7 @@
       </div>
       <template #footer>
         <button @click="showModal = false" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">İptal</button>
-        <button @click="save" :disabled="!form.name.trim() || saving" class="px-4 py-2 bg-teal-600 text-white rounded hover:bg-teal-700 font-bold disabled:bg-teal-300">
+        <button @click="save" :disabled="!form.name.trim() || saving" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-bold disabled:bg-blue-300">
           {{ saving ? 'Kaydediliyor...' : 'Kaydet' }}
         </button>
       </template>

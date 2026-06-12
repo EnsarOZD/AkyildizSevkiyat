@@ -230,7 +230,7 @@
                 <td class="px-4 py-3 text-gray-700 dark:text-gray-300 hidden lg:table-cell">{{ loc.modulNo.toString().padStart(3,'0') }}</td>
                 <td class="px-4 py-3 text-gray-700 dark:text-gray-300 hidden lg:table-cell">{{ loc.kat.toString().padStart(2,'0') }}</td>
                 <td class="px-4 py-3 hidden sm:table-cell">
-                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300">
                     {{ locationTypeLabel(loc.locationTypeId) }}
                   </span>
                 </td>

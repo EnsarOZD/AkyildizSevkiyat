@@ -14,9 +14,9 @@
           <div
             class="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center"
             :class="step > s.n
-              ? 'bg-indigo-600 text-white'
+              ? 'bg-blue-600 text-white'
               : step === s.n
-                ? 'bg-indigo-600 text-white'
+                ? 'bg-blue-600 text-white'
                 : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'"
           >
             <svg v-if="step > s.n" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
@@ -26,7 +26,7 @@
           </div>
           <span
             class="text-xs font-medium hidden sm:inline"
-            :class="step === s.n ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400 dark:text-gray-500'"
+            :class="step === s.n ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'"
           >{{ s.label }}</span>
         </div>
         <div v-if="i < stepDefs.length - 1" class="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
@@ -46,7 +46,7 @@
               @click="vehicleType = v.value"
               class="flex-1 py-2 text-center transition-colors"
               :class="vehicleType === v.value
-                ? 'bg-indigo-600 text-white font-medium'
+                ? 'bg-blue-600 text-white font-medium'
                 : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'"
             >{{ v.label }}</button>
           </div>
@@ -58,7 +58,7 @@
             <input
               type="checkbox"
               v-model="forceBridgeCrossing"
-              class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+              class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
             <span class="text-xs text-gray-600 dark:text-gray-400">
               <span class="font-medium">{{ vehicleTypes.find(v => v.value === vehicleType)?.bridge }}</span>
@@ -74,8 +74,8 @@
           <!-- Radio group -->
           <div class="space-y-2">
             <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors"
-              :class="startLocationType === 1 ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
-              <input type="radio" :value="1" v-model="startLocationType" class="mt-0.5 accent-indigo-600" />
+              :class="startLocationType === 1 ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
+              <input type="radio" :value="1" v-model="startLocationType" class="mt-0.5 accent-blue-600" />
               <div class="flex-1">
                 <p class="text-sm font-medium text-gray-800 dark:text-gray-200">Depo</p>
                 <p v-if="depotLoaded && depotSettings?.depotName" class="text-xs text-gray-500 dark:text-gray-400">{{ depotSettings.depotName }}</p>
@@ -87,8 +87,8 @@
             </label>
 
             <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors"
-              :class="startLocationType === 0 ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
-              <input type="radio" :value="0" v-model="startLocationType" class="mt-0.5 accent-indigo-600" />
+              :class="startLocationType === 0 ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
+              <input type="radio" :value="0" v-model="startLocationType" class="mt-0.5 accent-blue-600" />
               <div class="flex-1">
                 <p class="text-sm font-medium text-gray-800 dark:text-gray-200">Mevcut Konum</p>
                 <p v-if="startLocationType === 0 && startLatitude && startLongitude" class="text-xs text-green-600">
@@ -96,15 +96,15 @@
                 </p>
                 <button v-if="startLocationType === 0" @click.prevent="getCurrentLocation()"
                   :disabled="gettingLocation"
-                  class="mt-1 text-xs text-indigo-600 hover:underline disabled:opacity-50">
+                  class="mt-1 text-xs text-blue-600 hover:underline disabled:opacity-50">
                   {{ gettingLocation ? 'Konum alınıyor...' : 'Konumu Yenile' }}
                 </button>
               </div>
             </label>
 
             <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors"
-              :class="startLocationType === 2 ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
-              <input type="radio" :value="2" v-model="startLocationType" class="mt-0.5 accent-indigo-600" />
+              :class="startLocationType === 2 ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'">
+              <input type="radio" :value="2" v-model="startLocationType" class="mt-0.5 accent-blue-600" />
               <div class="flex-1">
                 <p class="text-sm font-medium text-gray-800 dark:text-gray-200">Manuel Adres</p>
                 <input v-if="startLocationType === 2"
@@ -112,7 +112,7 @@
                   @click.stop
                   type="text"
                   placeholder="Başlangıç adresi girin"
-                  class="mt-2 w-full border dark:border-gray-600 rounded px-2 py-1.5 text-sm dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  class="mt-2 w-full border dark:border-gray-600 rounded px-2 py-1.5 text-sm dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
             </label>
@@ -124,7 +124,7 @@
         <!-- Seçenekler -->
         <div class="mt-4 flex flex-wrap gap-4 items-center border-t dark:border-gray-700 pt-4">
           <label class="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" v-model="returnToStart" class="accent-indigo-600" />
+            <input type="checkbox" v-model="returnToStart" class="accent-blue-600" />
             <span class="text-sm text-gray-700 dark:text-gray-300">Dönüş: Başlangıca Geri Dön</span>
           </label>
           <div class="flex items-center gap-2">
@@ -139,11 +139,11 @@
             v-model="projectSearch"
             type="text"
             placeholder="Proje ara..."
-            class="flex-1 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            class="flex-1 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <button
             @click="toggleSelectAll"
-            class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline whitespace-nowrap"
+            class="text-sm text-blue-600 dark:text-blue-400 hover:underline whitespace-nowrap"
           >
             {{ allFilteredSelected ? 'Tümünü kaldır' : 'Tümünü seç' }}
           </button>
@@ -159,14 +159,14 @@
             v-for="project in filteredProjects"
             :key="project.code"
             class="flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 border-b last:border-b-0 dark:border-gray-700"
-            :class="{ 'bg-indigo-50 dark:bg-indigo-900/20': selectedCodes.has(project.code) }"
+            :class="{ 'bg-blue-50 dark:bg-blue-900/20': selectedCodes.has(project.code) }"
           >
             <input
               type="checkbox"
               :value="project.code"
               :checked="selectedCodes.has(project.code)"
               @change="toggleProject(project.code)"
-              class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+              class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2">
@@ -186,7 +186,7 @@
           <button
             @click="goToStep2"
             :disabled="selectedCodes.size === 0 || comparingIss"
-            class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+            class="px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
           >
             <span v-if="comparingIss">
               <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
@@ -253,7 +253,7 @@
                       type="checkbox"
                       :checked="getSyncApproval(result.projectCode).approveNameUpdate"
                       @change="setSyncApproval(result.projectCode, 'name', ($event.target as HTMLInputElement).checked)"
-                      class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                      class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
                   </td>
                 </tr>
@@ -270,7 +270,7 @@
                       type="checkbox"
                       :checked="getSyncApproval(result.projectCode).approveAddressUpdate"
                       @change="setSyncApproval(result.projectCode, 'address', ($event.target as HTMLInputElement).checked)"
-                      class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                      class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
                   </td>
                 </tr>
@@ -299,7 +299,7 @@
             <button
               @click="runOptimization"
               :disabled="optimizing"
-              class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+              class="px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
             >
               <svg v-if="optimizing" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
@@ -319,15 +319,15 @@
       <!-- Summary cards -->
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div class="bg-white dark:bg-gray-900 rounded-lg shadow p-3 text-center">
-          <div class="text-2xl font-bold text-indigo-600">{{ manualStops.length }}</div>
+          <div class="text-2xl font-bold text-blue-600">{{ manualStops.length }}</div>
           <div class="text-xs text-gray-500 mt-1">Durak</div>
         </div>
         <div class="bg-white dark:bg-gray-900 rounded-lg shadow p-3 text-center">
-          <div class="text-2xl font-bold text-indigo-600">{{ formatDistance(optimizationResult.totalDistance) }}</div>
+          <div class="text-2xl font-bold text-blue-600">{{ formatDistance(optimizationResult.totalDistance) }}</div>
           <div class="text-xs text-gray-500 mt-1">Toplam Mesafe</div>
         </div>
         <div class="bg-white dark:bg-gray-900 rounded-lg shadow p-3 text-center">
-          <div class="text-2xl font-bold text-indigo-600">{{ formatDuration(optimizationResult.totalDuration) }}</div>
+          <div class="text-2xl font-bold text-blue-600">{{ formatDuration(optimizationResult.totalDuration) }}</div>
           <div class="text-xs text-gray-500 mt-1">Tahmini Süre</div>
         </div>
         <div class="bg-white dark:bg-gray-900 rounded-lg shadow p-3 text-center">
@@ -376,12 +376,12 @@
         <button
           @click="mapView = 'list'"
           class="flex-1 py-2 font-medium transition-colors"
-          :class="mapView === 'list' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400'"
+          :class="mapView === 'list' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400'"
         >Liste</button>
         <button
           @click="mapView = 'map'"
           class="flex-1 py-2 font-medium transition-colors"
-          :class="mapView === 'map' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400'"
+          :class="mapView === 'map' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400'"
         >Harita</button>
       </div>
 
@@ -396,7 +396,7 @@
           <div class="px-4 py-3 border-b dark:border-gray-700 flex items-center justify-between">
             <div class="flex items-center gap-3">
               <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Optimize Edilmiş Rota</h2>
-              <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300">
+              <span class="text-xs px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
                 {{ vehicleTypes.find(v => v.value === vehicleType)?.label ?? vehicleType }}
               </span>
             </div>
@@ -421,7 +421,7 @@
               @dragend="onDragEnd"
               class="flex items-start gap-3 px-4 py-3 cursor-grab active:cursor-grabbing select-none transition-colors"
               :class="[
-                dragOverIndex === idx ? 'bg-indigo-50 dark:bg-indigo-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800',
+                dragOverIndex === idx ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800',
                 dragIndexRef === idx ? 'opacity-40' : '',
               ]"
             >
@@ -437,7 +437,7 @@
                 </svg>
               </div>
               <!-- Number badge -->
-              <div class="flex-shrink-0 w-7 h-7 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 flex items-center justify-center text-xs font-bold">
+              <div class="flex-shrink-0 w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 flex items-center justify-center text-xs font-bold">
                 {{ idx + 1 }}
               </div>
               <!-- Content -->
@@ -475,7 +475,7 @@
             </button>
             <button
               @click="resetWizard"
-              class="px-3 py-2 text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+              class="px-3 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
             >
               Yeni Rota
             </button>

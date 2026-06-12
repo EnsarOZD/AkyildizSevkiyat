@@ -64,7 +64,7 @@
                             <span v-else class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Pasif</span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button @click="openDriverModal(driver)" class="text-indigo-600 hover:text-indigo-900 mr-4">Düzenle</button>
+                            <button @click="openDriverModal(driver)" class="text-blue-600 hover:text-blue-900 mr-4">Düzenle</button>
                             <button @click="deleteDriver(driver.id)" class="text-red-600 hover:text-red-900">Sil</button>
                         </td>
                     </tr>
@@ -99,9 +99,8 @@
                         <td class="px-6 py-4 whitespace-nowrap hidden sm:table-cell">
                           <span class="px-2 py-0.5 text-xs rounded-full font-medium"
                             :class="{
-                              'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300': vehicle.vehicleType === 0,
-                              'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300': vehicle.vehicleType === 1,
-                              'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300': vehicle.vehicleType === 2,
+                              'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300': vehicle.vehicleType === 0 || vehicle.vehicleType === 2,
+                              'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300': vehicle.vehicleType === 1,
                             }">{{ (vehicle.vehicleTypeName || ['Kamyon','Kamyonet','Minibüs'][vehicle.vehicleType]) ?? 'Kamyon' }}</span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden lg:table-cell">{{ vehicle.description || vehicle.capacity || '—' }}</td>
@@ -116,7 +115,7 @@
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
                             <button v-if="vehicle.qrCode" @click="openQrModal(vehicle)" class="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300">QR Görüntüle</button>
                             <button v-else @click="generateQr(vehicle)" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">QR Oluştur</button>
-                            <button @click="openVehicleModal(vehicle)" class="text-indigo-600 hover:text-indigo-900">Düzenle</button>
+                            <button @click="openVehicleModal(vehicle)" class="text-blue-600 hover:text-blue-900">Düzenle</button>
                             <button @click="deleteVehicle(vehicle.id)" class="text-red-600 hover:text-red-900">Sil</button>
                         </td>
                     </tr>

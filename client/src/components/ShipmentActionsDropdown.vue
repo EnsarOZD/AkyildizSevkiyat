@@ -47,7 +47,7 @@
           <button
             v-if="can('markReady')"
             @click="act('markReady')"
-            class="menu-item text-purple-700 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+            class="menu-item text-violet-700 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20"
           >
             <CheckCircleIcon class="w-4 h-4" />
             Hazır İşaretle

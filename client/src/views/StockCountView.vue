@@ -11,7 +11,7 @@
         <button
           v-role="['Admin', 'Manager']"
           @click="openCreateModal"
-          class="px-4 py-2 bg-indigo-600 text-white rounded font-semibold hover:bg-indigo-700 transition"
+          class="px-4 py-2 bg-blue-600 text-white rounded font-semibold hover:bg-blue-700 transition"
         >
           + Yeni Sayım Başlat
         </button>
@@ -56,7 +56,7 @@
               <td class="px-4 py-3 text-right">
                 <button
                   @click="openCount(c.id)"
-                  class="text-xs px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                  class="text-xs px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
                 >
                   {{ c.status === 'Draft' ? 'Sayıma Devam Et' : 'Görüntüle' }}
                 </button>
@@ -143,7 +143,7 @@
       <div v-if="activeCount.status === 'Draft'" class="bg-white dark:bg-gray-900 rounded-lg shadow p-4 mb-4 flex items-center gap-4">
         <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-3">
           <div
-            class="bg-indigo-500 h-3 rounded-full transition-all"
+            class="bg-blue-500 h-3 rounded-full transition-all"
             :style="{ width: progressPct + '%' }"
           />
         </div>
@@ -201,7 +201,7 @@
                   type="number"
                   min="0"
                   step="0.01"
-                  class="w-24 border rounded px-2 py-1 text-right text-sm focus:ring-2 focus:ring-indigo-400 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100"
+                  class="w-24 border rounded px-2 py-1 text-right text-sm focus:ring-2 focus:ring-blue-400 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100"
                   :class="{ 'border-yellow-400 bg-yellow-50': lineEdits[line.id]!.actualQty == null }"
                   placeholder="?"
                 />
@@ -216,7 +216,7 @@
                   v-model="lineEdits[line.id]!.note"
                   type="text"
                   placeholder="opsiyonel"
-                  class="w-full border rounded px-2 py-1 text-xs focus:ring-2 focus:ring-indigo-400 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100"
+                  class="w-full border rounded px-2 py-1 text-xs focus:ring-2 focus:ring-blue-400 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100"
                 />
                 <span v-else class="text-xs text-gray-500 dark:text-gray-400">{{ line.note || '' }}</span>
               </td>
@@ -230,16 +230,16 @@
     <!-- Create Modal -->
     <BaseModal :show="showCreateModal" title="Yeni Sayım Başlat" maxWidth="sm" @close="showCreateModal = false">
       <div class="space-y-4">
-        <p class="text-sm text-gray-600 dark:text-gray-400 bg-indigo-50 border border-indigo-100 rounded p-3">
+        <p class="text-sm text-gray-600 dark:text-gray-400 bg-blue-50 border border-blue-100 rounded p-3">
           Tüm aktif stok kalemleri mevcut sistematik miktarlarıyla sayım formuna eklenir.
         </p>
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sayım Tarihi <span class="text-red-500">*</span></label>
-          <input v-model="createForm.countDate" type="date" class="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-indigo-400 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100" />
+          <input v-model="createForm.countDate" type="date" class="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-blue-400 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100" />
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Not</label>
-          <textarea v-model="createForm.note" rows="2" class="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 resize-none placeholder-gray-400 dark:placeholder-gray-600 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100" placeholder="Opsiyonel..." />
+          <textarea v-model="createForm.note" rows="2" class="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 resize-none placeholder-gray-400 dark:placeholder-gray-600 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100" placeholder="Opsiyonel..." />
         </div>
       </div>
       <template #footer>
@@ -247,7 +247,7 @@
         <button
           @click="submitCreate"
           :disabled="!createForm.countDate || creating"
-          class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 font-bold disabled:bg-indigo-300"
+          class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-bold disabled:bg-blue-300"
         >
           {{ creating ? 'Oluşturuluyor...' : 'Sayımı Başlat' }}
         </button>

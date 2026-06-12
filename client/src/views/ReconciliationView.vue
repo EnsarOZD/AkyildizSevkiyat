@@ -19,15 +19,15 @@
     </PageHeader>
 
     <!-- Last run result banner -->
-    <div v-if="lastRunResult" class="mb-5 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl p-4 flex flex-wrap items-center gap-4">
-      <span class="text-sm font-bold text-indigo-700 dark:text-indigo-400">Son çalıştırma sonucu:</span>
-      <span class="text-sm text-indigo-600 dark:text-indigo-300">
+    <div v-if="lastRunResult" class="mb-5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 flex flex-wrap items-center gap-4">
+      <span class="text-sm font-bold text-blue-700 dark:text-blue-400">Son çalıştırma sonucu:</span>
+      <span class="text-sm text-blue-600 dark:text-blue-300">
         <b>{{ lastRunResult.newIssues }}</b> yeni sorun,
         <b>{{ lastRunResult.autoResolved }}</b> otomatik çözüldü,
         <b>{{ lastRunResult.totalChecked }}</b> kayıt kontrol edildi
-        <span class="text-indigo-400">({{ lastRunResult.durationMs }}ms)</span>
+        <span class="text-blue-400">({{ lastRunResult.durationMs }}ms)</span>
       </span>
-      <button @click="lastRunResult = null" class="ml-auto text-indigo-400 hover:text-indigo-600 text-lg leading-none">&times;</button>
+      <button @click="lastRunResult = null" class="ml-auto text-blue-400 hover:text-blue-600 text-lg leading-none">&times;</button>
     </div>
 
     <!-- Open Summary Cards -->
@@ -37,7 +37,7 @@
         :key="key"
         class="bg-white dark:bg-gray-900 border rounded-xl p-3 cursor-pointer transition-colors"
         :class="filters.checkType === key
-          ? 'border-indigo-400 ring-2 ring-indigo-200 dark:ring-indigo-800'
+          ? 'border-blue-400 ring-2 ring-blue-200 dark:ring-blue-800'
           : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'"
         @click="toggleCheckTypeFilter(key as ReconciliationCheckType)"
       >
@@ -93,7 +93,7 @@
 
       <!-- Loading skeleton -->
       <div v-if="loading" class="p-8 flex justify-center">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
 
       <!-- Empty state -->
@@ -302,7 +302,7 @@ const checkTypeClass = (type: ReconciliationCheckType) => {
   const map: Record<ReconciliationCheckType, string> = {
     IssQtyMismatch:        'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400',
     PickingIncomplete:     'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400',
-    NetsisTransferMissing: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400',
+    NetsisTransferMissing: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-400',
     IrsaliyeMissing:       'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-400',
     IssCoverageGap:        'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
   };

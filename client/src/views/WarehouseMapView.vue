@@ -139,8 +139,8 @@ const typeColors = [
   { id: 2, label: 'Giriş',           bg: 'bg-emerald-500' },
   { id: 3, label: 'Çıkış',           bg: 'bg-red-500' },
   { id: 4, label: 'Karantina',       bg: 'bg-orange-500' },
-  { id: 5, label: 'Hazırlama',       bg: 'bg-purple-500' },
-  { id: 6, label: 'Toplama Gözü',   bg: 'bg-teal-500' },
+  { id: 5, label: 'Hazırlama',       bg: 'bg-violet-500' },
+  { id: 6, label: 'Toplama Gözü',   bg: 'bg-blue-500' },
 ];
 
 function typeLabelById(id: number) {

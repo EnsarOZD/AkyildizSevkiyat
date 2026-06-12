@@ -26,7 +26,7 @@
               <span class="font-semibold text-gray-900 dark:text-gray-100 truncate">{{ d.projectName }}</span>
               <span v-if="d.isCompleted" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">Tamamlandı</span>
               <span v-else-if="d.isExpired" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300">Süresi doldu</span>
-              <span v-else class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400">Aktif</span>
+              <span v-else class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">Aktif</span>
             </div>
             <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
               {{ d.carrierName }}<span v-if="d.carrierPhone"> · {{ d.carrierPhone }}</span> · {{ d.shipmentCount }} sevkiyat

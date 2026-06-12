@@ -39,7 +39,7 @@
               <!-- PO Header -->
               <div class="flex items-start justify-between">
                 <div>
-                  <span class="text-[10px] font-black text-indigo-500 uppercase tracking-widest">{{ alloc.purchaseOrderNumber }}</span>
+                  <span class="text-[10px] font-black text-blue-500 uppercase tracking-widest">{{ alloc.purchaseOrderNumber }}</span>
                   <p class="text-sm font-bold text-gray-800 dark:text-gray-200 leading-tight mt-0.5">{{ alloc.supplierNameSnapshot }}</p>
                 </div>
                 <div class="text-right">
@@ -58,7 +58,7 @@
                     min="0"
                     step="any"
                     inputmode="decimal"
-                    class="w-full px-3 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-base font-black text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-center"
+                    class="w-full px-3 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-base font-black text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center"
                     placeholder="0"
                     @input="onReceivedChange(alloc)"
                   />
@@ -74,7 +74,7 @@
                     class="w-full px-3 py-2.5 bg-white dark:bg-gray-900 border rounded-xl text-base font-black text-center focus:ring-2 focus:border-transparent"
                     :class="alloc.rejectedQty > 0
                       ? 'border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 focus:ring-red-500'
-                      : 'border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 focus:ring-indigo-500'"
+                      : 'border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 focus:ring-blue-500'"
                     placeholder="0"
                     @input="onRejectedChange(alloc)"
                   />
@@ -131,7 +131,7 @@
               :disabled="!canSave"
               class="flex-[2] py-3 rounded-2xl text-sm font-black text-white transition-all"
               :class="canSave
-                ? 'bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98]'
+                ? 'bg-blue-600 hover:bg-blue-700 active:scale-[0.98]'
                 : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'"
             >
               {{ existingEntry ? 'Güncelle' : 'Listeye Ekle' }}

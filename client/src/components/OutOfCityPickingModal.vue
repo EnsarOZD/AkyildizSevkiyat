@@ -7,7 +7,7 @@
         <div class="overflow-hidden">
           <h3 class="text-base md:text-lg font-bold text-gray-800 dark:text-gray-200 truncate">{{ projectName }}</h3>
           <div class="flex items-center gap-2">
-            <span class="text-xs font-bold px-2 py-0.5 bg-teal-100 text-teal-700 rounded">Şehir Dışı</span>
+            <span class="text-xs font-bold px-2 py-0.5 bg-blue-100 text-blue-700 rounded">Şehir Dışı</span>
             <span class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ zoneName }}</span>
             <span class="text-xs text-gray-400 dark:text-gray-600">· {{ items.length }} Kalem</span>
           </div>
@@ -22,7 +22,7 @@
       <!-- Content -->
       <div class="flex-1 overflow-y-auto p-2 md:p-4 space-y-2 relative">
         <div v-if="loading" class="flex flex-col items-center justify-center h-40 gap-3 text-gray-500 dark:text-gray-400">
-          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           <span class="text-sm">Yükleniyor...</span>
         </div>
 
@@ -38,14 +38,14 @@
               <div class="flex items-center gap-3">
                 <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">İlerleme</span>
                 <button @click="setAllFull"
-                        class="text-xs font-bold text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-900/20 hover:bg-teal-100 dark:hover:bg-teal-900/40 border border-teal-300 dark:border-teal-700 px-3 py-1.5 rounded-lg transition-colors">
+                        class="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 border border-blue-300 dark:border-blue-700 px-3 py-1.5 rounded-lg transition-colors">
                   Hepsi
                 </button>
               </div>
-              <span class="text-xs font-bold text-teal-600">{{ completedCount }}/{{ items.length }}</span>
+              <span class="text-xs font-bold text-blue-600">{{ completedCount }}/{{ items.length }}</span>
             </div>
             <div class="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-              <div class="h-full bg-teal-500 rounded-full transition-all duration-300"
+              <div class="h-full bg-blue-500 rounded-full transition-all duration-300"
                    :style="{ width: `${progress}%` }"></div>
             </div>
           </div>
@@ -89,7 +89,7 @@
               <div class="flex flex-col items-end gap-1 shrink-0">
                 <div class="text-right">
                   <span class="block text-[10px] text-gray-400 font-bold uppercase leading-none">Sipariş</span>
-                  <span class="block text-xl font-black text-indigo-600 dark:text-indigo-400 leading-tight">{{ item.totalOrderedQty }}</span>
+                  <span class="block text-xl font-black text-blue-600 dark:text-blue-400 leading-tight">{{ item.totalOrderedQty }}</span>
                 </div>
                 <div class="flex items-center gap-1.5">
                   <button @click="adjustQty(item, -1)"
@@ -100,15 +100,15 @@
                     :value="getPickedQty(item)"
                     @change="onQtyChange(item, $event)"
                     @focus="($event.target as HTMLInputElement).select()"
-                    class="w-16 text-center border rounded px-1 py-2.5 text-base font-bold dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
+                    class="w-16 text-center border rounded px-1 py-2.5 text-base font-bold dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                     :class="getInputClass(item)"
                   />
                   <button @click="adjustQty(item, 1)"
-                          class="w-11 h-11 rounded-lg bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 text-2xl font-bold flex items-center justify-center active:bg-teal-200 dark:active:bg-teal-900/50 touch-manipulation border border-teal-200 dark:border-teal-800">+</button>
+                          class="w-11 h-11 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-2xl font-bold flex items-center justify-center active:bg-blue-200 dark:active:bg-blue-900/50 touch-manipulation border border-blue-200 dark:border-blue-800">+</button>
                 </div>
                 <div class="flex gap-1.5 w-full">
                   <button @click="setFull(item)"
-                          class="flex-1 py-2.5 rounded-lg text-xs font-bold bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-700 text-teal-600 dark:text-teal-400 active:bg-teal-100 touch-manipulation">
+                          class="flex-1 py-2.5 rounded-lg text-xs font-bold bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 text-blue-600 dark:text-blue-400 active:bg-blue-100 touch-manipulation">
                     Tam: {{ item.totalOrderedQty }}
                   </button>
                   <button @click="toggleSubstitute(item)"
@@ -175,7 +175,7 @@
           :disabled="!canComplete || isSavingProgress"
           class="flex-[2] py-3 rounded-lg font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50"
           :class="allCompleted
-            ? 'bg-teal-600 hover:bg-teal-700 text-white shadow-sm'
+            ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm'
             : 'bg-amber-500 hover:bg-amber-600 text-white shadow-sm'"
         >
           <span v-if="isSavingProgress" class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
@@ -401,7 +401,7 @@ const getItemBorderClass = (item: OutOfCityPickItemDto) => {
   const qty = getPickedQty(item);
   if (getSubstituteStock(item)) return 'border-l-4 border-orange-400 dark:border-orange-500 bg-orange-50 dark:bg-orange-900/10';
   if (qty === 0) return 'bg-white dark:bg-gray-900 border dark:border-gray-700';
-  if (qty >= item.totalOrderedQty) return 'border-l-4 border-teal-400 dark:border-teal-500 bg-teal-50 dark:bg-teal-900/20';
+  if (qty >= item.totalOrderedQty) return 'border-l-4 border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20';
   return 'border-l-4 border-amber-400 dark:border-amber-500 bg-amber-50 dark:bg-amber-900/10';
 };
 
@@ -409,7 +409,7 @@ const getInputClass = (item: OutOfCityPickItemDto) => {
   const qty = getPickedQty(item);
   if (qty === 0) return 'border-gray-300 dark:border-gray-600';
   if (qty > item.totalOrderedQty) return 'border-blue-400 text-blue-700 dark:text-blue-400';
-  if (qty >= item.totalOrderedQty) return 'border-teal-400 text-teal-700 dark:text-teal-400';
+  if (qty >= item.totalOrderedQty) return 'border-blue-400 text-blue-700 dark:text-blue-400';
   return 'border-amber-400 text-amber-700 dark:text-amber-400';
 };
 </script>

@@ -4,7 +4,7 @@
       <div class="relative flex-grow">
         <input
           type="text"
-          class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:text-gray-100"
+          class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm dark:text-gray-100"
           :placeholder="placeholder || 'Tedarikçi Ara...'"
           v-model="searchTerm"
           @focus="isOpen = true"
@@ -20,13 +20,13 @@
           <li
             v-for="supplier in filteredSuppliers"
             :key="supplier.id"
-            class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-indigo-600 hover:text-white text-gray-900 dark:text-gray-100"
+            class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-blue-600 hover:text-white text-gray-900 dark:text-gray-100"
             @click="selectSupplier(supplier)"
           >
             <span class="block truncate" :class="{ 'font-semibold': modelValue === supplier.id }">
               {{ supplier.name }} <span v-if="supplier.supplierCode" class="text-xs text-gray-500 dark:text-gray-400 ml-1">({{ supplier.supplierCode }})</span>
             </span>
-            <span v-if="modelValue === supplier.id" class="absolute inset-y-0 right-0 flex items-center pr-4 text-indigo-600 hover:text-white">
+            <span v-if="modelValue === supplier.id" class="absolute inset-y-0 right-0 flex items-center pr-4 text-blue-600 hover:text-white">
               <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
               </svg>
@@ -37,7 +37,7 @@
 
       <button
         type="button"
-        class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-700 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-700 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         @click="showCreateModal = true"
       >
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -208,6 +208,6 @@ const pipeline = computed(() => [
   { label: 'Depoda',  count: props.stats.statusWarehouse, to: '/shipments?statuses=1', cls: 'bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300' },
   { label: 'Toplama', count: props.stats.statusPicking,   to: '/shipments?statuses=2', cls: 'bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300' },
   { label: 'Hazır',   count: props.stats.statusReady,     to: '/shipments?statuses=3', cls: 'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300' },
-  { label: 'Araçta',  count: props.stats.statusOnRoute,   to: '/shipments?statuses=4', cls: 'bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300' },
+  { label: 'Araçta',  count: props.stats.statusOnRoute,   to: '/shipments?statuses=4', cls: 'bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300' },
 ]);
 </script>

@@ -168,12 +168,12 @@
                   </div>
                   <div class="text-right">
                      <div class="text-[10px] font-bold text-gray-400 dark:text-gray-600 uppercase">Kalan Miktar</div>
-                     <div class="text-sm font-bold text-indigo-700">{{ po.remainingTotalQty }}</div>
+                     <div class="text-sm font-bold text-blue-700">{{ po.remainingTotalQty }}</div>
                   </div>
                </div>
                <button
                   @click="selectPO(po.purchaseOrderId)"
-                  class="bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white px-6 py-2 rounded-lg font-bold text-sm transition-all shadow-sm border border-indigo-100"
+                  class="bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white px-6 py-2 rounded-lg font-bold text-sm transition-all shadow-sm border border-blue-100"
                >
                   Bu PO ile Mal Kabul Aç &rarr;
                </button>

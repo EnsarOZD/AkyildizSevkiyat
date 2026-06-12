@@ -50,7 +50,7 @@
           >{{ irsaliyePendingCount }}</span>
           <span
             v-if="tab.key === 'vehicle' && vehiclePendingCount > 0"
-            class="ml-1 bg-purple-500 text-white rounded-full px-1.5 py-0.5 text-[10px] font-bold"
+            class="ml-1 bg-violet-500 text-white rounded-full px-1.5 py-0.5 text-[10px] font-bold"
           >{{ vehiclePendingCount }}</span>
           <span
             v-if="tab.key === 'loading' && loadingPendingCount > 0"
@@ -132,7 +132,7 @@
                   </span>
                 </template>
                 <template v-else>
-                  <span class="text-[10px] font-bold px-1.5 py-0.5 rounded border flex-shrink-0 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800">
+                  <span class="text-[10px] font-bold px-1.5 py-0.5 rounded border flex-shrink-0 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-400 border-violet-200 dark:border-violet-800">
                     {{ zonePrep.mergedIds.length }} parti birleştirildi
                   </span>
                 </template>
@@ -233,7 +233,7 @@
               v-if="zonePrep.statusId === 5 && !zonePrep.irsaliyeFetched && zonePrep.isFrozen"
               @click.stop="fetchIrsaliye(zonePrep)"
               :disabled="fetchingIrsaliyeId === zonePrep.id"
-              class="flex-1 md:flex-none bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-4 py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition-colors"
+              class="flex-1 md:flex-none bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-4 py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition-colors"
             >
               <svg v-if="fetchingIrsaliyeId === zonePrep.id" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -247,7 +247,7 @@
             <template v-if="zonePrep.statusId === 5 && zonePrep.irsaliyeFetched && zonePrep.isFrozen">
               <button
                 @click.stop="openDriverModal(zonePrep)"
-                class="flex-1 md:flex-none bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition-colors"
+                class="flex-1 md:flex-none bg-violet-600 hover:bg-violet-700 text-white px-4 py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition-colors"
               >
                 🚚 <span>Şoför Ata</span>
               </button>
@@ -271,7 +271,7 @@
               </button>
               <button
                 @click.stop="openFreightModal(zonePrep)"
-                class="flex-1 md:flex-none bg-teal-600 hover:bg-teal-700 text-white px-4 py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition-colors"
+                class="flex-1 md:flex-none bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition-colors"
               >
                 🚐 <span>Nakliye ile Gönder</span>
               </button>
@@ -323,16 +323,16 @@
             <div v-if="expandedIds.has(zonePrep.id)" class="border-t border-gray-100 dark:border-gray-800 px-4 py-4 space-y-4 bg-gray-50 dark:bg-gray-800/50">
 
               <!-- Out-of-city zone: single panel -->
-              <div v-if="zonePrep.isOutOfCity" class="bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-lg p-4">
+              <div v-if="zonePrep.isOutOfCity" class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                 <div class="flex items-center gap-2 mb-3">
-                  <span class="text-sm font-bold text-teal-800 dark:text-teal-300">🏙️ Şehir Dışı Projeler</span>
-                  <span class="text-[10px] font-bold bg-teal-200 dark:bg-teal-800 text-teal-800 dark:text-teal-200 px-1.5 py-0.5 rounded uppercase">Proje Bazlı Toplama</span>
+                  <span class="text-sm font-bold text-blue-800 dark:text-blue-300">🏙️ Şehir Dışı Projeler</span>
+                  <span class="text-[10px] font-bold bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded uppercase">Proje Bazlı Toplama</span>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                   <div v-for="proj in zonePrep.projects" :key="proj.id"
-                       class="bg-white dark:bg-gray-900 rounded-lg border border-teal-200 dark:border-teal-800 p-3">
+                       class="bg-white dark:bg-gray-900 rounded-lg border border-blue-200 dark:border-blue-800 p-3">
                     <div class="flex items-start justify-between gap-1 mb-1">
-                      <span class="font-bold text-sm text-teal-900 dark:text-teal-300 truncate">{{ proj.projectCode }}</span>
+                      <span class="font-bold text-sm text-blue-900 dark:text-blue-300 truncate">{{ proj.projectCode }}</span>
                       <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0"
                             :class="proj.isMicroReady ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'">
                         {{ proj.isMicroReady ? 'HAZIR' : 'BEKLER' }}
@@ -349,7 +349,7 @@
                     <button
                       v-if="zonePrep.isFrozen && zonePrep.statusId >= 1 && zonePrep.statusId < 4"
                       @click.stop="openOutOfCityModal(zonePrep, proj)"
-                      class="w-full py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded flex items-center justify-center gap-1 transition-colors"
+                      class="w-full py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded flex items-center justify-center gap-1 transition-colors"
                     >
                       🗂️ Topla
                     </button>
@@ -411,7 +411,7 @@
                       <div class="mt-1.5 flex gap-1">
                         <button
                           @click.stop="openDriverModalForProject(proj)"
-                          class="flex-1 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-[10px] font-bold flex items-center justify-center gap-0.5 transition-colors"
+                          class="flex-1 py-1 bg-violet-600 hover:bg-violet-700 text-white rounded text-[10px] font-bold flex items-center justify-center gap-0.5 transition-colors"
                           title="Bu proje için şoför ata"
                         >🚚 Şoför</button>
                         <button
@@ -421,7 +421,7 @@
                         >📦 Kargo</button>
                         <button
                           @click.stop="openFreightModalForProject(proj)"
-                          class="flex-1 py-1 bg-teal-600 hover:bg-teal-700 text-white rounded text-[10px] font-bold flex items-center justify-center gap-0.5 transition-colors"
+                          class="flex-1 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-[10px] font-bold flex items-center justify-center gap-0.5 transition-colors"
                           title="Bu projeyi nakliye ile gönder"
                         >🚐 Nakliye</button>
                       </div>
@@ -482,11 +482,11 @@
                     <template v-if="zonePrep.statusId === 5 && zonePrep.irsaliyeFetched">
                       <div class="mt-1.5 flex gap-1">
                         <button @click.stop="openDriverModalForProject(proj)"
-                          class="flex-1 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-[10px] font-bold flex items-center justify-center gap-0.5 transition-colors">🚚 Şoför</button>
+                          class="flex-1 py-1 bg-violet-600 hover:bg-violet-700 text-white rounded text-[10px] font-bold flex items-center justify-center gap-0.5 transition-colors">🚚 Şoför</button>
                         <button @click.stop="openCargoModalForProject(proj)"
                           class="flex-1 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded text-[10px] font-bold flex items-center justify-center gap-0.5 transition-colors">📦 Kargo</button>
                         <button @click.stop="openFreightModalForProject(proj)"
-                          class="flex-1 py-1 bg-teal-600 hover:bg-teal-700 text-white rounded text-[10px] font-bold flex items-center justify-center gap-0.5 transition-colors">🚐 Nakliye</button>
+                          class="flex-1 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-[10px] font-bold flex items-center justify-center gap-0.5 transition-colors">🚐 Nakliye</button>
                       </div>
                     </template>
                   </div>

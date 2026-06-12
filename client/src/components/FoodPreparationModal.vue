@@ -11,7 +11,7 @@
           <div class="flex items-center gap-2 flex-wrap">
             <span class="text-xs font-bold px-2 py-0.5 bg-green-100 text-green-700 rounded">Gıda Macro</span>
             <span class="text-xs text-gray-500 dark:text-gray-400">{{ deliveryDateFormatted }}</span>
-            <span v-if="batchCount > 1" class="text-xs font-bold text-purple-600 dark:text-purple-400">{{ batchCount }} batch birleştirildi</span>
+            <span v-if="batchCount > 1" class="text-xs font-bold text-violet-600 dark:text-violet-400">{{ batchCount }} batch birleştirildi</span>
             <span class="text-xs text-gray-400 dark:text-gray-600">· {{ items.length }} Kalem</span>
             <span v-if="totalWeightKg != null" class="text-xs font-bold text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 px-1.5 py-0.5 rounded">
               🌿 {{ totalPickedWeightKg?.toFixed(1) }} / {{ totalWeightKg.toFixed(1) }} kg
@@ -85,7 +85,7 @@
                     <template v-if="item.lines.length > 1">
                       <span v-for="sub in item.lines" :key="sub.shipmentLineId"
                             class="text-[10px] text-gray-400 dark:text-gray-600">
-                        {{ sub.projectName }}<span v-if="sub.batchNo > 1" class="text-purple-400"> (B{{ sub.batchNo }})</span>:
+                        {{ sub.projectName }}<span v-if="sub.batchNo > 1" class="text-violet-400"> (B{{ sub.batchNo }})</span>:
                         <span class="font-semibold text-gray-600 dark:text-gray-300">{{ sub.orderedQty }}</span>
                       </span>
                     </template>
@@ -101,7 +101,7 @@
                 <div class="flex flex-col items-end gap-1 shrink-0">
                   <div class="text-right">
                     <span class="block text-[10px] text-gray-400 font-bold uppercase leading-none">Sipariş</span>
-                    <span class="block text-xl font-black text-indigo-600 dark:text-indigo-400 leading-tight">{{ item.totalOrderedQty }}</span>
+                    <span class="block text-xl font-black text-blue-600 dark:text-blue-400 leading-tight">{{ item.totalOrderedQty }}</span>
                   </div>
                   <div class="flex items-center gap-1.5">
                     <button @click="adjustQty(item, -1)"

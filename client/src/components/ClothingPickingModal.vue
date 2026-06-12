@@ -5,7 +5,7 @@
       <!-- Header -->
       <div class="bg-white dark:bg-gray-800 px-4 py-3 border-b dark:border-gray-700 flex justify-between items-center">
         <div>
-          <h3 class="font-bold text-purple-700 dark:text-purple-300">KIYAFET HAZIRLIK</h3>
+          <h3 class="font-bold text-violet-700 dark:text-violet-300">KIYAFET HAZIRLIK</h3>
           <p v-if="pick" class="text-xs text-gray-500 dark:text-gray-400">
             {{ pick.externalOrderNumber || ('#' + pick.shipmentId) }}
             <span v-if="pick.talepNo"> · T:{{ pick.talepNo }}</span> · {{ pick.projectName }}
@@ -19,7 +19,7 @@
       <!-- Content -->
       <div class="flex-1 overflow-y-auto p-3 space-y-3">
         <div v-if="loading" class="flex justify-center py-16">
-          <div class="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+          <div class="w-8 h-8 border-4 border-violet-600 border-t-transparent rounded-full animate-spin"></div>
         </div>
 
         <template v-else>
@@ -42,7 +42,7 @@
                   <div class="w-24 flex-shrink-0">
                     <label class="block text-[10px] text-gray-400 text-right mb-0.5">Hazırlanan</label>
                     <input v-model.number="item.qty" @input="clamp(item)" type="number" min="0" step="1"
-                           class="w-full px-2 py-1.5 text-center text-sm rounded-lg border bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                           class="w-full px-2 py-1.5 text-center text-sm rounded-lg border bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-violet-400"
                            :class="item.qty < item.orderedQty ? 'border-orange-400' : 'border-gray-300 dark:border-gray-700'" />
                   </div>
                 </div>
@@ -64,12 +64,12 @@
         <div class="flex items-center gap-2">
           <label class="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">Koli Sayısı</label>
           <input v-model="koliCount" type="text" placeholder="Örn: 3 koli + 1 poşet"
-                 class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-400" />
+                 class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-violet-400" />
         </div>
         <div class="flex gap-2">
           <button @click="$emit('close')" class="flex-1 py-3 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-bold rounded-xl text-sm">KAPAT</button>
           <button @click="complete" :disabled="submitting"
-                  class="flex-[2] py-3 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2">
+                  class="flex-[2] py-3 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2">
             <span v-if="submitting" class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
             {{ submitting ? 'Kaydediliyor...' : 'Hazırlığı Tamamla' }}
           </button>

@@ -294,7 +294,7 @@
         class="bg-white dark:bg-[#0f2744] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 overflow-hidden"
       >
         <div class="px-4 py-3 space-y-3"
-             :class="shipment.status === 'Delivered' ? 'bg-green-50 dark:bg-green-900/20' : 'bg-purple-50 dark:bg-purple-900/20'">
+             :class="shipment.status === 'Delivered' ? 'bg-green-50 dark:bg-green-900/20' : 'bg-violet-50 dark:bg-violet-900/20'">
           <div class="flex items-center gap-2">
             <CheckCircleIcon v-if="shipment.status === 'Delivered'" class="w-5 h-5 text-green-500 flex-shrink-0" aria-hidden="true" />
             <ArrowUturnLeftIcon v-else class="w-5 h-5 text-amber-500 flex-shrink-0" aria-hidden="true" />

@@ -195,7 +195,7 @@
 
               <!-- User info -->
               <div class="px-5 pb-4 border-b border-white/[0.07] flex items-center gap-3">
-                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0">
+                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center flex-shrink-0">
                   <span class="text-base font-extrabold text-white">{{ userInitial }}</span>
                 </div>
                 <div class="flex-1 min-w-0">

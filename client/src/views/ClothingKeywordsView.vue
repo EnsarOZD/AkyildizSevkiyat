@@ -20,7 +20,7 @@
           <input v-model="newForm.color" type="color" class="h-10 w-14 border rounded dark:border-gray-700 bg-white dark:bg-gray-800" />
         </div>
         <button @click="addKeyword" :disabled="!newForm.keyword.trim() || saving"
-                class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold rounded-lg text-sm">
+                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-lg text-sm">
           Ekle
         </button>
       </div>
@@ -39,7 +39,7 @@
           <label class="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300">
             <input type="checkbox" v-model="k.isActive" /> Aktif
           </label>
-          <button @click="saveKeyword(k)" class="px-3 py-1.5 text-xs font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 rounded">Kaydet</button>
+          <button @click="saveKeyword(k)" class="px-3 py-1.5 text-xs font-bold text-blue-600 bg-blue-50 dark:bg-blue-900/30 rounded">Kaydet</button>
           <button @click="removeKeyword(k)" class="px-2 py-1.5 text-xs font-bold text-red-600 bg-red-50 dark:bg-red-900/20 rounded">Sil</button>
         </div>
       </div>

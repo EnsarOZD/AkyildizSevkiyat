@@ -4,7 +4,7 @@
       <div class="px-4 py-3 border-b dark:border-gray-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <h3 class="font-medium text-gray-900 dark:text-gray-100 mb-2 sm:mb-0">Açık Satın Alma Siparişleri ({{ openPOs.length }})</h3>
         <div class="flex flex-wrap items-center gap-3">
-          <button @click="loadOpenPOs" class="text-sm text-indigo-600 hover:underline">Yenile</button>
+          <button @click="loadOpenPOs" class="text-sm text-blue-600 hover:underline">Yenile</button>
           <button v-if="openPOs.length > 0" @click="exportPOs" class="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-green-600 text-green-700 dark:text-green-400 dark:border-green-600 rounded hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
             Excel

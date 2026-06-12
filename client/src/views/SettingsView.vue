@@ -18,7 +18,7 @@
           @click="activeTab = tab.key"
           :class="[
             activeTab === tab.key
-              ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+              ? 'border-blue-500 text-blue-600 dark:text-blue-400'
               : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600',
             'whitespace-nowrap py-4 px-4 border-b-2 font-medium text-sm flex-shrink-0'
           ]"
@@ -88,7 +88,7 @@
                     <span v-else class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Pasif</span>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button @click="openDriverModal(driver)" class="text-indigo-600 hover:text-indigo-900 mr-4">Düzenle</button>
+                    <button @click="openDriverModal(driver)" class="text-blue-600 hover:text-blue-900 mr-4">Düzenle</button>
                     <button @click="deleteDriver(driver.id)" class="text-red-600 hover:text-red-900">Sil</button>
                   </td>
                 </tr>
@@ -126,9 +126,8 @@
                   <td class="px-6 py-4 whitespace-nowrap hidden sm:table-cell">
                     <span class="px-2 py-0.5 text-xs rounded-full font-medium"
                       :class="{
-                        'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300': vehicle.vehicleType === 0,
-                        'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300': vehicle.vehicleType === 1,
-                        'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300': vehicle.vehicleType === 2,
+                        'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300': vehicle.vehicleType === 0 || vehicle.vehicleType === 2,
+                        'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300': vehicle.vehicleType === 1,
                       }">{{ (vehicle.vehicleTypeName || ['Kamyon','Kamyonet','Minibüs'][vehicle.vehicleType]) ?? 'Kamyon' }}</span>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden lg:table-cell">{{ vehicle.description || vehicle.capacity || '—' }}</td>
@@ -147,7 +146,7 @@
                       <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                       QR Oluştur
                     </button>
-                    <button @click="openVehicleModal(vehicle)" class="text-indigo-600 hover:text-indigo-900">Düzenle</button>
+                    <button @click="openVehicleModal(vehicle)" class="text-blue-600 hover:text-blue-900">Düzenle</button>
                     <button @click="deleteVehicle(vehicle.id)" class="text-red-600 hover:text-red-900">Sil</button>
                   </td>
                 </tr>
@@ -342,7 +341,7 @@
               <tr v-for="zone in zone_zones" :key="zone.id" class="hover:bg-gray-50 dark:hover:bg-gray-800">
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{{ zone.name }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button @click="zone_openEdit(zone)" class="text-indigo-600 hover:text-indigo-900 mr-4">Düzenle</button>
+                  <button @click="zone_openEdit(zone)" class="text-blue-600 hover:text-blue-900 mr-4">Düzenle</button>
                   <button @click="zone_confirmDelete(zone)" class="text-red-600 hover:text-red-900">Sil</button>
                 </td>
               </tr>
@@ -368,7 +367,7 @@
               class="block w-full border border-gray-300 dark:border-gray-700 rounded-input px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 focus:outline-none dark:bg-gray-800 dark:text-gray-100 text-sm" />
           </div>
           <label class="flex items-center gap-3 cursor-pointer select-none">
-            <input type="checkbox" v-model="zone_form.isOutOfCity" class="w-4 h-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500" />
+            <input type="checkbox" v-model="zone_form.isOutOfCity" class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
             <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Şehir Dışı Bölge</span>
             <span class="text-xs text-gray-400 dark:text-gray-500">(Micro/Macro yerine tek toplu hazırlık)</span>
           </label>
@@ -392,7 +391,7 @@
             v-model="depot_form.depotName"
             type="text"
             placeholder="Örn: Akyıldız Ana Depo"
-            class="w-full border dark:border-gray-700 rounded-lg px-3 py-2 dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+            class="w-full border dark:border-gray-700 rounded-lg px-3 py-2 dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
           />
         </div>
 
@@ -403,12 +402,12 @@
               v-model="depot_form.depotAddress"
               type="text"
               placeholder="Depo adresi"
-              class="flex-1 border dark:border-gray-700 rounded-lg px-3 py-2 dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              class="flex-1 border dark:border-gray-700 rounded-lg px-3 py-2 dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
             />
             <button
               @click="depot_geocodeAddress"
               :disabled="!depot_form.depotAddress || depot_geocoding"
-              class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm whitespace-nowrap flex items-center gap-2"
+              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm whitespace-nowrap flex items-center gap-2"
             >
               <svg v-if="depot_geocoding" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
@@ -428,7 +427,7 @@
               type="number"
               step="0.000001"
               placeholder="41.0082"
-              class="w-full border dark:border-gray-700 rounded-lg px-3 py-2 dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              class="w-full border dark:border-gray-700 rounded-lg px-3 py-2 dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
             />
           </div>
           <div>
@@ -438,7 +437,7 @@
               type="number"
               step="0.000001"
               placeholder="28.9784"
-              class="w-full border dark:border-gray-700 rounded-lg px-3 py-2 dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              class="w-full border dark:border-gray-700 rounded-lg px-3 py-2 dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
             />
           </div>
         </div>
@@ -460,7 +459,7 @@
           <button
             @click="depot_save"
             :disabled="depot_saving"
-            class="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 font-medium flex items-center gap-2"
+            class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium flex items-center gap-2"
           >
             <svg v-if="depot_saving" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
@@ -485,7 +484,7 @@
         <p class="text-gray-600 dark:text-gray-400 mb-4">Depo konumlarını ve adres tanımlamalarını yönetmek için ilgili sayfaya gidin.</p>
         <router-link
           to="/warehouse/locations"
-          class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium"
+          class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
         >
           Depo Adresleri Sayfasına Git
         </router-link>
@@ -501,7 +500,7 @@
             <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Sipariş numarasının sıra kısmını değiştirebilirsiniz. Bir sonraki sipariş "Sonraki Numara" ile başlar.</p>
           </div>
           <button @click="loadPoCounters" :disabled="poCounterLoading"
-            class="text-sm text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 underline">
+            class="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 underline">
             Yenile
           </button>
         </div>
@@ -540,14 +539,14 @@
                     v-if="editingCounterId === counter.id"
                     v-model.number="editingCounterValue"
                     type="number" min="0"
-                    class="w-28 px-2 py-1 border border-indigo-400 rounded text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-800 dark:text-gray-200"
+                    class="w-28 px-2 py-1 border border-blue-400 rounded text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-200"
                   />
                   <span v-else class="font-mono text-gray-600 dark:text-gray-400">{{ counter.lastValue }}</span>
                 </td>
                 <td class="py-3 px-3">
                   <div v-if="editingCounterId === counter.id" class="flex gap-2">
                     <button @click="savePoCounter(counter)" :disabled="poCounterSaving"
-                      class="px-3 py-1 bg-indigo-600 text-white rounded text-xs hover:bg-indigo-700 disabled:opacity-50">
+                      class="px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 disabled:opacity-50">
                       Kaydet
                     </button>
                     <button @click="editingCounterId = null"
@@ -592,7 +591,7 @@
             v-model="email_form.procurementEmailCc"
             rows="3"
             placeholder="ornek@sirket.com, baska@sirket.com"
-            class="block w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+            class="block w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
           ></textarea>
           <p class="text-xs text-gray-400 dark:text-gray-500">
             Tedarikçiye gönderilen satınalma sipariş e-postalarına bu adresler CC olarak eklenir.
@@ -609,7 +608,7 @@
             v-model="email_form.dispatchEmailCc"
             rows="3"
             placeholder="ornek@sirket.com, baska@sirket.com"
-            class="block w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+            class="block w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
           ></textarea>
           <p class="text-xs text-gray-400 dark:text-gray-500">
             Eksik ürün ve kısmi gönderim bildirim e-postalarına bu adresler CC olarak eklenir.
@@ -628,9 +627,9 @@
             type="button"
             @click="email_form.dispatchEmailEnabled = !email_form.dispatchEmailEnabled"
             :class="email_form.dispatchEmailEnabled
-              ? 'bg-indigo-600'
+              ? 'bg-blue-600'
               : 'bg-gray-200 dark:bg-gray-700'"
-            class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             :aria-checked="email_form.dispatchEmailEnabled"
             role="switch"
           >
@@ -649,7 +648,7 @@
           <button
             @click="email_save"
             :disabled="email_saving"
-            class="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 font-medium flex items-center gap-2"
+            class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium flex items-center gap-2"
           >
             <svg v-if="email_saving" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
@@ -685,9 +684,9 @@
             @click="wms_form.wmsPutawayEnabled = !wms_form.wmsPutawayEnabled"
             :class="[
               wms_form.wmsPutawayEnabled
-                ? 'bg-indigo-600'
+                ? 'bg-blue-600'
                 : 'bg-gray-200 dark:bg-gray-700',
-              'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'
+              'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
             ]"
             role="switch"
             :aria-checked="wms_form.wmsPutawayEnabled"
@@ -714,9 +713,9 @@
             @click="wms_form.wmsLocationPickingEnabled = !wms_form.wmsLocationPickingEnabled"
             :class="[
               wms_form.wmsLocationPickingEnabled
-                ? 'bg-indigo-600'
+                ? 'bg-blue-600'
                 : 'bg-gray-200 dark:bg-gray-700',
-              'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'
+              'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
             ]"
             role="switch"
             :aria-checked="wms_form.wmsLocationPickingEnabled"
@@ -742,9 +741,9 @@
             @click="wms_form.wmsBarcodePickingEnabled = !wms_form.wmsBarcodePickingEnabled"
             :class="[
               wms_form.wmsBarcodePickingEnabled
-                ? 'bg-indigo-600'
+                ? 'bg-blue-600'
                 : 'bg-gray-200 dark:bg-gray-700',
-              'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'
+              'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
             ]"
             role="switch"
             :aria-checked="wms_form.wmsBarcodePickingEnabled"
@@ -766,7 +765,7 @@
           <button
             @click="wms_save"
             :disabled="wms_saving"
-            class="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 font-medium flex items-center gap-2"
+            class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium flex items-center gap-2"
           >
             <svg v-if="wms_saving" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
@@ -788,7 +787,7 @@
             <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">5 başarısız girişten sonra IP adresi 5 dakika kilitlenir. Sahadaki kullanıcılar için kilidi buradan kaldırabilirsiniz.</p>
           </div>
           <button @click="loadLoginBlocks" :disabled="securityLoading"
-            class="text-sm text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 underline">
+            class="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 underline">
             Yenile
           </button>
         </div>
@@ -839,7 +838,7 @@
             <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Bağlı Agent'lar</h2>
             <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Depo bilgisayarlarında çalışan yerel baskı servisleri.</p>
           </div>
-          <button @click="loadPrinters" class="text-sm text-indigo-600 dark:text-indigo-400 underline">Yenile</button>
+          <button @click="loadPrinters" class="text-sm text-blue-600 dark:text-blue-400 underline">Yenile</button>
         </div>
         <div v-if="printer_loading" class="text-sm text-gray-400 py-4">Yükleniyor...</div>
         <div v-else-if="printer_agents.length === 0"
@@ -884,7 +883,7 @@
             <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Hangi etiket tipinin hangi yazıcıdan çıkacağını tanımlayın.</p>
           </div>
           <button @click="openPrinterModal()"
-            class="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-colors">
+            class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors">
             + Yazıcı Ekle
           </button>
         </div>
@@ -908,7 +907,7 @@
                 <div class="flex items-center gap-2">
                   <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ cfg.name }}</p>
                   <span v-if="cfg.isDefault"
-                    class="text-xs bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded">
+                    class="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded">
                     Varsayılan
                   </span>
                 </div>
@@ -930,7 +929,7 @@
                 Test
               </button>
               <button @click="openPrinterModal(cfg)"
-                class="px-2 py-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 border border-indigo-300 dark:border-indigo-700 rounded hover:bg-indigo-50 dark:hover:bg-indigo-900/30">
+                class="px-2 py-1 text-xs font-semibold text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-700 rounded hover:bg-blue-50 dark:hover:bg-blue-900/30">
                 Düzenle
               </button>
               <button @click="deletePrinterConfig(cfg.id)"
@@ -949,7 +948,7 @@
             <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Son Baskılar</h2>
             <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Son 20 baskı işi ve sonuçları.</p>
           </div>
-          <button @click="loadPrintJobs" class="text-sm text-indigo-600 dark:text-indigo-400 underline">Yenile</button>
+          <button @click="loadPrintJobs" class="text-sm text-blue-600 dark:text-blue-400 underline">Yenile</button>
         </div>
         <div v-if="print_jobs_loading" class="text-sm text-gray-400 py-4">Yükleniyor...</div>
         <div v-else-if="print_jobs.length === 0" class="text-center py-6 text-sm text-gray-400 dark:text-gray-600">
@@ -1034,7 +1033,7 @@
           </div>
           <div class="flex items-center gap-2">
             <input id="isDefault" v-model="printerForm.isDefault" type="checkbox"
-              class="rounded border-gray-300 text-indigo-600" />
+              class="rounded border-gray-300 text-blue-600" />
             <label for="isDefault" class="text-sm text-gray-700 dark:text-gray-300">
               Bu etiket tipi için varsayılan yazıcı
             </label>
@@ -1046,7 +1045,7 @@
             İptal
           </button>
           <button @click="savePrinterConfig" :disabled="printer_saving"
-            class="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg disabled:opacity-50">
+            class="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg disabled:opacity-50">
             {{ printer_saving ? 'Kaydediliyor...' : 'Kaydet' }}
           </button>
         </template>
@@ -1063,7 +1062,7 @@
             <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Her servisin son çalışma zamanı ve sonucu. Uygulama başladıktan sonra ilk çalışmaya kadar kayıt görünmez.</p>
           </div>
           <button @click="loadSystemHealth" :disabled="system_loading"
-            class="text-sm text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 underline disabled:opacity-50">
+            class="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 underline disabled:opacity-50">
             Yenile
           </button>
         </div>

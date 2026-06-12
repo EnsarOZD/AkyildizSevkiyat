@@ -14,7 +14,7 @@
               v-model="form.note" 
               type="text" 
               placeholder="Örn: Acil teslimat ricası..."
-              class="w-full border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none" 
+              class="w-full border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none" 
             />
           </div>
         </div>
@@ -25,7 +25,7 @@
             <input 
               v-model="form.orderDate" 
               type="date" 
-              class="w-full border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none font-bold" 
+              class="w-full border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none font-bold" 
             />
           </div>
           <div>
@@ -33,7 +33,7 @@
             <input 
               v-model="form.expectedDeliveryDate" 
               type="date" 
-              class="w-full border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-indigo-600 dark:text-indigo-400" 
+              class="w-full border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none font-bold text-blue-600 dark:text-blue-400" 
             />
           </div>
           <div class="col-span-2 flex items-center justify-center p-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl text-gray-400">
@@ -50,12 +50,12 @@
         <div class="flex items-center justify-between px-2">
            <h4 class="text-sm font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
               Sipariş Kalemleri
-              <span class="bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full text-[10px] font-black">{{ form.lines.length }}</span>
+              <span class="bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full text-[10px] font-black">{{ form.lines.length }}</span>
            </h4>
            <button 
              @click="addLine" 
              type="button" 
-             class="px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-100 transition-all flex items-center gap-2"
+             class="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-blue-100 transition-all flex items-center gap-2"
            >
               <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
               Yeni Satır
@@ -84,7 +84,7 @@
                      v-model.number="line.orderedQty" 
                      type="number" 
                      step="0.01" 
-                     class="w-full text-left md:text-center border border-gray-200 dark:border-gray-700 md:border-transparent md:bg-transparent rounded-xl px-4 md:px-2 py-2.5 md:py-2 text-sm bg-white dark:bg-gray-800 md:dark:bg-transparent font-black focus:ring-2 focus:ring-indigo-500 outline-none" 
+                     class="w-full text-left md:text-center border border-gray-200 dark:border-gray-700 md:border-transparent md:bg-transparent rounded-xl px-4 md:px-2 py-2.5 md:py-2 text-sm bg-white dark:bg-gray-800 md:dark:bg-transparent font-black focus:ring-2 focus:ring-blue-500 outline-none" 
                      placeholder="0.00"
                    />
                 </div>
@@ -125,7 +125,7 @@
             </button>
             <button 
               @click="save" 
-              class="flex-1 sm:flex-none px-10 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-lg shadow-indigo-100 dark:shadow-none transition-all hover:scale-[1.02] active:scale-95"
+              class="flex-1 sm:flex-none px-10 py-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-lg shadow-blue-100 dark:shadow-none transition-all hover:scale-[1.02] active:scale-95"
             >
               Siparişi Kaydet
             </button>

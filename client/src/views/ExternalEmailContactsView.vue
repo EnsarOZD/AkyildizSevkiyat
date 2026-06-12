@@ -7,7 +7,7 @@
         </svg>
       </template>
       <template #actions>
-        <button @click="openModal()" class="bg-indigo-600 text-white px-4 py-2 rounded-xl hover:bg-indigo-700 text-sm font-bold">+ Yeni Kişi</button>
+        <button @click="openModal()" class="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 text-sm font-bold">+ Yeni Kişi</button>
       </template>
     </PageHeader>
 
@@ -40,7 +40,7 @@
               </span>
             </td>
             <td class="px-6 py-4 text-right space-x-3">
-              <button @click="openModal(c)" class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">Düzenle</button>
+              <button @click="openModal(c)" class="text-blue-600 hover:text-blue-900 text-sm font-medium">Düzenle</button>
               <button @click="deleteContact(c)" class="text-red-600 hover:text-red-900 text-sm font-medium">Sil</button>
             </td>
           </tr>
@@ -72,7 +72,7 @@
         </div>
         <div class="mt-6 flex justify-end gap-3">
           <button @click="showModal = false" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">İptal</button>
-          <button @click="save" :disabled="saving" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-bold">
+          <button @click="save" :disabled="saving" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold">
             {{ saving ? 'Kaydediliyor...' : 'Kaydet' }}
           </button>
         </div>

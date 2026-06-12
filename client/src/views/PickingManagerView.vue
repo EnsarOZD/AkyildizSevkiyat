@@ -22,12 +22,12 @@
         <div class="flex flex-wrap items-end gap-2 border-b border-gray-100 dark:border-gray-800 pb-3">
           <input v-model="newGroup.name" placeholder="Grup adı (ör. Güvenlik)" class="flex-1 min-w-[160px] border rounded px-3 py-2 text-sm dark:bg-gray-800 dark:border-gray-700" />
           <input v-model.number="newGroup.sortOrder" type="number" placeholder="Sıra" class="w-20 border rounded px-2 py-2 text-sm dark:bg-gray-800 dark:border-gray-700" />
-          <button @click="saveGroup(null)" :disabled="!newGroup.name.trim()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold rounded-lg text-sm">Ekle</button>
+          <button @click="saveGroup(null)" :disabled="!newGroup.name.trim()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-lg text-sm">Ekle</button>
         </div>
         <div v-for="g in groups" :key="g.id" class="flex items-center gap-2" :class="{ 'opacity-50': !g.isActive }">
           <input v-model="g.name" class="flex-1 border rounded px-2 py-1.5 text-sm dark:bg-gray-800 dark:border-gray-700" />
           <input v-model.number="g.sortOrder" type="number" class="w-20 border rounded px-2 py-1.5 text-sm dark:bg-gray-800 dark:border-gray-700" />
-          <button @click="saveGroup(g)" class="px-3 py-1.5 text-xs font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 rounded">Kaydet</button>
+          <button @click="saveGroup(g)" class="px-3 py-1.5 text-xs font-bold text-blue-600 bg-blue-50 dark:bg-blue-900/30 rounded">Kaydet</button>
           <button v-if="g.isActive" @click="deactivateGroup(g)" class="px-2 py-1.5 text-xs font-bold text-red-600 bg-red-50 dark:bg-red-900/20 rounded">Pasifleştir</button>
           <span v-else class="text-[11px] text-gray-400">pasif</span>
         </div>
@@ -44,7 +44,7 @@
             <option :value="0">Araba</option>
             <option :value="1">Palet</option>
           </select>
-          <button @click="saveContainer(null)" :disabled="!newContainer.code.trim()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold rounded-lg text-sm">Ekle</button>
+          <button @click="saveContainer(null)" :disabled="!newContainer.code.trim()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-lg text-sm">Ekle</button>
         </div>
         <!-- Etiket baskı çubuğu -->
         <div class="flex flex-wrap items-center gap-2 pb-1">
@@ -52,13 +52,13 @@
           <span class="text-xs text-gray-400">{{ selectedContainers.size > 0 ? `${selectedContainers.size} seçili` : 'Seçim yoksa tüm aktif arabalar' }}</span>
         </div>
         <div v-for="c in containers" :key="c.id" class="flex items-center gap-2" :class="{ 'opacity-50': !c.isActive }">
-          <input type="checkbox" :checked="selectedContainers.has(c.id)" :disabled="!c.isActive" @change="toggleSelect(c.id)" class="shrink-0 accent-indigo-600 disabled:opacity-30" title="Etikete dahil et" />
+          <input type="checkbox" :checked="selectedContainers.has(c.id)" :disabled="!c.isActive" @change="toggleSelect(c.id)" class="shrink-0 accent-blue-600 disabled:opacity-30" title="Etikete dahil et" />
           <input v-model="c.code" class="flex-1 border rounded px-2 py-1.5 text-sm dark:bg-gray-800 dark:border-gray-700" />
           <select v-model.number="c.type" class="border rounded px-2 py-1.5 text-sm dark:bg-gray-800 dark:border-gray-700">
             <option :value="0">Araba</option>
             <option :value="1">Palet</option>
           </select>
-          <button @click="saveContainer(c)" class="px-3 py-1.5 text-xs font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 rounded">Kaydet</button>
+          <button @click="saveContainer(c)" class="px-3 py-1.5 text-xs font-bold text-blue-600 bg-blue-50 dark:bg-blue-900/30 rounded">Kaydet</button>
           <button v-if="c.isActive" @click="deactivateContainer(c)" class="px-2 py-1.5 text-xs font-bold text-red-600 bg-red-50 dark:bg-red-900/20 rounded">Pasifleştir</button>
           <span v-else class="text-[11px] text-gray-400">pasif</span>
         </div>
@@ -83,13 +83,13 @@
               <button @click="move(col, idx, 1)" :disabled="idx === col.items.length - 1" class="text-gray-400 disabled:opacity-30 leading-none">▼</button>
             </div>
             <!-- detay aç/kapa -->
-            <button @click="toggleDetail(it)" class="text-gray-400 hover:text-indigo-600 transition-transform" :class="{ 'rotate-90': expanded.has(it.shipmentId) }" title="Satır detayı">▶</button>
+            <button @click="toggleDetail(it)" class="text-gray-400 hover:text-blue-600 transition-transform" :class="{ 'rotate-90': expanded.has(it.shipmentId) }" title="Satır detayı">▶</button>
             <div class="flex-1 min-w-[200px] cursor-pointer" @click="toggleDetail(it)">
               <div class="flex flex-wrap items-center gap-1.5">
                 <span class="font-semibold text-gray-900 dark:text-gray-100">{{ it.externalOrderNumber || ('#' + it.shipmentId) }}</span>
-                <span v-if="it.talepNo" class="text-[10px] font-bold bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded">T:{{ it.talepNo }}</span>
+                <span v-if="it.talepNo" class="text-[10px] font-bold bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded">T:{{ it.talepNo }}</span>
                 <span class="px-1.5 py-0.5 rounded text-[10px] font-bold" :class="it.status === 'Picking' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-700'">{{ it.status === 'Picking' ? 'Hazırlanıyor' : 'Bekliyor' }}</span>
-                <span v-if="it.pickingMode != null" class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-700">{{ modeLabel(it.pickingMode) }}</span>
+                <span v-if="it.pickingMode != null" class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-violet-100 text-violet-700">{{ modeLabel(it.pickingMode) }}</span>
                 <span v-if="it.claimedOutOfOrder" class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-orange-100 text-orange-700" title="Sıra atlanarak alındı">⚠ sıra atladı</span>
                 <span v-if="it.paused" class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">⏸ duraklatıldı</span>
                 <span v-if="it.pickingCompleted" class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700">toplama bitti</span>
@@ -98,7 +98,7 @@
               <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                 {{ it.projectCode }} — {{ it.projectName }} · {{ it.lineCount }} kalem
                 <span v-if="it.assignedPickerName" class="text-emerald-600 dark:text-emerald-400"> · 👷 {{ it.assignedPickerName }}</span>
-                <span v-if="it.reservedForUserId" class="text-indigo-600 dark:text-indigo-400"> · 🔒 {{ userName(it.reservedForUserId) }}</span>
+                <span v-if="it.reservedForUserId" class="text-blue-600 dark:text-blue-400"> · 🔒 {{ userName(it.reservedForUserId) }}</span>
               </div>
             </div>
 

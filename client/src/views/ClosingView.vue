@@ -9,20 +9,20 @@
     </div>
 
     <!-- by-container sonucu -->
-    <div v-if="lookup" class="bg-white dark:bg-gray-900 rounded-xl border border-purple-200 dark:border-purple-800 p-3 space-y-2">
+    <div v-if="lookup" class="bg-white dark:bg-gray-900 rounded-xl border border-violet-200 dark:border-violet-800 p-3 space-y-2">
       <p class="text-xs text-gray-500">🛒 {{ lookup.containerCode }} — {{ lookup.shipments.length }} sevkiyat</p>
       <div v-for="s in lookup.shipments" :key="s.shipmentId" class="border border-gray-100 dark:border-gray-800 rounded-lg p-2">
         <div class="flex items-center justify-between gap-2">
           <div>
             <div class="font-semibold text-gray-900 dark:text-gray-100">{{ s.externalOrderNumber || ('#' + s.shipmentId) }}
-              <span v-if="s.pickingMode != null" class="text-[10px] font-bold bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded ml-1">{{ modeLabel(s.pickingMode) }}</span>
+              <span v-if="s.pickingMode != null" class="text-[10px] font-bold bg-violet-100 text-violet-700 px-1.5 py-0.5 rounded ml-1">{{ modeLabel(s.pickingMode) }}</span>
             </div>
             <div class="text-xs text-gray-500">{{ s.projectName }}</div>
             <div v-if="s.otherContainerCodes.length" class="text-[11px] text-sky-600 mt-0.5">Diğer arabalar: {{ s.otherContainerCodes.join(', ') }}</div>
           </div>
           <div class="text-right">
             <span v-if="s.closed" class="text-xs font-bold text-green-600">✓ kapatıldı</span>
-            <button v-else-if="s.pickingCompleted" @click="openClose(s.shipmentId, s.externalOrderNumber, s.projectName)" class="px-3 py-2 bg-purple-600 text-white font-semibold rounded-lg text-xs">Kapat</button>
+            <button v-else-if="s.pickingCompleted" @click="openClose(s.shipmentId, s.externalOrderNumber, s.projectName)" class="px-3 py-2 bg-violet-600 text-white font-semibold rounded-lg text-xs">Kapat</button>
             <span v-else class="text-xs font-bold text-orange-500">⏳ toplama sürüyor</span>
           </div>
         </div>
@@ -40,11 +40,11 @@
                 class="w-full text-left p-3 flex items-center justify-between">
           <div>
             <div class="font-semibold text-gray-900 dark:text-gray-100">{{ it.externalOrderNumber || ('#' + it.shipmentId) }}
-              <span v-if="it.pickingMode != null" class="text-[10px] font-bold bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded ml-1">{{ modeLabel(it.pickingMode) }}</span>
+              <span v-if="it.pickingMode != null" class="text-[10px] font-bold bg-violet-100 text-violet-700 px-1.5 py-0.5 rounded ml-1">{{ modeLabel(it.pickingMode) }}</span>
             </div>
             <div class="text-xs text-gray-500">{{ it.projectName }} · {{ it.lineCount }} kalem</div>
           </div>
-          <span class="text-purple-600 font-bold text-sm">Kapat →</span>
+          <span class="text-violet-600 font-bold text-sm">Kapat →</span>
         </button>
       </div>
     </div>
@@ -65,7 +65,7 @@
             <div class="flex gap-2">
               <button v-for="(lbl, idx) in ['Koli','Poşet']" :key="idx" @click="packageType = idx"
                       class="flex-1 py-2 rounded-lg border-2 text-sm font-bold"
-                      :class="packageType === idx ? 'border-purple-500 text-purple-700 bg-purple-50' : 'border-gray-200 text-gray-500'">{{ lbl }}</button>
+                      :class="packageType === idx ? 'border-violet-500 text-violet-700 bg-violet-50' : 'border-gray-200 text-gray-500'">{{ lbl }}</button>
             </div>
           </div>
           <div>
@@ -74,7 +74,7 @@
           </div>
           <div class="flex gap-2 pt-1">
             <button @click="closeTarget = null" class="flex-1 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm font-bold">Vazgeç</button>
-            <button @click="doClose" :disabled="busy || !boxCount || boxCount < 1" class="flex-1 py-2 bg-purple-600 disabled:opacity-50 text-white rounded-lg text-sm font-bold">Kapat</button>
+            <button @click="doClose" :disabled="busy || !boxCount || boxCount < 1" class="flex-1 py-2 bg-violet-600 disabled:opacity-50 text-white rounded-lg text-sm font-bold">Kapat</button>
           </div>
         </template>
 
@@ -82,7 +82,7 @@
         <template v-else>
           <p class="text-sm font-semibold text-green-600">✓ Kapatıldı ({{ boxCount }} koli)</p>
           <div class="flex gap-2">
-            <button @click="printLabel" :disabled="busy" class="flex-1 py-2.5 bg-purple-600 disabled:opacity-50 text-white rounded-lg text-sm font-bold">Etiket Bas</button>
+            <button @click="printLabel" :disabled="busy" class="flex-1 py-2.5 bg-violet-600 disabled:opacity-50 text-white rounded-lg text-sm font-bold">Etiket Bas</button>
             <button @click="handwritten" :disabled="busy" class="flex-1 py-2.5 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm font-bold">Elle Yazıldı</button>
           </div>
           <button @click="finishClose" class="w-full py-2 text-sm font-bold text-gray-500">Kapat</button>

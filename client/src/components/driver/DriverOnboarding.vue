@@ -159,7 +159,7 @@ const emit = defineEmits<{
 const slides: Slide[] = [
   {
     icon: HandRaisedIcon,
-    iconBg: 'bg-gradient-to-br from-blue-500/25 to-indigo-600/25',
+    iconBg: 'bg-gradient-to-br from-blue-500/25 to-blue-600/25',
     iconColor: 'text-blue-300',
     title: 'Hoş geldin! 👋',
     body: 'Bu panel günlük seferlerini yönetmen için tasarlandı. Birkaç adımda nasıl kullanacağını gösterelim. İstediğin an "Diğer › Nasıl kullanılır?" menüsünden tekrar açabilirsin.',

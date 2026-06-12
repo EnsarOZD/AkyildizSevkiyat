@@ -1,10 +1,10 @@
 <template>
   <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-    <div class="bg-white dark:bg-gray-900 rounded-xl p-6 w-full max-w-md shadow-xl border-t-4 border-teal-500">
+    <div class="bg-white dark:bg-gray-900 rounded-xl p-6 w-full max-w-md shadow-xl border-t-4 border-blue-500">
 
       <div class="flex items-center gap-3 mb-5">
-        <div class="p-2 bg-teal-100 dark:bg-teal-900/30 rounded-lg">
-          <svg class="h-6 w-6 text-teal-600 dark:text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div class="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+          <svg class="h-6 w-6 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
           </svg>
         </div>
@@ -16,11 +16,11 @@
 
       <template v-if="phase === 'form'">
       <!-- Zone summary -->
-      <div class="mb-5 bg-teal-50 dark:bg-teal-900/10 border border-teal-200 dark:border-teal-800 rounded-lg p-3 flex items-center gap-3">
-        <svg class="h-5 w-5 text-teal-600 dark:text-teal-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+      <div class="mb-5 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg p-3 flex items-center gap-3">
+        <svg class="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
           <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
         </svg>
-        <span class="text-sm text-teal-800 dark:text-teal-300">
+        <span class="text-sm text-blue-800 dark:text-blue-300">
           <strong>{{ shipmentCount }}</strong> sevkiyat nakliye ile gönderilecek ve <strong>Sevk Edildi</strong> statüsüne alınacak.
         </span>
       </div>
@@ -34,7 +34,7 @@
           <select
             v-model="carrierChoice"
             @change="onCarrierChange"
-            class="block w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
+            class="block w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
           >
             <option value="" disabled>Seçiniz...</option>
             <option v-for="c in carriers" :key="c.id" :value="String(c.id)">
@@ -51,7 +51,7 @@
             <select
               v-if="selectedCarrier.vehicles.filter(v => v.isActive).length"
               v-model="carrierPlate"
-              class="block w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
+              class="block w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
             >
               <option value="">Plaka seçiniz... (opsiyonel)</option>
               <option v-for="v in selectedCarrier.vehicles.filter(v => v.isActive)" :key="v.id" :value="v.plateNumber">
@@ -75,7 +75,7 @@
               v-model="carrierName"
               type="text"
               placeholder="Ad Soyad..."
-              class="block w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
+              class="block w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
             />
           </div>
           <div>
@@ -87,7 +87,7 @@
               type="text"
               placeholder="34 ABC 123"
               maxlength="20"
-              class="block w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none uppercase"
+              class="block w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none uppercase"
               @input="carrierPlate = ($event.target as HTMLInputElement).value.toUpperCase()"
             />
           </div>
@@ -100,7 +100,7 @@
               type="tel"
               placeholder="05XX XXX XX XX"
               maxlength="30"
-              class="block w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
+              class="block w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
             />
           </div>
         </template>
@@ -116,7 +116,7 @@
         <button
           @click="save"
           :disabled="!carrierName.trim() || isSaving"
-          class="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-bold text-sm flex items-center gap-2"
+          class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-bold text-sm flex items-center gap-2"
         >
           <span v-if="isSaving" class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
           <span>{{ isSaving ? 'Kaydediliyor...' : 'Nakliyeye Ver' }}</span>
@@ -151,7 +151,7 @@
         </div>
         <div class="mt-5 flex justify-end">
           <button @click="$emit('close')"
-            class="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold text-sm">Kapat</button>
+            class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-sm">Kapat</button>
         </div>
       </template>
     </div>

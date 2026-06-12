@@ -32,13 +32,13 @@ const props = defineProps<{
 // Flat tasarımda yalnızca ikon kutusu rengi kullanılır.
 type ColorDef = { iconBg: string };
 const colorDefs: Record<string, ColorDef> = {
-  indigo: { iconBg: 'bg-indigo-600' },
+  indigo: { iconBg: 'bg-blue-600' },
   blue:   { iconBg: 'bg-blue-600' },
   green:  { iconBg: 'bg-green-600' },
   amber:  { iconBg: 'bg-amber-500' },
   orange: { iconBg: 'bg-orange-500' },
-  teal:   { iconBg: 'bg-teal-600' },
-  purple: { iconBg: 'bg-purple-600' },
+  teal:   { iconBg: 'bg-blue-600' },
+  purple: { iconBg: 'bg-violet-600' },
   red:    { iconBg: 'bg-red-600' },
   gray:   { iconBg: 'bg-gray-600' },
   slate:  { iconBg: 'bg-slate-600' },

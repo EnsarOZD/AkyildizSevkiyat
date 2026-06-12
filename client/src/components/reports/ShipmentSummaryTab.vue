@@ -18,7 +18,7 @@
       <ReportStat label="Depoda"        :value="summary.assignedToWarehouse" tone="blue" />
       <ReportStat label="Toplanıyor"    :value="summary.picking" tone="amber" />
       <ReportStat label="Hazır"         :value="summary.readyForDispatch" tone="green" />
-      <ReportStat label="Araçta"        :value="summary.assignedToVehicle" tone="indigo" />
+      <ReportStat label="Araçta"        :value="summary.assignedToVehicle" tone="blue" />
       <ReportStat label="Teslim Edildi" :value="summary.delivered" tone="green" />
       <ReportStat label="İptal"         :value="summary.cancelled" tone="red" />
     </div>

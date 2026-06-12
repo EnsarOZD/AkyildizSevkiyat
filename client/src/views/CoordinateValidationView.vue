@@ -20,14 +20,14 @@
           v-if="selectedIds.size > 0"
           @click="validateSelected"
           :disabled="bulkRunning"
-          class="px-4 py-2 bg-indigo-600 text-white rounded font-medium text-sm hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="px-4 py-2 bg-blue-600 text-white rounded font-medium text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Seçilileri Doğrula ({{ selectedIds.size }})
         </button>
         <button
           @click="validateAll"
           :disabled="bulkRunning || filteredProjects.length === 0"
-          class="px-4 py-2 bg-indigo-500 text-white rounded font-medium text-sm hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="px-4 py-2 bg-blue-500 text-white rounded font-medium text-sm hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Tümünü Doğrula ({{ filteredProjects.length }})
         </button>
@@ -100,7 +100,7 @@
         @click="activeTab = tab.key"
         class="px-4 py-2 text-sm font-medium rounded-t transition border-b-2"
         :class="activeTab === tab.key
-          ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+          ? 'border-blue-600 text-blue-600 dark:text-blue-400'
           : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'"
       >
         {{ tab.label }}
@@ -204,7 +204,7 @@
                 <button
                   @click="validateOne(p)"
                   :disabled="rowLoading.has(p.id) || bulkRunning || !p.address"
-                  class="text-xs px-2 py-1 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 rounded hover:bg-indigo-200 disabled:opacity-40 disabled:cursor-not-allowed"
+                  class="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-200 disabled:opacity-40 disabled:cursor-not-allowed"
                 >Doğrula</button>
                 <button
                   v-if="getValidation(p.id)?.geocodedLat"
@@ -214,7 +214,7 @@
                 <button
                   v-if="getValidation(p.id)?.placeLat"
                   @click="applyPlaceCoords(p)"
-                  class="text-xs px-2 py-1 bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 rounded hover:bg-teal-200"
+                  class="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-200"
                   title="Proje adından Google Places ile bulunan koordinatı uygula"
                 >İsimle Güncelle</button>
                 <button
@@ -254,7 +254,7 @@
           </span>
         </div>
         <div class="flex gap-2 pt-1 flex-wrap">
-          <button @click="validateOne(p)" :disabled="!p.address || rowLoading.has(p.id)" class="flex-1 text-xs py-1.5 bg-indigo-100 text-indigo-700 rounded disabled:opacity-40">Doğrula</button>
+          <button @click="validateOne(p)" :disabled="!p.address || rowLoading.has(p.id)" class="flex-1 text-xs py-1.5 bg-blue-100 text-blue-700 rounded disabled:opacity-40">Doğrula</button>
           <button v-if="getValidation(p.id)?.geocodedLat" @click="applyGeocodedCoords(p)" class="flex-1 text-xs py-1.5 bg-green-100 text-green-700 rounded">Güncelle</button>
           <a v-if="p.latitude && p.longitude" :href="`https://www.google.com/maps?q=${p.latitude},${p.longitude}`" target="_blank" class="px-3 text-xs py-1.5 border border-gray-300 rounded text-gray-500">🗺</a>
         </div>
@@ -413,7 +413,7 @@ const sourceBadgeClass = (s?: string) => {
   switch (s) {
     case 'DriverVerified': return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300';
     case 'Geocoded':       return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300';
-    case 'Manual':         return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300';
+    case 'Manual':         return 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300';
     default:               return 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400';
   }
 };

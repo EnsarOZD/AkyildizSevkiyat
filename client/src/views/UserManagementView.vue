@@ -51,7 +51,7 @@
               </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
-              <button @click="openEditModal(user)" class="text-indigo-600 hover:text-indigo-900">Düzenle</button>
+              <button @click="openEditModal(user)" class="text-blue-600 hover:text-blue-900">Düzenle</button>
               <button @click="openResetPasswordModal(user)" class="text-yellow-600 hover:text-yellow-900">Şifre Sıfırla</button>
               <button
                 @click="toggleActive(user)"
@@ -178,11 +178,11 @@ const roleLabel = (role: string) => {
 
 const roleBadgeClass = (role: string) => {
   const map: Record<string, string> = {
-    Admin: 'bg-purple-100 text-purple-800',
+    Admin: 'bg-violet-100 text-violet-800',
     Accounting: 'bg-blue-100 text-blue-800',
     Warehouse: 'bg-yellow-100 text-yellow-800',
     Manager: 'bg-green-100 text-green-800',
-    Driver: 'bg-teal-100 text-teal-800',
+    Driver: 'bg-blue-100 text-blue-800',
   };
   return map[role] || 'bg-gray-100 text-gray-800';
 };

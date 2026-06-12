@@ -21,7 +21,7 @@
           v-role="['Admin', 'Manager', 'Accounting', 'Driver']"
           @click="$emit('exportClothing')"
           :disabled="clothingExportLoading"
-          class="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition text-sm font-bold disabled:opacity-50"
+          class="w-full bg-violet-600 text-white py-2 px-4 rounded-lg hover:bg-violet-700 transition text-sm font-bold disabled:opacity-50"
         >
           <span v-if="clothingExportLoading">Netsis'e aktarılıyor...</span>
           <span v-else>Netsis'e Gönder (Kıyafet)</span>
@@ -42,7 +42,7 @@
           v-role="['Admin', 'Manager', 'Accounting', 'Driver']"
           @click="$emit('fetchIrsaliye')"
           :disabled="irsaliyeFetchLoading"
-          class="w-full border border-indigo-400 text-indigo-600 py-2 px-4 rounded-lg hover:bg-indigo-50 transition text-sm font-medium disabled:opacity-50"
+          class="w-full border border-blue-400 text-blue-600 py-2 px-4 rounded-lg hover:bg-blue-50 transition text-sm font-medium disabled:opacity-50"
         >
           <span v-if="irsaliyeFetchLoading">İrsaliye çekiliyor...</span>
           <span v-else>İrsaliye Yenile</span>
@@ -104,7 +104,7 @@
           @click="$emit('openAssignVehicle')"
           :disabled="!shipment.zoneId"
           class="w-full text-white py-2 px-4 rounded-lg transition text-sm font-medium"
-          :class="!shipment.zoneId ? 'bg-gray-300 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'"
+          :class="!shipment.zoneId ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'"
         >Araca Ata</button>
 
         <button

@@ -23,7 +23,7 @@
               type="checkbox"
               :checked="selectedIds.has(c.id)"
               @change="toggle(c.id)"
-              class="h-4 w-4 rounded border-gray-300 text-indigo-600"
+              class="h-4 w-4 rounded border-gray-300 text-blue-600"
             />
             <div class="flex-1 min-w-0">
               <div class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ c.name }}</div>
@@ -45,7 +45,7 @@
       <button
         @click="submit"
         :disabled="submitting"
-        class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 font-semibold text-sm disabled:opacity-50"
+        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-semibold text-sm disabled:opacity-50"
       >
         {{ submitting ? 'Gönderiliyor...' : submitLabel }}
       </button>

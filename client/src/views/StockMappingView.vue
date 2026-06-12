@@ -23,7 +23,7 @@
 
         <input type="file" ref="mappingFileInput" class="hidden" accept=".xlsx" @change="uploadMappings" />
         <button @click="mappingFileInput?.click()"
-          class="px-3 py-1.5 bg-purple-600 text-white rounded hover:bg-purple-700 text-sm flex items-center gap-1.5 font-medium">
+          class="px-3 py-1.5 bg-violet-600 text-white rounded hover:bg-violet-700 text-sm flex items-center gap-1.5 font-medium">
           <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -54,7 +54,7 @@
       <!-- Search + Filter -->
       <div class="flex gap-2 flex-wrap">
         <input v-model="search" @input="onSearch" type="text" placeholder="Ara (ISS kodu, ad, sistem kodu)..."
-          class="border border-gray-300 dark:border-gray-700 rounded px-3 py-1.5 text-sm bg-white dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-teal-400 w-64" />
+          class="border border-gray-300 dark:border-gray-700 rounded px-3 py-1.5 text-sm bg-white dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 w-64" />
         <button @click="refresh"
           class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded" title="Yenile">
           <svg class="h-5 w-5 text-gray-500 dark:text-gray-400" viewBox="0 0 20 20" fill="currentColor">
@@ -73,7 +73,7 @@
           @click="switchTab(tab.value)"
           class="py-3 px-5 border-b-2 font-semibold text-sm transition-all whitespace-nowrap"
           :class="activeStatus === tab.value
-            ? 'border-teal-500 text-teal-600 bg-teal-50/30'
+            ? 'border-blue-500 text-blue-600 bg-blue-50/30'
             : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'">
           {{ tab.label }}
           <span class="ml-1 text-[11px] opacity-60">({{ tab.count ?? '?' }})</span>
@@ -125,7 +125,7 @@
                     class="px-2 py-1 text-xs flex items-center gap-1 rounded"
                     :class="rowState[item.id]?.showCreateForm
                       ? 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                      : 'bg-teal-500 hover:bg-teal-600 text-white'"
+                      : 'bg-blue-500 hover:bg-blue-600 text-white'"
                     title="Yeni Stok Kartı Aç">
                     <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -138,14 +138,14 @@
                   <div v-if="rowState[item.id]?.selectedLocalId" class="flex items-center gap-1">
                     <label class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Netsis:</label>
                     <input v-model="rowState[item.id]!.netsisCode" type="text" placeholder="Netsis kodu"
-                      class="w-28 border rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-teal-500 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100"
+                      class="w-28 border rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100"
                       :class="!rowState[item.id]?.netsisCode ? 'border-orange-400 dark:border-orange-500' : 'border-gray-300'" />
                     <span v-if="!rowState[item.id]?.netsisCode" class="text-orange-500 text-xs" title="Netsis aktarımı için zorunlu">⚠</span>
                   </div>
 
                   <button @click="mapItem(item, false)"
                     :disabled="!rowState[item.id]?.selectedLocalId"
-                    class="px-3 py-1 bg-teal-600 text-white rounded hover:bg-teal-700 text-sm disabled:opacity-40 disabled:cursor-not-allowed font-medium">
+                    class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm disabled:opacity-40 disabled:cursor-not-allowed font-medium">
                     Eşleştir
                   </button>
                   <button @click="mapItem(item, true)"
@@ -157,15 +157,15 @@
 
               <!-- Inline yeni stok kartı formu -->
               <div v-if="rowState[item.id]?.showCreateForm"
-                class="mt-3 pt-3 border-t dark:border-gray-700 bg-teal-50 dark:bg-teal-900/10 rounded-b p-3">
-                <p class="text-xs font-semibold text-teal-700 dark:text-teal-400 mb-2">
+                class="mt-3 pt-3 border-t dark:border-gray-700 bg-blue-50 dark:bg-blue-900/10 rounded-b p-3">
+                <p class="text-xs font-semibold text-blue-700 dark:text-blue-400 mb-2">
                   Yeni stok kartı: <span class="font-bold">{{ rowState[item.id]?.currentSearch }}</span>
                 </p>
                 <div class="flex flex-wrap gap-3 items-end">
                   <div>
                     <label class="block text-xs text-gray-600 dark:text-gray-400 mb-0.5">Kategori <span class="text-red-500">*</span></label>
                     <select v-model="rowState[item.id]!.newCategory"
-                      class="border rounded px-2 py-1 text-xs bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-teal-500"
+                      class="border rounded px-2 py-1 text-xs bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
                       :class="!rowState[item.id]?.newCategory ? 'border-red-400' : 'border-gray-300'">
                       <option :value="undefined" disabled>Seçin...</option>
                       <option :value="1">Gıda</option>
@@ -179,7 +179,7 @@
                   <div>
                     <label class="block text-xs text-gray-600 dark:text-gray-400 mb-0.5">Birim</label>
                     <select v-model="rowState[item.id]!.newUnit"
-                      class="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-xs bg-white dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-teal-500">
+                      class="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-xs bg-white dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
                       <option :value="0">Adet</option>
                       <option :value="1">Kg</option>
                       <option :value="2">Paket</option>
@@ -195,14 +195,14 @@
                   <div>
                     <label class="block text-xs text-gray-600 dark:text-gray-400 mb-0.5">Picking</label>
                     <select v-model="rowState[item.id]!.newPickingType"
-                      class="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-xs bg-white dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-teal-500">
+                      class="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-xs bg-white dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
                       <option :value="1">Micro</option>
                       <option :value="2">Macro</option>
                     </select>
                   </div>
                   <button @click="createAndSelectStock(item)"
                     :disabled="!rowState[item.id]?.newCategory"
-                    class="px-3 py-1 bg-teal-600 hover:bg-teal-700 text-white rounded text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed">
+                    class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed">
                     Oluştur
                   </button>
                 </div>
@@ -229,7 +229,7 @@
                 <!-- Eşleştirme bilgisi -->
                 <div v-if="item.status === 'Mapped'" class="flex-1 min-w-0">
                   <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase font-bold mb-0.5">Sistem Stok</div>
-                  <div class="text-sm font-semibold text-teal-700 dark:text-teal-400">{{ item.localStockCode }}</div>
+                  <div class="text-sm font-semibold text-blue-700 dark:text-blue-400">{{ item.localStockCode }}</div>
                   <div class="text-xs text-gray-600 dark:text-gray-400 truncate">{{ item.localStockName }}</div>
                   <div v-if="item.netsisStockCode" class="text-[10px] text-gray-400 mt-0.5">
                     Netsis: <span class="font-mono font-medium text-gray-600 dark:text-gray-300">{{ item.netsisStockCode }}</span>
@@ -262,12 +262,12 @@
                   <div class="flex items-center gap-1">
                     <label class="text-xs text-gray-500 whitespace-nowrap">Netsis:</label>
                     <input v-model="editState.netsisCode" type="text" placeholder="Netsis kodu"
-                      class="w-28 border rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-teal-500 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100"
+                      class="w-28 border rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100"
                       :class="!editState.netsisCode ? 'border-orange-400' : 'border-gray-300'" />
                   </div>
                   <button @click="saveEdit(item)"
                     :disabled="!editState.selectedLocalId"
-                    class="px-3 py-1 bg-teal-600 text-white rounded hover:bg-teal-700 text-sm disabled:opacity-40 font-medium">
+                    class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm disabled:opacity-40 font-medium">
                     Kaydet
                   </button>
                   <button @click="cancelEdit"

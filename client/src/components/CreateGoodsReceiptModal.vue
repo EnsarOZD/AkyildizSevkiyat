@@ -20,9 +20,9 @@
       <p class="text-sm font-semibold text-blue-900 dark:text-blue-100">{{ purchaseOrder.orderNumber }} — {{ purchaseOrder.supplierNameSnapshot }}</p>
       <p class="text-xs text-blue-600 dark:text-blue-400 mt-0.5">{{ formatDate(purchaseOrder.orderDate) }}</p>
     </div>
-    <div v-else-if="purchaseOrderIds && purchaseOrderIds.length > 0" class="mb-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl p-3 border border-indigo-200 dark:border-indigo-800">
-      <p class="text-xs font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wider mb-1">Bağlı Siparişler</p>
-      <p class="text-sm font-semibold text-indigo-900 dark:text-indigo-100">{{ purchaseOrderIds.length }} adet sipariş seçildi</p>
+    <div v-else-if="purchaseOrderIds && purchaseOrderIds.length > 0" class="mb-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-3 border border-blue-200 dark:border-blue-800">
+      <p class="text-xs font-bold text-blue-700 dark:text-blue-300 uppercase tracking-wider mb-1">Bağlı Siparişler</p>
+      <p class="text-sm font-semibold text-blue-900 dark:text-blue-100">{{ purchaseOrderIds.length }} adet sipariş seçildi</p>
     </div>
     <div v-else class="mb-4 p-3 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-xl">
        <p class="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider mb-2">Siparişsiz Mal Kabul</p>
@@ -41,7 +41,7 @@
       <button
         @click="showScanModal = true"
         type="button"
-        class="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-indigo-300 dark:border-indigo-700 rounded-xl text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+        class="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-xl text-sm font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
       >
         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />

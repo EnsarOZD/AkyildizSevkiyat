@@ -17,7 +17,7 @@
         <div class="flex items-center gap-3 mb-2">
           <button
             @click="router.back()"
-            class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-indigo-300 transition-all"
+            class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-blue-300 transition-all"
           >
             <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
@@ -25,23 +25,23 @@
             Geri
           </button>
           <nav class="flex items-center gap-2 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
-            <button @click="router.back()" class="hover:text-indigo-600 transition-colors">Siparişler</button>
+            <button @click="router.back()" class="hover:text-blue-600 transition-colors">Siparişler</button>
             <span class="text-gray-300">/</span>
-            <span class="text-indigo-600 dark:text-indigo-400">{{ order.orderNumber }}</span>
+            <span class="text-blue-600 dark:text-blue-400">{{ order.orderNumber }}</span>
           </nav>
         </div>
 
         <!-- Main Header Card -->
-        <div class="relative overflow-hidden bg-white dark:bg-gray-900 rounded-3xl shadow-xl shadow-indigo-100/50 dark:shadow-none border border-indigo-50 dark:border-indigo-900 group">
+        <div class="relative overflow-hidden bg-white dark:bg-gray-900 rounded-3xl shadow-xl shadow-blue-100/50 dark:shadow-none border border-blue-50 dark:border-blue-900 group">
           <!-- Decorative gradient -->
-          <div class="absolute -top-24 -right-24 h-64 w-64 bg-indigo-500/5 rounded-full blur-3xl group-hover:bg-indigo-500/10 transition-all duration-700"></div>
+          <div class="absolute -top-24 -right-24 h-64 w-64 bg-blue-500/5 rounded-full blur-3xl group-hover:bg-blue-500/10 transition-all duration-700"></div>
           
           <div class="relative p-6 sm:p-8">
             <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
               <!-- Left: Info -->
               <div class="space-y-4">
                 <div class="flex items-center gap-3">
-                  <div class="p-3 bg-indigo-600 rounded-2xl text-white shadow-lg shadow-indigo-200 dark:shadow-none">
+                  <div class="p-3 bg-blue-600 rounded-2xl text-white shadow-lg shadow-blue-200 dark:shadow-none">
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                     </svg>
@@ -60,7 +60,7 @@
                 <div class="grid grid-cols-2 sm:flex sm:items-center gap-4 sm:gap-8 pt-2">
                   <div class="space-y-0.5">
                     <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sipariş No</p>
-                    <p class="text-sm font-bold text-indigo-600 dark:text-indigo-400">{{ order.orderNumber }}</p>
+                    <p class="text-sm font-bold text-blue-600 dark:text-blue-400">{{ order.orderNumber }}</p>
                   </div>
                   <div v-if="order.expectedDeliveryDate" class="space-y-0.5">
                      <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Termin Tarihi</p>
@@ -111,11 +111,11 @@
                  <!-- Primary Actions -->
                  <div class="flex flex-wrap gap-2">
                     <template v-if="order.status === 'Draft'">
-                      <button v-if="canEdit" @click="handleApprove" :disabled="actionLoading" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-100 dark:shadow-none transition-all flex items-center justify-center gap-2">
+                      <button v-if="canEdit" @click="handleApprove" :disabled="actionLoading" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-100 dark:shadow-none transition-all flex items-center justify-center gap-2">
                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         Onayla
                       </button>
-                      <button v-if="canEdit" @click="showEditForm = !showEditForm" class="p-3 text-indigo-600 bg-indigo-50 dark:bg-indigo-900/10 hover:bg-indigo-100 dark:hover:bg-indigo-900/20 rounded-xl transition-all">
+                      <button v-if="canEdit" @click="showEditForm = !showEditForm" class="p-3 text-blue-600 bg-blue-50 dark:bg-blue-900/10 hover:bg-blue-100 dark:hover:bg-blue-900/20 rounded-xl transition-all">
                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                       </button>
                       <button v-if="canEdit" @click="handleCancel" class="p-3 text-red-500 bg-red-50 dark:bg-red-900/10 hover:bg-red-100 rounded-xl transition-all">
@@ -171,7 +171,7 @@
                </div>
                <div class="flex justify-end gap-2">
                   <button @click="showEditForm = false" class="px-4 py-2 text-xs font-bold text-gray-500 uppercase">Vazgeç</button>
-                  <button @click="handleUpdate" :disabled="updating" class="px-6 py-2 bg-indigo-600 text-white text-xs font-black uppercase rounded-lg shadow-lg shadow-indigo-100">Güncelle</button>
+                  <button @click="handleUpdate" :disabled="updating" class="px-6 py-2 bg-blue-600 text-white text-xs font-black uppercase rounded-lg shadow-lg shadow-blue-100">Güncelle</button>
                </div>
             </div>
 
@@ -188,7 +188,7 @@
           <div class="px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
             <h2 class="text-sm font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
                Sipariş Kalemleri
-               <span class="bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full text-[10px] font-black">{{ order.lines?.length || 0 }}</span>
+               <span class="bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full text-[10px] font-black">{{ order.lines?.length || 0 }}</span>
             </h2>
           </div>
 
@@ -208,7 +208,7 @@
                 <tr v-if="!order.lines || order.lines.length === 0">
                   <td colspan="5" class="px-6 py-16 text-center text-sm text-gray-400 font-bold uppercase tracking-widest">Henüz kalem eklenmemiş.</td>
                 </tr>
-                <tr v-for="line in order.lines" :key="line.id" class="hover:bg-indigo-50/30 dark:hover:bg-indigo-900/10 transition-colors group">
+                <tr v-for="line in order.lines" :key="line.id" class="hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-colors group">
                   <td class="px-6 py-4">
                     <div class="flex items-center gap-3">
                         <div class="h-10 w-10 shrink-0 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400 font-black text-xs">
@@ -222,7 +222,7 @@
                     </td>
                   <td class="px-4 py-4 text-center">
                      <div v-if="order.status === 'Draft' && editingLineId === line.id" class="flex items-center justify-center gap-1">
-                        <input v-model.number="editLineForm.orderedQty" type="number" step="0.01" class="w-20 border-indigo-200 rounded-lg px-2 py-1 text-sm text-center dark:bg-gray-800 font-black" />
+                        <input v-model.number="editLineForm.orderedQty" type="number" step="0.01" class="w-20 border-blue-200 rounded-lg px-2 py-1 text-sm text-center dark:bg-gray-800 font-black" />
                         <button @click="saveLineEdit(line)" class="p-1 text-green-600"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg></button>
                      </div>
                      <span v-else class="text-sm font-black text-gray-900 dark:text-gray-100">{{ line.orderedQty }}</span>
@@ -237,7 +237,7 @@
                   </td>
                   <td v-if="order.status === 'Draft'" class="px-6 py-4 text-right">
                     <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button @click="startLineEdit(line)" class="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all">
+                      <button @click="startLineEdit(line)" class="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-all">
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                       </button>
                       <button @click="confirmRemoveLine(line)" class="p-2 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all">
@@ -246,12 +246,12 @@
                     </div>
                   </td>
                 </tr>
-                <tr v-if="order.status === 'Draft' && showAddLineForm" class="bg-indigo-50/50 dark:bg-indigo-900/20">
+                <tr v-if="order.status === 'Draft' && showAddLineForm" class="bg-blue-50/50 dark:bg-blue-900/20">
                   <td class="px-6 py-4">
                      <StockCombobox v-model="newLineForm.stockMasterId" />
                   </td>
                   <td class="px-4 py-4 text-center">
-                     <input v-model.number="newLineForm.orderedQty" type="number" step="0.01" class="w-20 border-indigo-200 rounded-lg px-2 py-1 text-sm text-center dark:bg-gray-800 font-black" placeholder="Miktar" />
+                     <input v-model.number="newLineForm.orderedQty" type="number" step="0.01" class="w-20 border-blue-200 rounded-lg px-2 py-1 text-sm text-center dark:bg-gray-800 font-black" placeholder="Miktar" />
                   </td>
                   <td class="px-4 py-4 text-center">
                      <!-- New line, no received qty yet -->
@@ -272,7 +272,7 @@
                   </td>
                 </tr>
                 <tr v-if="order.status === 'Draft' && !showAddLineForm" class="bg-gray-50/10 hover:bg-gray-50 dark:bg-gray-900 dark:hover:bg-gray-800/50 cursor-pointer" @click="showAddLineForm = true">
-                  <td colspan="5" class="px-6 py-4 text-center text-sm font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center justify-center gap-2">
+                  <td colspan="5" class="px-6 py-4 text-center text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center justify-center gap-2">
                      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
                      Yeni Kalem Ekle
                   </td>
@@ -325,13 +325,13 @@
             </div>
             <!-- Mobile Add Line Button -->
             <div v-if="order.status === 'Draft' && !showAddLineForm" class="px-4 py-4 w-full">
-               <button @click="showAddLineForm = true" class="w-full py-3 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-xl font-bold text-sm tracking-wide uppercase flex items-center justify-center gap-2">
+               <button @click="showAddLineForm = true" class="w-full py-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl font-bold text-sm tracking-wide uppercase flex items-center justify-center gap-2">
                   <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
                   Yeni Kalem Ekle
                </button>
             </div>
             <!-- Mobile Add Line Form -->
-            <div v-if="order.status === 'Draft' && showAddLineForm" class="px-4 py-4 bg-indigo-50/50 dark:bg-indigo-900/10">
+            <div v-if="order.status === 'Draft' && showAddLineForm" class="px-4 py-4 bg-blue-50/50 dark:bg-blue-900/10">
                <div class="space-y-3">
                   <StockCombobox v-model="newLineForm.stockMasterId" />
                   <input v-model.number="newLineForm.orderedQty" type="number" step="0.01" class="w-full border-gray-200 rounded-xl px-4 py-2 text-sm dark:bg-gray-800 font-black" placeholder="Miktar girin..." />

@@ -134,12 +134,12 @@ function clearFilters() { activeTypeFilter.value = null; search.value = ''; }
 function fmt(n: number) { return n.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 2 }); }
 
 const TONE_TEXT: Record<number, string> = {
-  0: 'text-blue-600 dark:text-blue-300', 1: 'text-amber-600 dark:text-amber-300', 2: 'text-indigo-600 dark:text-indigo-300',
-  3: 'text-indigo-600 dark:text-indigo-300', 4: 'text-amber-600 dark:text-amber-300', 5: 'text-gray-500 dark:text-white/60',
+  0: 'text-blue-600 dark:text-blue-300', 1: 'text-amber-600 dark:text-amber-300', 2: 'text-blue-600 dark:text-blue-300',
+  3: 'text-blue-600 dark:text-blue-300', 4: 'text-amber-600 dark:text-amber-300', 5: 'text-gray-500 dark:text-white/60',
   6: 'text-emerald-600 dark:text-emerald-300', 7: 'text-red-600 dark:text-red-300',
 };
 const TONE_DOT: Record<number, string> = {
-  0: 'bg-blue-500', 1: 'bg-amber-500', 2: 'bg-indigo-500', 3: 'bg-indigo-500', 4: 'bg-amber-500', 5: 'bg-gray-400', 6: 'bg-emerald-500', 7: 'bg-red-500',
+  0: 'bg-blue-500', 1: 'bg-amber-500', 2: 'bg-blue-500', 3: 'bg-blue-500', 4: 'bg-amber-500', 5: 'bg-gray-400', 6: 'bg-emerald-500', 7: 'bg-red-500',
 };
 const typeText = (id: number) => TONE_TEXT[id] ?? TONE_TEXT[5];
 const typeDot = (id: number) => TONE_DOT[id] ?? TONE_DOT[5];

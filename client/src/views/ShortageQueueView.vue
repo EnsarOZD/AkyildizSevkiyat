@@ -17,9 +17,9 @@
     </div>
 
     <!-- Gönder çubuğu -->
-    <div v-if="selectedPending.length" class="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-3 flex items-center justify-between">
-      <span class="text-sm text-purple-800 dark:text-purple-200">{{ selectedPending.length }} eksik seçili — proje/sipariş bazında gruplanarak gönderilecek.</span>
-      <button @click="dispatch" :disabled="busy" class="px-4 py-2 bg-purple-600 disabled:opacity-50 text-white font-bold rounded-lg text-sm">Gönder</button>
+    <div v-if="selectedPending.length" class="bg-violet-50 dark:bg-violet-900/20 rounded-xl p-3 flex items-center justify-between">
+      <span class="text-sm text-violet-800 dark:text-violet-200">{{ selectedPending.length }} eksik seçili — proje/sipariş bazında gruplanarak gönderilecek.</span>
+      <button @click="dispatch" :disabled="busy" class="px-4 py-2 bg-violet-600 disabled:opacity-50 text-white font-bold rounded-lg text-sm">Gönder</button>
     </div>
 
     <div v-if="loading" class="text-center py-12 text-gray-400 text-sm">Yükleniyor...</div>
@@ -27,7 +27,7 @@
 
     <div v-else class="space-y-2">
       <div v-for="r in filtered" :key="r.id" class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-3 flex items-center gap-3">
-        <input v-if="r.status === 0" type="checkbox" :checked="selected.has(r.id)" @change="toggle(r.id)" class="h-5 w-5 rounded text-purple-600" />
+        <input v-if="r.status === 0" type="checkbox" :checked="selected.has(r.id)" @change="toggle(r.id)" class="h-5 w-5 rounded text-violet-600" />
         <div class="flex-1 min-w-0">
           <div class="flex flex-wrap items-center gap-1.5">
             <span class="font-semibold text-gray-900 dark:text-gray-100">{{ r.stockName }}</span>
@@ -38,7 +38,7 @@
             <span class="font-bold text-red-600">{{ r.qty }}</span> eksik · {{ r.projectName }}
             <span v-if="r.externalOrderNumber"> · {{ r.externalOrderNumber }}</span>
             <span v-if="r.followupShipmentId"> · →
-              <router-link :to="`/shipments/${r.followupShipmentId}`" class="text-purple-600 underline">tamamlama #{{ r.followupShipmentId }}</router-link>
+              <router-link :to="`/shipments/${r.followupShipmentId}`" class="text-violet-600 underline">tamamlama #{{ r.followupShipmentId }}</router-link>
             </span>
           </div>
           <div v-if="r.note" class="text-[11px] text-gray-400 mt-0.5">{{ r.note }}</div>

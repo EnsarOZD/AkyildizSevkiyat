@@ -11,7 +11,7 @@
       <button
         v-if="store.unreadCount > 0"
         @click="store.markAllRead()"
-        class="px-3 py-2 text-sm font-medium rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-colors"
+        class="px-3 py-2 text-sm font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors"
       >Tümünü okundu işaretle</button>
     </div>
 
@@ -31,10 +31,10 @@
           class="flex items-start gap-3 px-4 py-3.5 cursor-pointer transition-colors"
           :class="n.isRead
             ? 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
-            : 'bg-indigo-50/50 dark:bg-indigo-900/10 hover:bg-indigo-50 dark:hover:bg-indigo-900/20'"
+            : 'bg-blue-50/50 dark:bg-blue-900/10 hover:bg-blue-50 dark:hover:bg-blue-900/20'"
         >
           <span class="mt-1.5 w-2 h-2 rounded-full flex-shrink-0"
-            :class="n.isRead ? 'bg-transparent' : 'bg-indigo-500'"></span>
+            :class="n.isRead ? 'bg-transparent' : 'bg-blue-500'"></span>
           <div class="flex-1 min-w-0">
             <p class="text-sm font-medium text-gray-800 dark:text-gray-200 leading-snug">{{ n.title }}</p>
             <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5 leading-snug">{{ n.body }}</p>
@@ -43,7 +43,7 @@
           <button
             v-if="!n.isRead"
             @click.stop="store.markRead(n.id)"
-            class="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline flex-shrink-0 mt-0.5"
+            class="text-[11px] text-blue-600 dark:text-blue-400 hover:underline flex-shrink-0 mt-0.5"
           >Okundu</button>
         </div>
       </div>

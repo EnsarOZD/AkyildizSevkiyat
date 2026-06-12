@@ -10,7 +10,7 @@
       </div>
       <button
         @click="openCreate"
-        class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700"
+        class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
       >
         + Yeni Müşteri
       </button>
@@ -64,7 +64,7 @@
             <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">{{ c.netsisTeslimCariKodu || '—' }}</td>
             <td class="px-4 py-2 text-sm">
               <span :class="c.operationType === 1
-                ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+                ? 'bg-violet-100 text-violet-800 dark:bg-violet-900 dark:text-violet-200'
                 : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'"
                 class="px-2 py-0.5 rounded-full text-xs">
                 {{ c.operationType === 1 ? 'Kıyafet' : 'Catering' }}
@@ -82,7 +82,7 @@
               </span>
             </td>
             <td class="px-4 py-2 text-right text-sm">
-              <button @click="openEdit(c)" class="text-indigo-600 hover:text-indigo-800 mr-3">Düzenle</button>
+              <button @click="openEdit(c)" class="text-blue-600 hover:text-blue-800 mr-3">Düzenle</button>
               <button @click="toggleActive(c)" class="text-gray-600 hover:text-gray-800">
                 {{ c.isActive ? 'Pasifleştir' : 'Aktifleştir' }}
               </button>
@@ -214,6 +214,6 @@ fetchData();
 
 <style scoped>
 .input {
-  @apply bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm;
+  @apply bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm;
 }
 </style>

@@ -55,7 +55,7 @@
         <div class="mt-6">
           <div class="flex justify-between items-center mb-2">
             <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100">Kalemler</h4>
-            <button @click="showStockPicker = true" type="button" class="px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700">
+            <button @click="showStockPicker = true" type="button" class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">
               + Satır Ekle
             </button>
           </div>
@@ -262,6 +262,6 @@ async function save() {
 
 <style scoped>
 .input {
-  @apply bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm;
+  @apply bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm;
 }
 </style>

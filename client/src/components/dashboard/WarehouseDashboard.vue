@@ -255,7 +255,7 @@ const ZP_BADGE: Record<string, string> = {
   MicroReady:         'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300',
   MacroPicking:       'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300',
   GidaHazirlik:       'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
-  ReadyForDriverInfo: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',
+  ReadyForDriverInfo: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
   ReadyForTransfer:   'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
   Dispatched:         'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
 };

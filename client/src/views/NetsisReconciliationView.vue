@@ -84,7 +84,7 @@
             <span
               class="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border"
               :class="shipment.operationType === 'Kıyafet'
-                ? 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/40 dark:text-purple-300 dark:border-purple-700'
+                ? 'bg-violet-100 text-violet-700 border-violet-200 dark:bg-violet-900/40 dark:text-violet-300 dark:border-violet-700'
                 : 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700'"
             >{{ shipment.operationType }}</span>
           </div>
@@ -92,7 +92,7 @@
             <span class="text-xs text-gray-500 dark:text-gray-400">
               {{ formatDate(shipment.deliveryDate) }}
             </span>
-            <span v-if="shipment.irsaliyeNo" class="text-xs font-mono text-indigo-600 dark:text-indigo-400">
+            <span v-if="shipment.irsaliyeNo" class="text-xs font-mono text-blue-600 dark:text-blue-400">
               {{ shipment.irsaliyeNo }}
             </span>
             <span

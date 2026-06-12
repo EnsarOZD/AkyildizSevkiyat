@@ -3,9 +3,9 @@
     <div class="flex gap-2">
       <input v-model="code" @keyup.enter="emitCode" type="text" inputmode="text"
              :placeholder="placeholder"
-             class="flex-1 px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-400" />
+             class="flex-1 px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-violet-400" />
       <button @click="emitCode" :disabled="!code.trim()"
-              class="px-4 py-2.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-semibold rounded-lg text-sm whitespace-nowrap">Onayla</button>
+              class="px-4 py-2.5 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white font-semibold rounded-lg text-sm whitespace-nowrap">Onayla</button>
       <button @click="toggleCamera" class="px-3 py-2.5 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm" :title="scanning ? 'Kamerayı kapat' : 'Kamerayı aç'">
         {{ scanning ? '✕' : '📷' }}
       </button>
@@ -13,7 +13,7 @@
     <div v-if="scanning" class="relative rounded-xl overflow-hidden bg-black aspect-video">
       <video ref="videoEl" class="w-full h-full object-cover" autoplay playsinline muted></video>
       <canvas ref="canvasEl" class="hidden"></canvas>
-      <div class="absolute inset-0 border-4 border-purple-400/60 m-8 rounded-lg pointer-events-none"></div>
+      <div class="absolute inset-0 border-4 border-violet-400/60 m-8 rounded-lg pointer-events-none"></div>
     </div>
     <p v-if="error" class="text-xs text-red-500">{{ error }}</p>
   </div>

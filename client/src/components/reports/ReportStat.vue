@@ -24,13 +24,13 @@ const VALUE: Record<string, string> = {
   blue:   'text-blue-600 dark:text-blue-300',
   amber:  'text-amber-600 dark:text-amber-300',
   green:  'text-emerald-600 dark:text-emerald-300',
-  indigo: 'text-indigo-600 dark:text-indigo-300',
+  indigo: 'text-blue-600 dark:text-blue-300',
   red:    'text-red-600 dark:text-red-300',
   gray:   'text-gray-500 dark:text-white/60',
 };
 const DOT: Record<string, string> = {
   blue: 'bg-blue-500', amber: 'bg-amber-500', green: 'bg-emerald-500',
-  indigo: 'bg-indigo-500', red: 'bg-red-500', gray: 'bg-gray-400',
+  indigo: 'bg-blue-500', red: 'bg-red-500', gray: 'bg-gray-400',
 };
 const valueCls = computed(() => VALUE[props.tone] || VALUE.neutral);
 const dotCls = computed(() => DOT[props.tone] || '');

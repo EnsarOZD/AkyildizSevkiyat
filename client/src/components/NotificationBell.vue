@@ -33,7 +33,7 @@
             <button
               v-if="unreadCount > 0"
               @click="markAllRead"
-              class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+              class="text-xs text-blue-600 dark:text-blue-400 hover:underline"
             >Tümünü okundu işaretle</button>
             <button
               v-if="webPush.isSupported.value"
@@ -62,11 +62,11 @@
             class="flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors"
             :class="n.isRead
               ? 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
-              : 'bg-indigo-50/50 dark:bg-indigo-900/10 hover:bg-indigo-50 dark:hover:bg-indigo-900/20'"
+              : 'bg-blue-50/50 dark:bg-blue-900/10 hover:bg-blue-50 dark:hover:bg-blue-900/20'"
           >
             <span
               class="mt-1 w-2 h-2 rounded-full flex-shrink-0"
-              :class="n.isRead ? 'bg-transparent' : 'bg-indigo-500'"
+              :class="n.isRead ? 'bg-transparent' : 'bg-blue-500'"
             ></span>
             <div class="flex-1 min-w-0">
               <p class="text-sm font-medium text-gray-800 dark:text-gray-200 leading-snug">{{ n.title }}</p>
@@ -80,7 +80,7 @@
         <div class="border-t border-gray-100 dark:border-gray-800">
           <button
             @click="goToAll"
-            class="w-full text-center px-4 py-2.5 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+            class="w-full text-center px-4 py-2.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
           >Tüm bildirimleri gör</button>
         </div>
       </div>

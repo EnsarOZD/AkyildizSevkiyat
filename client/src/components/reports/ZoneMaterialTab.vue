@@ -29,7 +29,7 @@
 
     <div v-if="reportData.length > 0" class="grid grid-cols-1 md:grid-cols-3 gap-3">
       <ReportStat label="Toplam Kalem" :value="totalMaterialRows" tone="blue" />
-      <ReportStat label="Toplam Miktar" :value="formatQty(totalQtySum)" tone="indigo" />
+      <ReportStat label="Toplam Miktar" :value="formatQty(totalQtySum)" tone="blue" />
       <ReportStat label="Miktar Modu" :value="filters.qtyMode === 'Ordered' ? 'Sipariş (Plan)' : 'Sevkiyat (Fiili)'" />
     </div>
 

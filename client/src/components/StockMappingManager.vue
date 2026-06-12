@@ -20,7 +20,7 @@
       </button>
 
       <input type="file" ref="mappingFileInput" class="hidden" accept=".xlsx" @change="uploadStockMappings">
-      <button @click="mappingFileInput?.click()" class="px-3 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 text-sm flex items-center gap-1">
+      <button @click="mappingFileInput?.click()" class="px-3 py-1 bg-violet-600 text-white rounded hover:bg-violet-700 text-sm flex items-center gap-1">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
         </svg>
@@ -75,7 +75,7 @@
                 class="px-2 py-1 text-xs flex items-center gap-1 rounded"
                 :class="stock.showCreateForm
                   ? 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                  : 'bg-teal-500 hover:bg-teal-600 text-white'"
+                  : 'bg-blue-500 hover:bg-blue-600 text-white'"
                 title="Yeni Stok Kartı Aç"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -117,8 +117,8 @@
         </div>
 
         <!-- Inline yeni stok kartı formu -->
-        <div v-if="stock.showCreateForm" class="mt-3 pt-3 border-t dark:border-gray-700 bg-teal-50 dark:bg-teal-900/10 rounded-b p-3">
-          <p class="text-xs font-semibold text-teal-700 dark:text-teal-400 mb-2">
+        <div v-if="stock.showCreateForm" class="mt-3 pt-3 border-t dark:border-gray-700 bg-blue-50 dark:bg-blue-900/10 rounded-b p-3">
+          <p class="text-xs font-semibold text-blue-700 dark:text-blue-400 mb-2">
             Yeni stok kartı: <span class="font-bold">{{ stock.currentSearch }}</span>
           </p>
           <div class="flex flex-wrap gap-3 items-end">
@@ -129,7 +129,7 @@
               </label>
               <select
                 v-model="stock.newCategory"
-                class="border rounded px-2 py-1 text-xs bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-teal-500"
+                class="border rounded px-2 py-1 text-xs bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
                 :class="!stock.newCategory ? 'border-red-400' : 'border-gray-300'"
               >
                 <option :value="undefined" disabled>Seçin...</option>
@@ -147,7 +147,7 @@
               <label class="block text-xs text-gray-600 dark:text-gray-400 mb-0.5">Birim</label>
               <select
                 v-model="stock.newUnit"
-                class="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-xs bg-white dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-teal-500"
+                class="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-xs bg-white dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
               >
                 <option :value="0">Adet</option>
                 <option :value="1">Kg</option>
@@ -167,7 +167,7 @@
               <label class="block text-xs text-gray-600 dark:text-gray-400 mb-0.5">Picking</label>
               <select
                 v-model="stock.newPickingType"
-                class="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-xs bg-white dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-teal-500"
+                class="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-xs bg-white dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
               >
                 <option :value="1">Micro</option>
                 <option :value="2">Macro</option>
@@ -177,7 +177,7 @@
             <button
               @click="createAndSelectStock(stock)"
               :disabled="!stock.newCategory"
-              class="px-3 py-1 bg-teal-600 hover:bg-teal-700 text-white rounded text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+              class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Oluştur
             </button>

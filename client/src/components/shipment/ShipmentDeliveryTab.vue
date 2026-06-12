@@ -5,7 +5,7 @@
     <div class="p-5">
       <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
         Araç &amp; {{ isFreight ? 'Taşıyıcı' : 'Sürücü' }}
-        <span v-if="isFreight" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 normal-case">Nakliye</span>
+        <span v-if="isFreight" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 normal-case">Nakliye</span>
       </h3>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
         <div>
@@ -34,7 +34,7 @@
             <button
               v-role="['Admin', 'Manager']"
               @click="$emit('openIrsaliye')"
-              class="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 border border-indigo-200 dark:border-indigo-800 rounded px-1.5 py-0.5 transition-colors"
+              class="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 border border-blue-200 dark:border-blue-800 rounded px-1.5 py-0.5 transition-colors"
             >
               {{ shipment.irsaliyeNo ? 'Güncelle' : 'Gir' }}
             </button>
@@ -57,7 +57,7 @@
     <div v-if="shipment.deliveredAt" class="p-5 bg-green-50 dark:bg-green-900/10 border-t border-green-100 dark:border-green-900/30">
       <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
         Teslim Bilgisi
-        <span v-if="isFreight" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 normal-case">
+        <span v-if="isFreight" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 normal-case">
           Nakliye ile teslim{{ displayDriver ? ' — ' + displayDriver : '' }}
         </span>
       </h3>

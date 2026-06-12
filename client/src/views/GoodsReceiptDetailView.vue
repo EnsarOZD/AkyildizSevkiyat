@@ -14,22 +14,22 @@
     <template v-else-if="receipt">
       <!-- Breadcrumb -->
       <nav class="flex items-center gap-2 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">
-        <router-link to="/goods-receipts" class="hover:text-indigo-600 transition-colors">İrsaliyeler</router-link>
+        <router-link to="/goods-receipts" class="hover:text-blue-600 transition-colors">İrsaliyeler</router-link>
         <span class="text-gray-300">/</span>
-        <span class="text-indigo-600 dark:text-indigo-400">{{ receipt.waybillNo }}</span>
+        <span class="text-blue-600 dark:text-blue-400">{{ receipt.waybillNo }}</span>
       </nav>
 
       <!-- Main Header Card -->
-      <div class="relative overflow-hidden bg-white dark:bg-gray-900 rounded-3xl shadow-xl shadow-indigo-100/50 dark:shadow-none border border-indigo-50 dark:border-indigo-900 group">
+      <div class="relative overflow-hidden bg-white dark:bg-gray-900 rounded-3xl shadow-xl shadow-blue-100/50 dark:shadow-none border border-blue-50 dark:border-blue-900 group">
         <!-- Decorative gradient -->
-        <div class="absolute -top-24 -right-24 h-64 w-64 bg-indigo-500/5 rounded-full blur-3xl group-hover:bg-indigo-500/10 transition-all duration-700"></div>
+        <div class="absolute -top-24 -right-24 h-64 w-64 bg-blue-500/5 rounded-full blur-3xl group-hover:bg-blue-500/10 transition-all duration-700"></div>
         
         <div class="relative p-6 sm:p-8">
           <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <!-- Left: Info -->
             <div class="space-y-4">
               <div class="flex items-center gap-3">
-                <div class="p-3 bg-indigo-600 rounded-2xl text-white shadow-lg shadow-indigo-200 dark:shadow-none">
+                <div class="p-3 bg-blue-600 rounded-2xl text-white shadow-lg shadow-blue-200 dark:shadow-none">
                   <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                   </svg>
@@ -48,14 +48,14 @@
               <div class="grid grid-cols-2 sm:flex sm:items-center gap-4 sm:gap-8 pt-2">
                 <div class="space-y-0.5">
                   <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">İrsaliye No</p>
-                  <p class="text-sm font-bold text-indigo-600 dark:text-indigo-400">{{ receipt.waybillNo }}</p>
+                  <p class="text-sm font-bold text-blue-600 dark:text-blue-400">{{ receipt.waybillNo }}</p>
                 </div>
                 <div v-if="receipt.purchaseOrderNumber" class="space-y-0.5">
                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sipariş No</p>
                    <router-link
                       v-if="receipt.purchaseOrderId"
                       :to="{ name: 'PurchaseOrderDetail', params: { id: receipt.purchaseOrderId } }"
-                      class="text-sm font-bold text-gray-900 dark:text-gray-100 hover:text-indigo-600 transition-colors"
+                      class="text-sm font-bold text-gray-900 dark:text-gray-100 hover:text-blue-600 transition-colors"
                     >#{{ receipt.purchaseOrderNumber }}</router-link>
                     <p v-else class="text-sm font-bold text-gray-900 dark:text-gray-100 italic">Siparişsiz</p>
                 </div>
@@ -91,7 +91,7 @@
                       v-if="canPost"
                       @click="handlePost"
                       :disabled="actionLoading"
-                      class="flex-1 sm:flex-none px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-100 dark:shadow-none transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
+                      class="flex-1 sm:flex-none px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-100 dark:shadow-none transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
                     >
                       <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                       Postla
@@ -143,12 +143,12 @@
         <div class="flex items-center justify-between px-2">
            <h2 class="text-sm font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
               İrsaliye Kalemleri
-              <span class="bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full text-[10px] font-black">{{ receipt.lines?.length || 0 }}</span>
+              <span class="bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full text-[10px] font-black">{{ receipt.lines?.length || 0 }}</span>
            </h2>
            <button
              v-if="receipt.status === 'Draft'"
              @click="showAddLineModal = true"
-             class="px-4 py-2 bg-white dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800 rounded-xl text-xs font-bold shadow-sm hover:bg-indigo-50 transition-all flex items-center gap-2 group"
+             class="px-4 py-2 bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800 rounded-xl text-xs font-bold shadow-sm hover:bg-blue-50 transition-all flex items-center gap-2 group"
            >
              <svg class="h-4 w-4 group-hover:rotate-90 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
              Ürün Ekle
@@ -179,11 +179,11 @@
                          <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
                       </div>
                       <p class="text-sm font-bold text-gray-400">Bu irsaliyede henüz hiç kalem bulunmuyor.</p>
-                      <button v-if="receipt.status === 'Draft'" @click="showAddLineModal = true" class="text-xs font-black text-indigo-500 uppercase tracking-widest hover:text-indigo-700 transition-colors">Şimdi Ekle &rarr;</button>
+                      <button v-if="receipt.status === 'Draft'" @click="showAddLineModal = true" class="text-xs font-black text-blue-500 uppercase tracking-widest hover:text-blue-700 transition-colors">Şimdi Ekle &rarr;</button>
                    </div>
                 </td>
               </tr>
-              <tr v-for="line in receipt.lines" :key="line.id" class="hover:bg-indigo-50/30 dark:hover:bg-indigo-900/10 transition-colors group">
+              <tr v-for="line in receipt.lines" :key="line.id" class="hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-colors group">
                 <td class="px-6 py-4">
                   <div class="flex items-center gap-3">
                      <div class="h-10 w-10 shrink-0 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-400 font-black text-xs">
@@ -223,7 +223,7 @@
                   <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       @click="openEditLine(line)"
-                      class="px-3 py-1.5 text-[10px] font-black text-indigo-600 dark:text-indigo-400 bg-white dark:bg-gray-800 border border-indigo-100 dark:border-indigo-800 rounded-lg uppercase tracking-widest hover:bg-indigo-50 transition-colors"
+                      class="px-3 py-1.5 text-[10px] font-black text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-800 border border-blue-100 dark:border-blue-800 rounded-lg uppercase tracking-widest hover:bg-blue-50 transition-colors"
                     >
                       Miktar Gir
                     </button>

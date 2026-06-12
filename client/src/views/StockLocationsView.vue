@@ -10,7 +10,7 @@
       <div class="flex gap-2" v-if="canManage">
         <button
           @click="openTransferModal()"
-          class="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
+          class="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
         >
           <ArrowsRightLeftIcon class="w-4 h-4" aria-hidden="true" />
           Transfer
@@ -54,11 +54,11 @@
           <input
             v-model="searchQuery"
             placeholder="Stok kodu veya adı ara..."
-            class="flex-1 min-w-[200px] text-sm px-3 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            class="flex-1 min-w-[200px] text-sm px-3 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <select
             v-model="filterZone"
-            class="text-sm px-3 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            class="text-sm px-3 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">Tüm Bölgeler</option>
             <option v-for="z in uniqueZones" :key="z" :value="z">Bölge {{ z }}</option>
@@ -69,7 +69,7 @@
 
       <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div v-if="loading" class="flex justify-center py-12">
-          <div class="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+          <div class="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
         </div>
         <div v-else-if="filteredItems.length === 0" class="py-16 text-center text-sm text-gray-400">
           <ArchiveBoxIcon class="w-10 h-10 mx-auto mb-3 opacity-30" aria-hidden="true" />
@@ -99,7 +99,7 @@
                 <td class="px-4 py-3 font-mono text-xs font-semibold text-gray-900 dark:text-gray-100">{{ item.stockCode }}</td>
                 <td class="px-4 py-3 text-gray-700 dark:text-gray-300 truncate max-w-[180px]">{{ item.stockName }}</td>
                 <td class="px-4 py-3">
-                  <span class="font-mono text-xs bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded">
+                  <span class="font-mono text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded">
                     {{ item.locationCode }}
                   </span>
                 </td>
@@ -125,7 +125,7 @@
                 <td v-if="canManage" class="px-4 py-3 text-right">
                   <button
                     @click="openTransferModal(item)"
-                    class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+                    class="text-xs text-blue-600 dark:text-blue-400 hover:underline"
                   >
                     Transfer
                   </button>
@@ -141,7 +141,7 @@
     <template v-else-if="activeTab === 'history'">
       <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div v-if="historyLoading" class="flex justify-center py-12">
-          <div class="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+          <div class="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
         </div>
         <div v-else-if="history.length === 0" class="py-16 text-center text-sm text-gray-400">
           Henüz transfer kaydı yok
@@ -168,7 +168,7 @@
                 </td>
                 <td class="px-4 py-3 font-mono text-xs text-gray-600 dark:text-gray-300">{{ t.fromLocationCode }}</td>
                 <td class="px-4 py-3">
-                  <span class="flex items-center gap-1 font-mono text-xs text-indigo-600 dark:text-indigo-400">
+                  <span class="flex items-center gap-1 font-mono text-xs text-blue-600 dark:text-blue-400">
                     <ArrowRightIcon class="w-3 h-3" aria-hidden="true" />
                     {{ t.toLocationCode }}
                   </span>
@@ -279,7 +279,7 @@
       <button @click="showTransferModal = false"
         class="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">İptal</button>
       <button @click="saveTransfer" :disabled="saving"
-        class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg">
+        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg">
         {{ saving ? 'Kaydediliyor...' : 'Transfer Et' }}
       </button>
     </template>

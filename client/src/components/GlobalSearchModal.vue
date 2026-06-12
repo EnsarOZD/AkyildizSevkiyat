@@ -49,7 +49,7 @@
 
             <!-- Loading -->
             <div v-if="loading" class="flex justify-center py-8">
-              <div class="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+              <div class="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
             </div>
 
             <!-- Empty query hint -->
@@ -75,13 +75,13 @@
                   :key="'s-' + s.id"
                   role="option"
                   :aria-selected="flatIndex('s', i) === selectedIdx"
-                  class="w-full flex items-center gap-3 px-4 py-3 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-left transition-colors"
-                  :class="flatIndex('s', i) === selectedIdx ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''"
+                  class="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-left transition-colors"
+                  :class="flatIndex('s', i) === selectedIdx ? 'bg-blue-50 dark:bg-blue-900/20' : ''"
                   @click="goShipment(s.id)"
                   @mouseenter="selectedIdx = flatIndex('s', i)"
                 >
-                  <div class="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center flex-shrink-0">
-                    <ClipboardDocumentListIcon class="w-4 h-4 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
+                  <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center flex-shrink-0">
+                    <ClipboardDocumentListIcon class="w-4 h-4 text-blue-600 dark:text-blue-400" aria-hidden="true" />
                   </div>
                   <div class="flex-1 min-w-0">
                     <p class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
@@ -108,8 +108,8 @@
                   :key="'st-' + s.id"
                   role="option"
                   :aria-selected="flatIndex('st', i) === selectedIdx"
-                  class="w-full flex items-center gap-3 px-4 py-3 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-left transition-colors"
-                  :class="flatIndex('st', i) === selectedIdx ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''"
+                  class="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-left transition-colors"
+                  :class="flatIndex('st', i) === selectedIdx ? 'bg-blue-50 dark:bg-blue-900/20' : ''"
                   @click="goStock()"
                   @mouseenter="selectedIdx = flatIndex('st', i)"
                 >
@@ -136,8 +136,8 @@
                   :key="'p-' + p.id"
                   role="option"
                   :aria-selected="flatIndex('p', i) === selectedIdx"
-                  class="w-full flex items-center gap-3 px-4 py-3 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-left transition-colors"
-                  :class="flatIndex('p', i) === selectedIdx ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''"
+                  class="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-left transition-colors"
+                  :class="flatIndex('p', i) === selectedIdx ? 'bg-blue-50 dark:bg-blue-900/20' : ''"
                   @click="goProjects()"
                   @mouseenter="selectedIdx = flatIndex('p', i)"
                 >
@@ -286,8 +286,8 @@ const statusClassMap: Record<string, string> = {
   Created: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400',
   AssignedToWarehouse: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400',
   Picking: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
-  ReadyForDispatch: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400',
-  AssignedToVehicle: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400',
+  ReadyForDispatch: 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400',
+  AssignedToVehicle: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
   Dispatched: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400',
   Delivered: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
   Cancelled: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400',

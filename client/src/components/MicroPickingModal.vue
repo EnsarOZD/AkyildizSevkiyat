@@ -57,7 +57,7 @@
                       <div class="flex flex-col items-end gap-1">
                         <div class="text-right leading-none">
                           <span class="block text-[10px] font-bold uppercase text-gray-400 dark:text-gray-500">Sipariş</span>
-                          <span class="block text-3xl font-black text-indigo-600 dark:text-indigo-400 leading-tight">{{ item.totalQty }}</span>
+                          <span class="block text-3xl font-black text-blue-600 dark:text-blue-400 leading-tight">{{ item.totalQty }}</span>
                         </div>
                         <div class="flex items-baseline gap-1" :class="getQtyColorClass(item)">
                           <span class="text-[10px] font-bold uppercase text-gray-400 dark:text-gray-500">Toplanan</span>
@@ -116,7 +116,7 @@
                       <div class="flex flex-col items-end gap-1">
                         <div class="text-right leading-none">
                           <span class="block text-[10px] font-bold uppercase text-gray-400 dark:text-gray-500">Sipariş</span>
-                          <span class="block text-3xl font-black text-indigo-600 dark:text-indigo-400 leading-tight">{{ item.totalQty }}</span>
+                          <span class="block text-3xl font-black text-blue-600 dark:text-blue-400 leading-tight">{{ item.totalQty }}</span>
                         </div>
                         <div class="flex items-baseline gap-1 text-green-600 dark:text-green-400">
                           <span class="text-[10px] font-bold uppercase text-gray-400 dark:text-gray-500">Toplanan</span>
