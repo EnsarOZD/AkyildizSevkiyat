@@ -208,6 +208,13 @@
               <!-- Actions -->
               <div class="px-3 py-3 space-y-1">
                 <button
+                  @click="openOnboarding"
+                  class="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-white font-semibold hover:bg-white/[0.05] transition-colors text-sm"
+                >
+                  <span class="w-9 h-9 rounded-xl bg-white/[0.07] text-white/70 flex items-center justify-center"><QuestionMarkCircleIcon class="w-5 h-5" /></span>
+                  Nasıl kullanılır?
+                </button>
+                <button
                   @click="router.push('/driver/qr-scan?mode=end'); menuOpen = false"
                   class="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-white font-semibold hover:bg-white/[0.05] transition-colors text-sm"
                 >
@@ -234,6 +241,9 @@
         </div>
       </Transition>
     </Teleport>
+
+    <!-- Şoför tanıtım turu -->
+    <DriverOnboarding v-model="showOnboarding" @done="markOnboardingSeen" />
   </div>
 </template>
 
@@ -250,11 +260,13 @@ import {
   EllipsisHorizontalIcon,
   SignalSlashIcon,
   ShieldCheckIcon,
+  QuestionMarkCircleIcon,
 } from '@heroicons/vue/24/outline';
 import { useAuthStore } from '../stores/auth';
 import { useDeliveryQueue } from '../composables/useDeliveryQueue';
 import { useDriverRouteStore } from '../stores/driverRoute';
 import { useOpenMaps } from '../composables/useOpenMaps';
+import DriverOnboarding from '../components/driver/DriverOnboarding.vue';
 import logoUrl from '../assets/logo.png';
 
 const route = useRoute();
@@ -265,6 +277,21 @@ const driverRouteStore = useDriverRouteStore();
 const { openMaps } = useOpenMaps();
 const menuOpen = ref(false);
 const locationDenied = ref(false);
+const showOnboarding = ref(false);
+
+const ONBOARDING_KEY = 'driver_onboarding_seen';
+
+function openOnboarding() {
+  menuOpen.value = false;
+  showOnboarding.value = true;
+}
+function markOnboardingSeen() {
+  try {
+    localStorage.setItem(ONBOARDING_KEY, '1');
+  } catch {
+    // localStorage yoksa sessizce geç
+  }
+}
 
 // QR butonu yalnızca sefer başında (başlat) ve sonunda (kapat) aktif olur;
 // sefer sürerken pasif kalır (teslimat sırasında işe yaramaz).
@@ -272,6 +299,15 @@ const qrActive = computed(() => !driverRouteStore.hasActiveSession || driverRout
 const qrTarget = computed(() => driverRouteStore.canEndSession ? '/driver/qr-scan?mode=end' : '/driver/qr-scan');
 
 onMounted(async () => {
+  // İlk girişte tanıtım turunu otomatik göster
+  try {
+    if (localStorage.getItem(ONBOARDING_KEY) !== '1') {
+      showOnboarding.value = true;
+    }
+  } catch {
+    // localStorage yoksa sessizce geç
+  }
+
   if (!navigator.geolocation) return;
   try {
     const result = await navigator.permissions.query({ name: 'geolocation' });

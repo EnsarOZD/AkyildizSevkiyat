@@ -52,29 +52,33 @@ namespace Akyildiz.Sevkiyat.Application.Driver.Commands.EndDriverSession
 
             var today = DateTime.UtcNow.Date;
 
-            // 5. Bitiş kadranı (km + foto): aynı araç için bugün başka bir şoför zaten
-            //    bitiş kadranını girdiyse miras al, yoksa ilk kapatan şoförden zorunlu iste.
-            var existingEndOdometerSession = await _context.DriverSessions
+            // 5. Bitiş kadranı (km + foto): iki şoför aynı araçta aynı seferi bitirir; bitiş
+            //    kadranını yalnızca biri girer. "İlk giren otorite" kuralı: aynı araç için
+            //    bugün başka bir sefer zaten bitiş kadranını girmişse (EndOdometerKm yalnızca
+            //    Close() ile yazılır → o sefer kapanmıştır), bu şoför kendi KM'sini göndermiş
+            //    olsa bile o ilk değeri devralır. Böylece iki şoför için tek/​tutarlı bitiş
+            //    km'si oluşur ve eşzamanlı gönderimde ilk kaydedilen geçerli olur.
+            var partnerEndSession = await _context.DriverSessions
                 .Where(ds =>
                     ds.VehicleId == vehicle.Id &&
-                    ds.Status == DriverSessionStatus.Closed &&
+                    ds.Id != session.Id &&
                     ds.StartTime >= today &&
                     ds.EndOdometerKm != null)
-                .OrderByDescending(ds => ds.EndTime)
+                .OrderBy(ds => ds.EndTime)   // en erken kapanan = ilk giren = otorite
                 .FirstOrDefaultAsync(cancellationToken);
 
             string? odometerPath;
             int? endOdometerKm;
-            if (!string.IsNullOrWhiteSpace(command.EndOdometerPhotoBase64) && command.EndOdometerKm is > 0)
+            if (partnerEndSession != null)
+            {
+                // İlk bitiren şoförün kadranı otorite → devral (bu şoför KM göndermiş olsa bile).
+                odometerPath = partnerEndSession.EndOdometerPhotoPath;
+                endOdometerKm = partnerEndSession.EndOdometerKm;
+            }
+            else if (!string.IsNullOrWhiteSpace(command.EndOdometerPhotoBase64) && command.EndOdometerKm is > 0)
             {
                 odometerPath = await _photos.SaveAsync(command.EndOdometerPhotoBase64, "odometer", cancellationToken);
                 endOdometerKm = command.EndOdometerKm;
-            }
-            else if (existingEndOdometerSession != null)
-            {
-                // Aynı araçta ilk kapatan şoför kadranı girmiş → kayıt tutarlılığı için miras al.
-                odometerPath = existingEndOdometerSession.EndOdometerPhotoPath;
-                endOdometerKm = existingEndOdometerSession.EndOdometerKm;
             }
             else
             {
