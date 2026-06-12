@@ -115,32 +115,43 @@ This means:
 
 ### Deployment
 
-**Production environment:** Hetzner Ubuntu VM running Nginx + systemd-managed .NET service.
+**Production environment:** Hetzner Ubuntu VM running Nginx + systemd-managed .NET service. SQL Server runs in Docker on the same host (see **Server Infrastructure** below).
 
-**Deploy method:** Manual, via PowerShell script (`deploy.ps1`) on the developer machine. The script:
-1. Runs `dotnet publish --configuration Release` locally.
-2. Runs `npm run build` for the frontend.
-3. Stops the systemd service on the server.
-4. Wipes `/var/www/sevkiyat-api/*` and `/var/www/sevkiyat-app/*`.
-5. Copies the new publish output and frontend dist over via scp.
-6. Restarts the systemd service.
+**Deploy model — release + symlink (atomic, near-zero downtime):** Manual, via `deploy.ps1` (repo root) on the developer machine:
+1. `dotnet publish --configuration Release` (API) + `npm run build` (frontend), locally.
+2. scp output into a NEW timestamped release dir: `/var/www/releases/{api,web}/<timestamp>`.
+3. Atomic symlink swap — `/var/www/sevkiyat-api` → new api release, `/var/www/sevkiyat-app` → new web release.
+4. Restart service, then verify `GET /health` (DB-checked) before treating the deploy as good.
+5. Last 5 releases are kept; older ones pruned.
 
-**There is no git-based deploy, no CI/CD, no staging environment.** The production VM does not have a clone of this repository.
+The live symlink target is never touched during scp, so the running app is undisturbed until the atomic swap — downtime is negligible.
 
-**Files that survive deploy** (because they live outside `/var/www/sevkiyat-api/`):
+**Rollback:** `rollback.ps1` — swaps the symlink back to the previous release + restarts (~5 s).
+
+**Deploy permissions:** `ensaradmin` has NOPASSWD sudo for `systemctl stop/start/restart sevkiyat-api` **only** (`/etc/sudoers.d/sevkiyat-deploy`).
+
+**Still no CI/CD, no git-based deploy, no staging** — a deliberate choice for a single-developer private project, not a gap to flag. The production VM has no clone of this repository.
+
+**Files that survive deploy** (outside the release dirs):
 - `/etc/sevkiyat/sevkiyat.env` — production secrets, loaded by systemd via `EnvironmentFile=`
-- `/etc/systemd/system/sevkiyat-api.service` — service unit
-- Nginx configuration under `/etc/nginx/`
+- `/etc/systemd/system/sevkiyat-api.service` — service unit; Nginx config under `/etc/nginx/`
+- Photo uploads (`PhotoStorage:BasePath`, outside `/var/www/releases`)
 
-**Files that get overwritten on every deploy:**
-- All `.dll`, `.json`, and static asset files in `/var/www/sevkiyat-api/` — including `appsettings.json`
-- All frontend assets in `/var/www/sevkiyat-app/`
+**Secrets rule:** each release ships a fresh `appsettings.json` holding only `SET_BY_ENV_*` placeholders; real values live exclusively in `/etc/sevkiyat/sevkiyat.env`. **Never put production secret values into `appsettings.json` in the source tree** — they are overwritten every release and production relies on env vars through systemd.
 
-This means: **never put production secret values into `appsettings.json` in the source tree.** They would be wiped on the next deploy anyway, but more importantly, the deploy script does not preserve them — production relies on env vars through systemd.
+**Operational risk:** Akyıldız uses this system in active production. Prefer off-hours deploys; the `/health` gate + `rollback.ps1` make recovery fast.
 
-**Known deploy-script limitation:** The current `deploy.ps1` uses `rm -rf ${API_PATH}/*` before `scp`, meaning any manually-edited file in `/var/www/sevkiyat-api/` is destroyed on deploy. This is acceptable because production config lives outside `/var/www/`. If a file inside `/var/www/sevkiyat-api/` must persist across deploys, it must be moved to `/etc/` or similar first.
+### Server Infrastructure
 
-**Operational risk:** Akyıldız uses this system in active production. Run deploys during off-hours when possible, and verify the service is healthy (`systemctl status sevkiyat-api`) before walking away.
+- **SQL Server 2022 in Docker** (container `sevkiyat-sql`), data on host bind mount `/var/lib/sevkiyat-sql` — deleting the container does NOT lose data; recreate command in `/root/runbook.md`. Listens on `127.0.0.1:1433`, restart policy `unless-stopped`.
+- **Nginx:** `sevkiyat.akyildizlojistik.com` → `/var/www/sevkiyat-app` (SPA); `api.sevkiyat.akyildizlojistik.com` → reverse-proxy to `127.0.0.1:5000`.
+- `/var/www/sevkiyat-ui` is a leftover directory, slated for removal.
+
+### Backups
+
+- **Nightly FULL at 02:00 + hourly transaction-log at xx:30** (cron `/etc/cron.d/sevkiyat-backup`; scripts `/usr/local/bin/sevkiyat-*.sh`; config `/etc/sevkiyat/backup.env`).
+- Retention: 7 days local at `/var/backups/sevkiyat`; offsite to Hetzner Storage Box (Falkenstein) via rsync-over-ssh.
+- `SevkiyatDb` uses FULL recovery model; **RPO ~1 hour**. Restore procedure tested 2026-06-12; runbook at `/root/runbook.md`.
 
 ### Provider Coupling — Application Layer
 
@@ -160,6 +171,8 @@ For auditors: do not propose removing the SqlServer reference from Application w
 
 **Static files:** Photos are served from the `/photos/` path via a static files middleware configured to read from a directory on disk.
 
+**Health endpoint:** `GET /health` is anonymous and registered with `AddDbContextCheck<SevkiyatDbContext>`, so it tests DB connectivity (not just liveness) — deploy verification depends on it. `AllowAnonymous` metadata bypasses the global `RequireAuthenticatedUser` FallbackPolicy; this is intentional.
+
 **Background services:**
 - `IssOrderImportBackgroundService` — auto-imports ISS-IP orders on `IssImport:IntervalMinutes` interval
 - `YkStatusSyncBackgroundService` — polls YurtiKargo for cargo status updates
@@ -175,6 +188,14 @@ For auditors: do not propose removing the SqlServer reference from Application w
 - `IEmailService` / `SmtpEmailService` — SMTP delivery; config under `Smtp` section
 
 **Database:** `context.Database.Migrate()` runs automatically on startup. `UserSeeder` and `ShipmentSeeder` run after migration on every startup. Admin password comes from `SeedData:AdminPassword` config.
+
+### Migration Policy (MUST FOLLOW)
+
+`Database.Migrate()` runs **unconditionally on every startup** and applies pending `Up()` methods. An EF rollback (`Down()`) does NOT undo a bad schema change in production — so a destructive `Up()` is effectively irreversible. Therefore:
+
+- **Never generate in a migration `Up()`:** `DELETE`/`UPDATE` data statements, `DropColumn`, `DropTable`, `RenameColumn`.
+- **Destructive schema changes use expand/contract:** first stop the code from using the column; remove the column in the *next* release's migration.
+- **Data cleanup/backfill goes in a separate SQL script**, never in a migration.
 
 ### External Integrations
 
