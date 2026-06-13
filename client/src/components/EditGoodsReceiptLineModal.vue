@@ -108,7 +108,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
+import { useDefinedReasons, ReasonCategory } from '../composables/useDefinedReasons';
 import BaseModal from './BaseModal.vue';
 import goodsReceiptService from '../services/goodsReceiptService';
 import { useNotificationStore } from '../stores/notification';
@@ -129,7 +130,10 @@ const emit = defineEmits<{
 const notificationStore = useNotificationStore();
 const saving = ref(false);
 
-const rejectReasons = ['Hasarlı', 'Eksik / Kırık', 'Yanlış Ürün', 'Kalite Sorunu', 'Diğer'];
+// Red sebepleri DB'den (Sebep Tanımları). "Diğer" her zaman en sonda sabit kalır.
+const { reasons: managedRejectReasons, load: loadRejectReasons } = useDefinedReasons(ReasonCategory.GoodsReceiptReject);
+const rejectReasons = computed(() => [...managedRejectReasons.value, 'Diğer']);
+onMounted(loadRejectReasons);
 
 const form = ref({
   receivedQty: 0,

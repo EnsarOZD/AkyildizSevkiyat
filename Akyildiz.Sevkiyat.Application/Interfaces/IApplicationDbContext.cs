@@ -72,6 +72,9 @@ namespace Akyildiz.Sevkiyat.Application.Interfaces
         // External Email Contacts
         DbSet<ExternalEmailContact> ExternalEmailContacts { get; }
 
+        // Yönetilebilir sebep tanımları (fark/red)
+        DbSet<DefinedReason> DefinedReasons { get; }
+
         // Kıyafet toplama vurgu anahtar kelimeleri
         DbSet<ClothingHighlightKeyword> ClothingHighlightKeywords { get; }
 

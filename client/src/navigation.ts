@@ -161,6 +161,7 @@ export const NAV_ITEMS: NavGroup[] = [
             { label: 'Şoför Puantajı',           to: '/admin/driver-sessions',             icon: DevicePhoneMobileIcon, roles: ['Admin', 'Manager', 'Accounting'] },
             { label: 'Harici Mail Adresleri',    to: '/external-email-contacts',           icon: EnvelopeIcon,          roles: ['Admin', 'Manager', 'Accounting'] },
             { label: 'Kıyafet Vurgu Kelimeleri', to: '/clothing-keywords',                 icon: Cog6ToothIcon,         roles: ['Admin', 'Manager'] },
+            { label: 'Sebep Tanımları',          to: '/defined-reasons',                   icon: Cog6ToothIcon,         roles: ['Admin', 'Manager'] },
             { label: 'Kullanıcı Yönetimi',       to: '/users',                             icon: UsersIcon,             roles: ['Admin'] },
         ],
     },

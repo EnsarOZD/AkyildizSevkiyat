@@ -457,6 +457,7 @@ using (var scope = app.Services.CreateScope())
     var seedOpt = services.GetRequiredService<IOptions<SeedDataOptions>>().Value;
     await Akyildiz.Sevkiyat.Infrastructure.Persistence.Seeding.UserSeeder.SeedAsync(context, hasher, seedOpt.AdminPassword);
     await Akyildiz.Sevkiyat.Infrastructure.Persistence.Seeding.ShipmentSeeder.SeedAsync(context);
+    await Akyildiz.Sevkiyat.Infrastructure.Persistence.Seeding.DefinedReasonSeeder.SeedAsync(context);
 }
 
 // Health endpoint — anonim erişilebilir (liveness + DB connectivity).

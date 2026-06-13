@@ -8,7 +8,7 @@
       @click.stop
     >
       <option value="" disabled>Sebep seçiniz…</option>
-      <option v-for="p in PRESETS" :key="p" :value="p">{{ p }}</option>
+      <option v-for="p in reasons" :key="p" :value="p">{{ p }}</option>
       <option :value="OTHER">Diğer…</option>
     </select>
 
@@ -25,7 +25,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, onMounted } from 'vue';
+import { useDefinedReasons, ReasonCategory } from '../composables/useDefinedReasons';
 
 const props = withDefaults(defineProps<{
   modelValue: string;
@@ -43,18 +44,16 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{ (e: 'update:modelValue', value: string): void }>();
 
-// Hızlı seçim için hazır nedenler. "Diğer" seçilince serbest metin alanı açılır.
-// Bu alan yalnızca sevkiyat/depo toplama akışlarında kullanılır; bu nedenle sadece
-// sevkiyatta anlamlı sebepler tutulur (Hasarlı/Yanlış ürün/Fazla geldi gibi
-// satınalma odaklı sebepler buradan çıkarıldı).
-const PRESETS = ['Stokta yok', 'Kısmi stok', 'Koli tamamlaması'];
+// Sebepler artık DB'den yönetilir (Sebep Tanımları ekranı). "Diğer" seçilince
+// serbest metin alanı açılır. API erişilemezse composable fallback listesi döner.
+const { reasons, load } = useDefinedReasons(ReasonCategory.PickingDifference);
 const OTHER = '__other__';
 
 const isCustom = ref(false);
 const customText = ref('');
 
 function syncFromModel(v: string) {
-  if (v && !PRESETS.includes(v)) {
+  if (v && !reasons.value.includes(v)) {
     isCustom.value = true;
     customText.value = v;
   } else {
@@ -68,6 +67,12 @@ syncFromModel(props.modelValue);
 watch(() => props.modelValue, (v) => {
   const current = isCustom.value ? customText.value : props.modelValue;
   if (v !== current) syncFromModel(v);
+});
+
+// Liste geldikten sonra mevcut değeri yeniden değerlendir (preset mi serbest mi).
+onMounted(async () => {
+  await load();
+  syncFromModel(props.modelValue);
 });
 
 function onSelect(value: string) {

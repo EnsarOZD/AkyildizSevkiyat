@@ -97,11 +97,7 @@
                   class="w-full px-3 py-2.5 bg-white dark:bg-gray-900 border border-red-300 dark:border-red-700 rounded-xl text-sm font-bold text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-red-500 focus:border-transparent"
                 >
                   <option value="">Neden seçin...</option>
-                  <option value="Hasarlı">Hasarlı</option>
-                  <option value="Eksik/Kırık">Eksik / Kırık</option>
-                  <option value="Yanlış Ürün">Yanlış Ürün</option>
-                  <option value="Kalite Sorunu">Kalite Sorunu</option>
-                  <option value="Diğer">Diğer</option>
+                  <option v-for="reason in rejectReasons" :key="reason" :value="reason">{{ reason }}</option>
                 </select>
                 <p v-if="(alloc.rejectedQty || 0) > 0 && !alloc.rejectReason" class="text-xs text-red-500 font-bold mt-1">
                   Red nedeni zorunludur
@@ -144,8 +140,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useMalKabulStore, type POAllocation, type SessionEntry } from '../stores/malKabul';
+import { useDefinedReasons, ReasonCategory } from '../composables/useDefinedReasons';
 
 interface Material {
     stockMasterId: number;
@@ -167,6 +164,11 @@ const emit = defineEmits<{
 }>();
 
 const store = useMalKabulStore();
+
+// Red sebepleri DB'den (Sebep Tanımları) + sabit "Diğer".
+const { reasons: managedRejectReasons, load: loadRejectReasons } = useDefinedReasons(ReasonCategory.GoodsReceiptReject);
+const rejectReasons = computed(() => [...managedRejectReasons.value, 'Diğer']);
+onMounted(loadRejectReasons);
 
 const localAllocations = ref<POAllocation[]>([]);
 

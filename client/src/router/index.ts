@@ -73,6 +73,12 @@ const router = createRouter({
                     meta: { title: 'Kıyafet Vurgu Kelimeleri', roles: ['Admin', 'Manager'] }
                 },
                 {
+                    path: 'defined-reasons',
+                    name: 'DefinedReasons',
+                    component: () => import('../views/DefinedReasonsView.vue'),
+                    meta: { title: 'Sebep Tanımları', roles: ['Admin', 'Manager'] }
+                },
+                {
                     path: 'clothing-prep',
                     name: 'ClothingPrep',
                     component: () => import('../views/ClothingPrepView.vue'),

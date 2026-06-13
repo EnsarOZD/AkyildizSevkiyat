@@ -96,6 +96,9 @@ namespace Akyildiz.Sevkiyat.Infrastructure.Persistence
         public DbSet<ExternalEmailContact> ExternalEmailContacts { get; set; } = null!;
         public DbSet<InstitutionCariMapping> InstitutionCariMappings { get; set; } = null!;
 
+        // Yönetilebilir sebep tanımları (fark/red)
+        public DbSet<DefinedReason> DefinedReasons { get; set; } = null!;
+
         // Kıyafet toplama vurgu anahtar kelimeleri
         public DbSet<ClothingHighlightKeyword> ClothingHighlightKeywords { get; set; } = null!;
 
