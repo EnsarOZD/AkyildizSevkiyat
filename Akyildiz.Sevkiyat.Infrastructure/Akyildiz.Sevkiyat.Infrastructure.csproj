@@ -19,6 +19,9 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.0" />
+    <!-- Güvenlik: transitive olarak 9.0.0 geliyordu (GHSA-37gx-xxp4-5rgx, GHSA-w3x6-4m5h-cxqf).
+         Açıkları giderilmiş sürüme zorlamak için doğrudan referans veriyoruz. -->
+    <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.9" />
     <PackageReference Include="WebPush" Version="1.0.13" />
   </ItemGroup>
 
