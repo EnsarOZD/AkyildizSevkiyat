@@ -94,7 +94,7 @@
                       <div class="mt-3">
                         <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Farklı Ürün (Opsiyonel)</label>
                         <StockCombobox v-model="item.localStockId" :placeholder="'Değişmeyecek (' + item.stockName + ')'" class="text-sm" />
-                        <p v-if="item.localStockId && item.localStockId > 0" class="text-xs text-orange-600 mt-1 flex items-center gap-1">⚠️ Ürün değişecek.</p>
+                        <p v-if="item.localStockId && item.localStockId > 0" class="text-xs text-violet-600 mt-1 flex items-center gap-1">⚠️ Ürün değişecek.</p>
                       </div>
                     </div>
                   </div>

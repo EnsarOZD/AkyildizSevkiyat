@@ -71,7 +71,7 @@
                 <div class="text-sm font-semibold text-gray-800 dark:text-gray-200 leading-tight">{{ item.stockName }}</div>
                 <!-- Substitute stock badge -->
                 <div v-if="getSubstituteStock(item)" class="mt-1 flex items-center gap-1">
-                  <span class="text-[10px] font-bold px-1.5 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded">
+                  <span class="text-[10px] font-bold px-1.5 py-0.5 bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 rounded">
                     → {{ getSubstituteStock(item)!.stockCode }} · {{ getSubstituteStock(item)!.stockName }}
                   </span>
                 </div>
@@ -114,7 +114,7 @@
                   <button @click="toggleSubstitute(item)"
                           class="flex-1 py-2.5 rounded-lg text-xs font-bold active:bg-gray-200 dark:active:bg-gray-700 touch-manipulation border"
                           :class="getSubstituteStock(item)
-                            ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700 text-orange-500 dark:text-orange-400'
+                            ? 'bg-violet-50 dark:bg-violet-900/20 border-violet-200 dark:border-violet-700 text-violet-500 dark:text-violet-400'
                             : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400'">
                     {{ expandedSubstitute.has(groupKey(item)) ? 'Kapat' : 'Değiştir' }}
                   </button>
@@ -124,7 +124,7 @@
 
             <!-- Substitute stock picker (expanded) -->
             <div v-if="expandedSubstitute.has(groupKey(item))" class="px-3 pb-3 border-t border-dashed border-gray-200 dark:border-gray-700 pt-2">
-              <label class="block text-[10px] font-bold text-orange-500 dark:text-orange-400 uppercase tracking-wide mb-1">
+              <label class="block text-[10px] font-bold text-violet-500 dark:text-violet-400 uppercase tracking-wide mb-1">
                 Yerine Verilecek Ürün
               </label>
               <StockCombobox
@@ -134,7 +134,7 @@
                 :placeholder="`Değişmeyecek (${item.stockName})`"
                 class="text-sm"
               />
-              <p v-if="getSubstituteStock(item)" class="text-[10px] text-orange-600 dark:text-orange-400 mt-1">
+              <p v-if="getSubstituteStock(item)" class="text-[10px] text-violet-600 dark:text-violet-400 mt-1">
                 ⚠ Gönderilecek ürün değişecek: <strong>{{ getSubstituteStock(item)!.stockName }}</strong>
               </p>
             </div>
@@ -399,7 +399,7 @@ const saveProgress = async (markComplete = false) => {
 
 const getItemBorderClass = (item: OutOfCityPickItemDto) => {
   const qty = getPickedQty(item);
-  if (getSubstituteStock(item)) return 'border-l-4 border-orange-400 dark:border-orange-500 bg-orange-50 dark:bg-orange-900/10';
+  if (getSubstituteStock(item)) return 'border-l-4 border-violet-400 dark:border-violet-500 bg-violet-50 dark:bg-violet-900/10';
   if (qty === 0) return 'bg-white dark:bg-gray-900 border dark:border-gray-700';
   if (qty >= item.totalOrderedQty) return 'border-l-4 border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20';
   return 'border-l-4 border-amber-400 dark:border-amber-500 bg-amber-50 dark:bg-amber-900/10';
